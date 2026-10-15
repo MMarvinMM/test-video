@@ -1,0 +1,152 @@
+video-analysis 服务
+容器管理-> 生命周期
+修改
+--spring.profiles.active=pro ->   --spring.profiles.active=prod
+新增
+--spring.application.name=video-analysis
+删除
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=mKWri$L7
+--spring.cloud.nacos.discovery.server-addr=10.38.26.252:8848
+--spring.cloud.nacos.config.server-addr=10.38.26.252:8848
+
+容器管理-> 数据存储 ->添加存储卷 (选择 配置项)
+配置项 (ConfigMap) (选择 video-prod)
+挂载路径  								子路径
+/app/bootstrap-prod.yml					public.yml
+/app/application-prod.yml				video-analysis.yml
+
+
+
+ttview-analysis 服务
+容器管理-> 生命周期
+修改
+--spring.profiles.active=pro ->   --spring.profiles.active=prod
+新增
+--spring.application.name=ttview-analysis
+删除
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=mKWri$L7
+--spring.cloud.nacos.discovery.server-addr=10.38.26.252:8848
+--spring.cloud.nacos.config.server-addr=10.38.26.252:8848
+
+容器管理-> 数据存储 ->添加存储卷 (选择 配置项)
+配置项 (ConfigMap) (选择 video-prod)
+挂载路径  								子路径
+/app/bootstrap-prod.yml					public.yml
+/app/application-prod.yml				ttview-analysis.yml
+
+
+video-event 服务
+容器管理-> 生命周期
+修改
+--spring.profiles.active=pro ->   --spring.profiles.active=prod
+新增
+--spring.application.name=video-event
+删除
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=mKWri$L7
+--spring.cloud.nacos.discovery.server-addr=10.38.26.252:8848
+--spring.cloud.nacos.config.server-addr=10.38.26.252:8848
+
+容器管理-> 数据存储 ->添加存储卷 (选择 配置项)
+配置项 (ConfigMap) (选择 video-prod)
+挂载路径  								子路径
+/app/bootstrap-prod.yml					public.yml
+/app/application-prod.yml				video-event.yml
+
+
+
+video-chinatower-view-event 服务
+容器管理-> 生命周期
+修改
+--spring.profiles.active=pro ->   --spring.profiles.active=prod
+新增
+--spring.application.name=ttview-event
+删除
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=mKWri$L7
+--spring.cloud.nacos.discovery.server-addr=10.38.26.252:8848
+--spring.cloud.nacos.config.server-addr=10.38.26.252:8848
+
+容器管理-> 数据存储 ->添加存储卷 (选择 配置项)
+配置项 (ConfigMap) (选择 video-prod)
+挂载路径  								子路径
+/app/bootstrap-prod.yml					public.yml
+/app/application-prod.yml				ttview-event.yml
+
+
+video-task 服务
+容器管理-> 生命周期
+修改
+--spring.profiles.active=pro ->   --spring.profiles.active=prod
+新增
+--spring.application.name=video-task
+删除
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=mKWri$L7
+--spring.cloud.nacos.discovery.server-addr=10.38.26.252:8848
+--spring.cloud.nacos.config.server-addr=10.38.26.252:8848
+
+容器管理-> 数据存储 ->添加存储卷 (选择 配置项)
+配置项 (ConfigMap) (选择 video-prod)
+挂载路径  								子路径
+/app/bootstrap-prod.yml					public.yml
+/app/application-prod.yml				video-task.yml
+
+
+video-task-data 服务
+容器管理-> 生命周期
+修改
+--spring.profiles.active=pro ->   --spring.profiles.active=prod
+新增
+--spring.application.name=video-task-data
+删除
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=mKWri$L7
+--spring.cloud.nacos.discovery.server-addr=10.38.26.252:8848
+--spring.cloud.nacos.config.server-addr=10.38.26.252:8848
+
+容器管理-> 数据存储 ->添加存储卷 (选择 配置项)
+配置项 (ConfigMap) (选择 video-prod)
+挂载路径  								子路径
+/app/bootstrap-prod.yml					public.yml
+/app/application-prod.yml				video-task-data.yml
+
+
+video-out-data 服务
+容器管理-> 生命周期
+修改
+--spring.profiles.active=pro ->   --spring.profiles.active=prod
+新增
+--spring.application.name=video-out-data
+删除
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=mKWri$L7
+--spring.cloud.nacos.discovery.server-addr=10.38.26.252:8848
+--spring.cloud.nacos.config.server-addr=10.38.26.252:8848
+
+容器管理-> 数据存储 ->添加存储卷 (选择 配置项)
+配置项 (ConfigMap) (选择 video-prod)
+挂载路径  								子路径
+/app/bootstrap-prod.yml					public.yml
+/app/application-prod.yml				video-out-data.yml
+
+
+
+1、nacos配置文件修改：
+video-event：
+    # sms节点下增加：
+    iotTemplateCode: givh_gjdd_iot
+
+video-export：
+    spring:
+      servlet:
+        multipart:
+          max-file-size: 50MB
+
+video-chinatower-view-event：
+    # sms节点下增加：
+    iotTemplateCode: givh_gjdd_iot
+
+2、export服务增加GPU配置

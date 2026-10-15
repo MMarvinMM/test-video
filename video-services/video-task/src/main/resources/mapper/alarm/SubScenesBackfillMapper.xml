@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.SubScenesBackfillMapper">
+
+    <!-- 游标扫描：delete_flag='0'，按 warning_order_id 升序 -->
+    <select id="selectBatch" resultType="com.chinatower.platform.modules.alarm.entity.SubScenesBackfillRow">
+        SELECT
+            warning_order_id AS warningOrderId,
+            warning_type_id AS warningTypeId,
+            extra_field AS extraField,
+            CAST(sub_scenes AS CHAR) AS subScenes
+        FROM ${tableName}
+        WHERE delete_flag = '0'
+        <if test="lastId != null and lastId != ''">
+            AND warning_order_id &gt; #{lastId}
+        </if>
+        ORDER BY warning_order_id ASC
+        LIMIT #{batchSize}
+    </select>
+
+    <!-- 幂等：与目标值不同才更新（目标可为 null，用于非大模型置空） -->
+    <update id="updateSubScenes">
+        UPDATE ${tableName}
+        SET sub_scenes = #{subScenes,jdbcType=VARCHAR},
+            modifier_date = NOW()
+        WHERE warning_order_id = #{warningOrderId}
+        <choose>
+            <when test="subScenes == null">
+                AND sub_scenes IS NOT NULL
+            </when>
+            <otherwise>
+                AND (
+                    sub_scenes IS NULL
+                    OR CAST(sub_scenes AS CHAR) != #{subScenes}
+                )
+            </otherwise>
+        </choose>
+    </update>
+
+</mapper>

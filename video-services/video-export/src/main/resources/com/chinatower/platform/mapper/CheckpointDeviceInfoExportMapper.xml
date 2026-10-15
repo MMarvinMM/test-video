@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.CheckpointDeviceInfoExportMapper">
+
+    <select id="queryCheckpointDeviceExportList" resultType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceExportVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceInfoVO">
+    SELECT  m.device_name as deviceName,
+        m.device_code as deviceCode,
+        m.channel_name as channelName,
+        m.channel_code as channelCode,
+        d.device_status as deviceStatus,
+        m.province_name as provinceName,
+        m.city_name as cityName,
+        m.county_name as countyName
+        FROM vm_checkpoint_device_info_t m, vm_device_info_t d, (
+        SELECT
+        a.device_code,
+        a.accept_node
+        FROM
+        vm_order_devices a
+        WHERE a.delete_flag = 0
+        AND a.ord_status in(0, 1, 2)
+        and a.tenant_id = #{tenantId} and a.industry_code = #{industryCode}
+        GROUP BY a.device_code) t
+        WHERE t.device_code = d.device_code
+        AND m.device_code = d.device_code
+        AND m.delete_flag = 0
+        AND d.delete_flag = '0'
+        ${dataScope}
+        <choose>
+            <when test='ids != null and ids.size != 0'>
+                AND m.cp_id in
+                <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                <if test='provinceId != null and provinceId != ""'>
+                    AND m.province_id = #{provinceId}
+                </if>
+                <if test='cityId != null and cityId != ""'>
+                    AND m.city_id = #{cityId}
+                </if>
+                <if test='countyId != null and countyId != ""'>
+                    AND m.county_id = #{countyId}
+                </if>
+                <if test='deviceCode != null and deviceCode != ""'>
+                    AND m.device_code like CONCAT('%', #{deviceCode}, '%')
+                </if>
+                <if test='deviceStatus != null and deviceStatus != ""'>
+                    AND d.device_status = #{deviceStatus}
+                </if>
+                <if test='channelCode != null and channelCode != ""'>
+                    AND m.channel_code like CONCAT('%', #{channelCode}, '%')
+                </if>
+                <if test='channelName != null and channelName != ""'>
+                    AND m.channel_name like CONCAT('%', #{channelName}, '%')
+                </if>
+                <if test='deviceName != null and deviceName != ""'>
+                    AND m.device_name like CONCAT('%', #{deviceName}, '%')
+                </if>
+            </otherwise>
+        </choose>
+        order by m.province_id, m.city_id, m.county_id, m.device_code
+    </select>
+
+
+
+</mapper>

@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.chinatower.emergency.mapper.EmergencyEventInfoMapper">
+
+    <!-- 插入数据 -->
+    <insert id="insert" parameterType="com.chinatower.emergency.dto.EmergencyEventInfoVO">
+        INSERT INTO vm_emergency_event_info (event_code, event_name, event_grade_dict, event_time,
+                                             event_type_large_category,
+                                             event_type_middle_category, event_type_small_category,
+                                             province_code, city_code, country_code, specific_location,
+                                             longitude, latitude, event_describe, remark,
+                                             tenant_id, industry_code, create_time, creator, delete_flag, status)
+        VALUES (#{eventCode}, #{eventName}, #{eventGradeDict}, #{eventTime},
+                #{eventTypeLargeCategory},
+                #{eventTypeMiddleCategory}, #{eventTypeSmallCategory},
+                #{provinceCode}, #{cityCode}, #{countryCode}, #{specificLocation},
+                #{longitude}, #{latitude}, #{eventDescribe}, #{remark},
+                #{tenantId}, #{industryCode}, now(), #{creator}, 0, #{status})
+    </insert>
+
+    <!-- 更新数据 -->
+    <update id="update" parameterType="com.chinatower.emergency.dto.EmergencyEventInfoVO">
+        UPDATE vm_emergency_event_info
+        <set>
+            <if test="eventName != null and eventName != ''">
+                event_name = #{eventName},
+            </if>
+            <if test="eventGradeDict != null and eventGradeDict != ''">
+                event_grade_dict = #{eventGradeDict},
+            </if>
+            <if test="eventTime != null">
+                event_time = #{eventTime},
+            </if>
+            event_type_large_category = #{eventTypeLargeCategory},
+            event_type_middle_category = #{eventTypeMiddleCategory},
+            event_type_small_category = #{eventTypeSmallCategory},
+            <if test="provinceCode != null and provinceCode != ''">
+                province_code = #{provinceCode},
+            </if>
+            <if test="cityCode != null and cityCode != ''">
+                city_code = #{cityCode},
+            </if>
+            <if test="countryCode != null and countryCode != ''">
+                country_code = #{countryCode},
+            </if>
+            <if test="specificLocation != null and specificLocation != ''">
+                specific_location = #{specificLocation},
+            </if>
+            <if test="longitude != null">
+                longitude = #{longitude},
+            </if>
+            <if test="latitude != null">
+                latitude = #{latitude},
+            </if>
+            <if test="eventDescribe != null and eventDescribe != ''">
+                event_describe = #{eventDescribe},
+            </if>
+            remark = #{remark},
+            <if test="tenantId != null">
+                tenant_id = #{tenantId},
+            </if>
+            <if test="industryCode != null and industryCode != ''">
+                industry_code = #{industryCode},
+            </if>
+            update_time = now(),
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier},
+            </if>
+            <if test="deleteFlag != null">
+                delete_flag = #{deleteFlag},
+            </if>
+            <if test="status != null and status != ''">
+                status = #{status},
+            </if>
+        </set>
+        WHERE
+            1 = 1
+        <if test="eventCode != null and eventCode != ''">
+            AND event_code = #{eventCode}
+        </if>
+    </update>
+    <delete id="delete">
+        DELETE FROM vm_emergency_event_info
+        WHERE
+            1 = 1
+        AND
+        <if test="eventCodes != null and eventCodes.size() > 0">
+            event_code in
+            <foreach collection="eventCodes" index="index" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+
+
+    <!-- 根据ID查询 -->
+    <select id="selectByEventCode" parameterType="com.chinatower.emergency.dto.EmergencyEventInfoVO" resultType="com.chinatower.emergency.dto.EmergencyEventInfoVO">
+        SELECT
+            event.id,
+            event.event_code,
+            event.event_name,
+            event.event_grade_dict,
+            event.event_time,
+            event.event_type_large_category,
+            event.event_type_middle_category,
+            event.event_type_small_category,
+            event.province_code,
+            event.city_code,
+            event.country_code,
+            a1.AREA_NAME province,
+            a2.AREA_NAME city,
+            a3.AREA_NAME country,
+            event.specific_location,
+            event.longitude,
+            event.latitude,
+            event.event_describe,
+            event.remark,
+            event.tenant_id,
+            event.industry_code,
+            event.app_ver_code,
+            event.create_time,
+            event.creator,
+            event.update_time,
+            event.modifier,
+            event.delete_flag,
+            event.status
+        FROM
+            vm_emergency_event_info event
+        LEFT JOIN sys_area a1 ON a1.AREA_CODE = event.province_code
+        LEFT JOIN sys_area a2 ON a2.AREA_CODE = event.city_code
+        LEFT JOIN sys_area a3 ON a3.AREA_CODE = event.country_code
+        WHERE
+            delete_flag = 0
+        AND
+            tenant_id = #{tenantId,jdbcType=VARCHAR}
+        AND
+            industry_code = #{industryCode}
+        AND
+            event_code = #{eventCode}
+    </select>
+
+    <select id="selectList" resultType="com.chinatower.emergency.dto.EmergencyEventInfoVO">
+        SELECT
+            id,
+            event_code,
+            event_name,
+            event_grade_dict,
+            event_time,
+            event_type_large_category,
+            event_type_middle_category,
+            event_type_small_category,
+            province_code,
+            city_code,
+            country_code,
+            specific_location,
+            longitude,
+            latitude,
+            event_describe,
+            remark,
+            tenant_id,
+            industry_code,
+            app_ver_code,
+            create_time,
+            creator,
+            update_time,
+            modifier,
+            delete_flag,
+            status
+        FROM
+            vm_emergency_event_info a
+        WHERE
+            a.delete_flag = 0
+        AND
+            a.industry_code = #{industryCode}
+        AND
+            a.tenant_id = #{tenantId,jdbcType=VARCHAR}
+        <!-- 根据事件编号查询 -->
+        <if test="eventCode != null and eventCode != ''">
+            AND a.event_code LIKE CONCAT('%', #{eventCode}, '%')
+        </if>
+
+        <!-- 根据事件名称查询 -->
+        <if test="eventName != null and eventName != ''">
+            AND a.event_name LIKE CONCAT('%', #{eventName}, '%')
+        </if>
+
+        <!-- 根据事件开始时间查询 -->
+        <if test="eventTimeStart != null and eventTimeStart !=''">
+            AND a.event_time &gt;= #{eventTimeStart}
+        </if>
+
+        <!-- 根据事件结束时间查询 -->
+        <if test="eventTimeEnd != null and  eventTimeEnd != ''">
+            AND a.event_time &lt;= #{eventTimeEnd}
+        </if>
+
+        <!-- 根据关键字查询（匹配事件名称或事件编号） -->
+        <if test="keyWord != null and keyWord != ''">
+            AND (a.event_name LIKE CONCAT('%', #{keyWord}, '%')
+            OR a.event_code LIKE CONCAT('%', #{keyWord}, '%'))
+        </if>
+        <if test="largeCategoryList != null and largeCategoryList.size() > 0 ">
+            AND ( a.event_type_large_category in
+            <foreach collection="largeCategoryList" index="index" item="item" open="(" close=")" separator=",">
+                #{item, jdbcType=INTEGER}
+            </foreach>
+            <if test="middleCategoryList != null and middleCategoryList.size() > 0 ">
+                OR a.event_type_middle_category in
+                <foreach collection="middleCategoryList" index="index" item="item" open="(" close=")" separator=",">
+                    #{item, jdbcType=INTEGER}
+                </foreach>
+            </if>
+            <if test="smallCategoryList != null and smallCategoryList.size() > 0 ">
+                OR a.event_type_small_category in
+                <foreach collection="smallCategoryList" index="index" item="item" open="(" close=")" separator=",">
+                    #{item, jdbcType=INTEGER}
+                </foreach>
+            </if>
+            )
+        </if>
+        <if test="middleCategoryList != null and middleCategoryList.size() > 0">
+            <if test="largeCategoryList == null or largeCategoryList.size() == 0">
+                AND ( a.event_type_middle_category in
+                <foreach collection="middleCategoryList" index="index" item="item" open="(" close=")" separator=",">
+                    #{item, jdbcType=INTEGER}
+                </foreach>
+                <if test="smallCategoryList != null and smallCategoryList.size() > 0 ">
+                    OR a.event_type_small_category in
+                    <foreach collection="smallCategoryList" index="index" item="item" open="(" close=")" separator=",">
+                        #{item, jdbcType=INTEGER}
+                    </foreach>
+                </if>
+                )
+            </if>
+        </if>
+        <if test="smallCategoryList != null and smallCategoryList.size() > 0 ">
+            <if test="largeCategoryList == null or largeCategoryList.size() == 0">
+                <if test="middleCategoryList == null or middleCategoryList.size() == 0">
+                    AND a.event_type_small_category in
+                    <foreach collection="smallCategoryList" index="index" item="item" open="(" close=")" separator=",">
+                        #{item, jdbcType=INTEGER}
+                    </foreach>
+                </if>
+            </if>
+        </if>
+
+        <if test="eventGradeDictList != null and eventGradeDictList.size() > 0 ">
+            AND a.event_grade_dict in
+            <foreach collection="eventGradeDictList" index="index" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test="statusList != null and statusList.size() > 0 ">
+            AND a.status in
+            <foreach collection="statusList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="sortType == 'desc'">
+            ORDER BY a.event_time DESC
+        </if>
+        <if test="sortType == 'asc'">
+            ORDER BY a.event_time ASC
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.consumer.dao.RecorderDeviceDAO">
+
+    <update id="updateDeviceBatch" parameterType="com.chinatower.platform.consumer.item.RecorderDeviceReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_recorder_device_info_t
+            set
+            device_name = #{item.deviceName},
+            device_status = #{item.resourceStatus},
+            province_code = #{item.provinceCode},
+            city_code = #{item.cityCode},
+            county_code = #{item.countyCode},
+            town_code = #{item.townCode},
+            location = #{item.address},
+            longitude = #{item.longitude},
+            latitude = #{item.latitude},
+            area_code = #{item.adminArea},
+            adm_code = #{item.dept},
+            manufacturer_code = #{item.manufacturer},
+            model_code = #{item.deviceModel},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.delFlag},
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'),
+            site_code = #{item.siteId},
+            access_node = #{item.locationCode}
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <select id="queryDeviceAppModInfo" resultType="com.chinatower.platform.consumer.item.DeviceAppModVO">
+        select device_code, IFNULL(app_mod_flag, 0) appModFlag
+        from vm_recorder_device_info_t
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateDeviceModBatch" parameterType="com.chinatower.platform.consumer.item.RecorderDeviceReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_recorder_device_info_t
+            set
+            device_status = #{item.resourceStatus},
+            area_code = #{item.adminArea},
+            adm_code = #{item.dept},
+            modifier = #{item.updateBy},
+            <if test="item.locationCode != null">
+                access_node = #{item.locationCode},
+            </if>
+            delete_flag = #{item.delFlag},
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S')
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <insert id="insertDeviceBatch" parameterType="com.chinatower.platform.consumer.item.RecorderDeviceReport">
+        insert into vm_recorder_device_info_t
+        (device_code,device_name,device_status,province_code,city_code,county_code,town_code,location,longitude,latitude,area_code,
+        adm_code,manufacturer_code,model_code,site_code,access_node,app_mod_flag,delete_flag,
+        creator,modifier,create_time,update_time)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode}, #{item.deviceName}, #{item.resourceStatus}, #{item.provinceCode}, #{item.cityCode},
+            #{item.countyCode}, #{item.townCode}, #{item.address}, #{item.longitude}, #{item.latitude}, #{item.adminArea},
+            #{item.dept}, #{item.manufacturer}, #{item.deviceModel}, #{item.siteId}, #{item.locationCode}, '0', '0',
+            #{item.createBy}, #{item.updateBy}, DATE_FORMAT(#{item.createTime}, '%Y-%m-%d %H:%i:%S'),
+            DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'))
+        </foreach>
+    </insert>
+
+    <select id="queryExistChannelCodeList" resultType="java.lang.String">
+        select channel_code
+        from vm_recorder_channel_info_t
+        where channel_code in
+        <foreach collection="channelCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateDeviceChannelBatch" parameterType="com.chinatower.platform.consumer.item.RecorderChannelReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_recorder_channel_info_t
+            set channel_name = #{item.channelName},
+            device_code = #{item.deviceCode},
+            channel_status = #{item.status},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.delFlag},
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S')
+            where channel_code = #{item.channelCode}
+        </foreach>
+    </update>
+
+    <insert id="insertDeviceChannelBatch" parameterType="com.chinatower.platform.consumer.item.RecorderChannelReport">
+        insert into vm_recorder_channel_info_t
+        (channel_code, device_code, channel_name, channel_status, delete_flag, creator, create_time, modifier, update_time)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.channelCode}, #{item.deviceCode}, #{item.channelName}, #{item.status}, '0', #{item.createBy},
+            DATE_FORMAT(#{item.createTime}, '%Y-%m-%d %H:%i:%S'), #{item.updateBy}, DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'))
+        </foreach>
+    </insert>
+</mapper>

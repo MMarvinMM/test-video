@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.MessageSendInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.MessageSendInfoDO">
+        <id column="uni_id" property="uniId" />
+        <result column="msg_id" property="msgId" />
+        <result column="user_id" property="userId" />
+        <result column="notify_type" property="notifyType" />
+        <result column="notify_title" property="notifyTitle" />
+        <result column="if_read" property="ifRead" />
+        <result column="order_status" property="orderStatus" />
+        <result column="creator" property="creator" />
+        <result column="creator_date" property="creatorDate" />
+        <result column="modifier" property="modifier" />
+        <result column="modifier_date" property="modifierDate" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="address" property="address" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        uni_id, msg_id, user_id, notify_type, notify_title, if_read, order_status, creator, creator_date, modifier, modifier_date, delete_flag, address
+    </sql>
+
+    <insert id="insertMessage" parameterType="com.chinatower.event.dto.MessagePushDTO">
+        insert into vm_message_send_info_t(uni_id,msg_id,user_id,notify_type,notify_title,if_read,order_status,
+            creator,creator_date,modifier,modifier_date,delete_flag,address)
+        values (UUID_SHORT(),#{msgId},#{userId},#{notifyType},#{notifyTitle},'0',#{linkId},#{creator},NOW(),
+            #{creator},NOW(),'1',#{address})
+    </insert>
+
+    <!-- 暂时不获取铁塔用户，后续修改 -->
+    <select id="getUserIdByAdmin" resultType="com.chinatower.event.vo.UserInfoVO" parameterType="java.lang.String">
+        SELECT a.user_id,a.mobile_phone FROM vm_userinfo_t a, vm_user_role_rel_t b
+        WHERE a.user_id = b.user_id
+        AND b.role_id = '2'
+        AND a.tenant_id = #{tenantId}
+        AND a.delete_flag = '0'
+    </select>
+
+    <insert id="insertOrderDelayList" parameterType="java.util.List">
+        insert into vm_order_delay_message_t (
+        source,
+        operate_status,
+        order_id,
+        user_id,
+        message_json,
+        app_ver_code,
+        industry_code,
+        create_time,
+        update_time
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.source},
+            #{item.operateStatus},
+            #{item.orderId},
+            #{item.userId},
+            #{item.messageJson},
+            #{item.appVerCode},
+            #{item.industryCode},
+            now(),
+            null
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateOrderDelayList">
+        update vm_order_delay_message_t set operate_status ='1',update_time =now()
+        where
+        <foreach collection="list" item="item" index="index" separator="or">
+            <if test="item.orderId != null and item.orderId != ''">
+                (user_id =#{item.userId} and industry_code = #{item.industryCode} and operate_status='0')
+            </if>
+            <if test="item.orderId == null or item.orderId == ''">
+                (order_id =#{item.orderId} and user_id =#{item.userId} and industry_code = #{item.industryCode} and operate_status='0')
+            </if>
+        </foreach>
+    </update>
+
+
+    <select id="getSmsSendStatistics" resultType="com.chinatower.event.dto.smssendstatistics.SmsSendStatisticsDto" parameterType="com.chinatower.event.dto.smssendstatistics.SmsSendStatisticsDto">
+        SELECT user_id userId,send_date sendDate,send_count sendCount from vm_sms_send_statistics_t
+        WHERE send_date = #{sendDate}
+        <if test="userList != null and userList.size() > 0 ">
+            and user_id in
+            <foreach collection="userList" item="user" index="index" open="(" close=")" separator=",">
+                #{user}
+            </foreach>
+        </if>
+    </select>
+
+    <update id="updateSmsSendStatistics" parameterType="com.chinatower.event.dto.smssendstatistics.SmsSendStatisticsDto">
+        update vm_sms_send_statistics_t set send_count =send_count+1
+        where send_date = #{sendDate}
+        <if test="userList != null and userList.size() > 0 ">
+            and user_id in
+            <foreach collection="userList" item="user" index="index" open="(" close=")" separator=",">
+                #{user}
+            </foreach>
+        </if>
+    </update>
+
+
+    <insert id="insertSmsSendStatistics" parameterType="java.util.List">
+        insert into vm_sms_send_statistics_t (
+        user_id,
+        send_date,
+        send_count
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.userId},
+            #{item.sendDate},
+            1
+            )
+        </foreach>
+    </insert>
+
+</mapper>

@@ -1,0 +1,10 @@
+spring:
+  profiles:
+    active: test
+  main:
+    banner-mode: "off"
+  application:
+    name: video-doc
+#每个服务nacos配置增加以下配置，关闭屏蔽
+#knife4j:
+  #production: false

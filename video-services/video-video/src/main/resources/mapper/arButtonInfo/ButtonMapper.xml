@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.chinatower.video.modules.arButton.mapper.ButtonMapper">
+
+    <sql id="BASE_COLUMN">
+        id,
+        button_name,
+        enable_status,
+        create_time,
+        turn_time,
+        update_time,
+        creator,
+        modifier,
+        delete_flag,
+        tenant_id,
+        industry_code,
+        app_ver_code,
+        accept_node,
+        device_range
+    </sql>
+    <!-- 根据ID查询按钮信息 -->
+    <select id="selectById" resultType="com.chinatower.video.modules.arButton.entity.ArButtonInfo">
+        SELECT <include refid="BASE_COLUMN" /> FROM vm_ar_button_info WHERE id = #{id}
+    </select>
+
+    <!-- 插入按钮信息 -->
+    <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.chinatower.video.modules.arButton.entity.ArButtonInfo">
+        INSERT INTO vm_ar_button_info (button_name, enable_status, create_time, update_time, creator, modifier, delete_flag, tenant_id, industry_code, app_ver_code, accept_node, device_range)
+        VALUES (#{buttonName}, #{enableStatus}, now(), #{updateTime}, #{creator}, #{modifier}, #{deleteFlag}, #{tenantId}, #{industryCode}, #{appVerCode}, #{acceptNode}, #{deviceRange})
+    </insert>
+
+    <!-- 更新按钮信息 -->
+    <update id="updateById" parameterType="com.chinatower.video.modules.arButton.entity.ArButtonInfo">
+        UPDATE vm_ar_button_info
+        <set>
+            <if test="buttonName != null and buttonName != ''">button_name = #{buttonName},</if>
+            <if test="enableStatus != null">enable_status = #{enableStatus},</if>
+            update_time = now(),
+            <if test="turnTime != null">turn_time = now(),</if>
+            <if test="creator != null">creator = #{creator},</if>
+            <if test="modifier != null">modifier = #{modifier},</if>
+            <if test="deleteFlag != null">delete_flag = #{deleteFlag},</if>
+            <if test="tenantId != null">tenant_id = #{tenantId},</if>
+            <if test="industryCode != null">industry_code = #{industryCode},</if>
+            <if test="appVerCode != null">app_ver_code = #{appVerCode},</if>
+            <if test="acceptNode != null">accept_node = #{acceptNode},</if>
+            <if test="deviceRange != null">device_range = #{deviceRange},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据条件查询按钮数量 -->
+    <select id="selectCountByConditions" resultType="int">
+        SELECT COUNT(*) FROM vm_ar_button_info
+        WHERE delete_flag = 0
+        <if test="buttonName != null and buttonName != ''">AND button_name = #{buttonName}</if>
+        <if test="industryCode != null and industryCode !=''">AND industry_code = #{industryCode}</if>
+        <if test="tenantId != null and tenantId !=''">AND tenant_id = #{tenantId}</if>
+        <if test="appVerCode != null and appVerCode !='' ">AND app_ver_code = #{appVerCode}</if>
+        <if test="acceptNode != null and acceptNode !=''">AND accept_node = #{acceptNode}</if>
+        <if test="enableStatus != null and enableStatus !=''">AND enable_status = #{enableStatus}</if>
+        <if test="deviceRange != null and deviceRange !=''">AND device_range = #{deviceRange}</if>
+        <if test="id != null">AND id != #{id}</if>
+    </select>
+    <select id="pageArButtonInfo" resultType="com.chinatower.video.modules.arButton.entity.ArButtonInfo">
+        SELECT
+            id,
+            button_name,
+            enable_status,
+            DATE_FORMAT(create_time, '%Y-%m-%d %H:%i:%s') AS "createTime",
+            DATE_FORMAT(update_time, '%Y-%m-%d %H:%i:%s') AS "updateTime",
+            DATE_FORMAT(turn_time, '%Y-%m-%d %H:%i:%s') AS "turnTime",
+            creator,
+            modifier,
+            delete_flag,
+            tenant_id,
+            industry_code,
+            app_ver_code,
+            accept_node,
+            device_range
+        FROM vm_ar_button_info
+        <where>
+            <if test="buttonName != null and buttonName != ''">
+                AND button_name LIKE CONCAT('%', #{buttonName}, '%')
+            </if>
+            <if test="enableStatus != null and enableStatus !=''">
+                AND enable_status = #{enableStatus}
+            </if>
+            <if test="creator != null and creator !=''">
+                AND creator LIKE CONCAT('%', #{creator}, '%')
+            </if>
+            <if test="modifier != null and modifier !=''">
+                AND modifier LIKE CONCAT('%', #{modifier}, '%')
+            </if>
+            <if test="createTimeStart != null and createTimeStart !=''">
+                AND create_time &gt;= #{createTimeStart}
+            </if>
+            <if test="createTimeEnd != null and createTimeEnd !=''">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeStart != null and updateTimeStart !=''">
+                AND update_time &gt;= #{updateTimeStart}
+            </if>
+            <if test="updateTimeEnd != null and updateTimeEnd !=''">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+            <if test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </if>
+            <if test="acceptNode != null and acceptNode != ''">
+                AND accept_node = #{acceptNode}
+            </if>
+            <if test="industryCode != null and industryCode != ''">
+                AND industry_code = #{industryCode}
+            </if>
+            <if test="deviceRange != null and deviceRange != ''">
+                AND device_range = #{deviceRange}
+            </if>
+            <if test="ids != null and ids.size() > 0">
+                AND id
+                <foreach collection="ids"  item="item" index="index" open="in (" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            AND delete_flag = 0
+        </where>
+        <choose>
+            <when test="orderColumn == null or orderColumn ==''">
+                ORDER BY create_time DESC
+            </when>
+            <when test="orderColumn == 'createTime' and ascOrDesc == 'asc'">
+                ORDER BY create_time ASC
+            </when>
+            <when test="orderColumn == 'createTime' and ascOrDesc == 'desc'">
+                ORDER BY create_time DESC
+            </when>
+            <when test="orderColumn == 'updateTime' and ascOrDesc == 'asc'">
+                ORDER BY update_time ASC
+            </when>
+            <when test="orderColumn == 'updateTime' and ascOrDesc == 'desc'">
+                ORDER BY update_time DESC
+            </when>
+            <when test="orderColumn == 'turnTime' and ascOrDesc == 'asc'">
+                ORDER BY turn_time ASC
+            </when>
+            <when test="orderColumn == 'turnTime' and ascOrDesc == 'desc'">
+                ORDER BY turn_time DESC
+            </when>
+        </choose>
+    </select>
+</mapper>

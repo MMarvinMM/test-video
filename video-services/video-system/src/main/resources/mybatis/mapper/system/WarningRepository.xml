@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysAreaStreetMapper">
+
+    <resultMap type="com.chinatower.platform.project.system.domain.SysAreaStreet" id="SysAreaStreetResult">
+        <result property="id"    column="ID"    />
+        <result property="areaCode"    column="AREA_CODE"    />
+        <result property="areaName"    column="AREA_NAME"    />
+        <result property="areaLevel"    column="AREA_LEVEL"    />
+        <result property="areaParentCode"    column="AREA_PARENT_CODE"    />
+        <result property="areaParentName"    column="AREA_PARENT_NAME"    />
+        <result property="status"    column="STATUS"    />
+        <result property="longitude"    column="LONGITUDE"    />
+        <result property="latitude"    column="LATITUDE"    />
+        <result property="createBy"    column="CREATE_BY"    />
+        <result property="createTime"    column="CREATE_TIME"    />
+        <result property="updateBy"    column="UPDATE_BY"    />
+        <result property="updateTime"    column="UPDATE_TIME"    />
+        <result property="delFlag"    column="DEL_FLAG"    />
+        <result property="deptId"    column="DEPT_ID"    />
+        <result property="bussnessUnit"    column="BUSSNESS_UNIT"    />
+    </resultMap>
+
+    <select id="selectSysAreaStreetListByParentCode" parameterType="String" resultMap="SysAreaStreetResult">
+              SELECT
+            *
+        FROM
+            (
+            SELECT
+                t1.*,
+            IF
+                ( find_in_set( AREA_PARENT_CODE, @pids ) > 0, @pids := concat( @pids, ',', AREA_CODE ), 0 ) AS ischild
+            FROM
+                (
+                SELECT
+                    ID,
+                    AREA_CODE,
+                    AREA_NAME,
+                    AREA_PARENT_CODE,
+                    AREA_PARENT_NAME,
+                    AREA_LEVEL,
+                    STATUS,
+                    DEPT_ID,
+                    BUSSNESS_UNIT
+                FROM
+                    sys_area t
+                WHERE
+                    t.del_flag = '0'
+                ORDER BY
+                    AREA_PARENT_CODE,
+                    AREA_CODE
+                ) t1,
+                ( SELECT @pids := #{areaParentCode} ) t2
+            ) t3
+        WHERE
+            ischild != 0
+    </select>
+
+
+    <select id="getAllStreetList" resultType="com.chinatower.system.api.model.StreetTreeVO" >
+        SELECT
+            AREA_CODE AS  areaCode,
+            AREA_NAME AS areaName,
+            AREA_PARENT_CODE AS areaParentCode,
+            AREA_LEVEL AS areaLevel
+        FROM sys_area
+        WHERE STATUS =0
+        ORDER BY AREA_LEVEL
+    </select>
+</mapper>

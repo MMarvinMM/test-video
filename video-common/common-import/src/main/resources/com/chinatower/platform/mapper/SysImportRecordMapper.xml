@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.SysImportRecordMapper">
+
+    <select id="selectImportRecordList" parameterType="com.chinatower.platform.entity.SysImportRecord"
+            resultType="com.chinatower.platform.entity.SysImportRecord">
+        SELECT
+            T.IMPORT_ID, T.IMPORT_TYPE, T.FILE_NAME, T.FILE_URL, T.IMPORT_TOTAL, T.SUCCESS_TOTAL, T.FAILURE_TOTAL,
+            T.PROCESS_STATE, T.PROCESS_INFO, T.CREATE_BY, T.CREATE_TIME, T.UPDATE_BY, T.UPDATE_TIME, T.DEPT_ID
+        FROM sys_import_record T
+        <where>
+            <if test="importId != null  and importId != ''"> AND T.IMPORT_ID = #{importId}</if>
+            <if test="importType != null  and importType != ''"> AND T.IMPORT_TYPE = #{importType}</if>
+            <if test="fileName != null  and fileName != ''"> AND T.FILE_NAME like concat('%',#{fileName},'%')</if>
+            <if test="processState != null  and processState != ''"> AND T.PROCESS_STATE = #{processState}</if>
+            <if test="createBy != null  and createBy != ''"> AND T.CREATE_BY = #{createBy}</if>
+            <if test="dataScope != null and dataScope != '' ">${dataScope}</if>
+        </where>
+        ORDER BY T.CREATE_TIME DESC
+    </select>
+
+    <select id="selectLatestRecordById" parameterType="String" resultType="com.chinatower.platform.entity.SysImportRecord">
+        SELECT
+            T.IMPORT_ID, T.IMPORT_TYPE, T.FILE_NAME, T.FILE_URL, T.IMPORT_TOTAL,
+            (SELECT COUNT(1) FROM sys_import_detail A WHERE A.IMPORT_ID =T.IMPORT_ID AND A.HANDLE_RESULT ='S') SUCCESS_TOTAL,
+            (SELECT COUNT(1) FROM sys_import_detail A WHERE A.IMPORT_ID =T.IMPORT_ID AND A.HANDLE_RESULT ='F') FAILURE_TOTAL,
+            T.PROCESS_STATE, T.PROCESS_INFO, T.CREATE_BY, T.CREATE_TIME, T.UPDATE_BY, T.UPDATE_TIME, T.DEPT_ID
+        FROM sys_import_record T WHERE T.IMPORT_ID = #{importId}
+    </select>
+
+</mapper>

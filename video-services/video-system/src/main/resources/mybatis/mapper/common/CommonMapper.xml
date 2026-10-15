@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.common.mapper.CommonMapper">
+
+    <select id="getSeqByName" resultType="java.lang.String" parameterType="java.lang.String">
+        SELECT GETSEQ(#{name}) AS SEQ_ID
+    </select>
+
+    <select id="getSeqByNameList" resultType="java.lang.String" >
+        SELECT GETSEQ(#{name}) AS SEQ_ID
+        <foreach collection="list" item="key" index="index">
+            <if test="index != 0">
+            union all   SELECT GETSEQ(#{name}) AS SEQ_ID
+            </if>
+        </foreach>
+    </select>
+
+    <select id="isExistTable" resultType="java.lang.Integer" parameterType="java.lang.String">
+        SELECT COUNT(*) FROM USER_TABLES WHERE TABLE_NAME =#{tableName}
+    </select>
+    <select id="getOldCollection" resultType="java.lang.String">
+        SELECT coll_obj_code
+        FROM `vm_user_device_collection_t`
+        where
+        user_id = #{userId}
+        <if test='collObjType != null and collObjType != "" '>
+            AND coll_obj_type = #{collObjType}
+        </if>
+        <if test='collObjCodeList != null and collObjCodeList.size() > 0 '>
+            AND coll_obj_code IN
+            <foreach collection="collObjCodeList" item="collObjCode" index="index" open="(" separator="," close=") ">
+                #{collObjCode}
+            </foreach>
+        </if>
+    </select>
+
+    <insert id="insertBatchCollection">
+        insert into vm_user_device_collection_t  (user_id,coll_obj_type,coll_obj_code) values
+        <foreach collection="insertList" item="item" separator=",">
+            (#{item.userId},#{item.collObjType},#{item.collObjCode})
+        </foreach>
+    </insert>
+
+    <delete id="removeCollection">
+        DELETE FROM `vm_user_device_collection_t`
+        where
+        user_id = #{userId}
+        <if test='collObjType != null and collObjType != "" '>
+            AND coll_obj_type = #{collObjType}
+        </if>
+        <if test='collObjCodeList != null and collObjCodeList.size() > 0 '>
+            AND coll_obj_code IN
+            <foreach collection="collObjCodeList" item="collObjCode" index="index" open="(" separator="," close=") ">
+                #{collObjCode}
+            </foreach>
+        </if>
+    </delete>
+</mapper>

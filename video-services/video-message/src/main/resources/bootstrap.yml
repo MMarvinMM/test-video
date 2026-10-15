@@ -1,0 +1,37 @@
+# Tomcat
+server:
+  port: 9208
+
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: video-message
+  profiles:
+    # 环境配置
+    active: dev
+  main:
+    allow-bean-definition-overriding: true
+
+
+# mybatis配置
+mybatis:
+  mapperLocations: classpath*:mapper/*Mapper.xml
+  configuration:
+    cache-enabled: true
+    use-generated-keys: false
+    default-executor-type: reuse
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    map-underscore-to-camel-case: true
+
+mybatis-plus:
+  mapperLocations: classpath*:mapper/*.xml
+
+webSocket:
+  netty:
+    port: 58090
+    path: /webSocket
+
+jasypt:
+  encryptor:
+    bootstrap: false

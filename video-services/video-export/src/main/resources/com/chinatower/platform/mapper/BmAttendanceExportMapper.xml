@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.BmAttendanceExportMapper">
+
+    <select id="getList" resultType="com.chinatower.bdm.api.entity.BmAttendanceListVO">
+        SELECT
+        a.keeper_id,
+        a.keeper_name,
+        COUNT(CASE WHEN FALSE = ISNULL( a.sign_in_status ) AND a.sign_in_status <![CDATA[ <> ]]> '1' THEN 1 END) +
+        COUNT(CASE WHEN FALSE = ISNULL( a.sign_out_status ) AND a.sign_out_status <![CDATA[ <> ]]> '4' THEN 1 END) +
+        COUNT(CASE WHEN TRUE = ISNULL( a.sign_in_status ) AND NOW() > CONCAT( a.attendance_date, ' ', a.sign_in_time ) THEN 1 END) +
+        COUNT(CASE WHEN TRUE = ISNULL( a.sign_out_status ) AND NOW() > CONCAT( a.attendance_date, ' ', a.sign_out_time )  THEN 1 END) AS dbnormal_count,
+        COUNT( CASE WHEN a.sign_in_status = '1' THEN 1 END ) +
+        COUNT( CASE WHEN a.sign_out_status = '4' THEN 1 END )AS normal_count,
+        a.industry_code,
+        a.app_ver_code,
+        a.tenant_id,
+        MAX( a.sign_in_add_time ) create_time,
+        a.grid_id
+        FROM
+        bm_attendance_line a
+        <if test="gridId != null and gridId != ''">
+            LEFT JOIN bm_grid_keeper_ref b ON a.keeper_id = b.keeper_id AND a.grid_id = b.grid_id AND b.delete_flag = '0'
+        </if>
+        WHERE a.tenant_id = #{tenantId} AND a.industry_code = #{industryCode}
+        <if test="startDate != null and startDate != ''">
+            AND a.attendance_date >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND a.attendance_date <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="gridId != null and gridId != ''">
+            AND b.grid_id = #{gridId}
+        </if>
+        <if test="keeperName != null and keeperName != ''">
+            AND (a.keeper_id like concat('%',#{keeperName},'%') OR a.keeper_name like concat('%',#{keeperName},'%'))
+        </if>
+        GROUP BY a.keeper_id,a.grid_id
+        ORDER BY a.create_time DESC
+    </select>
+
+    <select id="getGridNamesByKeeper" resultType="com.chinatower.bdm.api.entity.GridKeeperRefVO">
+        SELECT a.keeper_id,GROUP_CONCAT(b.grid_name) AS grid_name,c.login_name AS login_name FROM bm_grid_keeper_ref a
+          LEFT JOIN bm_grid b
+                    ON a.grid_id = b.grid_id
+          LEFT JOIN bm_gridkeeper c ON a.keeper_id = c.keeper_id
+        WHERE a.delete_flag = 0
+          AND a.keeper_id = #{keeperId}
+          AND a.grid_id = #{gridId}
+    </select>
+
+    <select id="getGridNamesByKeeperBatch" resultType="com.chinatower.bdm.api.entity.GridKeeperRefVO">
+        SELECT a.keeper_id, b.grid_name, c.login_name AS login_name,b.grid_id FROM bm_grid_keeper_ref a
+        LEFT JOIN bm_grid b
+        ON a.grid_id = b.grid_id
+        LEFT JOIN bm_gridkeeper c ON a.keeper_id = c.keeper_id
+        WHERE a.delete_flag = 0 and a.keeper_id IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getHistoryList" resultType="com.chinatower.bdm.api.entity.BmAttendanceHistoryListVO">
+        SELECT t.keeper_id,t.keeper_name,t.`date`,t.`time`,t.`status`,t.keeperId,t.industryCode,t.tenantId,t.sign_in_time,t.sign_out_time,t.type,t.grid_id FROM (
+        SELECT a.keeper_id,a.keeper_name,a.attendance_date AS `date`,
+        a.sign_in_time,a.sign_out_time,"1" as type,
+        IFNULL(DATE_FORMAT(a.sign_in_add_time, '%H:%i:%s'),'-') AS `time`,a.sign_in_status AS `status`,
+        a.keeper_id keeperId,
+        a.industry_code industryCode,
+        a.tenant_id tenantId,
+        a.grid_id
+        FROM bm_attendance_line a
+        WHERE a.keeper_id = #{keeperId} AND a.grid_id = #{gridId}
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND a.attendance_date >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND a.attendance_date <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="status != null and status != '' and status !='7'.toString()">
+            AND a.sign_in_status = #{status}
+        </if>
+        <if test="status == '7'.toString()">
+            AND a.sign_in_status = '3' AND a.sign_out_status = '6'
+        </if>
+        UNION ALL
+        SELECT a.keeper_id,a.keeper_name,a.attendance_date AS `date`,
+        a.sign_in_time,a.sign_out_time,'2' as type,
+        IFNULL(DATE_FORMAT(a.sign_out_add_time, '%H:%i:%s'),'-') AS `time`,a.sign_out_status AS `status`,
+        a.keeper_id keeperId,
+        a.industry_code industryCode,
+        a.tenant_id tenantId,
+        a.grid_id
+        FROM bm_attendance_line a
+        WHERE a.keeper_id = #{keeperId} AND a.grid_id = #{gridId}
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND a.attendance_date >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND a.attendance_date <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="status != null and status != '' and status !='7'.toString()">
+            AND a.sign_out_status = #{status}
+        </if>
+        <if test="status == '7'.toString()">
+            AND a.sign_in_status = '3' AND a.sign_out_status = '6'
+        </if>
+        ) t ORDER BY t.`date` DESC, t.type DESC
+
+    </select>
+
+</mapper>

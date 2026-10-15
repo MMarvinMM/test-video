@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.SysTenantDeptMapper">
+
+    <select id="selectDeptStreetCodeByDeptId" parameterType="String" resultType="String">
+        select street_area_code from sys_dept_street_rel
+        where dept_id = #{deptId}
+    </select>
+
+    <select id="selectDeptIdByTenantId" parameterType="String" resultType="String">
+        select distinct dept_id
+        from sys_dept
+        where tenant_id = #{tenantId} and parent_id = '000000' and del_flag = '0'
+    </select>
+
+    <select id="selectByParentId" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysDept">
+        <include refid="selectDeptVo"/>
+        and d.PARENT_ID = #{parentId}
+    </select>
+
+    <select id="selectDeptById" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysDept">
+        <include refid="selectDeptVo"/>
+        and dept_id = #{deptId}
+    </select>
+
+    <select id="countByDeptId" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="java.lang.Integer">
+        select count(*) from sys_dept
+        where tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+        and dept_level = '1' and del_flag = '0'
+    </select>
+
+    <select id="countByDeptIdBatch" resultType="com.chinatower.platform.entity.admin.SysDept">
+        select tenant_id,industry_code
+        from sys_dept
+        where tenant_id = #{tenantId}
+        and industry_code in
+        <foreach collection="list" item="industryCode" open="(" separator="," close=")">
+            #{industryCode}
+        </foreach>
+        and dept_level = '1' and del_flag = '0'
+    </select>
+
+    <update id="updateAppVerCodeBatch">
+        <foreach collection="list" item="param" separator=";">
+            update sys_dept
+            set app_ver_code = #{param.appVerCode}
+            where tenant_id = #{param.tenantId}
+            and industry_code = #{param.industryCode}
+            and dept_level = '1' and del_flag = '0'
+        </foreach>
+    </update>
+
+    <sql id="selectDeptVo">
+        select d.TENANT_ID as tenantId,   d.TENANT_TOWER_DEPT_ID as tenantTowerDeptId, d.TENANT_NAME as tenantName, d.id, d.dept_id, d.parent_id,d.parent_name, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time, d.dept_level,d.bussness_unit, d.update_time,
+               CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN d.dept_id ELSE d.parent_id END province,
+               CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN NULL ELSE d.dept_id END city
+        from sys_dept d
+        where d.del_flag = '0'
+    </sql>
+
+    <insert id="insertDeptBatch" useGeneratedKeys="true" keyProperty="id">
+        insert into sys_dept(
+        dept_id,
+        parent_id,
+        dept_name,
+        ancestors,
+        create_by,
+        dept_level,
+        tenant_id,
+        tenant_tower_dept_id,
+        tenant_name,
+        industry_code,
+        app_ver_code,
+        create_time
+        )values
+        <foreach collection="list" item="param" separator=",">
+            (
+            #{param.deptId},
+            #{param.parentId},
+            #{param.deptName},
+            #{param.ancestors},
+            #{param.createBy},
+            #{param.deptLevel},
+            #{param.tenantId},
+            #{param.tenantTowerDeptId},
+            #{param.tenantName},
+            #{param.industryCode},
+            #{param.appVerCode},
+            #{param.createTime}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertGridInfoList">
+        INSERT INTO bm_grid (grid_id, grid_code, grid_name, gb_code, parent_id, parent_code, grid_classification, grid_level, grid_level_code, grid_property, is_end, grid_address,
+        grid_introduce, grid_picture, regin_scope_desc, grid_sort, point_status, grid_em_center, grid_begin_time, grid_end_time, grid_area, is_valid, creator,
+        create_time, delete_flag, color, grid_center, grid_range, tenant_id,industry_code,app_ver_code) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.gridId},#{item.gridCode},#{item.gridName},#{item.gbCode},#{item.parentId},#{item.parentCode},#{item.gridClassification},#{item.gridLevel},#{item.gridLevelCode},
+            #{item.gridProperty},#{item.isEnd},#{item.gridAddress},#{item.gridIntroduce},#{item.gridPicture},#{item.reginScopeDesc},#{item.gridSort},#{item.pointStatus},
+            #{item.gridEmCenter},#{item.gridBeginTime},#{item.gridEndTime},#{item.gridArea},#{item.isValid},#{item.creator},#{item.createTime},#{item.deleteFlag},#{item.color},
+            #{item.gridCenter},#{item.gridRange},#{item.tenantId},#{item.industryCode},#{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <select id="findFirstGridBatch" resultType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT tenant_id,industry_code
+        FROM bm_grid
+        WHERE grid_level = '1'
+        and delete_flag = '0'
+        and tenant_id = #{tenantId}
+        and industry_code in
+        <foreach collection="list" item="industryCode" open="(" separator="," close=")">
+            #{industryCode}
+        </foreach>
+        group by industry_code
+    </select>
+
+    <update id="updateVideoPreset">
+        update vm_video_preset
+        set order_code = #{orderCode}, modify_time = now()
+        where order_code = #{oldOrderCode} and industry_code = #{industryCode} and app_ver_code = #{appVerCode} and device_code in
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updatePatrolInfo">
+        update vm_patrol_info_t
+        set order_code = #{orderCode}, update_time = now()
+        where order_code = #{oldOrderCode} and industry_code = #{industryCode} and app_ver_code = #{appVerCode} and device_code in
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateChannelVideoPlan">
+        update vm_channel_video_plan_t
+        set order_code = #{orderCode}, package_code = #{packageCode}, update_time = now()
+        where order_code = #{oldOrderCode} and industry_code = #{industryCode} and app_ver_code = #{appVerCode} and device_code in
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateNotSecondSwitchAlgorithmGiveConfig">
+        update vm_algorithm_give_config
+        set order_code = #{orderCode}, update_time = now()
+        where order_code = #{oldOrderCode} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        and device_code in
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and second_switch = 1
+    </update>
+
+    <update id="updateSecondSwitchAlgorithmGiveConfig">
+        update vm_algorithm_give_config
+        set order_code = #{orderCode}, update_time = now()
+        where order_code = #{oldOrderCode} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        and device_code in
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and second_switch = 0
+        <if test="algorithmCodeList != null and algorithmCodeList.size() > 0 ">
+            and algorithm_code in
+            <foreach collection="algorithmCodeList" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <update id="updateAlgorithmConfig">
+        update vm_algorithm_config
+        set order_code = #{orderCode}, update_time = now()
+        where order_code = #{oldOrderCode} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        and device_code in
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        <if test="algorithmCodeList != null and algorithmCodeList.size() > 0 ">
+            and algorithm_code in
+            <foreach collection="algorithmCodeList" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <update id="updateAlgorithmConfigStatus">
+        update vm_algorithm_config
+        set delete_flag = 0, update_time = now()
+        where order_code = #{orderCode} and modifier = 'system' and delete_flag = 1
+    </update>
+
+    <update id="updateOrderAlgorithmConfig">
+        update vm_order_algorithm_config
+        set order_code = #{orderCode}, update_time = now()
+        where order_code = #{oldOrderCode} and industry_code = #{industryCode}
+        and device_code in
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        <if test="algorithmCodeList != null and algorithmCodeList.size() > 0 ">
+            and algorithm_code in
+            <foreach collection="algorithmCodeList" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <select id="selectByTenantIdAndIndustryCode" resultType="com.chinatower.order.dto.SysDeptHisMongoDTO">
+        SELECT
+            `ID`, `DEPT_ID`, `DEPT_NAME`, `PARENT_ID`, `PARENT_NAME`,
+            `ANCESTORS`, `ORDER_NUM`, `LEADER`, `PHONE`, `EMAIL`,
+            `STATUS`, `DEL_FLAG`, `CREATE_BY`, `CREATE_TIME`, `UPDATE_BY`,
+            `UPDATE_TIME`, `DEPT_LEVEL`, `BUSSNESS_UNIT`, `MDM_ORG_CODE`,
+            `TENANT_ID`, `TENANT_TOWER_DEPT_ID`, `TENANT_NAME`,
+            `REMARK`, `APP_VER_CODE`, `INDUSTRY_CODE`
+        FROM sys_dept
+        WHERE TENANT_ID = #{tenantId}
+            AND INDUSTRY_CODE = #{industryCode}
+    </select>
+
+    <delete id="physicalDeleteByIds">
+        DELETE FROM sys_dept
+        WHERE
+        id IN
+        <foreach collection="idList" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

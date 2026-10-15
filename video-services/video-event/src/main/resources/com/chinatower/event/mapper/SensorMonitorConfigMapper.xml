@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.event.mapper.SensorMonitorConfigMapper">
+
+  <select id="queryDeviceSensorMonitor" parameterType="com.chinatower.event.vo.SensorMonitorConfigVO" resultType="com.chinatower.event.vo.SensorMonitorConfigVO">
+    select smc.monitor_code,
+           smc.monitor_name,
+           smc.alarm_type,
+           iaf.min_char,
+           iaf.min_num,
+           iaf.max_char,
+           iaf.max_num,
+           iac.tenant_id,
+           iac.app_ver_code,
+           iac.industry_code,
+           iad.device_code,
+           iaf.id
+        from vm_sensor_monitor_config smc
+        INNER JOIN vm_iot_alarm_factor_t iaf on smc.monitor_code = iaf.factor_code
+        INNER JOIN vm_iot_alarm_config_t iac on iaf.config_id = iac.id
+        INNER JOIN vm_iot_alarm_device_t iad on iad.group_id = iac.id
+    where iac.config_status = '1'
+      and iac.delete_flag = '0'
+      and smc.delete_flag = '0'
+      and iaf.delete_flag = '0'
+      and iac.config_method = #{param.configMethod}
+      and iad.delete_flag = '0'
+      and iad.device_code in
+      <foreach collection="param.deviceCodeList" item="deviceCode" open="(" separator="," close=")">
+          #{deviceCode}
+      </foreach>
+      <if test="param.monitorCodeList != null and param.monitorCodeList.size() > 0">
+          and smc.monitor_code in
+          <foreach collection="param.monitorCodeList" item="monitorCode" open="(" separator="," close=")">
+              #{monitorCode}
+          </foreach>
+      </if>
+      <if test="param.tenantIdList != null and param.tenantIdList.size() > 0">
+          and iac.tenant_id in
+          <foreach collection="param.tenantIdList" item="tenantId" open="(" separator="," close=")">
+              #{tenantId}
+          </foreach>
+      </if>
+  </select>
+
+    <select id="querySensorMonitor" parameterType="com.chinatower.event.vo.SensorMonitorConfigVO" resultType="com.chinatower.event.vo.SensorMonitorConfigVO">
+        select smc.monitor_code,
+        smc.monitor_name,
+        smc.alarm_type,
+        iaf.min_char,
+        iaf.min_num,
+        iaf.max_char,
+        iaf.max_num,
+        iac.tenant_id,
+        iac.app_ver_code,
+        iac.industry_code,
+        iaf.id
+        from vm_sensor_monitor_config smc
+        INNER JOIN vm_iot_alarm_factor_t iaf on smc.monitor_code = iaf.factor_code
+        INNER JOIN vm_iot_alarm_config_t iac on iaf.config_id = iac.id
+        where iac.config_status = '1'
+        and iac.delete_flag = '0'
+        and smc.delete_flag = '0'
+        and iaf.delete_flag = '0'
+        and iac.config_method = #{param.configMethod}
+        <if test="param.monitorCodeList != null and param.monitorCodeList.size() > 0">
+            and smc.monitor_code in
+            <foreach collection="param.monitorCodeList" item="monitorCode" open="(" separator="," close=")">
+                #{monitorCode}
+            </foreach>
+        </if>
+        <if test="param.tenantIdList != null and param.tenantIdList.size() > 0">
+            and iac.tenant_id in
+            <foreach collection="param.tenantIdList" item="tenantId" open="(" separator="," close=")">
+                #{tenantId}
+            </foreach>
+        </if>
+    </select>
+</mapper>

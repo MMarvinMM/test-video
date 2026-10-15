@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.chinatower.video.modules.arButton.mapper.ArbuttonDeviceRelationMapper">
+
+    <resultMap id="ArButtonDeviceRelationMap"
+               type="com.chinatower.video.modules.arButton.entity.ArButtonDeviceRelation">
+        <id property="id" column="id"/>
+        <result property="deviceCode" column="device_code"/>
+        <result property="buttonId" column="button_id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="industryCode" column="industry_code"/>
+        <result property="acceptNode" column="accept_node"/>
+    </resultMap>
+
+    <sql id="BASE_COLUMN">
+        id,
+        device_code,
+        button_id,
+        tenant_id,
+        industry_code,
+        accept_node,
+        enable_status
+    </sql>
+
+    <insert id="batchInsert">
+        INSERT INTO vm_arbutton_device_relation (device_code, button_id, tenant_id, industry_code, accept_node, enable_status)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.deviceCode}, #{item.buttonId}, #{item.tenantId}, #{item.industryCode}, #{item.acceptNode}, #{item.enableStatus})
+        </foreach>
+    </insert>
+
+    <update id="updateByButtonId">
+        UPDATE vm_arbutton_device_relation
+        SET enable_status = #{enableStatus}
+        WHERE
+            button_id = #{buttonId}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND accept_node = #{acceptNode}
+    </update>
+
+    <delete id="deleteByCondition">
+        DELETE
+        FROM vm_arbutton_device_relation
+        WHERE button_id = #{buttonId}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND accept_node = #{acceptNode}
+    </delete>
+
+    <select id="selectCountByCondition" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM vm_arbutton_device_relation
+        WHERE button_id = #{buttonId}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND accept_node = #{acceptNode}
+    </select>
+    <select id="selectListByCondition"
+            resultType="com.chinatower.video.modules.arButton.entity.ArButtonDeviceRelation">
+        SELECT
+        <include refid="BASE_COLUMN" />
+        FROM
+        vm_arbutton_device_relation
+        WHERE
+        tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND accept_node = #{acceptNode}
+        <if test="deviceCode != null and deviceCode !=''">
+            AND device_code = #{deviceCode}
+        </if>
+        <if test="enableStatus != null and enableStatus !=''">
+            AND enable_status = #{enableStatus}
+        </if>
+        <if test="buttonId != null and buttonId !=''">
+            AND button_id = #{buttonId}
+        </if>
+    </select>
+    <select id="selectListForGroupByConditions" resultType="java.lang.String">
+        SELECT
+        relation.device_code
+        FROM
+        vm_arbutton_device_relation relation
+        LEFT JOIN (
+        SELECT
+        d1.device_code,
+        MIN(d1.ID) AS min_id
+        FROM
+        vm_order_devices d1
+        WHERE
+        d1.tenant_id = #{tenantId}
+        AND d1.industry_code = #{industryCode}
+        AND d1.accept_node = #{acceptNode}
+        AND d1.ord_status IN (0, 1, 2)
+        GROUP BY
+        d1.device_code
+        ) deviceOrder ON relation.device_code = deviceOrder.device_code
+        WHERE
+        relation.enable_status = #{enableStatus}
+        AND relation.tenant_id = #{tenantId}
+        AND relation.industry_code = #{industryCode}
+        AND relation.accept_node = #{acceptNode}
+        <if test="buttonId != null and buttonId !=''">
+            AND relation.device_code IN (
+            SELECT device_code
+            FROM vm_arbutton_device_relation
+            WHERE button_id = #{buttonId}
+            )
+        </if>
+        GROUP BY
+        relation.device_code
+        HAVING
+        COUNT(*) > #{varCount}
+    </select>
+
+</mapper>

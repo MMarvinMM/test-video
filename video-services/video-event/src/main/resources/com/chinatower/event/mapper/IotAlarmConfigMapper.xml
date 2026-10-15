@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.IotAlarmConfigMapper">
+
+
+    <select id="getIotDeviceInfoVoList" parameterType="com.chinatower.event.vo.IotAlarmConfigRequest" resultType="com.chinatower.event.vo.IotDeviceInfoVo">
+        select DISTINCT a.device_code,
+        b.iot_device_id,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then b.device_name else ten.device_name end
+        ) device_name,
+        b.device_status,
+        b.province_id,
+        b.city_id,
+        b.county_id,
+        c.area_name as provinceName,
+        c.area_parent_code as provinceParentId,
+        d.area_name as cityName,
+        d.area_parent_code as cityParentId,
+        e.area_name as countyName,
+        e.area_parent_code as countyParentId
+        from vm_order_sensor_devices a
+        left join vm_iot_device_t b on b.device_code = a.device_code and b.category_code = 2
+        left join sys_area c on b.province_id = c.area_code
+        left join sys_area d on b.city_id = d.area_code
+        left join sys_area e on b.county_id = e.area_code
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = a.device_code
+        and ten.tenant_id = a.tenant_id  and ten.industry_code=a.industry_code
+        and ten.delete_flag='0'
+        where a.delete_flag = 0 and b.delete_flag = 0 and a.ord_status in (0,1,2) and a.category_code=2
+        and b.province_id is not null and b.city_id is not null and b.county_id is not null
+        <if test="tenantId != null and tenantId != ''">
+            and a.tenant_id = #{tenantId}
+        </if>
+        <if test="deviceType != null and deviceType != ''">
+            and b.device_type = #{deviceType}
+        </if>
+        <if test="deviceTypeList != null and deviceTypeList.size()>0">
+            and b.device_type in
+            <foreach item="item" index="index" collection="deviceTypeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+        ORDER BY province_id,city_id,county_id,device_code
+    </select>
+
+    <select id="getAllFactor" parameterType="com.chinatower.event.vo.IotAlarmConfigRequest" resultType="com.chinatower.event.vo.IotFactorVo">
+        select distinct
+        t1.device_code,
+        ms.monitor_code as factorCode,
+        (
+        case when length(IFNULL(mc.monitor_name, '')) = 0
+        then ms.monitor_desc  else mc.monitor_name end
+        ) factorName,
+        ms.monitor_code as factorId
+        from vm_order_sensor_devices t1
+        INNER JOIN vm_sensor_monitor_status ms on t1.device_code=ms.device_code
+        LEFT JOIN vm_sensor_monitor_config mc on ms.monitor_code=mc.monitor_code
+        where t1.delete_flag = 0 and ms.delete_flag = 0 and mc.delete_flag = 0  and t1.category_code = 2
+        and t1.ord_status in (0, 1, 2)
+        <if test="tenantId != null and tenantId != ''">
+            and t1.tenant_id = #{tenantId}
+        </if>
+        ${dataScope}
+        group by ms.monitor_code
+    </select>
+
+    <select id="getFactorByDeviceCode" resultType="com.chinatower.event.vo.IotFactorVo">
+        SELECT device_code,factorCode,sensorType,sensorTypeName,factorName,factorId,monitorUnits FROM(
+        select distinct
+        t1.device_code,
+        ms.monitor_code as factorCode,
+        IFNULL(ty.type_code,'') as sensorType,
+        IFNULL(ty.type_name,'') as sensorTypeName,
+        (
+        case when length(IFNULL(mc.monitor_name, '')) = 0
+        then ms.monitor_desc  else mc.monitor_name end
+        ) factorName,
+        ms.monitor_code as factorId,
+        mc.monitor_units as monitorUnits
+        from vm_order_sensor_devices t1
+        INNER JOIN vm_sensor_monitor_status ms on t1.device_code=ms.device_code
+        LEFT JOIN vm_sensor_device_type ty on ty.type_code = ms.sensor_code  and ty.delete_flag ='0'
+        LEFT JOIN vm_sensor_monitor_config mc on ms.monitor_code=mc.monitor_code
+        where t1.delete_flag = 0 and ms.delete_flag = 0 and mc.delete_flag = 0
+        and t1.ord_status in (0, 1, 2)
+        and t1.tenant_id = #{tenantId}
+        and t1.device_code in
+        <foreach collection="deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+             #{deviceCode}
+        </foreach>
+        ORDER BY 	ty.type_code desc)a
+        GROUP BY
+        a.factorCode
+
+    </select>
+
+    <insert id="insertFactor" parameterType="com.chinatower.event.vo.IotFactorVo">
+        insert into vm_iot_alarm_factor_t (
+        group_id,
+        factor_id,
+        factor_code,
+        factor_name,
+        min_char,
+        min_num,
+        max_char,
+        max_num,
+        creator,
+        create_time,
+        modifier,
+        update_time,
+        delete_flag,value_type,sum_value,sum_value_unit,monitor_units,factor_type_code)
+        values
+        <foreach collection="iotFactorVoList" item="iotFactorVo" index="index" open="" close="" separator=",">
+            (
+            #{iotFactorVo.groupId},
+            #{iotFactorVo.factorId},
+            #{iotFactorVo.factorCode},
+            #{iotFactorVo.factorName},
+            <choose>
+                <when test="iotFactorVo.minChar != null and iotFactorVo.minChar != ''">
+                    #{iotFactorVo.minChar},
+                </when>
+                <otherwise>
+                    null,
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="iotFactorVo.minNum != null and iotFactorVo.minNum != ''">
+                    #{iotFactorVo.minNum},
+                </when>
+                <otherwise>
+                    null,
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="iotFactorVo.maxChar != null and iotFactorVo.maxChar != ''">
+                    #{iotFactorVo.maxChar},
+                </when>
+                <otherwise>
+                    null,
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="iotFactorVo.maxNum != null and iotFactorVo.maxNum != ''">
+                    #{iotFactorVo.maxNum},
+                </when>
+                <otherwise>
+                    null,
+                </otherwise>
+            </choose>
+            #{iotFactorVo.creator},
+            #{iotFactorVo.createTime},
+            #{iotFactorVo.modifier},
+            #{iotFactorVo.updateTime},
+            #{iotFactorVo.deleteFlag},
+            #{iotFactorVo.valueType},
+            #{iotFactorVo.sumValue},
+            #{iotFactorVo.sumValueUnit},
+            #{iotFactorVo.monitorUnits},
+            #{iotFactorVo.sensorTypeCode}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertDevice" parameterType="com.chinatower.event.dataobject.IotAlarmDeviceDo">
+        insert into vm_iot_alarm_device_t (
+        group_id,
+        device_code,
+        tenant_id,
+        creator,
+        create_time,
+        modifier,
+        update_time,
+        delete_flag
+        )
+        values
+        <foreach collection="iotDeviceVOList" item="iotAlarmDeviceDo" index="index" open="" close="" separator=",">
+            (
+            #{iotAlarmDeviceDo.groupId},
+            #{iotAlarmDeviceDo.deviceCode},
+            #{iotAlarmDeviceDo.tenantId},
+            #{iotAlarmDeviceDo.creator},
+            #{iotAlarmDeviceDo.createTime},
+            #{iotAlarmDeviceDo.modifier},
+            #{iotAlarmDeviceDo.updateTime},
+            #{iotAlarmDeviceDo.deleteFlag}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertConfigGroups" parameterType="com.chinatower.event.dataobject.IotAlarmConfigGroupsDo" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into vm_iot_alarm_groups_t (
+        groups_name,
+        iot_config_id,
+        anti_shake_type,
+        anti_shake_num,
+        anti_shake_time,
+        anti_shake_time_unit,
+        relation,
+        creator,
+        create_time,
+        modifier,
+        update_time,
+        delete_flag,
+        device_type
+        )
+        values
+            (
+            #{groupsName},
+            #{iotConfigId},
+            #{antiShakeType},
+            #{antiShakeNum},
+            #{antiShakeTime},
+            #{antiShakeTimeUnit},
+            #{relation},
+            #{creator},
+            #{createTime},
+            #{modifier},
+            #{updateTime},
+            #{deleteFlag},
+            #{deviceType}
+            )
+    </insert>
+    <select id="queryGroupIdsById" resultType="java.lang.String">
+        select id
+        from vm_iot_alarm_groups_t
+        where iot_config_id = #{id}
+    </select>
+
+    <select id="queryConfigGroupsById" resultType="com.chinatower.event.dataobject.IotAlarmConfigGroupsDo">
+        select id,groups_name,device_type,iot_config_id,anti_shake_type,anti_shake_num,anti_shake_time,anti_shake_time_unit,relation
+        from vm_iot_alarm_groups_t
+        where delete_flag = '0'
+        and iot_config_id in
+        <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="queryConfigDeviceById" resultType="com.chinatower.event.dataobject.IotAlarmDeviceDo">
+        select id,group_id,device_code
+        from vm_iot_alarm_device_t
+        where delete_flag = '0'
+        and group_id in
+        <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+
+    <select id="queryConfigFactorById" resultType="com.chinatower.event.vo.IotFactorVo">
+        select id,group_id,factor_id,factor_code,factor_name,min_char,min_num,max_char,max_num,value_type,sum_value,sum_value_unit,monitor_units,IFNULL(factor_type_code,'') as sensorTypeCode
+        from vm_iot_alarm_factor_t
+        where delete_flag = '0'
+        and group_id in
+        <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+
+
+    <delete id="deleteConfigGroups">
+        delete from vm_iot_alarm_groups_t  where iot_config_id = #{id}
+    </delete>
+
+    <delete id="deleteConfigDevice">
+        delete from vm_iot_alarm_device_t  where group_id in
+            <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+
+    </delete>
+
+    <delete id="deleteConfigFactor">
+        delete from vm_iot_alarm_factor_t  where group_id in
+        <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateConfigGroups">
+        UPDATE vm_iot_alarm_groups_t SET delete_flag = '1'
+        where iot_config_id = #{id}
+    </update>
+
+    <update id="updateConfigDevice">
+        UPDATE vm_iot_alarm_device_t SET delete_flag = '1'
+        where group_id in
+        <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+
+    <update id="updateConfigFactor">
+        UPDATE vm_iot_alarm_factor_t SET delete_flag = '1'
+        where group_id in
+        <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+
+
+    <select id="queryUserInfoList" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select user_id as userId,user_name as userName
+        from sys_user
+        <where>
+            <if test="userIdList != null and userIdList != ''">
+                and user_id in
+                <foreach collection="userIdList" item="userId" index="index" open="(" close=")" separator=",">
+                    #{userId}
+                </foreach>
+            </if>
+            <if test="userName != null and userName != ''">
+                and user_name like CONCAT('%', #{userName},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="getAutoConfigName" resultType="java.lang.String">
+		SELECT
+            IF(MAX(CAST(a.iot_alarm_config_name AS SIGNED)) is not null, concat('物联告警配置', MAX(CAST(a.iot_alarm_config_name AS SIGNED)) + 1), '物联告警配置1')
+        FROM
+        (
+            SELECT
+            SUBSTRING(iot_alarm_config_name, 7) AS iot_alarm_config_name
+            FROM
+            vm_iot_alarm_config_t
+            WHERE
+            iot_alarm_config_name LIKE '物联告警配置%'
+            AND delete_flag = 0
+            and tenant_id = #{tenantId}
+		    and industry_code = #{industryCode}
+        ) a
+  	</select>
+
+    <select id="selectFactorInfos" resultType="com.chinatower.event.vo.IotFactorVo">
+        SELECT
+            f.factor_code AS factorCode,
+            f.factor_name AS factorName,
+            f.min_char AS minChar,
+            f.min_num AS minNUm,
+            f.max_char AS maxChar,
+            f.max_num AS maxNum
+        FROM
+            vm_iot_alarm_config_t t
+            LEFT JOIN vm_iot_alarm_factor_t f ON f.group_id = t.id
+        WHERE
+            t.config_status = '1' AND t.delete_flag = 0 AND f.delete_flag = 0
+            <if test="param.tenantId != null and param.tenantId != ''">
+                AND t.tenant_id = #{param.tenantId}
+            </if>
+            <if test="param.industryCode != null and param.industryCode != ''">
+                AND t.industry_code = #{param.industryCode}
+            </if>
+    </select>
+
+    <select id="selectDeviceInfos" resultType="java.util.Map">
+        SELECT DISTINCT
+            dt.device_code AS deviceCode,
+            GROUP_CONCAT(s.monitor_code) AS monitorCode,
+            dt.device_name AS deviceName,
+            dt.device_status AS deviceStatus
+        FROM
+            vm_sensor_monitor_status s
+            LEFT JOIN vm_iot_device_t dt ON dt.device_code = s.device_code AND dt.delete_flag = 0
+        WHERE s.delete_flag = 0
+        <if test="param.deviceCodeList != null and param.deviceCodeList.size() > 0">
+            AND dt.device_code IN
+            <foreach collection="param.deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                #{deviceCode}
+            </foreach>
+        </if>
+        GROUP BY dt.device_code
+    </select>
+
+    <select id="selectAllIotConfig" resultType="com.chinatower.event.entity.dto.ReceiveIotAlarmConfigDto">
+        SELECT
+        id AS configId,
+        tenant_id AS tenantId,
+        industry_code AS industryCode,
+        iot_alarm_config_name AS iotAlarmConfigName,
+        iot_alarm_type AS iotAlarmType,
+        receive_start_time AS  receiveStartTime,
+        receive_end_time AS receiveEndTime,
+        receive_period_time AS receivePeriodTime,
+        alarm_level AS alarmLevel,
+        intercept_time AS interceptTime,
+        intercept_time_unit AS interceptTimeUnit,
+        device_groups_json AS deviceGroupsJson
+        FROM
+        vm_iot_alarm_config_t
+        WHERE
+        config_status = '1' AND delete_flag = 0
+    </select>
+
+    <select id="selectAllIotGroupsInConfig" resultType="com.chinatower.event.entity.dto.ReceiveIotAlarmGroupsDto">
+        select id,groups_name,device_type,iot_config_id,anti_shake_type,anti_shake_num,anti_shake_time,anti_shake_time_unit,relation
+        FROM
+        vm_iot_alarm_groups_t
+        WHERE
+        delete_flag = 0
+        <if test="configIdList != null and configIdList.size() > 0">
+            AND iot_config_id IN
+            <foreach collection="configIdList" item="configId" index="index" open="(" close=")" separator=",">
+                #{configId}
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="selectAllIotDeviceInConfig" resultType="com.chinatower.event.entity.dto.ReceiveIotAlarmDeviceDto">
+        SELECT
+            group_id AS groupId,
+            device_code AS deviceCode
+        FROM
+            vm_iot_alarm_device_t
+        WHERE
+            delete_flag = 0
+        <if test="groupIdList != null and groupIdList.size() > 0">
+            AND group_id IN
+            <foreach collection="groupIdList" item="groupId" index="index" open="(" close=")" separator=",">
+                #{groupId}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectAllIotFactorInConfig" resultType="com.chinatower.event.entity.dto.ReceiveIotAlarmFactorDto">
+        SELECT
+            group_id AS groupId,
+            factor_code AS factorCode,
+            factor_name AS factorName,
+            min_char AS minChar,
+            min_num AS minNum,
+            max_char AS maxChar,
+            max_num AS  maxnum,
+            value_type AS valueType,
+            sum_value AS sumValue,
+            sum_value_unit AS  sumValueUnit,
+            monitor_units AS monitorUnits
+        FROM
+            vm_iot_alarm_factor_t
+        WHERE
+             delete_flag = 0
+        <if test="groupIdList != null and groupIdList.size() > 0">
+            AND group_id IN
+            <foreach collection="groupIdList" item="groupId" index="index" open="(" close=")" separator=",">
+                #{groupId}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getDeviceAllFactor" resultType="com.chinatower.event.vo.IotFactorVo">
+        select distinct
+        t1.device_code,
+        ms.monitor_code as factorCode
+        from vm_order_sensor_devices t1
+        INNER JOIN vm_sensor_monitor_status ms on t1.device_code=ms.device_code
+        where t1.delete_flag = 0 and ms.delete_flag = 0 and t1.category_code = 2
+        and t1.ord_status in (0, 1, 2)
+    </select>
+
+
+    <select id="queryAlarmLevelByTypeId" resultType="com.chinatower.event.vo.AlarmLevelVO">
+        SELECT
+            tenant_id,
+            industry_code,
+            type_value,
+            IFNULL(alarm_level, '1' ) AS alarmLevel
+        FROM
+            sys_alarm_type_level
+        where type_value = #{typeValue}
+          and tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+          and delete_flag = '0'
+    </select>
+
+
+    <select id="queryIotDeviceType" resultType="java.lang.String">
+        select DISTINCT b.device_type
+        from vm_order_sensor_devices a
+        left join vm_iot_device_t b on b.device_code = a.device_code and b.category_code = 2
+        where a.delete_flag = 0 and b.delete_flag = 0 and a.ord_status in (0,1,2) and a.category_code=2
+        and b.province_id is not null and b.city_id is not null and b.county_id is not null
+        ${dataScope}
+        GROUP BY b.device_type
+    </select>
+
+</mapper>

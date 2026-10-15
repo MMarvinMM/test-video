@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.GisMapper">
+
+
+
+
+    <select id="getLatitude" resultType="java.util.Map">
+        SELECT area_name AS areaName,area_level as level,latitude,longitude,area_code as code from sys_area
+        WHERE 1 = 1
+        <if test="params.adCode != null and params.adCode != ''">
+            and area_code=#{params.adCode}
+        </if>
+        <if test="params.areaName != null and params.areaName != ''">
+            and area_name = #{params.areaName}
+        </if>
+    </select>
+
+    <select id="selectByAreaCode" resultType="com.chinatower.platform.entity.admin.SysArea">
+        select
+            AREA_CODE areaCode,
+            AREA_NAME areaName,
+            AREA_LEVEL areaLevel,
+            LONGITUDE longitude,
+            LATITUDE latitude,
+            AREA_PARENT_CODE areaParentCode,
+            AREA_PARENT_NAME areaParentName
+        from sys_area
+        where AREA_CODE = #{areaCode}
+    </select>
+    <select id="selectByAreaCodes" resultType="com.chinatower.platform.entity.admin.SysArea">
+        select
+            AREA_CODE areaCode,
+            AREA_NAME areaName,
+            AREA_LEVEL areaLevel,
+            LONGITUDE longitude,
+            LATITUDE latitude,
+            AREA_PARENT_CODE areaParentCode,
+            AREA_PARENT_NAME areaParentName
+        from sys_area
+        where AREA_CODE in
+        <foreach collection="list" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </select>
+    <select id="selectByAreaNames" resultType="com.chinatower.platform.entity.admin.SysArea">
+        select
+        AREA_CODE areaCode,
+        AREA_NAME areaName,
+        AREA_LEVEL areaLevel,
+        LONGITUDE longitude,
+        LATITUDE latitude,
+        AREA_PARENT_CODE areaParentCode,
+        AREA_PARENT_NAME areaParentName
+        from sys_area
+        where AREA_NAME in
+        <foreach collection="list" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectByDistrictAndCounty" resultType="com.chinatower.platform.entity.admin.SysArea">
+        select
+        AREA_CODE areaCode,
+        AREA_NAME areaName,
+        AREA_LEVEL areaLevel,
+        LONGITUDE longitude,
+        LATITUDE latitude,
+        AREA_PARENT_CODE areaParentCode,
+        AREA_PARENT_NAME areaParentName
+        from sys_area
+        where AREA_LEVEL &lt; 5
+    </select>
+
+    <select id="selectBySysParentCode" resultType="com.chinatower.platform.entity.admin.SysArea">
+        select
+            AREA_CODE areaCode,
+            AREA_NAME areaName,
+            AREA_LEVEL areaLevel,
+            LONGITUDE longitude,
+            LATITUDE latitude,
+            AREA_PARENT_CODE areaParentCode,
+            AREA_PARENT_NAME areaParentName
+        from sys_area
+        where area_parent_code = #{sysAreaParentCode}
+    </select>
+
+
+    <select id="selectByProvCode" resultType="com.chinatower.system.api.model.SysCapitalVO">
+        select
+            PROV_CODE provCode,
+            PROV_NAME provName,
+            CAPITAL_CODE capitalCode,
+            CAPITAL_NAME capitalName
+        from sys_capital
+        where PROV_CODE = #{provCode}
+        and status = 0
+    </select>
+    <select id="selectByProvList" resultType="com.chinatower.system.api.model.SysCapitalVO">
+        select
+            PROV_CODE provCode,
+            PROV_NAME provName,
+            CAPITAL_CODE capitalCode,
+            CAPITAL_NAME capitalName
+        from sys_capital
+        where status = 0
+    </select>
+
+
+</mapper>

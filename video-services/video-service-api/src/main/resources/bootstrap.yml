@@ -1,0 +1,33 @@
+# Tomcat
+server:
+  port: 9093
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: video-service-api
+  profiles:
+    # 环境配置
+    active: local
+  main:
+    allow-bean-definition-overriding: true
+  servlet:
+    multipart:
+      location: /app/tmp
+      max-file-size: 2000MB
+      max-request-size: 2000MB
+
+mybatis:
+  # 重点！！！spring boot集成mybatis的方式打印sql
+  mapper-locations: classpath*:com/chinatower/**/dao/*.xml,classpath*:com/chinatower/**/mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+
+
+enableChannelSize: 9
+enableCustomerStr: 122035797,111111111
+
+jasypt:
+  encryptor:
+    bootstrap: false

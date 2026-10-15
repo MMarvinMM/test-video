@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.AlarmTypeSecondRecogMapper">
+
+    <!--    批量插入-->
+    <insert id="insertBatch" parameterType="com.chinatower.event.entity.vo.AlarmTypeSecondRecogVO">
+
+        INSERT INTO `vm_alarm_type_second_recog`
+        (`alarm_second_recog_id`, `alarm_source_value`, `alarm_type_value`, `creator`, `create_time`,`delete_flag`, `tenant_id`, `industry_code`, `app_ver_code`)
+        VALUES
+        <foreach collection="typeList" index="" item="type" separator=",">
+            (
+            #{type.alarmSecondRecogId},
+            #{type.alarmSourceValue},
+            #{type.alarmTypeValue},
+            #{type.creator},
+            now(),
+            0,
+            #{type.tenantId},
+            #{type.industryCode},
+            #{type.appVerCode}
+            )
+        </foreach>;
+
+    </insert>
+
+
+
+    <!-- 二次识别配置逻辑删除 根据二次识别配置id删除 -->
+    <update id="deleteAlarmSecondRecogId">
+        UPDATE `vm_alarm_type_second_recog` SET
+         `delete_flag` = '1',
+         `modifier` = #{modifier},
+         `update_time` = now()
+         WHERE `alarm_second_recog_id` = #{alarmSecondRecogId} and `delete_flag` = '0'
+    </update>
+
+
+    <!-- 根据id逻辑删除二次识别配置告警类型 -->
+    <update id="deleteIds" parameterType="com.chinatower.event.entity.vo.CombinationVo">
+        UPDATE `vm_alarm_type_second_recog` SET
+         `delete_flag` = '1' WHERE `delete_flag` = '0' and `id` in
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <!--  根据id获取二次识别配置告警类型集合  -->
+    <select id="findAllListByAlarmSecondRecogId" resultType="com.chinatower.event.entity.vo.AlarmTypeSecondRecogVO" parameterType="java.lang.Integer">
+        select id, alarm_second_recog_id, alarm_source_value, alarm_type_value, creator, create_time, modifier, update_time, delete_flag, tenant_id, industry_code, app_ver_code
+        from vm_alarm_type_second_recog where `delete_flag` = '0' and alarm_second_recog_id = #{id)}
+    </select>
+
+
+</mapper>

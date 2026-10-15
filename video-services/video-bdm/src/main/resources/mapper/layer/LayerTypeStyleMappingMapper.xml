@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.LayerTypeStyleMappingMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.bdm.modules.layer.domain.LayerTypeStyleMapping" >
+        <result column="id" property="id" />
+        <result column="type_style_id" property="typeStyleId" />
+        <result column="style_name" property="styleName" />
+        <result column="abbreviation" property="abbreviation" />
+        <result column="workspace_name" property="workspaceName" />
+        <result column="field_name" property="fieldName" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="geo_type" property="geoType" />
+        <result column="default_show" property="defaultShow" />
+        <result column="code" property="code" />
+        <result column="code_name" property="codeName" />
+        <result column="range_type" property="rangeType" />
+        <result column="dict_json" property="dictJson" />
+        <result column="show_label" property="showLabel" />
+        <result column="show_bind_field" property="showBindField" />
+        <result column="layer_type_id" property="layerTypeId" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+                id,
+                type_style_id,
+                style_name,
+                abbreviation,
+                workspace_name,
+                field_name,
+                create_time,
+                update_time,
+                delete_flag,
+                geo_type
+    </sql>
+    <insert id="insert"  parameterType="com.chinatower.bdm.modules.layer.domain.LayerTypeStyleMapping">
+        INSERT INTO sys_layer_type_style_mapping
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="null != typeStyleId and '' != typeStyleId">
+                type_style_id,
+            </if>
+            <if test="null != styleName and '' != styleName">
+                style_name,
+            </if>
+            <if test="null != abbreviation and '' != abbreviation">
+                abbreviation,
+            </if>
+            <if test="null != workspaceName and '' != workspaceName">
+                workspace_name,
+            </if>
+            <if test="null != fieldName and '' != fieldName">
+                field_name,
+            </if>
+            <if test="null != createTime ">
+                create_time,
+            </if>
+            <if test="null != updateTime ">
+                update_time,
+            </if>
+            <if test="null != deleteFlag ">
+                delete_flag,
+            </if>
+            <if test="null != geoType and '' != geoType">
+                geo_type
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="null != typeStyleId and '' != typeStyleId">
+                #{typeStyleId},
+            </if>
+            <if test="null != styleName and '' != styleName">
+                #{styleName},
+            </if>
+            <if test="null != abbreviation and '' != abbreviation">
+                #{abbreviation},
+            </if>
+            <if test="null != workspaceName and '' != workspaceName">
+                #{workspaceName},
+            </if>
+            <if test="null != fieldName and '' != fieldName">
+                #{fieldName},
+            </if>
+            <if test="null != createTime ">
+                #{createTime},
+            </if>
+            <if test="null != updateTime ">
+                #{updateTime},
+            </if>
+            <if test="null != deleteFlag ">
+                #{deleteFlag},
+            </if>
+            <if test="null != geoType and '' != geoType">
+                #{geoType}
+            </if>
+        </trim>
+    </insert>
+
+    <insert id="saveBatch">
+        insert into sys_layer_type_style_mapping
+        (
+        id,
+        type_style_id,
+        style_name,
+        abbreviation,
+        workspace_name,
+        field_name,
+        create_time,
+        update_time,
+        delete_flag,
+        geo_type
+         )
+        values
+        <foreach collection="list" item="item" separator=",">
+            (
+             #{item.id},
+             #{item.typeStyleId},
+             #{item.styleName},
+             #{item.abbreviation},
+             #{item.workspaceName},
+             #{item.fieldName},
+             #{item.createTime},
+             #{item.updateTime},
+             0,
+             #{item.geoType}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateBatchById">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE sys_layer_type_style_mapping
+            <set>
+                <if test="null != item.typeStyleId and '' != item.typeStyleId">type_style_id = #{item.typeStyleId},</if>
+                <if test="null != item.styleName and '' != item.styleName">style_name = #{item.styleName},</if>
+                <if test="null != item.abbreviation and '' != item.abbreviation">abbreviation = #{item.abbreviation},</if>
+                <if test="null != item.workspaceName and '' != item.workspaceName">workspace_name = #{item.workspaceName},</if>
+                <if test="null != item.fieldName and '' != item.fieldName">field_name = #{item.fieldName},</if>
+                <if test="null != item.createTime ">create_time = #{item.createTime},</if>
+                <if test="null != item.updateTime ">update_time = #{item.updateTime},</if>
+                <if test="null != item.deleteFlag ">delete_flag = #{item.deleteFlag},</if>
+                <if test="null != item.geoType and '' != item.geoType">geo_type = #{item.geoType}</if>
+            </set>
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+
+    <delete id="delete" >
+        update sys_layer_type_style_mapping set delete_flag = 1,update_time=now()
+        WHERE type_style_id = #{typeStyleId}
+    </delete>
+
+    <delete id="deletes" >
+        update sys_layer_type_style_mapping set delete_flag = 1,update_time=now()
+        WHERE type_style_id in
+        <foreach collection="typeStyleIds" item="typeStyleId" open="(" separator="," close=")">
+            #{typeStyleId}
+        </foreach>
+    </delete>
+
+    <update id="update" parameterType="com.chinatower.bdm.modules.layer.domain.LayerTypeStyleMapping">
+        UPDATE sys_layer_type_style_mapping
+        <set>
+            <if test="null != typeStyleId and '' != typeStyleId">type_style_id = #{typeStyleId},</if>
+            <if test="null != styleName and '' != styleName">style_name = #{styleName},</if>
+            <if test="null != abbreviation and '' != abbreviation">abbreviation = #{abbreviation},</if>
+            <if test="null != workspaceName and '' != workspaceName">workspace_name = #{workspaceName},</if>
+            <if test="null != fieldName and '' != fieldName">field_name = #{fieldName},</if>
+            <if test="null != createTime ">create_time = #{createTime},</if>
+            <if test="null != updateTime ">update_time = #{updateTime},</if>
+            <if test="null != deleteFlag ">delete_flag = #{deleteFlag},</if>
+            <if test="null != geoType and '' != geoType">geo_type = #{geoType}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByStyleId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from sys_layer_type_style_mapping
+        where type_style_id = #{styleId}
+        and delete_flag = 0
+        <if test="geoType != null and geoType != ''">
+            and geo_type = #{geoType}
+        </if>
+    </select>
+
+    <select id="selectByLayerTypeId" resultMap="BaseResultMap">
+        select
+        m.id,
+        m.type_style_id,
+        m.style_name,
+        m.abbreviation,
+        m.workspace_name,
+        m.field_name,
+        m.create_time,
+        m.update_time,
+        m.delete_flag,
+        m.geo_type,
+        s.default_show,
+        s.dict_json,
+        s.layer_type_id,
+        s.show_bind_field,
+        s.show_label,
+        s.code,
+        s.type range_type,
+        s.name code_name
+        from sys_layer_type_style_mapping m
+        left join sys_layer_type_style s on m.type_style_id = s.id
+        where
+            s.tenant_id = #{tenantId}
+        and s.industry_code = #{industryCode}
+        and s.layer_type_id in
+        <foreach collection="layerTypeIds" item="layerTypeId" open="(" separator="," close=")">
+            #{layerTypeId}
+        </foreach>
+        and m.delete_flag = 0
+        and s.delete_flag = 0
+        order by s.create_time asc
+    </select>
+
+    <select id="selectByAbbreviations" resultMap="BaseResultMap">
+        select
+        m.id,
+        m.type_style_id,
+        m.style_name,
+        m.abbreviation,
+        m.workspace_name,
+        m.field_name,
+        m.create_time,
+        m.update_time,
+        m.delete_flag,
+        m.geo_type,
+        s.default_show,
+        s.dict_json,
+        s.layer_type_id,
+        s.show_bind_field,
+        s.show_label,
+        s.code,
+        s.type range_type,
+        s.name code_name
+        from sys_layer_type_style_mapping m
+        left join sys_layer_type_style s on m.type_style_id = s.id
+        where
+        s.industry_code = '999999'
+        and s.abbreviation in
+        <foreach collection="abbreviations" item="abbreviation" open="(" separator="," close=")">
+            #{abbreviation}
+        </foreach>
+        and m.delete_flag = 0
+        and s.delete_flag = 0
+        order by s.create_time asc
+    </select>
+
+    <select id="selectByTypeId" resultMap="BaseResultMap">
+        select
+        m.id,
+        m.type_style_id,
+        m.style_name,
+        m.abbreviation,
+        m.workspace_name,
+        m.field_name,
+        m.create_time,
+        m.update_time,
+        m.delete_flag,
+        m.geo_type,
+        s.default_show,
+        s.dict_json,
+        s.layer_type_id,
+        s.show_bind_field,
+        s.show_label,
+        s.code,
+        s.type range_type,
+        s.name code_name
+        from sys_layer_type_style_mapping m
+        left join sys_layer_type_style s on m.type_style_id = s.id
+        where
+        m.delete_flag = 0
+        <if test="industryCode != null and industryCode != ''">
+            and s.industry_code = #{industryCode}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            and s.tenant_id = #{tenantId}
+        </if>
+        and m.type_style_id in
+        <foreach collection="typeIds" item="layerTypeId" open="(" separator="," close=")">
+            #{layerTypeId}
+        </foreach>
+        order by s.create_time asc
+    </select>
+
+    <select id="getLayerTypeStyleDefaultShowId" resultType="java.lang.String">
+        select
+            id
+        from sys_layer_type_style
+        where tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+        and layer_type_id = #{layerTypeId}
+        and default_show = 1
+        limit 1
+    </select>
+</mapper>

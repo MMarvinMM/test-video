@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.AlgorithmWeightDAO">
+
+    <!-- 批量更新权重 -->
+    <update id="batchUpdateWeights" parameterType="java.util.List">
+        UPDATE vm_algorithm_weight_t
+        SET algorithm_weight = CASE algorithm_code
+        <foreach collection="list" item="item">
+            WHEN #{item.algorithmCode} THEN #{item.algorithmWeight}
+        </foreach>
+        END,
+        update_time = now()
+        WHERE algorithm_code IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item.algorithmCode}
+        </foreach>
+    </update>
+
+    <!-- 批量存在更新，不存在插入 -->
+    <insert id="batchUpsert" parameterType="java.util.List">
+        INSERT INTO vm_algorithm_weight_t (
+        algorithm_code,
+        algorithm_name,
+        algorithm_weight,
+        create_time,
+        update_time,
+        delete_flag
+        ) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.algorithmCode},
+            #{item.algorithmName},
+            #{item.algorithmWeight},
+            #{item.createTime},
+            #{item.updateTime},
+            '0'
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectAlgorithmCodeList" resultType="com.chinatower.platform.modules.alarm.entity.VmAlgorithmWeightDO">
+        select * from vm_algorithm_weight_t where delete_flag =0 and algorithm_code in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

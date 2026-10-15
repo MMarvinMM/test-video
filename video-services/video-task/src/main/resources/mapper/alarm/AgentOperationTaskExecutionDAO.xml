@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.AgentOperationTaskExecutionDAO">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.platform.modules.alarm.entity.VmJudgeTaskExecutionDO">
+        <id column="execution_id" property="executionId" />
+        <result column="task_id" property="taskId" />
+        <result column="task_execution_type" property="taskExecutionType" />
+        <result column="execution_status" property="executionStatus" />
+        <result column="start_time" property="startTime" />
+        <result column="end_time" property="endTime" />
+        <result column="error_message" property="errorMessage" />
+        <result column="user_id" property="userId" />
+        <result column="group_id" property="groupId" />
+        <result column="execution_log" property="executionLog" />
+        <result column="creator" property="creator" />
+        <result column="modifier" property="modifier" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="ai_judge_total" property="aiJudgeTotal" />
+        <result column="real_num" property="realNum" />
+        <result column="false_num" property="falseNum" />
+        <result column="un_judged_num" property="unJudgedNum" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        execution_id, task_id, task_execution_type,execution_status, start_time, end_time, error_message,user_id,group_id,
+        execution_log, creator, modifier, delete_flag, create_time, update_time,ai_judge_total,real_num,false_num,un_judged_num
+    </sql>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT execution_id
+        FROM vm_agent_operation_task_execution
+        WHERE user_id = #{userId}
+        AND execution_status = 1  <!-- 执行状态 0-创建, 1-执行中, 2-执行结束, 3-停止 -->
+        AND delete_flag = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 插入执行记录 -->
+    <insert id="insertExecution" parameterType="com.chinatower.platform.modules.alarm.entity.VmJudgeTaskExecutionDO" useGeneratedKeys="true" keyProperty="executionId" keyColumn="execution_id">
+        INSERT INTO vm_agent_operation_task_execution (
+            task_id,user_id,task_execution_type, execution_status, start_time, end_time, error_message,
+            execution_log, creator, modifier, create_time, update_time,group_id
+        ) VALUES (
+                     #{taskId},#{userId},#{taskExecutionType}, #{executionStatus}, #{startTime}, #{endTime}, #{errorMessage},
+                     #{executionLog}, #{creator}, #{modifier}, #{createTime}, #{updateTime}, #{groupId}
+                 )
+    </insert>
+
+    <update id="updateExecution" parameterType="com.chinatower.platform.modules.alarm.entity.VmJudgeTaskExecutionDO" >
+        update vm_agent_operation_task_execution
+        set execution_status = #{executionStatus}
+        <if test="endTime != null">
+            ,end_time = #{endTime}
+        </if>
+        <if test="executionLog != null and executionLog != ''">
+            ,execution_log = #{executionLog}
+        </if>
+        <if test="errorMessage != null">
+            ,error_message = #{errorMessage}
+        </if>
+        <if test="aiJudgeTotal != null">
+            ,ai_judge_total = #{aiJudgeTotal}
+        </if>
+        <if test="realNum != null">
+            ,real_num = #{realNum}
+        </if>
+        <if test="falseNum != null">
+            ,false_num = #{falseNum}
+        </if>
+        <if test="unJudgedNum != null">
+            ,un_judged_num = #{unJudgedNum}
+        </if>
+        <if test="updateTime != null">
+            ,update_time = #{updateTime}
+        </if>
+        where execution_id = #{executionId}
+          AND delete_flag = 0
+    </update>
+
+    <select id="selectByUserIds" resultMap="BaseResultMap">
+        SELECT a.* from (SELECT
+        <include refid="Base_Column_List"></include>
+        ,ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY create_time DESC) as rn
+        FROM vm_agent_operation_task_execution
+        WHERE user_id in
+        <foreach collection="closeTaskUser" item="userId" index="index" open="(" close=")" separator=",">
+            #{userId}
+        </foreach>
+        <if test="taskExecutionType != null and taskExecutionType !='' ">
+            and task_execution_type = #{taskExecutionType}
+        </if>
+        AND execution_status = #{executionStatus}
+        AND delete_flag = 0
+        ORDER BY create_time DESC ) a WHERE a.rn = 1
+    </select>
+</mapper>

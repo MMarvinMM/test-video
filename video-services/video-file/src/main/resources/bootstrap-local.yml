@@ -1,0 +1,64 @@
+#测试环境
+video:
+  nacos:
+    ip: 127.0.0.1
+    port: 8848
+    namespace: 53272ed1-99be-4642-bb55-d870921f8074
+spring:
+  #spring cloud
+  cloud:
+    nacos:
+      #nacos注册中心地址
+      discovery:
+        server-addr: ${video.nacos.ip}:${video.nacos.port}
+        namespace: ${video.nacos.namespace}
+      #nacos配置中心
+      config:
+        # 配置文件的格式
+        file-extension: yaml
+        # 配置中心的地址
+        server-addr: ${video.nacos.ip}:${video.nacos.port}
+        # 配置文件prefix
+        prefix: ${spring.application.name}
+        #命名空间
+        namespace: ${video.nacos.namespace}
+        #关闭动态刷新，默认开启
+    #        refresh:
+    #         enabled: false
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+hwobs:
+  enable: true
+  expires: 600
+  endPoint: obs.cn-north-4.myhuaweicloud.com
+  bucketList:
+    - ak: GK6JYUVN6TPIEAECZUM7
+      sk: 8OUbBc3cJaFQPqX8eD0FHkRcYK7w5nOEj8aq6vCx
+      bucketName: slw-base-video-test
+    - ak: FIFYCLGVA3XZR4XRFLII
+      sk: QTJBTcJ8vlntAAZCLEQ8sqEK6VFX8R7L7Qt6EQwx
+      bucketName: video-platform
+    - ak: FIFYCLGVA3XZR4XRFLII
+      sk: QTJBTcJ8vlntAAZCLEQ8sqEK6VFX8R7L7Qt6EQwx
+      bucketName: sc-slyy2
+  suffixRules: jpg,bmp,pcx,tif,gif,jpeg,tga,exif,fpx,svg,psd,cdr,pcd,dxf,ufo,eps,ai,png,hdri,raw,wmf,flic,emf,ico,xlsx,xls,pdf,doc,docx
+
+tower:
+  log:
+    enable: false
+  swagger:
+    enable: true
+  redis:
+    enabled: true
+    max-pool-idex: 10
+    max-pool-total: 10
+    min-pool-idex: 10
+    max-wait-millis: 5000
+    command-timeout: 10000
+    primary:
+      host: 119.3.231.17
+      port: 11379
+      password: redchtower

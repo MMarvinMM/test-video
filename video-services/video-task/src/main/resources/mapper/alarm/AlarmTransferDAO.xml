@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.AlarmTransferDAO">
+    <update id="updateWaringOrderDeleteFlag">
+        update ${tableName} set delete_flag ='2',modifier_date =now()
+        where warning_order_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+
+    </update>
+
+    <update id="updateLearderAuditDeleteFlag">
+        update vm_order_leader_audit_t set delete_flag = '1' where order_id in
+        <foreach collection="list" item="warningOrderId" index="index" open="(" close=")" separator=",">
+            #{warningOrderId}
+        </foreach>
+    </update>
+
+    <select id="getAlarmTansferConfigList"
+            resultType="com.chinatower.platform.modules.alarm.entity.AlarmTransferConfigDto">
+
+        SELECT
+            c.industry_code AS 'industryCode',
+            c.never_process_flag AS 'neverProcessFlag',
+            c.alarm_transfer_time AS 'alarmTransferTime',
+            c.order_status AS 'orderStatus',
+            c.tenant_id AS 'tenantId',
+            c.transfer_date AS 'transferDate',
+            c.transfer_interval AS 'transferInterval',
+            t.alarm_type AS 'alarmType',
+            t.warning_source AS 'warningSource'
+        FROM
+            vm_alarm_type_transfer t
+                LEFT JOIN vm_alarm_transfer_config c ON t.alarm_transfer_id = c.id
+        WHERE
+            t.delete_flag = '0'
+          AND c.delete_flag = '0'
+
+    </select>
+
+
+    <select id="getNeverOrderIdList" resultType="com.chinatower.platform.modules.alarm.entity.AlarmTransferResultVo">
+        SELECT CONCAT(warning_order_id, '') AS 'warningOrderId',
+        IF(alarm_time IS NULL,'',DATE_FORMAT(alarm_time,'%Y-%m-%d %H:%i:%s')) as 'alarmTime',
+        industry_code AS 'industryCode',warning_type_id AS 'warningTypeId',warning_source AS 'warningSource',tenant_id AS 'tenantId'
+        from ${tableName}
+        where delete_flag = '0' and user_record is null and (
+        <foreach collection="list" item="item" index="index" open="" close="" separator="or">
+            (industry_code = #{item.industryCode} and warning_type_id = #{item.alarmType} and warning_source =
+            #{item.warningSource} and tenant_id = #{item.tenantId})
+        </foreach>
+        )
+    </select>
+
+    <select id="getNoNeverOrderIdList" resultType="com.chinatower.platform.modules.alarm.entity.AlarmTransferResultVo">
+        SELECT CONCAT(warning_order_id, '') AS 'warningOrderId',
+        IF(alarm_time IS NULL,'',DATE_FORMAT(alarm_time,'%Y-%m-%d %H:%i:%s')) as 'alarmTime',
+        industry_code AS 'industryCode',warning_type_id AS 'warningTypeId',warning_source AS 'warningSource',tenant_id AS 'tenantId'
+        from ${tableName}
+        where delete_flag = '0' and user_record is not null and(
+        <foreach collection="list" item="item" index="index" open="" close="" separator="or">
+            (industry_code = #{item.industryCode} and warning_type_id = #{item.alarmType} and warning_source =
+            #{item.warningSource} and tenant_id =#{item.tenantId} and (find_in_set(order_status,#{item.orderStatus})>0
+            or
+            (enable_acceptance_mode ='1' and find_in_set('9',#{item.orderStatus})>0)) )
+        </foreach>
+        )
+    </select>
+
+</mapper>

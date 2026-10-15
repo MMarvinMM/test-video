@@ -1,0 +1,18 @@
+server:
+  port: 18080
+  servlet:
+    context-path: /
+# Spring配置
+spring:
+  profiles:
+    active: local
+  main:
+    web-application-type: reactive
+    banner-mode: "off"
+    allow-bean-definition-overriding: true
+  application:
+    name: video-gateway
+
+jasypt:
+  encryptor:
+    bootstrap: false

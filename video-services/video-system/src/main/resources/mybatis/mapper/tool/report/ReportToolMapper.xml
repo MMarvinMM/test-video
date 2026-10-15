@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.tool.report.mapper.ReportToolMapper">
+
+    <sql id="selectSysReportConfigVo">
+        SELECT
+            ID,
+            REPORT_NAME,
+            REPORT_TYPE,
+            REPORT_DESC,
+            IF_DATA_FILTER,
+            DATASOURCE_TYPE,
+            REPORT_CONDITIONS,
+            REPORT_SQL,
+            REPORT_COLUMNS,
+            DEL_FLAG,
+            CREATE_BY,
+            CREATE_TIME,
+            UPDATE_BY,
+            UPDATE_TIME,
+            DEPT_ID
+        FROM tb_report_config T
+    </sql>
+
+    <select id="selectReportConfigList" parameterType="com.chinatower.platform.project.tool.report.domain.ReportTool" resultType="com.chinatower.platform.project.tool.report.domain.ReportTool">
+        <include refid="selectSysReportConfigVo"/>
+        <if test="reportName != null  and reportName != ''"> and T.REPORT_NAME like CONCAT( '%' , #{reportName} ,'%')</if>
+        <if test="reportType != null  and reportType != ''"> and T.REPORT_TYPE like CONCAT('%' , #{reportType} ,'%')</if>
+        <if test="delFlag != null  and delFlag != ''"> and T.DEL_FLAG = #{delFlag}</if>
+        <if test="createBy != null  and createBy != ''"> and T.CREATE_BY = #{createBy}</if>
+        ${dataScope}
+        ORDER BY ID ASC
+    </select>
+    
+    <select id="selectReportConfigById" parameterType="Integer" resultType="com.chinatower.platform.project.tool.report.domain.ReportTool">
+        <include refid="selectSysReportConfigVo"/>
+        and ID = #{id}
+    </select>
+
+    <select id="selectByDynamicSql" parameterType="java.lang.String" resultType="java.util.Map">
+        select * from (${dynamicSql}) T where 1=1 ${dataScope}
+    </select>
+
+    <insert id="insertReportConfig" parameterType="com.chinatower.platform.project.tool.report.domain.ReportTool">
+        insert into tb_report_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="reportName != null  and reportName != ''">REPORT_NAME,</if>
+            <if test="reportType != null  and reportType != ''">REPORT_TYPE,</if>
+            <if test="reportSql != null  and reportSql != ''">REPORT_SQL,</if>
+            <if test="reportDesc != null  and reportDesc != ''">REPORT_DESC,</if>
+            <if test="ifDataFilter != null  and ifDataFilter != ''">IF_DATA_FILTER,</if>
+            <if test="datasourceType != null  and datasourceType != ''">DATASOURCE_TYPE,</if>
+            <if test="reportConditions != null  and reportConditions != ''">REPORT_CONDITIONS,</if>
+            <if test="reportColumns != null  and reportColumns != ''">REPORT_COLUMNS,</if>
+            <if test="delFlag != null  and delFlag != ''">DEL_FLAG,</if>
+            <if test="createBy != null  and createBy != ''">CREATE_BY,</if>
+            <if test="createTime != null ">CREATE_TIME,</if>
+            <if test="updateBy != null  and updateBy != ''">UPDATE_BY,</if>
+            <if test="updateTime != null ">UPDATE_TIME,</if>
+            <if test="deptId != null ">DEPT_ID,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="reportName != null  and reportName != ''">#{reportName},</if>
+            <if test="reportType != null  and reportType != ''">#{reportType},</if>
+            <if test="reportSql != null  and reportSql != ''">#{reportSql},</if>
+            <if test="reportDesc != null  and reportDesc != ''">#{reportDesc},</if>
+            <if test="ifDataFilter != null  and ifDataFilter != ''">#{ifDataFilter},</if>
+            <if test="datasourceType != null  and datasourceType != ''">#{datasourceType},</if>
+            <if test="reportConditions != null  and reportConditions != ''">#{reportConditions},</if>
+            <if test="reportColumns != null  and reportColumns != ''">#{reportColumns},</if>
+            <if test="delFlag != null  and delFlag != ''">#{delFlag},</if>
+            <if test="createBy != null  and createBy != ''">#{createBy},</if>
+            <if test="createTime != null ">#{createTime},</if>
+            <if test="updateBy != null  and updateBy != ''">#{updateBy},</if>
+            <if test="updateTime != null ">#{updateTime},</if>
+            <if test="deptId != null ">#{deptId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateReportConfig" parameterType="com.chinatower.platform.project.tool.report.domain.ReportTool">
+        update tb_report_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="reportName != null  and reportName != ''">REPORT_NAME = #{reportName},</if>
+            <if test="reportType != null ">REPORT_TYPE = #{reportType},</if>
+            <if test="reportSql != null ">REPORT_SQL = #{reportSql},</if>
+            <if test="reportDesc != null ">REPORT_DESC = #{reportDesc},</if>
+            <if test="ifDataFilter != null ">IF_DATA_FILTER = #{ifDataFilter},</if>
+            <if test="datasourceType != null  and datasourceType != ''">DATASOURCE_TYPE= #{datasourceType},</if>
+            <if test="reportConditions != null  and reportConditions != ''">REPORT_CONDITIONS = #{reportConditions},</if>
+            <if test="reportColumns != null  and reportColumns != ''">REPORT_COLUMNS = #{reportColumns},</if>
+            <if test="delFlag != null  and delFlag != ''">DEL_FLAG = #{delFlag},</if>
+            <if test="createBy != null  and createBy != ''">CREATE_BY = #{createBy},</if>
+            <if test="createTime != null ">CREATE_TIME = #{createTime},</if>
+            <if test="updateBy != null  and updateBy != ''">UPDATE_BY = #{updateBy},</if>
+            <if test="updateTime != null ">UPDATE_TIME = #{updateTime},</if>
+            <if test="deptId != null ">DEPT_ID = #{deptId},</if>
+        </trim>
+        where ID = #{id}
+    </update>
+
+    <update id="deleteReportConfigById" parameterType="Integer">
+        update tb_report_config set del_flag='2' where ID = #{id}
+    </update>
+
+    <update id="deleteReportConfigByIds" >
+        update tb_report_config set del_flag='2' where ID in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

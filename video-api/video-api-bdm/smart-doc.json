@@ -1,0 +1,5 @@
+{
+  "outPath": "target/doc/",
+  "allInOne": true,
+  "packageFilters": "com.chinatower.bdm.api.*"
+}

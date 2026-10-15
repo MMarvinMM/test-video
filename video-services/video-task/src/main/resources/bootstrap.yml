@@ -1,0 +1,18 @@
+# Tomcat
+server:
+  port: 9236
+
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: video-task
+  profiles:
+    # 环境配置
+    active: local
+  main:
+    allow-bean-definition-overriding: true
+
+jasypt:
+  encryptor:
+    bootstrap: false

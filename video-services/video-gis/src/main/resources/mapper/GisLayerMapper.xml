@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.GisLayerMapper">
+
+
+    <select id="getFeaturesByFilterAPI" resultType="java.lang.String">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        SELECT
+        'FeatureCollection' AS type,
+        array_to_json(array_agg(f)) AS features
+        FROM
+        ( SELECT
+        gid AS id,
+        'feature' AS type ,
+        ST_AsGeoJSON(geom)::json as geometry ,
+        ( SELECT
+        row_to_json(t)
+        FROM
+        ( SELECT
+          ${params.cols}
+        ) AS t )
+        AS properties
+        FROM ${params.layerName} cb
+        <if test="params.filter != null and params.filter != ''">
+            ${params.filter}
+        </if>
+        OFFSET #{params.firstIndex} LIMIT #{params.count}
+        ) AS f
+        ) AS fc
+    </select>
+
+    <select id="getFeaturesByFilterAPI2" resultType="java.lang.String">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        SELECT
+        'FeatureCollection' AS type,
+        array_to_json(array_agg(f)) AS features
+        FROM
+        ( SELECT
+        gid AS id,
+        'feature' AS type ,
+        ST_AsGeoJSON(geom)::json as geometry ,
+        ( SELECT
+        row_to_json(t)
+        FROM
+        ( SELECT
+        ${params.cols}
+        ) AS t )
+        AS properties
+        FROM ${params.layerName} cb
+        <if test="params.filter != null and params.filter != ''">
+            ${params.filter}
+        </if>
+        <if test="params.firstIndex > 0">
+            OFFSET #{params.firstIndex}
+        </if>
+        <if test="params.count > 0">
+            LIMIT #{params.count}
+        </if>
+        ) AS f
+        ) AS fc
+    </select>
+
+    <select id="getFeaturesByFilterAPICount" resultType="java.lang.Integer">
+        SELECT
+        count(1)
+        FROM ${params.layerName} cb
+        <if test="params.filter != null and params.filter != ''">
+            ${params.filter}
+        </if>
+    </select>
+
+    <select id="tableField" resultType="java.lang.String">
+          SELECT array_to_string(ARRAY(SELECT 'cb' || '.' || c.column_name
+        FROM information_schema.columns As c
+            WHERE table_name = #{params.layerName}
+            AND  c.column_name NOT IN('geom', 'gid', 'layertype','calarea', 'minx', 'miny', 'maxx', 'maxy', 'gdpdjb2')
+    ), ',') As sqlstmt
+    </select>
+
+</mapper>

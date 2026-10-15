@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysRedisMapper">
+
+	<resultMap type="com.chinatower.platform.project.system.domain.SysRedis" id="SysRedisResult">
+		<id     property="id"        column="id"       />
+		<result property="key"      column="redis_key"     />
+		<result property="valueType"      column="value_type"     />
+		<result property="dueTime"      column="due_time"     />
+		<result property="sourceType"        column="source_type"        />
+		<result property="content"      column="content"     />
+		<result property="resultType"      column="result_type"     />
+		<result property="errorReason"        column="error_reason"        />
+		<result property="createBy"      column="create_by"     />
+		<result property="createTime"    column="create_time"   />
+		<result property="updateBy"      column="update_by"     />
+		<result property="updateTime"    column="update_time"   />
+	</resultMap>
+
+	<sql id="baseSelect">
+        select *
+		from sys_redis
+    </sql>
+
+	<select id="selectById" parameterType="Long" resultMap="SysRedisResult">
+		<include refid="baseSelect"/>
+		where id = #{id}
+	</select>
+
+	<select id="selectList" parameterType="com.chinatower.platform.project.system.domain.vo.SysRedisQuery" resultMap="SysRedisResult">
+	    <include refid="baseSelect"/>
+		<where>
+			<if test="createTimeStart != null">
+				and create_time <![CDATA[>=]]> DATE_FORMAT(#{createTimeStart},'%Y-%m-%d 00:00:00')
+			</if>
+			<if test="createTimeEnd != null">
+				and create_time <![CDATA[<=]]> DATE_FORMAT(#{createTimeEnd},'%Y-%m-%d 23:59:59')
+			</if>
+			<if test="createName != null and createName != ''">
+				and create_by like concat('%',#{createName},'%')
+			</if>
+			<if test="resultType != null and resultType != ''">
+				and result_type like concat('%',#{resultType},'%')
+			</if>
+		</where>
+
+		<choose>
+			<when test="orderByColumn != null and orderByColumn != '' and isAsc != null and isAsc != '' ">
+				<if test='orderByColumn == "redis_key"'>
+					order by redis_key
+					<if test='isAsc == "desc"'>
+						desc
+					</if>
+				</if>
+				<if test='orderByColumn == "valueType"'>
+					order by value_type
+					<if test='isAsc == "desc"'>
+						desc
+					</if>
+				</if>
+				<if test='orderByColumn == "dueTime"'>
+					order by due_time
+					<if test='isAsc == "desc"'>
+						desc
+					</if>
+				</if>
+				<if test='orderByColumn == "resultType"'>
+					order by result_type
+					<if test='isAsc == "desc"'>
+						desc
+					</if>
+				</if>
+				<if test='orderByColumn == "errorReason"'>
+					order by error_reason
+					<if test='isAsc == "desc"'>
+						desc
+					</if>
+				</if>
+				<if test='orderByColumn == "createBy"'>
+					order by create_by
+					<if test='isAsc == "desc"'>
+						desc
+					</if>
+				</if>
+				<if test='orderByColumn == "createTime"'>
+					order by create_time
+					<if test='isAsc == "desc"'>
+						desc
+					</if>
+				</if>
+			</when>
+			<otherwise>
+				ORDER BY CREATE_TIME desc
+			</otherwise>
+		</choose>
+	</select>
+
+ 	<insert id="insert" parameterType="com.chinatower.platform.project.system.domain.SysRedis" >
+ 		insert into sys_redis (
+ 			<if test="key != null and key != ''">redis_key,</if>
+ 			<if test="valueType != null and valueType != ''">value_type,</if>
+ 			<if test="dueTime != null">due_time,</if>
+ 			<if test="sourceType != null and sourceType != ''">source_type,</if>
+ 			<if test="content != null and content != ''">content,</if>
+			<if test="resultType != null and resultType != ''">result_type,</if>
+			<if test="errorReason != null and errorReason != ''">error_reason,</if>
+ 			<if test="createBy != null and createBy != ''">create_by,</if>
+ 			create_time
+ 		)values(
+ 			<if test="key != null and key != ''">#{key},</if>
+ 			<if test="valueType != null and valueType != ''">#{valueType},</if>
+ 			<if test="dueTime != null">#{dueTime},</if>
+ 			<if test="sourceType != null and sourceType != ''">#{sourceType},</if>
+ 			<if test="content != null and content != ''">#{content},</if>
+			<if test="resultType != null and resultType != ''">#{resultType},</if>
+			<if test="errorReason != null and errorReason != ''">#{errorReason},</if>
+ 			<if test="createBy != null and createBy != ''">#{createBy},</if>
+ 			#{createTime}
+ 		)
+	</insert>
+
+</mapper>

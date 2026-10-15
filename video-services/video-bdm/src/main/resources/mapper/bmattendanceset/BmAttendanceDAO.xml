@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.bmattendance.dao.BmAttendanceDAO">
+
+    <select id="getList" resultType="com.chinatower.bdm.api.entity.BmAttendanceListVO">
+        SELECT
+        t.keeper_id,
+        t.keeper_name,
+        COUNT(CASE WHEN FALSE = ISNULL( t.sign_in_status ) AND t.sign_in_status <![CDATA[ <> ]]> '1' THEN 1 END) +
+        COUNT(CASE WHEN FALSE = ISNULL( t.sign_out_status ) AND t.sign_out_status <![CDATA[ <> ]]> '4' THEN 1 END) +
+        COUNT(CASE WHEN TRUE = ISNULL( t.sign_in_status ) AND NOW() > CONCAT( t.attendance_date, ' ', t.sign_in_time ) THEN 1 END) +
+        COUNT(CASE WHEN TRUE = ISNULL( t.sign_out_status ) AND NOW() > CONCAT( t.attendance_date, ' ', t.sign_out_time )  THEN 1 END) AS dbnormal_count,
+        COUNT( CASE WHEN t.sign_in_status = '1' THEN 1 END ) +
+        COUNT( CASE WHEN t.sign_out_status = '4' THEN 1 END ) AS normal_count,
+        t.industry_code,
+        t.app_ver_code,
+        t.tenant_id,
+        MAX( t.sign_in_add_time ) create_time,
+        t.grid_id
+        FROM
+        bm_attendance_line t
+        WHERE t.tenant_id = #{tenantId} AND t.industry_code = #{industryCode} AND t.delete_flag = '0'
+        <if test="startDate != null and startDate != ''">
+            AND t.attendance_date >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND t.attendance_date <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="gridId != null and gridId != ''">
+            AND t.grid_id = #{gridId}
+        </if>
+        <if test="keeperName != null and keeperName != ''">
+            AND (t.keeper_id like concat('%',#{keeperName},'%') OR t.keeper_name like concat('%',#{keeperName},'%'))
+        </if>
+        GROUP BY t.keeper_id, t.grid_id
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="getGridNamesByKeeper" resultType="com.chinatower.bdm.api.entity.GridKeeperRefVO">
+        SELECT a.keeper_id,GROUP_CONCAT(b.grid_name) AS grid_name,c.login_name AS login_name FROM bm_grid_keeper_ref a
+        LEFT JOIN bm_grid b
+        ON a.grid_id = b.grid_id
+        LEFT JOIN bm_gridkeeper c ON a.keeper_id = c.keeper_id
+        WHERE a.delete_flag = 0
+            AND a.keeper_id = #{keeperId}
+            AND a.grid_id = #{gridId}
+    </select>
+
+    <select id="getGridNamesByKeeperBatch" resultType="com.chinatower.bdm.api.entity.GridKeeperRefVO">
+        SELECT a.keeper_id, b.grid_name, c.login_name AS login_name,b.grid_id FROM bm_grid_keeper_ref a
+        LEFT JOIN bm_grid b
+        ON a.grid_id = b.grid_id
+        LEFT JOIN bm_gridkeeper c ON a.keeper_id = c.keeper_id
+        WHERE a.delete_flag = 0 and a.keeper_id IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getHistoryList" resultType="com.chinatower.bdm.api.entity.BmAttendanceHistoryListVO">
+        SELECT t.keeper_id,t.keeper_name,t.`date`,t.`time`,t.`status`,t.keeperId,t.industryCode,t.tenantId,t.sign_in_time,t.sign_out_time,t.type,t.grid_id FROM (
+        SELECT a.keeper_id,a.keeper_name,a.attendance_date AS `date`,
+               a.sign_in_time,a.sign_out_time,'1' as type,
+        IFNULL(DATE_FORMAT(a.sign_in_add_time, '%H:%i:%s'),'-') AS `time`,a.sign_in_status AS `status`,
+               a.keeper_id keeperId,
+               a.industry_code industryCode,
+               a.tenant_id tenantId,
+               a.grid_id
+        FROM bm_attendance_line a
+        WHERE a.keeper_id = #{keeperId} AND a.grid_id = #{gridId}
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND a.attendance_date >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND a.attendance_date <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="status != null and status != '' and status !='7'.toString()">
+            AND a.sign_in_status = #{status}
+        </if>
+        <if test="status == '7'.toString()">
+            AND a.sign_in_status = '3' AND a.sign_out_status = '6'
+        </if>
+        UNION ALL
+        SELECT a.keeper_id,a.keeper_name,a.attendance_date AS `date`,
+        a.sign_in_time,a.sign_out_time,'2' as type,
+        IFNULL(DATE_FORMAT(a.sign_out_add_time, '%H:%i:%s'),'-') AS `time`,a.sign_out_status AS `status`,
+               a.keeper_id keeperId,
+               a.industry_code industryCode,
+               a.tenant_id tenantId,
+               a.grid_id
+        FROM bm_attendance_line a
+        WHERE a.keeper_id = #{keeperId} AND a.grid_id = #{gridId}
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND a.attendance_date >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND a.attendance_date <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="status != null and status != '' and status !='7'.toString()">
+            AND a.sign_out_status = #{status}
+        </if>
+        <if test="status == '7'.toString()">
+            AND a.sign_in_status = '3' AND a.sign_out_status = '6'
+        </if>
+        ) t ORDER BY t.`date` DESC, t.type DESC
+    </select>
+
+    <insert id="insertSetData" parameterType="com.chinatower.bdm.api.entity.BmAttendanceSetVO">
+    insert into bm_attendance_set (tenant_id, sign_in_frequency, sign_time_segment,
+                                   sign_in_time, sign_out_time, sign_begin,
+                                   sign_end, creator, create_time,
+                                   on_weekdays, sign_type,
+                                   sign_address, sign_lnglat, sign_range,sign_over,sign_close,industry_code,app_ver_code
+    )
+    values (#{tenantId,jdbcType=VARCHAR}, #{signInFrequency,jdbcType=VARCHAR}, #{signTimeSegment,jdbcType=VARCHAR},
+            CAST(#{signInTime} AS TIME), CAST(#{signOutTime} AS TIME), CAST(#{signBegin} AS TIME),
+            CAST(#{signEnd} AS TIME), #{creator,jdbcType=VARCHAR}, now(),
+            #{onWeekdays,jdbcType=VARCHAR}, #{signType,jdbcType=VARCHAR},
+            #{signAddress,jdbcType=VARCHAR}, #{signLnglat,jdbcType=VARCHAR}, #{signRange,jdbcType=VARCHAR},
+            CAST(#{signOver} AS TIME), CAST(#{signClose} AS TIME), #{industryCode,jdbcType=VARCHAR}, #{appVerCode,jdbcType=VARCHAR}
+           )
+    </insert>
+
+    <update id="updateSetData" parameterType="com.chinatower.bdm.api.entity.BmAttendanceSetVO">
+        update bm_attendance_set
+        <set>
+            <if test="signInFrequency != null">
+                sign_in_frequency = #{signInFrequency,jdbcType=VARCHAR},
+            </if>
+            <if test="signTimeSegment != null">
+                sign_time_segment = #{signTimeSegment,jdbcType=VARCHAR},
+            </if>
+            <if test="signInTime != null">
+                sign_in_time = CAST(#{signInTime} AS TIME),
+            </if>
+            <if test="signOutTime != null">
+                sign_out_time = CAST(#{signOutTime} AS TIME),
+            </if>
+            <if test="signBegin != null">
+                sign_begin = CAST(#{signBegin} AS TIME),
+            </if>
+            <if test="signEnd != null">
+                sign_end = CAST(#{signEnd} AS TIME),
+            </if>
+            <if test="modifier != null">
+                modifier = #{creator,jdbcType=VARCHAR},
+            </if>
+            update_time = now(),
+            <if test="onWeekdays != null">
+                on_weekdays = #{onWeekdays,jdbcType=VARCHAR},
+            </if>
+            <if test="signType != null">
+                sign_type = #{signType,jdbcType=VARCHAR},
+            </if>
+            <if test="signAddress != null">
+                sign_address = #{signAddress,jdbcType=VARCHAR},
+            </if>
+            <if test="signLnglat != null">
+                sign_lnglat = #{signLnglat,jdbcType=VARCHAR},
+            </if>
+            <if test="signRange != null">
+                sign_range = #{signRange,jdbcType=VARCHAR},
+            </if>
+            <if test="signOver != null">
+                sign_over = CAST(#{signOver} AS TIME),
+            </if>
+            <if test="signClose != null">
+                sign_close = CAST(#{signClose} AS TIME),
+            </if>
+        </set>
+        where tenant_id = #{tenantId,jdbcType=BIGINT}
+        <if test='industryCode != null and industryCode != ""'>
+            AND industry_code = #{industryCode}
+        </if>
+    </update>
+
+    <sql id="Base_Column_List">
+    tenant_id, sign_in_frequency, sign_time_segment, sign_in_time, sign_out_time,
+    sign_begin, sign_end, creator, create_time, modifier, update_time, delete_flag,
+    on_weekdays, sign_type, sign_address, sign_lnglat, sign_range,sign_over,sign_close,industry_code,app_ver_code
+  </sql>
+
+    <select id="findOneSetData" resultType="com.chinatower.bdm.api.entity.BmAttendanceSetVO">
+        select
+        <include refid="Base_Column_List"/>
+        from bm_attendance_set
+        where tenant_id = #{tenantId}
+        <if test='industryCode != null and industryCode != ""'>
+            AND industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="findOneByKeeper" resultType="com.chinatower.bdm.api.entity.BmAttendanceLineVO">
+        SELECT attendance_id,tenant_id, keeper_id, keeper_name, IFNULL(sign_in_status,'3') AS sign_in_status, sign_in_add_time,
+        IFNULL(sign_out_status,'6') AS sign_out_status, sign_out_add_time, attendance_date, create_time, sign_in_time, sign_out_time,
+        sign_begin,sign_end,bus_in_time,bus_out_time,tenant_id,industry_code,app_ver_code,sign_in_address
+	    FROM bm_attendance_line
+	    <where>
+            <if test='keeperId != null and keeperId != ""'>
+                AND keeper_id = #{keeperId}
+            </if>
+            <if test='attendanceDate != null and attendanceDate != ""'>
+                AND attendance_date = #{attendanceDate}
+            </if>
+            <if test='tenantId != null and tenantId != ""'>
+                AND tenant_id = #{tenantId}
+            </if>
+            <if test='industryCode != null and industryCode != ""'>
+                AND industry_code = #{industryCode}
+            </if>
+            <if test='gridId != null and gridId != ""'>
+                AND grid_id = #{gridId}
+            </if>
+        </where>
+    </select>
+
+    <update id="updateSignData">
+        UPDATE bm_attendance_line
+        <set>
+            <if test="signInStatus != null and signInStatus != '' and signInStatus != '3'.toString() ">
+                sign_in_status = #{signInStatus},
+                sign_in_add_time = #{signInAddTime},
+            </if>
+            <if test="signInStatus != null and signInStatus != '' and signInStatus == '3'.toString() ">
+                sign_in_status = #{signInStatus},
+            </if>
+            <if test='signInGrid != null and signInGrid != ""'>
+                sign_in_grid=#{signInGrid},
+            </if>
+            <if test='signInOutside != null and signInOutside != ""'>
+                sign_in_outside=#{signInOutside},
+            </if>
+            <if test='signInCoordinate != null and signInCoordinate != ""'>
+                sign_in_coordinate=#{signInCoordinate},
+            </if>
+            <if test='signInAddress != null and signInAddress != ""'>
+                sign_in_address=#{signInAddress},
+            </if>
+            <if test="signOutStatus != null and signOutStatus != '' and signOutStatus != '6'.toString()">
+                sign_out_status=#{signOutStatus},
+                sign_out_add_time= #{signOutAddTime},
+            </if>
+            <if test="signOutStatus != null and signOutStatus != '' and signOutStatus == '6'.toString()">
+                sign_out_status=#{signOutStatus},
+            </if>
+            <if test='signOutGrid != null and signOutGrid != ""'>
+                sign_out_grid=#{signOutGrid},
+            </if>
+            <if test='signOutOutside != null and signOutOutside != ""'>
+                sign_out_outside=#{signOutOutside},
+            </if>
+            <if test='signOutCoordinate != null and signOutCoordinate != ""'>
+                sign_out_coordinate=#{signOutCoordinate},
+            </if>
+            <if test='signOutAddress != null and signOutAddress != ""'>
+                sign_out_address=#{signOutAddress},
+            </if>
+        </set>
+        <where>
+            <if test='attendanceId != null and attendanceId != ""'>
+                AND attendance_id = #{attendanceId}
+            </if>
+            <if test='tenantId != null and tenantId != ""'>
+                AND tenant_id = #{tenantId}
+            </if>
+            <if test='industryCode != null and industryCode != ""'>
+                AND industry_code = #{industryCode}
+            </if>
+        </where>
+    </update>
+
+    <select id="getAttendanceStatisticsDetail"
+            resultType="com.chinatower.bdm.api.entity.AttendanceStatisticsDetailVO">
+        SELECT
+        a.attendance_date AS `date`,
+        (CASE WHEN a.sign_in_status = '1' AND a.sign_out_status = '4' THEN '正常' ELSE '异常' END) AS `status`
+        FROM
+        bm_attendance_line a
+        WHERE a.attendance_date != DATE_FORMAT(NOW(), '%Y-%m-%d')
+            AND DATE_FORMAT(a.attendance_date, '%Y-%m') = #{month}
+            AND a.keeper_id = #{keeperId}
+            AND a.grid_id = #{gridId}
+        <if test='tenantId != null and tenantId != ""'>
+            AND a.tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND a.industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="getAttendanceStatistics" resultType="com.chinatower.bdm.api.entity.AttendanceStatisticsVO">
+        SELECT t.normal_count,( t.all_count - t.normal_count ) AS dbnormal_count,
+        #{month} AS MONTH,
+        t.keeper_id,
+        t.grid_id,
+        t.tenant_id,
+        t.industry_code
+        FROM
+        (
+        SELECT
+        COUNT( CASE WHEN a.sign_in_status = '1' AND a.sign_out_status = '4' THEN 1 END ) AS normal_count,
+        COUNT( 1 ) AS all_count,
+        a.attendance_date,
+        a.keeper_id,
+        a.grid_id,
+        a.tenant_id,
+        a.industry_code
+        FROM bm_attendance_line a
+         WHERE date_format(a.attendance_date, '%Y-%m') = #{month}
+         AND date_format(now(), '%Y-%m-%d') > a.attendance_date
+         AND a.keeper_id = #{keeperId}
+         <if test='tenantId != null and tenantId != ""'>
+            AND a.tenant_id = #{tenantId}
+         </if>
+         <if test='industryCode != null and industryCode != ""'>
+            AND a.industry_code = #{industryCode}
+         </if>
+         <if test='gridId != null and gridId != ""'>
+            AND a.grid_id = #{gridId}
+         </if>
+         ) t
+    </select>
+
+    <select id="getCurrentMonthStatistics" resultType="com.chinatower.bdm.api.entity.AttendanceCurrentMonthStatisticsVO">
+        SELECT
+            COUNT( CASE WHEN a.sign_in_status = '1' AND a.sign_out_status = '4' THEN 1 END ) AS normal_count,
+            COUNT( CASE WHEN a.sign_in_status = '2' THEN 1 END ) + COUNT( CASE WHEN a.sign_out_status = '5' THEN 1 END ) AS abnormal_count,
+            COUNT( CASE WHEN a.sign_in_status = '3' THEN 1 END ) + COUNT( CASE WHEN a.sign_out_status = '6' THEN 1 END ) AS lack_count
+        FROM bm_attendance_line a
+        WHERE DATE_FORMAT( a.attendance_date, '%Y-%m' ) = DATE_FORMAT( now(), '%Y-%m' )
+        AND a.keeper_id = #{keeperId} AND a.grid_id = #{gridId}
+        <if test='tenantId != null and tenantId != ""'>
+            AND a.tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND a.industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="getCurrentDayLine" resultType="com.chinatower.bdm.api.entity.BmAttendanceLineVO">
+        SELECT sign_in_status, sign_out_status, sign_in_time, sign_out_time
+        FROM bm_attendance_line
+        <where>
+            <if test='keeperId != null and keeperId != ""'>
+                AND keeper_id = #{keeperId}
+            </if>
+            <if test='attendanceDate != null and attendanceDate != ""'>
+                AND attendance_date = #{attendanceDate}
+            </if>
+            <if test='tenantId != null and tenantId != ""'>
+                AND tenant_id = #{tenantId}
+            </if>
+            <if test='industryCode != null and industryCode != ""'>
+                AND industry_code = #{industryCode}
+            </if>
+            <if test='gridId != null and gridId != ""'>
+                AND grid_id = #{gridId}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="getAttendanceUserInfo"
+            resultType="com.chinatower.bdm.api.entity.BmAttendanceUserVO">
+        SELECT
+            b.NICK_NAME,
+            b.AVATAR,
+            a.keeper_id
+        FROM
+            bm_gridkeeper a
+        LEFT JOIN sys_user b ON a.staff_id = b.USER_ID
+        WHERE
+            a.delete_flag = 0
+        AND a.status = '0' and b.DEL_FLAG = '0' and b.STATUS = '0'
+        <if test='userName != null and userName != ""'>
+            AND a.login_name = #{userName}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND a.tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND a.industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="getAttendanceUserGridInfo"
+            resultType="com.chinatower.bdm.api.entity.BmAttendanceUserVO">
+        SELECT
+        a.keeper_id,
+        a.keeper_name,
+        b.grid_id,
+        c.grid_name
+        FROM
+        bm_gridkeeper a
+        LEFT JOIN bm_grid_keeper_ref b ON a.keeper_id = b.keeper_id
+        LEFT JOIN bm_grid c ON b.grid_id = c.grid_id
+        WHERE
+        a.delete_flag = 0
+        AND b.delete_flag = 0 and c.delete_flag = 0
+        <if test='keeperId != null and keeperId != ""'>
+            AND a.keeper_id = #{keeperId}
+        </if>
+        order by c.grid_level,CASE
+        WHEN SUBSTRING( grid_name, 1, 1 ) REGEXP '[一-龥]' THEN
+        firstPinyin ( grid_name ) ELSE SUBSTRING( grid_name, 1, 1 )
+        END
+    </select>
+
+    <select id="selectDictDataByType" resultType="java.lang.String">
+        select dict_value
+        from sys_dict_data
+        where status = '0' and dict_type = #{dictType} and dict_label = #{week}
+    </select>
+
+    <select id="getKeeperInfo" resultType="com.chinatower.bdm.modules.bmattendance.entity.BmAttendanceLineBdmVO">
+        SELECT a.tenant_id,a.industry_code as industry_code,a.app_ver_code,b.keeper_id,b.keeper_name, a.sign_over as sign_in_time,
+               a.sign_close as sign_out_time,a.sign_begin,a.sign_end,a.sign_in_time as bus_in_time,a.sign_out_time as bus_out_time,
+               c.grid_id
+        FROM bm_attendance_set a , bm_gridkeeper b
+        LEFT JOIN bm_grid_keeper_ref c on b.keeper_id = c.keeper_id
+        WHERE a.tenant_id = b.tenant_id
+          AND a.industry_code = b.industry_code
+          AND a.delete_flag = 0
+          AND b.delete_flag = 0
+          AND c.delete_flag = 0
+          AND FIND_IN_SET(#{weekDay},a.on_weekdays)
+          AND b.keeper_id = #{keeperId}
+    </select>
+
+    <insert id="insertAttendanceLineInfo">
+        INSERT INTO bm_attendance_line
+        (attendance_id,tenant_id, industry_code,app_ver_code,keeper_id, keeper_name,attendance_date, create_time, sign_in_time, sign_out_time,sign_begin,sign_end,bus_in_time,bus_out_time,grid_id)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (UUID_SHORT(),#{item.tenantId},#{item.industryCode},#{item.appVerCode},#{item.keeperId},#{item.keeperName},NOW(),NOW(),CAST(#{item.signInTime} AS time),CAST(#{item.signOutTime} AS time),
+            CAST(#{item.signBegin} AS time),CAST(#{item.signEnd} AS time),CAST(#{item.busInTime} AS time),CAST(#{item.busOutTime} AS time),#{item.gridId})
+        </foreach>
+    </insert>
+
+    <select id="getAllLineList" resultType="java.lang.String">
+        SELECT distinct grid_id
+        FROM bm_attendance_line
+        WHERE  keeper_id = #{keeperId}
+          AND attendance_date = #{attendanceDate}
+    </select>
+</mapper>

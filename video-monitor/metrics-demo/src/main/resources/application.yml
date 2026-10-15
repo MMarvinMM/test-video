@@ -1,0 +1,53 @@
+
+server:
+  port: 8085
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  metrics:
+    tags:
+      application: ${spring.application.name}
+spring:
+  application:
+    name: metrics-demo
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 10.1.2.160:8848
+
+tower:
+  log:
+    enable: true
+  swagger:
+    enable: true
+  redis:
+    enabled: true
+    max-pool-idex: 10
+    max-pool-total: 10
+    min-pool-idex: 10
+    max-wait-millis: 100
+    command-timeout: 10000
+    primary:
+      host: 127.0.0.1
+      port: 6379
+      password:
+    secondary:
+      enabled: true
+      host: 127.0.0.1
+      port: 6379
+      password:
+  mongodb:
+    enable: true
+    primary:
+      cluster: false
+      host: 117.78.10.90
+      username: energy
+      password: energy
+      database: energy
+      port: 27011
+      min-pool-size: 20
+      max-pool-size: 200
+      #???? ???
+      connect-timeout: 5

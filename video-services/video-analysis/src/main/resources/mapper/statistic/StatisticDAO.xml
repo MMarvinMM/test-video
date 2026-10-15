@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.analysis.modules.statistic.dao.StatisticDAO">
+    <select id="getEventStatisticalAnalysis"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT dataTable.warning_type_id typeId,dataTable.warning_type_name as 'typeName',
+        date_format(dataTable.create_date,'%Y-%m-%d') 'createDate',SUM(dataTable.warning_num) num
+        FROM vm_statistics_event_type dataTable
+        <where>
+        AND dataTable.create_date >= #{queryStartTime}
+        AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+        <if test="typeList != null and typeList.size() > 0 ">
+            AND dataTable.warning_type_id IN
+            <foreach collection="typeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+        </if>
+            ${dataScope}
+        </where>
+        GROUP BY dataTable.warning_type_id,date_format(dataTable.create_date,'%Y-%m-%d')
+        <if test='otherFlag == "1" '>
+            UNION
+            SELECT 'aaa666' typeId,'其他' typeName,date_format(dataTable.create_date,'%Y-%m-%d') createDate,SUM(dataTable.warning_num) num
+            FROM vm_statistics_event_type dataTable
+            <where>
+            AND dataTable.create_date >= #{queryStartTime}
+            AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+            <if test="typeList != null and typeList.size() > 0 ">
+                AND dataTable.warning_type_id NOT IN
+                <foreach collection="typeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                    #{labelIdItem}
+                </foreach>
+            </if>
+            <if test="countyId != null and countyId != '' ">
+                AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+            </if>
+                ${dataScope}
+            </where>
+            GROUP BY date_format(dataTable.create_date,'%Y-%m-%d')
+        </if>
+    </select>
+
+    <select id="getEventAnalysisByTag"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT dataTable.warning_type_id tagId,
+        date_format(dataTable.create_date,'%Y-%m-%d') createDate,SUM(dataTable.warning_num) num
+        FROM vm_statistics_event_tag dataTable
+        <where>
+        AND dataTable.create_date >= #{queryStartTime}
+        AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+        <if test="typeList != null and typeList.size() > 0 ">
+            AND dataTable.warning_type_id IN
+            <foreach collection="typeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+        </if>
+            ${dataScope}
+        </where>
+        GROUP BY dataTable.warning_type_id,date_format(dataTable.create_date,'%Y-%m-%d')
+        <if test='otherFlag == "1" '>
+            UNION
+            SELECT 'aaa666' tagId, date_format(dataTable.create_date,'%Y-%m-%d') createDate,SUM(dataTable.warning_num) num
+            FROM vm_statistics_event_tag dataTable
+            <where>
+            AND dataTable.create_date >= #{queryStartTime}
+            AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+            <if test="typeList != null and typeList.size() > 0 ">
+                AND dataTable.warning_type_id NOT IN
+                <foreach collection="typeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                    #{labelIdItem}
+                </foreach>
+            </if>
+            <if test="countyId != null and countyId != '' ">
+                AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+            </if>
+                ${dataScope}
+            </where>
+            GROUP BY date_format(dataTable.create_date,'%Y-%m-%d')
+        </if>
+    </select>
+
+    <select id="getAlarmType"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT bb.typeId,bb.typeName,cc.assigned_date as eventDate FROM
+        (SELECT DISTINCT ala.type_value typeId,ala.type_name typeName FROM sys_alarm_type ala
+        <where>
+        <if test="typeList != null and typeList.size() > 0 ">
+            AND ala.type_value IN
+            <foreach collection="typeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        </where>
+        <if test='otherFlag == "1" '>
+            UNION SELECT 'aaa666' typeId,'其他' typeName
+        </if>) bb,
+        (SELECT date_format(assigned_date,'%Y-%m-%d') assigned_date
+        FROM
+        (SELECT adddate('2021-01-01',t3.i*1000 + t2.i*100 + t1.i*10 + t0.i) assigned_date
+        FROM
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3
+        ) c
+        WHERE assigned_date between SUBSTR(#{queryStartTime},1,10) and #{queryEndTime}) cc
+        <if test="typeList != null and typeList.size() > 0 ">
+            ORDER BY cc.assigned_date,FIELD(bb.typeId,
+            <foreach collection="typeList" item="labelIdItem" index="index" separator=",">
+                #{labelIdItem}
+            </foreach>
+            ,'aaa666') ASC
+        </if>
+    </select>
+
+    <select id="getTags"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT bb.tagId,bb.tagName,cc.assigned_date as eventDate FROM
+        (SELECT tag_id as 'tagId',tag_name as 'tagName' FROM sys_alarm_tags
+        where delete_flag = '0'
+        <if test="typeList != null and typeList.size() > 0 ">
+            AND tag_id IN
+            <foreach collection="typeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        <if test='otherFlag == "1" '>
+            UNION SELECT 'aaa666' tagId, '其他' tagName
+        </if>) bb,
+        (SELECT date_format(assigned_date,'%Y-%m-%d') assigned_date
+        FROM
+        (SELECT adddate('2021-01-01',t3.i*1000 + t2.i*100 + t1.i*10 + t0.i) assigned_date
+        FROM
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3
+        ) c
+        WHERE assigned_date between SUBSTR(#{queryStartTime},1,10) and #{queryEndTime}) cc
+        <if test="typeList != null and typeList.size() > 0 ">
+            ORDER BY cc.assigned_date,FIELD(bb.tagId,
+            <foreach collection="typeList" item="labelIdItem" index="index" separator=",">
+                #{labelIdItem}
+            </foreach>
+            ,'aaa666') ASC
+        </if>
+    </select>
+
+    <select id="getEventAlarmDayNum"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT IFNULL(SUM(dataTable.today_all),0) AS 'todayAll',
+        IFNULL(SUM(dataTable.today_complete),0) AS todayComplete,IFNULL(SUM(dataTable.false_complete_num),0) AS 'falseCompleteNum',
+        IFNULL(SUM(dataTable.judge_num),0) AS judgeNum,IFNULL(SUM(dataTable.dispatch_num),0) AS 'dispatchNum',
+        IFNULL(SUM(dataTable.grab_num),0) AS grabNum,IFNULL(SUM(dataTable.handle_num),0) AS 'handleNum',
+        IFNULL(SUM(dataTable.approve_num),0) AS approveNum,IFNULL(SUM(dataTable.order_complete_num),0) AS 'orderCompleteNum',
+        IFNULL(SUM(dataTable.repeat_complete_num),0) AS 'repeatCompleteNum',
+        IFNULL(SUM(dataTable.false_num),0) AS falseNum,IFNULL(SUM(dataTable.real_num),0) AS 'realNum',
+        IFNULL(SUM(dataTable.false_num),0) + IFNULL(SUM(dataTable.real_num),0) AS 'allNum'
+        FROM vm_statistics_event_num_day dataTable
+        <where>
+        <if test='dimensionFlag == "4" '>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(NOW() ,'%Y-%m-%d')
+        </if>
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND dataTable.create_date >= #{queryStartTime}
+            AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+        </if>
+        <if test="provinceId != null and provinceId != '' ">
+            AND LEFT(dataTable.county_id,2) = LEFT(#{provinceId},2)
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND LEFT(dataTable.county_id,4) = LEFT(#{cityId},4)
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+        </if>
+            ${dataScope}
+        </where>
+    </select>
+
+    <select id="getEventAlarmYesterdayNum"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT IFNULL(SUM(dataTable.yesterday_all),0) AS 'yesterdayAll'
+        FROM vm_statistics_event_num_yesterday dataTable
+        <where>
+            <if test='dimensionFlag == "4" '>
+                AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(NOW() ,'%Y-%m-%d')
+            </if>
+            <if test='queryStartTime != null and queryStartTime != "" '>
+                AND dataTable.create_date >= #{queryStartTime}
+                AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            <if test="provinceId != null and provinceId != '' ">
+                AND LEFT(dataTable.county_id,2) = LEFT(#{provinceId},2)
+            </if>
+            <if test="cityId != null and cityId != '' ">
+                AND LEFT(dataTable.county_id,4) = LEFT(#{cityId},4)
+            </if>
+            <if test="countyId != null and countyId != '' ">
+                AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+            </if>
+            ${dataScope}
+        </where>
+    </select>
+
+
+    <select id="getEventAlarmNumYearMonth" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        select dataTable.warning_source 'warningSource', sum(IFNULL(dataTable.order_num,0)) num
+        from vm_statistics_event_source dataTable
+        <where>
+        <if test='dimensionFlag == "1" '>
+            AND DATE_FORMAT(dataTable.create_date ,'%Y') = DATE_FORMAT(NOW() ,'%Y')
+        </if>
+        <if test='dimensionFlag == "2" '>
+            AND DATE_FORMAT(dataTable.create_date ,'%Y-%m') = DATE_FORMAT(NOW() ,'%Y-%m')
+        </if>
+        <if test='dimensionFlag == "3" '>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),interval 1 DAY) ,'%Y-%m-%d')
+        </if>
+        <if test='dimensionFlag == "4" '>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(NOW() ,'%Y-%m-%d')
+        </if>
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND dataTable.create_date >= #{queryStartTime}
+            AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+        </if>
+            ${dataScope}
+        </where>
+        group by dataTable.warning_source
+    </select>
+
+    <select id="getEventHandleTimeNum"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT SUM(dataTable.less_one) AS 'lessOneHour',SUM(dataTable.one_five) AS 'oneFiveHour',
+        SUM(dataTable.five_ten) AS 'fiveTenHour',SUM(dataTable.more_ten) AS 'overTenHour'
+        FROM vm_statistics_event_duration dataTable
+        <where>
+        <if test="provinceId != null and provinceId != '' ">
+            AND LEFT(dataTable.county_id,2) = LEFT(#{provinceId},2)
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND LEFT(dataTable.county_id,4) = LEFT(#{cityId},4)
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+        </if>
+        <if test='queryStartTime != null and queryStartTime != "" and queryEndTime != null
+            and queryEndTime != ""'>
+            AND dataTable.create_date >= #{queryStartTime}
+            AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+        </if>
+            ${dataScope}
+        </where>
+    </select>
+
+    <select id="getEventNumByHandle"  resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.AnalysisVO">
+        SELECT
+        region_name AS 'regionName',
+        round(sum(handle_duration)/3600/sum(duration_num),2) AS 'avgTime',
+        province_id AS 'provinceId',
+        city_id AS 'cityId',
+        county_id AS 'countyId'
+        FROM
+        vm_statistics_event_handle dataTable
+        <where>
+        <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+            AND create_date >= #{queryStartTime} AND create_date <![CDATA[<=]]> #{queryEndTime}
+        </if>
+        <if test="provinceId != null and provinceId != '' ">
+            AND province_id = #{provinceId}
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND city_id = #{cityId}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+        </if>
+            ${dataScope}
+        </where>
+        GROUP BY
+        province_id,
+        city_id,
+        county_id
+        order by avgTime desc
+    </select>
+
+    <select id="getAreaNameById" parameterType="String" resultType="String">
+        SELECT AREA_NAME FROM sys_area WHERE AREA_CODE = #{areaId}
+    </select>
+
+    <select id="getAreaCodeByPCode" parameterType="String" resultType="String">
+        SELECT AREA_CODE FROM sys_area WHERE AREA_PARENT_CODE = #{parentCode}
+    </select>
+</mapper>

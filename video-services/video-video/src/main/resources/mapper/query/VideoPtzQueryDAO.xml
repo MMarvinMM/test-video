@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.query.dao.VideoPtzQueryDAO">
+
+    <select id="getDeviceModel" resultType="com.chinatower.platform.model.vo.DeviceModelVO">
+        select d.device_code
+        , d.height
+        , d.longitude
+        , d.latitude
+        , d.site_code
+        , t.model_id
+        , d.model_code mfgr_code
+        , t.device_model_code
+        , t.device_type
+        , t.pic_sensor_size
+        , t.pic_sensor_length
+        , t.pic_sensor_width
+        , ifnull(t.min_focus,'1') as min_focus
+        , t.focus_range
+        , t.horiz_view_range
+        , t.verti_view_range
+        , t.horiz_range
+        , t.verti_range
+        , ifnull(t.verti_down_neg,'0') as verti_down_neg
+        , t.remark
+        , '3'             as visual_range
+        , dp.real_hor_angle   as pan
+        , dp.real_pitch_angle as tilt
+        from vm_device_info_t d
+        left join vm_device_model_t t on d.device_model_code = t.device_model_code and d.model_code = t.mfgr_code
+        left join vm_device_ref_point_valid_t dp on d.device_code = dp.device_code and dp.point_flag = '1'
+        where d.device_code = #{deviceCode} limit 1
+    </select>
+
+    <select id="getDeviceList" resultType="com.chinatower.platform.model.vo.DeviceModelVO">
+        SELECT
+            min(o.channel_code) as channel_code,
+            d.device_code,
+            d.height,
+            d.longitude,
+            d.latitude,
+            d.site_code,
+            t.model_id,
+            t.mfgr_code,
+            t.device_model_code,
+            t.device_type,
+            t.pic_sensor_size,
+            t.pic_sensor_length,
+            t.pic_sensor_width,
+            ifnull(t.min_focus,'1') as min_focus,
+            t.focus_range,
+            t.horiz_view_range,
+            t.verti_view_range,
+            t.horiz_range,
+            t.verti_range,
+            ifnull(t.verti_down_neg,'0') as verti_down_neg,
+            t.remark,
+            '3' AS visual_range,
+            dp.real_hor_angle AS pan,
+            dp.real_pitch_angle AS tilt,
+            ST_DISTANCE ( POINT (#{pointLon},#{pointLat}), POINT ( d.longitude, d.latitude ) ) * 111195 AS distance
+            FROM
+            vm_order_devices o,
+            vm_device_info_t d
+            LEFT JOIN vm_device_model_t t ON d.device_model_code = t.device_model_code
+            AND d.model_code = t.mfgr_code
+            LEFT JOIN vm_device_ref_point_valid_t dp ON d.device_code = dp.device_code
+            AND dp.point_flag = '1'
+            WHERE o.tenant_id = #{customerCode}
+            AND ST_DISTANCE ( POINT (#{pointLon},#{pointLat}), POINT ( d.longitude, d.latitude ) ) * 111195 <![CDATA[<=]]> #{focusLimit}
+            AND d.latitude IS NOT NULL
+            AND d.site_code IS NOT NULL
+        group by d.device_code,
+                 d.height,
+                 d.longitude,
+                 d.latitude,
+                 d.site_code,
+                 t.model_id,
+                 t.mfgr_code,
+                 t.device_model_code,
+                 t.device_type,
+                 t.pic_sensor_size,
+                 t.pic_sensor_length,
+                 t.pic_sensor_width,
+                 ifnull(t.min_focus,'1'),
+                 t.focus_range,
+                 t.horiz_view_range,
+                 t.verti_view_range,
+                 t.horiz_range,
+                 t.verti_range,
+                 ifnull(t.verti_down_neg,'0'),
+                 t.remark,
+                 dp.real_hor_angle,
+                 dp.real_pitch_angle,
+                 d.longitude,
+                 d.latitude
+    </select>
+    <select id="getDevicePointsValid" resultType="com.chinatower.platform.model.vo.DeviceRefPointVO">
+        SELECT pan,hor_offset as "horOffset",pitch_offset as "pitchOffset",real_hor_angle,real_pitch_angle
+        FROM vm_device_ref_point_valid_t
+        where device_code = #{deviceCode}
+          and point_flag = '1'
+        order by pan asc
+    </select>
+    <select id="getDevicePointsValidByReal" resultType="com.chinatower.platform.model.vo.DeviceRefPointVO">
+        SELECT pan,hor_offset as "horOffset",pitch_offset as "pitchOffset",real_hor_angle,real_pitch_angle
+        FROM vm_device_ref_point_valid_t
+        where device_code = #{deviceCode}
+          and point_flag = '1'
+        order by real_hor_angle asc
+    </select>
+    <select id="getDeviceAvgPointsValid" resultType="com.chinatower.platform.model.vo.DeviceRefPointVO">
+        SELECT CAST(AVG(hor_offset) as decimal(10,2)) as "horOffset",CAST(avg(pitch_offset) as decimal(10,2)) as "pitchOffset"
+        FROM vm_device_ref_point_valid_t
+        where device_code = #{deviceCode}
+          and point_flag = '1'
+    </select>
+    <select id="getDevicePointsValidBatch" resultType="com.chinatower.platform.model.vo.DeviceRefPointVO">
+        SELECT device_code,pan,hor_offset as "horOffset",pitch_offset as "pitchOffset",real_hor_angle,real_pitch_angle
+        FROM vm_device_ref_point_valid_t
+        where device_code in
+        <if test="list != null and list.size() > 0">
+            <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+          and point_flag = '1'
+        order by device_code asc
+    </select>
+
+    <resultMap id="DeviceModeRefMap" type="com.chinatower.device.entity.dto.DeviceModelDTO">
+        <result column="device_code" property="deviceCode"/>
+        <result column="device_name" property="deviceName"/>
+        <result column="device_status" property="deviceStatus"/>
+        <result column="height" property="height"/>
+        <result column="longitude" property="longitude"/>
+        <result column="latitude" property="latitude"/>
+        <result column="site_code" property="siteCode"/>
+        <result column="model_id" property="modelId"/>
+        <result column="mfgr_code" property="mfgrCode"/>
+        <result column="device_model_code" property="deviceModelCode"/>
+        <result column="device_type" property="deviceType"/>
+        <result column="pic_sensor_size" property="picSensorSize"/>
+        <result column="pic_sensor_length" property="picSensorLength"/>
+        <result column="pic_sensor_width" property="picSensorWidth"/>
+        <result column="min_focus" property="minFocus"/>
+        <result column="focus_range" property="focusRange"/>
+        <result column="horiz_view_range" property="horizViewRange"/>
+        <result column="verti_view_range" property="vertiViewRange"/>
+        <result column="horiz_range" property="horizRange"/>
+        <result column="verti_range" property="vertiRange"/>
+        <result column="verti_down_neg" property="vertiDownNeg"/>
+        <result column="remark" property="remark"/>
+        <result column="visual_range" property="visualRange"/>
+        <collection property="refPoints" ofType="com.chinatower.platform.model.vo.DeviceRefPointVO" column="device_code" notNullColumn="point_id">
+            <result column="point_id" property="pointId"/>
+            <result column="device_code" property="deviceCode"/>
+            <result column="channel_code" property="channelCode"/>
+            <result column="hor_offset" property="horOffset"/>
+            <result column="pitch_offset" property="pitchOffset"/>
+            <result column="pan" property="pan"/>
+        </collection>
+    </resultMap>
+
+    <select id="getDeviceModelForArMove" resultMap="DeviceModeRefMap">
+        select d.device_code
+        , d.device_name
+        , d.device_status
+        , d.height
+        , d.longitude
+        , d.latitude
+        , d.site_code
+        , t.model_id
+        , t.mfgr_code
+        , t.device_model_code
+        , t.device_type
+        , t.pic_sensor_size
+        , t.pic_sensor_length
+        , t.pic_sensor_width
+        , t.min_focus
+        , t.focus_range
+        , t.horiz_view_range
+        , t.verti_view_range
+        , t.horiz_range
+        , t.verti_range
+        , t.verti_down_neg
+        , t.remark
+        , CAST(d.visual_radius AS CHAR)/1000 as visual_range
+        , dp.point_id
+        , dp.hor_offset
+        , dp.pitch_offset
+        , dp.pan
+        from vm_device_info_t d
+        left join vm_device_model_t t on d.device_model_code = t.device_model_code and d.model_code = t.mfgr_code
+        left join vm_device_ref_point_valid_t dp on d.device_code = dp.device_code and dp.point_flag = '1'
+        where d.device_code = #{deviceCode}
+        order by dp.pan
+    </select>
+
+    <select id="getArTagByVideo" resultType="com.chinatower.video.modules.query.entity.ArTagMoveRes">
+        SELECT DISTINCT
+        dev.id AS tagId,
+        '101' AS tagClass,
+        dev.tags_name,
+        dev.latitude,
+        dev.longitude,
+        dev.tags_type,
+        dev.tags_position,
+        dev.resolutionx,
+        dev.resolutiony,
+        dev.coordinate
+        FROM
+        vm_ar_tags_info dev
+        WHERE
+        dev.delete_flag = 0
+        AND tag_class = '101'
+        <if test="tagIdList != null and tagIdList.size() > 0">
+            AND dev.id IN
+            <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="geoPointStr != null and geoPointStr != ''">
+            AND (
+            ST_Contains(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dev.longitude, dev.latitude))> 0
+            OR ST_Touches(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dev.longitude,dev.latitude)) > 0
+            )
+        </if>
+        <if test='arViewId != null and arViewId != ""'>
+            AND dev.ar_view_id = #{arViewId}
+        </if>
+        <if test='channelCode != null and channelCode != ""'>
+            AND dev.channel_code = #{channelCode}
+        </if>
+        <if test="tenantId != null and tenantId != '' ">
+            AND dev.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            AND dev.industry_code = #{industryCode}
+        </if>
+        ${dataScope}
+    </select>
+    <select id="getArTagByMap" resultType="com.chinatower.video.modules.query.entity.ArTagMoveRes">
+        SELECT DISTINCT
+        dev.id AS tagId,
+        '102' AS tagClass,
+        dev.tags_name,
+        dev.latitude,
+        dev.longitude,
+        dev.tags_type,
+        dev.device_code
+        FROM
+        vm_ar_tags_info dev
+        WHERE
+        dev.delete_flag = 0
+        AND tag_class = '102'
+        <if test="tagIdList != null and tagIdList.size() > 0">
+            AND dev.id IN
+            <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="longitude != null and longitude != ''">
+            AND dev.longitude = #{longitude}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            AND dev.latitude = #{latitude}
+        </if>
+        <if test="geoPointStr != null and geoPointStr != ''">
+            AND (
+            ST_Contains(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dev.longitude, dev.latitude))> 0
+            OR ST_Touches(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dev.longitude,dev.latitude)) > 0
+            )
+        </if>
+        <if test="tenantId != null and tenantId != '' ">
+            AND dev.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            AND dev.industry_code = #{industryCode}
+        </if>
+        ${dataScope}
+    </select>
+
+    <select id="getArTagByDevice" resultType="com.chinatower.video.modules.query.entity.ArTagMoveRes">
+        SELECT DISTINCT
+        dev.device_code AS tagId,
+        '103' AS tagClass,
+        ( CASE WHEN length( IFNULL( tdr.device_name, '' )) = 0 THEN dev.device_name ELSE tdr.device_name END ) AS tagsName,
+        dev.latitude,
+        dev.longitude
+        FROM
+        vm_device_info_t dev
+        LEFT JOIN vm_order_devices t1 ON dev.device_code = t1.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t tdr ON tdr.device_code = dev.device_code
+        AND tdr.tenant_id = t1.tenant_id
+        AND tdr.industry_code = t1.industry_code,
+        vm_channel_info_t chan
+        WHERE
+        dev.device_code = chan.device_code
+        AND chan.delete_flag = '0'
+        AND t1.delete_flag = '0'
+        AND dev.delete_flag = '0'
+        AND t1.ord_status IN ( 0, 1, 2 )
+        <if test="tagIdList != null and tagIdList.size() > 0">
+            AND dev.device_code IN
+            <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="longitude != null and longitude != ''">
+            AND dev.longitude = #{longitude}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            AND dev.latitude = #{latitude}
+        </if>
+        <if test="geoPointStr != null and geoPointStr != ''">
+            AND (
+            ST_Contains(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dev.longitude, dev.latitude))> 0
+            OR ST_Touches(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dev.longitude,dev.latitude)) > 0
+            )
+        </if>
+        <if test="tenantId != null and tenantId != '' ">
+            AND t1.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            AND t1.industry_code = #{industryCode}
+        </if>
+        ${dataScope}
+        ORDER BY
+        height DESC,
+        dev.device_status,
+        dev.device_code
+    </select>
+    <select id="getArTagByIot" resultType="com.chinatower.video.modules.query.entity.ArTagMoveRes">
+        SELECT DISTINCT
+        m.device_code as tagId,
+        '105' as tagClass,
+        ( CASE WHEN length( IFNULL( dr.device_name, '' )) = 0 THEN m.device_name ELSE dr.device_name END ) AS tagsName,
+        m.latitude,
+        m.longitude
+        FROM
+        vm_order_sensor_devices osd
+        LEFT JOIN vm_iot_device_t m ON osd.device_code = m.device_code
+        AND m.category_code = 2
+        AND m.delete_flag = 0
+        LEFT JOIN vm_tenant_iot_device_rel_t dr ON dr.device_code = m.device_code
+        AND dr.tenant_id = osd.tenant_id
+        AND dr.delete_flag = '0'
+        AND dr.industry_code = osd.industry_code
+        WHERE
+        osd.delete_flag = 0
+        AND osd.ord_status IN ( 0, 1, 2 )
+        AND osd.category_code = 2
+        AND m.delete_flag = '0'
+        AND m.device_status != 2
+        <if test="tagIdList != null and tagIdList.size() > 0">
+            AND osd.device_code IN
+            <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="longitude != null and longitude != ''">
+            AND m.longitude = #{longitude}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            AND m.latitude = #{latitude}
+        </if>
+        <if test="geoPointStr != null and geoPointStr != ''">
+            AND (
+            ST_Contains(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(m.longitude, m.latitude))> 0
+            OR ST_Touches(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(m.longitude,m.latitude)) > 0
+            )
+        </if>
+        <if test="tenantId != null and tenantId != '' ">
+            AND osd.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            AND osd.industry_code = #{industryCode}
+        </if>
+        ${dataScope}
+    </select>
+    <select id="getArTagByUav" resultType="com.chinatower.video.modules.query.entity.ArTagMoveRes">
+        SELECT DISTINCT
+        dev.device_code AS tagId,
+        '106' AS tagClass,
+        ( CASE WHEN length( IFNULL( rel.device_name, '' )) = 0 THEN dev.device_name ELSE rel.device_name END ) AS tagsName,
+        (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName,
+        dev.latitude,
+        dev.longitude
+        FROM
+        vm_uav_device_info_t dev
+        LEFT JOIN vm_order_uav_devices t1 ON dev.device_code = t1.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = t1.device_code
+        AND rel.tenant_id = t1.tenant_id
+        AND rel.industry_code = t1.industry_code
+        AND rel.delete_flag = '0'
+        AND rel.device_type = 1
+        LEFT JOIN `vm_uav_nest_device_info` nest ON dev.uav_nest_code = nest.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t nrel ON nrel.device_code = nest.device_code
+        AND nrel.industry_code = t1.industry_code
+        AND nrel.tenant_id = t1.tenant_id
+        AND nrel.delete_flag = '0'
+        AND nrel.device_type = 4
+        WHERE
+        t1.delete_flag = '0'
+        AND dev.delete_flag = '0'
+        AND t1.ord_status IN ( 0, 1, 2 )
+        <if test="tagIdList != null and tagIdList.size() > 0">
+            AND dev.device_code IN
+            <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="longitude != null and longitude != ''">
+            AND dev.longitude = #{longitude}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            AND dev.latitude = #{latitude}
+        </if>
+        <if test="geoPointStr != null and geoPointStr != ''">
+            AND (
+            ST_Contains(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dev.longitude, dev.latitude))> 0
+            OR ST_Touches(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dev.longitude,dev.latitude)) > 0
+            )
+        </if>
+        <if test="tenantId != null and tenantId != '' ">
+            AND t1.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            AND t1.industry_code = #{industryCode}
+        </if>
+        ${dataScope}
+        ORDER BY
+        dev.device_status,
+        dev.device_code
+    </select>
+    <select id="getArTagBySensor" resultType="com.chinatower.video.modules.query.entity.ArTagMoveRes">
+        SELECT
+        m.device_code as tagId,
+        '107' as tagClass,
+        ( CASE WHEN length( IFNULL( dr.device_name, '' )) = 0 THEN m.device_name ELSE dr.device_name END ) AS tagsName,
+        m.latitude,
+        m.longitude
+        FROM
+        vm_order_sensor_devices osd
+        LEFT JOIN vm_iot_device_t m ON osd.device_code = m.device_code
+        AND m.category_code = 1
+        AND m.delete_flag = 0
+        LEFT JOIN vm_tenant_iot_device_rel_t dr ON dr.device_code = m.device_code
+        AND dr.tenant_id = osd.tenant_id
+        AND dr.delete_flag = '0'
+        AND dr.industry_code = osd.industry_code
+        WHERE
+        osd.delete_flag = 0
+        AND osd.ord_status IN ( 0, 1, 2 )
+        AND osd.category_code = 1
+        AND m.delete_flag = '0'
+        AND m.device_status != 2
+        <if test="tagIdList != null and tagIdList.size() > 0">
+            AND osd.device_code IN
+            <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="longitude != null and longitude != ''">
+            AND m.longitude = #{longitude}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            AND m.latitude = #{latitude}
+        </if>
+        <if test="geoPointStr != null and geoPointStr != ''">
+            AND (
+            ST_Contains(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(m.longitude, m.latitude))> 0
+            OR ST_Touches(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(m.longitude,m.latitude)) > 0
+            )
+        </if>
+        <if test="tenantId != null and tenantId != '' ">
+            AND osd.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            AND osd.industry_code = #{industryCode}
+        </if>
+        ${dataScope}
+    </select>
+    <select id="getArTagByHorn" resultType="com.chinatower.video.modules.query.entity.ArTagMoveRes">
+        SELECT DISTINCT
+        m.device_code as tagId,
+        '108' as tagClass,
+        ( CASE WHEN length( IFNULL( tdr.device_name, '' )) = 0 THEN m.device_name ELSE tdr.device_name END ) AS tagsName,
+        m.latitude,
+        m.longitude
+        FROM
+        vm_order_horn_devices osd
+        LEFT JOIN vm_horn_device_info_t m ON osd.device_code = m.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t tdr ON tdr.device_code = osd.device_code
+        AND tdr.tenant_id = osd.tenant_id
+        AND tdr.industry_code = osd.industry_code
+        AND tdr.delete_flag = 0
+        WHERE osd.delete_flag = '0'
+        AND m.delete_flag = '0'
+        AND m.device_status != 4
+        AND osd.ord_status IN ( 0, 1, 2 )
+        <if test="tagIdList != null and tagIdList.size() > 0">
+            AND osd.device_code IN
+            <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="longitude != null and longitude != ''">
+            AND m.longitude = #{longitude}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            AND m.latitude = #{latitude}
+        </if>
+        <if test="geoPointStr != null and geoPointStr != ''">
+            AND (
+            ST_Contains(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(m.longitude, m.latitude))> 0
+            OR ST_Touches(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(m.longitude,m.latitude)) > 0
+            )
+        </if>
+        <if test="tenantId != null and tenantId != '' ">
+            AND osd.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            AND osd.industry_code = #{industryCode}
+        </if>
+        ${dataScope}
+        ORDER BY
+        m.height + 0 DESC
+    </select>
+
+    <select id="queryPolygonByLayerId" resultType="com.chinatower.device.entity.dto.PolygonPatchConfig">
+        SELECT
+            polygon_id,
+            feature_id,
+            center_longitude,
+            center_latitude,
+            polygon_points_lon_lat,
+            dataTable.layer_id,
+            l.custom_name AS layerName,
+            l.layer_type_id,
+            t.type_name AS layerTypeName
+        FROM
+        vm_polygon_patch_config dataTable
+        LEFT JOIN sys_layer l ON dataTable.layer_id = l.id
+        LEFT JOIN sys_layer_type t ON l.layer_type_id = t.id
+        WHERE dataTable.delete_flag = 0
+        ${dataScope}
+        <if test="tenantId != null and tenantId != '' ">
+            AND dataTable.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            AND dataTable.industry_code = #{industryCode}
+        </if>
+        <if test="deviceCode != null and deviceCode != '' ">
+            AND dataTable.device_code = #{deviceCode}
+        </if>
+        <if test="channelCode != null and channelCode != '' ">
+            AND dataTable.channel_code = #{channelCode}
+        </if>
+        <if test="layerId != null and layerId != '' ">
+            AND dataTable.layer_id = #{layerId}
+        </if>
+        <if test="tagIdList != null and tagIdList.size() > 0">
+            AND dataTable.layer_id IN
+            <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="geoPointStr != null and geoPointStr != ''">
+            AND (
+            ST_Contains(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dataTable.center_longitude, dataTable.center_latitude))> 0
+            OR ST_Touches(ST_PolygonFromText(CONCAT('POLYGON((',#{geoPointStr},'))')),POINT(dataTable.center_longitude,dataTable.center_latitude)) > 0
+            )
+        </if>
+    </select>
+
+    <select id="getArTagByLayer" resultType="com.chinatower.video.modules.query.entity.ArTagMoveRes">
+        SELECT DISTINCT
+            l.id AS tagId,
+            '104' AS tagClass,
+            l.custom_name AS tagsName,
+            maxx,
+            maxy,
+            minx,
+            miny
+        FROM
+            sys_layer l
+        WHERE
+            l.delete_flag = 0
+            <if test="tagIdList != null and tagIdList.size() > 0">
+                AND l.id IN
+                <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            ${dataPermissions}
+    </select>
+</mapper>

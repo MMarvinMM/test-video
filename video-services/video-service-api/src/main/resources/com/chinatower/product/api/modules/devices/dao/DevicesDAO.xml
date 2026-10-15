@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.product.api.modules.devices.dao.DevicesDAO">
+    <insert id="insertLog" parameterType="java.util.Map">
+        INSERT INTO sys_api_log
+        VALUES (UUID_SHORT(),#{ip},#{url},#{headers},#{params},now(),#{result},#{duration})
+    </insert>
+
+    <select id="queryPlatformControl"
+            resultType="com.chinatower.product.api.modules.videosquare.entity.PlatformControlVO"
+            parameterType="com.chinatower.product.api.modules.videosquare.entity.PlatformControlVO">
+        SELECT lock_id,device_code,channel_code,customer_code,lock_status,token,duration,queue,
+        wait,end_date,delete_flag
+        FROM vm_platform_control_t plat WHERE delete_flag = '1'
+        <if test='lockId!= null and lockId != "" '>
+            AND plat.lock_id= #{lockId}
+        </if>
+        <if test='endDate!= null and endDate != "" '>
+            AND plat.end_date > NOW()
+        </if>
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND plat.device_code = #{deviceCode}
+        </if>
+        <if test='channelCode!= null and channelCode != "" '>
+            AND plat.channel_code = #{channelCode}
+        </if>
+        <if test='customerCode!= null and customerCode != "" '>
+            AND plat.customer_code= #{customerCode}
+        </if>
+        <if test='lock == 1 '>
+            AND plat.lock_status = 1
+        </if>
+        <if test='lock == 2 '>
+            AND (plat.lock_status = 0 OR plat.lock_status = 2)
+        </if>
+        <if test='token!= null and token != "" '>
+            AND plat.token= #{token}
+        </if>
+        ORDER BY plat.modifier_date DESC
+    </select>
+
+    <insert id="addPlatformControl"
+            parameterType="com.chinatower.product.api.modules.videosquare.entity.PlatformControlVO">
+        insert into vm_platform_control_t(lock_id,device_code,channel_code,customer_code,lock_status,token,duration,queue,
+        wait,end_date,creator,creator_date,modifier,modifier_date,delete_flag)
+        values (#{lockId},#{deviceCode},#{channelCode},#{customerCode},#{lock},#{token},#{duration},#{queue},#{wait},
+        #{endDate},'',NOW(),'',NOW(),'1')
+    </insert>
+
+    <!--获取UUID-->
+    <select id="getUUID" resultType="java.lang.String">
+     select UUID_SHORT()
+    </select>
+</mapper>

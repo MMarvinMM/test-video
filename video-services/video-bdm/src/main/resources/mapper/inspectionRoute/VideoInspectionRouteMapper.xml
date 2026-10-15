@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.inspectionRoute.mapper.VideoInspectionRouteMapper">
+
+    <select id="queryInspectionRelIdList" resultType="java.lang.Long">
+        select s.id
+        from sys_video_inspection_route_rel s
+        where
+        s.inspection_route_id = #{param.inspectionRouteId}
+        and s.delete_flag = 0
+        and s.tenant_id = #{param.tenantId}
+        and s.industry_code = #{param.industryCode}
+    </select>
+
+    <select id="selectInspectionByName" resultType="java.lang.Integer">
+        select count(*)
+        from `sys_video_inspection_route` s
+        where s.inspection_route_name = #{param.inspectionRouteName}
+        and s.tenant_id = #{param.tenantId}
+        and s.industry_code = #{param.industryCode}
+        and s.delete_flag = 0
+        <if test="param.inspectionRouteId != null">
+            and s.id != #{param.inspectionRouteId}
+        </if>
+    </select>
+
+    <insert id="insertInspectionRoute" keyProperty="inspectionRouteId" useGeneratedKeys="true"
+            parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionVO">
+        insert into `sys_video_inspection_route`
+        (
+        inspection_route_name,
+        pause_cruise_flag,
+        route_status,
+        tenant_id,
+        industry_code,
+        app_ver_code,
+        creator,
+        create_time,
+        delete_flag
+        )
+        values
+        (
+        #{param.inspectionRouteName},
+        #{param.pauseCruiseFlag},
+        #{param.routeStatus},
+        #{param.tenantId},
+        #{param.industryCode},
+        #{param.appVerCode},
+        #{param.creator},
+        #{param.createTime},
+        #{param.deleteFlag}
+        )
+    </insert>
+
+    <insert id="insertInspectionRelList" parameterType="java.util.List">
+        insert into `sys_video_inspection_route_rel`
+        (inspection_route_id,device_code,channel_code,preset_id,route_status,duration_time,
+        duration_unit,sort_seq,tenant_id,industry_code,app_ver_code,creator,create_time,delete_flag)
+        values
+        <foreach collection="list" item="item" separator="," index="index">
+        (
+            #{item.inspectionRouteId},
+            #{item.deviceCode},
+            #{item.channelCode},
+            #{item.presetId},
+            #{item.routeStatus},
+            #{item.durationTime},
+            #{item.durationUnit},
+            #{item.sortSeq},
+            #{item.tenantId},
+            #{item.industryCode},
+            #{item.appVerCode},
+            #{item.creator},
+            #{item.createTime},
+            #{item.deleteFlag}
+        )
+        </foreach>
+    </insert>
+
+    <update id="updateInspectionStatusWithOriginalStatus">
+        update `sys_video_inspection_route`
+        set route_status = #{param.routeStatus}, modifier = #{param.modifier}, update_time = #{param.updateTime}
+        where id = #{param.id}
+        <if test="param.originalRouteStatus != null">
+            and route_status = #{param.originalRouteStatus}
+        </if>
+    </update>
+
+    <select id="queryDurationInfoByRouteIdList" resultType="com.chinatower.bdm.api.entity.VideoInspectionRelVO">
+        select inspection_route_id, duration_time, duration_unit
+        from sys_video_inspection_route_rel
+        where inspection_route_id in
+        <foreach collection="inspectionRouteIdList" item="item" open="(" close=")" separator="," index="index">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectInspectionRelById" resultType="com.chinatower.bdm.api.entity.VideoInspectionRelVO">
+        select id inspectionRouteSubId, inspection_route_id, device_code, channel_code, preset_id, route_status,
+        duration_time, duration_unit, sort_seq, tenant_id, industry_code, app_ver_code
+        from sys_video_inspection_route_rel where id = #{id}
+    </select>
+
+    <select id="selectInspectionRelByIdWithPermission" resultType="com.chinatower.bdm.api.entity.VideoInspectionRelVO">
+        select rel.id inspectionRouteSubId
+        from sys_video_inspection_route_rel rel
+        inner join vm_order_devices o on rel.tenant_id = o.tenant_id and rel.industry_code = o.industry_code and rel.device_code = o.device_code
+        where rel.id = #{param.inspectionRouteSubId}
+        ${param.dataScope}
+        limit 1
+    </select>
+
+    <select id="selectInspectionRelBriefInfoById" resultType="com.chinatower.bdm.api.entity.VideoInspectionRelBriefInfoVO">
+        select rel.device_code, rel.channel_code, rel.preset_id, r.`pause_cruise_flag`
+        from sys_video_inspection_route_rel rel inner join sys_video_inspection_route r on r.id = rel.inspection_route_id
+        where rel.id = #{id}
+    </select>
+
+    <select id="selectWorkRelBriefInfoByRouteId" resultType="com.chinatower.bdm.api.entity.VideoInspectionRelBriefInfoVO">
+        select rel.device_code, r.`pause_cruise_flag`
+        from sys_video_inspection_route r inner join sys_video_inspection_route_rel rel on r.id = rel.inspection_route_id
+        where r.id = #{id} and rel.route_status = 1
+        limit 1
+    </select>
+
+    <select id="selectInspectionRelByRouteIdAndStatus" resultType="com.chinatower.bdm.api.entity.VideoInspectionRelVO">
+        select id inspectionRouteSubId, inspection_route_id, device_code, channel_code, preset_id, route_status,
+        duration_time, duration_unit, sort_seq, tenant_id, industry_code, app_ver_code, pause_start_time, inspection_start_time, pause_time
+        from sys_video_inspection_route_rel where inspection_route_id = #{inspectionRouteId} and route_status = #{routeStatus} limit 1
+    </select>
+
+    <update id="updateInspectionRelTimeAndStatusWithOriginalStatus">
+        update sys_video_inspection_route_rel
+        set route_status = #{param.routeStatus},
+        <if test="param.inspectionStartTime != null">
+            inspection_start_time = #{param.inspectionStartTime},
+        </if>
+        <if test="param.pauseStartTime != null">
+            pause_start_time = #{param.pauseStartTime},
+        </if>
+        modifier = #{param.modifier}, update_time = #{param.updateTime}
+        where id = #{param.id} and route_status = #{param.originalRouteStatus}
+    </update>
+
+    <update id="finishInspectionInfo">
+        update `sys_video_inspection_route`
+        set route_status = 0, modifier = #{param.modifier}, update_time = #{param.updateTime}
+        where id = #{param.inspectionRouteId}
+    </update>
+
+    <update id="finishInspectionRelInfo">
+        update `sys_video_inspection_route_rel`
+        set route_status = 0, modifier = #{param.modifier}, update_time = #{param.updateTime},
+        inspection_start_time = null, pause_start_time = null, pause_time = 0
+        where inspection_route_id = #{param.inspectionRouteId}
+    </update>
+
+    <update id="recoverInspectionRelStatus">
+        update `sys_video_inspection_route_rel`
+        set route_status = 1, modifier = #{param.modifier}, update_time = #{param.updateTime},
+        pause_time = pause_time + (unix_timestamp(#{param.updateTime}) - unix_timestamp(pause_start_time))
+        where inspection_route_id = #{param.inspectionRouteId} and id = #{param.inspectionRouteSubId} and route_status in (0, 2)
+    </update>
+
+    <update id="resetInspectionRelStatus">
+        update `sys_video_inspection_route_rel`
+        set route_status = 1, modifier = #{param.modifier}, update_time = #{param.updateTime},
+        inspection_start_time = #{param.updateTime}, pause_start_time = null, pause_time = 0
+        where inspection_route_id = #{param.inspectionRouteId} and id = #{param.inspectionRouteSubId}
+    </update>
+
+    <update id="updateOtherRouteRelStatus">
+        update `sys_video_inspection_route_rel`
+        set route_status = #{routeStatus}, modifier = #{param.modifier}, update_time = #{param.updateTime},
+        inspection_start_time = null, pause_start_time = null
+        where inspection_route_id = #{param.inspectionRouteId} and id != #{param.inspectionRouteSubId}
+    </update>
+
+    <select id="queryFirstTaskInfo" resultType="com.chinatower.bdm.api.entity.VideoInspectionRelVO">
+        select rel.id inspectionRouteSubId, rel.inspection_route_id, rel.device_code, rel.channel_code, rel.preset_id, rel.route_status,
+        rel.duration_time, rel.duration_unit, rel.sort_seq, rel.tenant_id, rel.industry_code, rel.app_ver_code
+        from `sys_video_inspection_route_rel` rel
+        inner join vm_order_devices o on rel.tenant_id = o.tenant_id and rel.industry_code = o.industry_code and rel.device_code = o.device_code
+        where rel.tenant_id = #{param.tenantId} and rel.industry_code = #{param.industryCode} and rel.inspection_route_id = #{param.inspectionRouteId}
+        and o.ord_status in (0,1,2) and o.delete_flag = 0
+        order by rel.sort_seq limit 1
+    </select>
+
+    <select id="queryList" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionVO">
+        select r.id inspectionRouteId, r.inspection_route_name inspectionRouteName, r.pause_cruise_flag pauseCruiseFlag,
+        r.route_status routeStatus, count(distinct o.device_code) deviceNum
+        from `sys_video_inspection_route` r
+        left join `sys_video_inspection_route_rel` rel on r.id = rel.inspection_route_id
+        left join vm_order_devices o on rel.tenant_id = o.tenant_id and rel.industry_code = o.industry_code and rel.device_code = o.device_code
+        and o.ord_status in (0,1,2) and o.delete_flag = 0
+        where r.tenant_id = #{param.tenantId} and r.industry_code = #{param.industryCode} and r.delete_flag = 0
+        <if test="param.inspectionRouteName != null and param.inspectionRouteName != '' ">
+            and r.inspection_route_name like concat('%', #{param.inspectionRouteName}, '%')
+        </if>
+        group by r.id
+        order by r.create_time desc
+    </select>
+
+    <select id="selectRouteById" parameterType="com.chinatower.bdm.api.entity.VideoInspectionRouteProcessParam"
+            resultType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionVO">
+        select id inspectionRouteId,
+               inspection_route_name inspectionRouteName,
+               route_status routeStatus
+        from `sys_video_inspection_route`
+            where id = #{param.inspectionRouteId}
+                and tenant_id = #{param.tenantId}
+                and industry_code = #{param.industryCode}
+                and delete_flag = 0
+    </select>
+
+    <select id="findNext" parameterType="com.chinatower.bdm.api.entity.VideoInspectionRelVO"
+            resultType="com.chinatower.bdm.api.entity.VideoInspectionRelVO">
+        select t.id inspectionRouteSubId,
+            t.inspection_route_id,
+            t.device_code,
+            t.channel_code,
+            t.preset_id,
+            t.route_status,
+            t.inspection_start_time,
+            t.pause_start_time,
+            t.pause_time,
+            t.duration_time,
+            t.duration_unit,
+            t.sort_seq
+            from sys_video_inspection_route_rel t
+            inner join vm_order_devices o on t.tenant_id = o.tenant_id and t.industry_code = o.industry_code and t.device_code = o.device_code
+        where t.inspection_route_id = #{param.inspectionRouteId}
+            and t.tenant_id = #{param.tenantId}
+            and t.industry_code = #{param.industryCode}
+            and t.delete_flag = 0
+            and t.sort_seq > #{param.sortSeq}
+            and o.ord_status in (0,1,2) and o.delete_flag = 0
+            order by t.sort_seq
+            limit 1
+    </select>
+
+    <select id="queryRelList" parameterType="com.chinatower.bdm.api.entity.VideoInspectionRelDTO"
+            resultType="com.chinatower.bdm.api.entity.VideoInspectionRelVO">
+        select de.device_code,
+               cc.channel_code,
+               rel.preset_id,
+               vp.preset_name,
+               rel.duration_time,
+               rel.duration_unit,
+               IFNULL(dr.device_name, de.device_name) AS device_name,
+               IFNULL(dr.channel_name, cc.channel_name) AS channel_name,
+               rel.id as inspection_route_sub_id,
+               rel.inspection_route_id,
+               rel.sort_seq,
+               rel.route_status as routeStatus
+            from `sys_video_inspection_route_rel` rel
+                inner join vm_order_devices ord on rel.device_code = ord.device_code and rel.tenant_id = ord.tenant_id
+                and rel.industry_code = ord.industry_code
+                and ord.ord_status in(0, 1, 2) and ord.accept_node = #{param.platformCode}
+                and ord.delete_flag = 0
+                left join vm_device_info_t de on de.device_code = ord.device_code and de.delete_flag = 0
+                left join vm_tenant_device_channel_rel_t dr on dr.device_code = ord.device_code and dr.delete_flag = '0'
+                    AND dr.tenant_id = ord.tenant_id and dr.channel_code = rel.channel_code and dr.industry_code = ord.industry_code
+                left join vm_channel_info_t cc on cc.device_code = ord.device_code and cc.channel_code = rel.channel_code and cc.delete_flag = 0
+                left join vm_video_preset vp on vp.preset_id = rel.preset_id and vp.device_code = rel.device_code
+            where rel.tenant_id = #{param.tenantId}
+                and rel.industry_code = #{param.industryCode}
+                and rel.inspection_route_id = #{param.inspectionRouteId}
+                and rel.delete_flag = 0
+            group by rel.id
+            order by rel.sort_seq, rel.id
+    </select>
+
+    <update id="deleteInspectionRoute" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionDTO">
+        update `sys_video_inspection_route`
+        set delete_flag = '1'
+        where id = #{param.inspectionRouteId}
+        and tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+    </update>
+
+    <delete id="deleteInspectionRelInfo" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionDTO">
+        delete from `sys_video_inspection_route_rel`
+        where inspection_route_id = #{param.inspectionRouteId} and tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+    </delete>
+
+    <select id="createInspectionName" resultType="java.lang.String">
+        SELECT
+        IF(MAX(CAST(a.inspection_route_name AS SIGNED)) is not null, concat('视频巡检路线', MAX(CAST(a.inspection_route_name AS SIGNED)) + 1), '视频巡检路线1')
+        FROM
+        (
+        SELECT
+        SUBSTRING(inspection_route_name, 7) AS inspection_route_name
+        FROM
+        `sys_video_inspection_route`
+        WHERE
+        inspection_route_name LIKE '视频巡检路线%'
+        AND delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        ) a
+    </select>
+
+    <select id="selectInspectionById" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionVO">
+        select id inspectionRouteId, inspection_route_name inspectionRouteName, route_status routeStatus, pause_cruise_flag pauseCruiseFlag
+        from `sys_video_inspection_route`
+        where id = #{id} and tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0
+    </select>
+
+    <update id="updateInspectionInfo" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionVO">
+        update sys_video_inspection_route
+        set
+        inspection_route_name = #{param.inspectionRouteName},
+        pause_cruise_flag = #{param.pauseCruiseFlag},
+        modifier = #{param.modifier},
+        update_time = #{param.updateTime}
+        where
+        id = #{param.inspectionRouteId} and tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+    </update>
+
+    <delete id="deleteInspectionRelById" parameterType="java.util.List">
+        delete from `sys_video_inspection_route_rel`
+        where
+        id in
+        <foreach collection="list" item="item" open="(" close=")" separator="," index="index">
+            #{item}
+        </foreach>
+    </delete>
+
+    <update id="updateInspectionRelBatch" parameterType="java.util.List">
+        <foreach collection="list" item="item" separator=";">
+            update
+            `sys_video_inspection_route_rel`
+            <set>
+                device_code = #{item.deviceCode},
+                channel_code = #{item.channelCode},
+                preset_id = #{item.presetId},
+                sort_seq = #{item.sortSeq},
+                duration_time = #{item.durationTime},
+                duration_unit = #{item.durationUnit},
+                modifier = #{item.modifier},
+                update_time = #{item.updateTime}
+            </set>
+            where id = #{item.inspectionRouteSubId}
+        </foreach>
+    </update>
+
+    <select id="selectValidRouteCount" resultType="java.lang.Integer">
+        select count(*)
+        from sys_video_inspection_route
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0
+    </select>
+
+    <insert id="initRouteRecord" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionRouteRecordDTO">
+        insert into sys_video_inspection_route_record
+        (
+        route_id,
+        start_time,
+        route_status,
+        tenant_id,
+        industry_code,
+        app_ver_code,
+        creator,
+        create_time,
+        delete_flag
+        )
+        values
+        (
+        #{param.routeId},
+        #{param.startTime},
+        #{param.routeStatus},
+        #{param.tenantId},
+        #{param.industryCode},
+        #{param.appVerCode},
+        #{param.creator},
+        #{param.createTime},
+        '0'
+        )
+    </insert>
+
+    <select id="getLatestRouteInfoByStatus" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionRouteRecordDTO">
+        select id, start_time
+        from sys_video_inspection_route_record
+        where route_id = #{routeId} and route_status = #{routeStatus}
+        order by id desc limit 1
+    </select>
+
+    <update id="updateRouteRecord">
+        update sys_video_inspection_route_record
+        set end_time = #{param.endTime}, modifier = #{param.modifier},
+        <if test="param.duration != null">
+            duration = duration + #{param.duration},
+        </if>
+        <if test="param.startTime != null">
+            start_time = #{param.startTime},
+        </if>
+        update_time = #{param.updateTime}
+        where id = #{param.id}
+    </update>
+
+    <select id="queryInspectionCountInfo" resultType="com.chinatower.bdm.api.entity.VideoInspectionRouteRecordVO">
+        select count(*) inspectionRouteCount
+        from sys_video_inspection_route
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0
+        <if test="startTime != null">
+            and create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            and create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <select id="queryInspectionRecordInfo" resultType="com.chinatower.bdm.api.entity.VideoInspectionRouteRecordVO">
+        select IFNULL(sum(duration), 0) inspectionDuration, count(*) inspectionTimes
+        from sys_video_inspection_route_record
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0 and duration > 0
+        <if test="startTime != null">
+            and create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            and create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <select id="queryInspectionList" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.VideoInspectionVO">
+        select distinct
+        s.id,
+        s.inspection_route_name,
+        s.`pause_cruise_flag`,
+        s.route_status,
+        s.creator,
+        s.create_time,
+        s.modifier,
+        s.update_time
+        from sys_video_inspection_route s
+        where s.delete_flag = 0
+        <if test="param.inspectionRouteName != null and param.inspectionRouteName != ''">
+            and s.inspection_route_name like CONCAT('%', #{param.inspectionRouteName}, '%')
+        </if>
+        <if test="param.creator != null and param.creator !=''">
+            and s.creator like CONCAT('%', #{param.creator}, '%')
+        </if>
+        ${param.dataScope}
+        <if test="param.modifier != null and param.modifier != ''">
+            and s.modifier like CONCAT('%',#{param.modifier},'%')
+        </if>
+        <if test="param.createTimeBegin != null and param.createTimeBegin != ''">
+            and s.create_time <![CDATA[ >= ]]> #{param.createTimeBegin}
+        </if>
+        <if test="param.createTimeEnd != null and param.createTimeEnd != ''">
+            and s.create_time <![CDATA[ <= ]]> #{param.createTimeEnd}
+        </if>
+        <if test="param.updateTimeBegin != null and param.updateTimeBegin != ''">
+            and s.update_time <![CDATA[ >= ]]> #{param.updateTimeBegin}
+        </if>
+        <if test="param.updateTimeEnd != null and param.updateTimeEnd != ''">
+            and s.update_time <![CDATA[ <= ]]> #{param.updateTimeEnd}
+        </if>
+        <choose>
+            <when test="param.sortName == 'createTime'">
+                order by s.create_time
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="param.sortName == 'updateTime'">
+                order by s.update_time
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by s.create_time desc
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

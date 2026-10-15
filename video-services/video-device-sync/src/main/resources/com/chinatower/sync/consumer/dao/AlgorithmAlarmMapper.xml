@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.AlgorithmAlarmMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.sync.consumer.entity.AlgorithmAlarmDO">
+        <id column="id" property="id" />
+        <result column="algo_min_type" property="algoMinType" />
+        <result column="alarm_type" property="alarmType" />
+        <result column="create_date" property="createDate" />
+        <result column="update_date" property="updateDate" />
+        <result column="delete_flag" property="deleteFlag" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, algo_min_type, alarm_type, create_date, update_date, delete_flag
+    </sql>
+
+</mapper>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 消息通知管理信息表(vm_message_send_info_t) -->
+<mapper namespace="com.chinatower.platform.project.mapper.WxMsgMapper">
+
+    <!--查询消息通知信息-->
+    <select id="getUserInfo" resultType="java.util.HashMap"
+            parameterType="com.chinatower.platform.entity.request.WxPushRequest">
+        SELECT t.union_id as "unionId",
+               t1.open_id as "openId",
+               t1.mini_open_id as "miniOpenId"
+        FROM bs_wx_user_link t left join bs_wx_user t1
+                 on t1.union_id = t.union_id
+        WHERE t.receive_msg = 'Y'
+        <if test="null != userIds">
+            and t.user_id in
+            <foreach collection="userIds" item="userId" open="(" separator="," close=")" index="index">
+                #{userId}
+            </foreach>
+        </if>
+        <if test="null == userIds">
+            and t.user_id = #{userId}
+        </if>
+          and t.is_active = 'Y'
+          and t1.delete_flag = '0'
+          and t1.open_id is not null
+           <if test="null != industryCode and '' != industryCode">
+               and t.INDUSTRY_CODE = #{industryCode}
+           </if>
+        UNION ALL
+        SELECT t.union_id as unionId,
+        t1.mini_open_id as openId,
+        t1.mini_open_id as miniOpenId
+        FROM bs_wx_user_link t left join bs_wx_user t1
+        on t1.union_id = t.union_id
+        WHERE t.receive_msg = 'Y'
+        <if test="null != userIds">
+            and t.user_id in
+            <foreach collection="userIds" item="userId" open="(" separator="," close=")" index="index">
+                #{userId}
+            </foreach>
+        </if>
+        <if test="null == userIds">
+            and t.user_id = #{userId}
+        </if>
+        and t.is_active = 'Y'
+        and t1.delete_flag = '0'
+        AND t1.MINI_OPEN_ID IS NOT NULL
+        <if test="null != industryCode and '' != industryCode">
+            and t.INDUSTRY_CODE = #{industryCode}
+        </if>
+    </select>
+
+</mapper>

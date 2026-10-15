@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.UserCollectionFolderMapper">
+
+    <select id="getListByCondition" resultType="com.chinatower.device.dto.UserCollectionFolderDTO">
+        select id, user_id, folder_name, sort_no
+            from vm_user_collection_folder_t
+          <where>
+              user_id = #{userId}
+            <if test='folderName != null and folderName != ""'>
+                and folder_name = #{folderName}
+            </if>
+            <if test="id != null">
+                and id = #{id}
+            </if>
+          </where>
+        order by ifnull(sort_no, 99999), create_time
+    </select>
+
+    <insert id="addFolder">
+        insert into vm_user_collection_folder_t(user_id, folder_name, industry_code, app_ver_code, create_time, creator)
+            values(#{userId}, #{folderName}, #{industryCode}, #{appVerCode}, now(), #{creator})
+    </insert>
+
+    <update id="batchUpdateFolder">
+        <foreach collection="list" item="item" separator=";">
+            update vm_user_collection_folder_t
+            set
+            folder_name = #{item.folderName},
+            sort_no =#{item.sortNo},
+            update_time = now(),
+            modifier = #{user.userName}
+          where id = #{item.collectFolderId} and user_id = #{user.userId}
+        </foreach>
+    </update>
+
+    <update id="batchModifyCollectData">
+        <foreach collection="list" item="item" separator=";">
+            update vm_user_device_collection_t
+            set
+            <if test="item.sortNo != null">
+                sort_no =#{item.sortNo},
+            </if>
+            <if test='item.aliasName != null and item.aliasName != ""'>
+                alias_name = #{item.aliasName},
+            </if>
+            collect_folder_id = #{item.collectFolderId}
+            where user_device_coll_id = #{item.userDeviceCollId} and user_id = #{user.userId}
+        </foreach>
+    </update>
+
+    <update id="updateCollectFolder">
+        update vm_user_device_collection_t set collect_folder_id = null
+            where collect_folder_id = #{collectFolderId} and user_id = #{userId}
+    </update>
+
+    <delete id="deleteCollectFolder">
+        delete from vm_user_collection_folder_t
+            where id = #{collectFolderId} and user_id = #{userId}
+    </delete>
+
+    <select id="getCollectList" resultType="com.chinatower.device.entity.vo.UserDeviceCollectionQueryVO">
+        select user_device_coll_id, user_id, coll_obj_type, coll_obj_code, collect_folder_id, alias_name, sort_no
+            from vm_user_device_collection_t where user_id = #{userId}
+            and coll_obj_type in
+        <foreach collection="list" item="collObjType" open="(" separator="," close=")">
+            #{collObjType}
+        </foreach>
+    </select>
+
+</mapper>

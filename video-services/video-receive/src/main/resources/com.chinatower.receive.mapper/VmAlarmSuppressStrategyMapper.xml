@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.VmAlarmSuppressStrategyMapper">
+
+	<resultMap id="BaseResultMap" type="com.chinatower.receive.vo.entity.VmAlarmSuppressStrategyVO">
+		<id column="id" jdbcType="INTEGER" property="id" />
+		<result column="alarm_suppress_name" jdbcType="VARCHAR" property="alarmSuppressName" />
+		<result column="alarm_suppress_type" jdbcType="VARCHAR" property="alarmSuppressType" />
+		<result column="alarm_source" jdbcType="VARCHAR" property="alarmSource" />
+		<result column="alarm_if_judge" jdbcType="VARCHAR" property="alarmIfJudge" />
+		<result column="alarm_judge_result" jdbcType="VARCHAR" property="alarmJudgeResult" />
+		<result column="weather_conditions" jdbcType="VARCHAR" property="weatherConditions" />
+		<result column="period_time" jdbcType="VARCHAR" property="periodTime" />
+		<result column="suppress_period_time" jdbcType="VARCHAR" property="suppressPeriodTime" />
+		<result column="suppress_thresh" jdbcType="INTEGER" property="suppressThresh" />
+		<result column="suppress_start_time" jdbcType="DATE" property="suppressStartTime" />
+		<result column="suppress_end_time" jdbcType="DATE" property="suppressEndTime" />
+		<result column="alarm_interval" jdbcType="INTEGER" property="alarmInterval" />
+		<result column="alarm_interval_type" jdbcType="VARCHAR" property="alarmIntervalType" />
+		<result column="alarm_range_p" jdbcType="VARCHAR" property="alarmRangeP" />
+		<result column="alarm_range_t" jdbcType="VARCHAR" property="alarmRangeT" />
+		<result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+		<result column="status" jdbcType="VARCHAR" property="status" />
+		<result column="creater_by" jdbcType="VARCHAR" property="createrBy" />
+		<result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+		<result column="update_by" jdbcType="VARCHAR" property="updateBy" />
+		<result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+		<result column="delete_flag" jdbcType="VARCHAR" property="deleteFlag" />
+		<result column="tenant_name" jdbcType="VARCHAR" property="tenantName" />
+		<result column="industry_code" jdbcType="VARCHAR" property="industryCode" />
+		<result column="app_ver_code" jdbcType="VARCHAR" property="appVerCode" />
+		<result column="industry_name" jdbcType="VARCHAR" property="industryName" />
+		<result column="alarm_space_range" jdbcType="VARCHAR" property="alarmSpaceRange" />
+		<result column="alarm_range_status" jdbcType="VARCHAR" property="alarmRangeStatus" />
+		<result column="config_type" jdbcType="VARCHAR" property="configType" />
+		<result column="begin_recognize_time" jdbcType="VARCHAR" property="beginRecognizeTime" />
+		<result column="begin_recognize_time_type" jdbcType="VARCHAR" property="beginRecognizeTimeType" />
+		<result column="end_recognize_time" jdbcType="VARCHAR" property="endRecognizeTime" />
+		<result column="end_recognize_time_type" jdbcType="VARCHAR" property="endRecognizeTimeType" />
+	</resultMap>
+
+	<select id="selectSuppressStrategy" resultType="java.lang.Integer">
+		select distinct id from vm_alarm_suppress_strategy ss LEFT JOIN vm_alarm_device_suppress ds on ds.alarm_suppress_id = ss.id and ds.delete_flag='0'
+		LEFT JOIN vm_alarm_type_suppress ts on ts.alarm_suppress_id = ss.id and ts.delete_flag='0'
+		where ss.status = '0' and ss.delete_flag = '0'
+		<if test='req.alarmSource != null and req.alarmSource == "9"'>
+			and ts.type_value = #{req.alarmType}
+		</if>
+		<if test='req.alarmSource != null and req.alarmSource != "9"'>
+			and (
+			(ds.device_code=#{req.deviceCode} and ts.type_value = #{req.alarmType} and ss.alarm_suppress_type = '1,2')
+			or (ds.device_code=#{req.deviceCode} and ss.alarm_suppress_type = '1')
+			or (ts.type_value = #{req.alarmType} and ss.alarm_suppress_type = '2')
+			)
+		</if>
+		<foreach collection="customers" item="customer" index="index" open="and (" close=")" separator="or">
+			( ss.tenant_id = #{customer.tenantId}
+			and ss.industry_code = #{customer.industryCode} )
+		</foreach>
+	</select>
+
+	<select id="selectList" resultMap="BaseResultMap" >
+		SELECT id,
+		alarm_suppress_name,
+		alarm_suppress_type,
+		alarm_source,
+		alarm_if_judge,
+		alarm_judge_result,
+		weather_conditions,
+		period_time,
+		suppress_period_time,
+		suppress_start_time,
+		suppress_end_time,
+		suppress_thresh,
+		alarm_interval,
+		alarm_interval_type,
+		alarm_range_p,
+		alarm_range_t,
+		tenant_id,
+		status,
+		creater_by,
+		create_time,
+		update_by,
+		update_time,
+		industry_code,
+		delete_flag,
+		alarm_space_range,
+		alarm_range_status,
+		config_type,
+		begin_recognize_time,
+		begin_recognize_time_type,
+		end_recognize_time,
+		end_recognize_time_type
+		FROM vm_alarm_suppress_strategy
+		WHERE delete_flag ='0'
+		AND status = '0'
+		<if test="strategyIdList!=null ">
+			and id in
+			<foreach collection="strategyIdList" item="strategyId" index="index" open="(" close=")" separator=",">
+				#{strategyId}
+			</foreach>
+		</if>
+		<choose>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				order by create_time asc
+			</when>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				order by create_time desc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				order by update_time asc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				order by update_time desc
+			</when>
+			<otherwise>
+				order by id desc
+			</otherwise>
+		</choose>
+
+	</select>
+</mapper>

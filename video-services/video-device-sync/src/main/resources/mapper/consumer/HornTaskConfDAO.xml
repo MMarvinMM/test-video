@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.HornTaskConfDAO">
+
+    <update id="updateHornTaskStatus">
+        <foreach collection="list" item="item" separator=";">
+            update
+            vm_horn_task_conf a
+            set
+            a.execut_status = #{item.executStatus},
+            a.update_time = now()
+            where a.id = #{item.id}
+        </foreach>
+    </update>
+
+    <update id="updateHornTaskRelStatus">
+        <foreach collection="list" item="item" separator=";">
+            update
+            vm_horn_task_diff_node_rel a
+            set
+            a.execut_status = #{item.status},
+            a.update_time = now()
+            where a.horn_task_id = #{item.taskId}
+        </foreach>
+    </update>
+
+    <select id="selectVmHornTaskDiffNodeRelByHornTaskId" resultType="com.chinatower.device.entity.dto.VmHornTaskDiffNodeRelDO">
+        select a.task_id, a.execut_status, a.horn_task_id
+        from vm_horn_task_diff_node_rel a
+        left join vm_horn_task_diff_node_rel b on a.task_id = b.task_id
+        where b.horn_task_id in
+        <foreach collection="hornTaskIds" open="(" close=")" separator="," index="index" item="item">
+            #{item.taskId}
+        </foreach>
+    </select>
+</mapper>

@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.SatelliteLawConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.bdm.modules.layer.domain.VmSatelliteLayerConfig" >
+        <result column="id" property="id" />
+        <result column="file_name" property="fileName" />
+        <result column="alarm_type_id" property="alarmTypeId" />
+        <result column="layer_template_id" property="layerTemplateId" />
+        <result column="file_url" property="fileUrl" />
+        <result column="layer_name" property="layerName" />
+        <result column="layer_namespace" property="layerNamespace" />
+        <result column="geoserver_url" property="geoserverUrl" />
+        <result column="custom_name" property="customName" />
+        <result column="maxx" property="maxx" />
+        <result column="maxy" property="maxy" />
+        <result column="minx" property="minx" />
+        <result column="miny" property="miny" />
+        <result column="layer_file_url" property="layerFileUrl" />
+        <result column="layer_file_name" property="layerFileName" />
+        <result column="layer_area" property="layerArea" />
+        <result column="polygon_count" property="polygonCount" />
+        <result column="root_geoserver_url" property="rootGeoserverUrl" />
+        <result column="geo_type" property="geoType" />
+        <result column="category" property="category" />
+        <result column="creator" property="creator" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier" property="modifier" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="app_ver_code" property="appVerCode" />
+        <result column="accept_node" property="acceptNode" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+                id,
+                file_name,
+                alarm_type_id,
+                layer_template_id,
+                file_url,
+                layer_name,
+                layer_namespace,
+                geoserver_url,
+                custom_name,
+                maxx,
+                maxy,
+                minx,
+                miny,
+                layer_file_url,
+                layer_file_name,
+                layer_area,
+                polygon_count,
+                root_geoserver_url,
+                geo_type,
+                category,
+                creator,
+                create_time,
+                modifier,
+                update_time,
+                delete_flag,
+                tenant_id,
+                industry_code,
+                app_ver_code,
+                accept_node
+    </sql>
+
+    <select id="selectByVmSatelliteLayerConfigDTO" resultType="com.chinatower.common.core.dto.bdm.VmSatelliteLayerConfigDTO">
+        select
+        c.id layerId,
+        c.create_time createTime,
+        c.layer_name layerName,
+        c.custom_name customName,
+        c.tenant_id tenantId,
+        c.industry_code industryCode,
+        c.app_ver_code appVerCode,
+        c.polygon_count polygonCount,
+        c.is_build_alarm isBuildAlarm,
+        t.abbreviation,
+        t.layer_temp_name layerTempName,
+        t.warning_source warningSource,
+        t.alarm_type alarmType,
+        t.alarm_type_name alarmTypeName
+        from vm_satellite_layer_config c
+        left join vm_layer_template_config t on c.layer_template_id = t.id
+        where c.delete_flag = 0
+        and c.id = #{layerId}
+    </select>
+
+    <update id="updateIsBuildAlarm">
+        update vm_satellite_layer_config
+        set is_build_alarm = '1'
+        where id = #{layerId}
+    </update>
+
+    <select id="getList" resultType="com.chinatower.common.core.vo.SatelliteLawConfigVo">
+        select id, file_name, custom_name, alarm_type_id, layer_template_id, file_url ,is_build_alarm, creator, create_time, modifier, update_time , tenant_id, industry_code, app_ver_code
+        from `vm_satellite_layer_config` s
+        <where>
+            <if test="id != null and id !=''">
+                and id = #{id}
+            </if>
+            <if test="fileName != null and fileName !=''">
+                and file_name like CONCAT('%', #{fileName}, '%')
+            </if>
+            <if test="customName != null and customName !=''">
+                and custom_name like CONCAT('%', #{customName}, '%')
+            </if>
+            <if test="alarmTypeId != null and alarmTypeId !=''">
+                and alarm_type_id = #{alarmTypeId}
+            </if>
+            <if test="layerTemplateIdList != null and layerTemplateIdList.size > 0">
+                and layer_template_id in
+                <foreach item="item" index="index" collection="layerTemplateIdList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="creator != null and creator !=''">
+                and creator like CONCAT('%', #{creator}, '%')
+            </if>
+            <if test="modifier != null and modifier !=''">
+                and modifier like CONCAT('%', #{modifier}, '%')
+            </if>
+            <if test="createStartTime != null and createStartTime !=''">
+                and create_time &gt;= #{createStartTime}
+            </if>
+            <if test="createEndTime != null and createEndTime !=''">
+                and create_time &lt;= #{createEndTime}
+            </if>
+            <if test="updateStartTime != null and updateStartTime !=''">
+                and update_time &gt;= #{updateStartTime}
+            </if>
+            <if test="updateEndTime != null and updateEndTime !=''">
+                and update_time &lt;= #{updateEndTime}
+            </if>
+            and delete_flag = 0
+             ${dataScope}
+        </where>
+        <choose>
+            <when test="createDateOrder != null and createDateOrder.toLowerCase() == 'asc'">
+                order by create_time asc
+            </when>
+            <when test="createDateOrder != null and createDateOrder.toLowerCase() == 'desc'">
+                order by create_time desc
+            </when>
+            <when test="updateDateOrder != null and updateDateOrder.toLowerCase() == 'asc'">
+                order by update_time asc
+            </when>
+            <when test="updateDateOrder != null and updateDateOrder.toLowerCase() == 'desc'">
+                order by update_time desc
+            </when>
+            <otherwise>
+                order by create_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+
+    <select id="getLayerInfo" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.LayerInfoVO">
+        select s.id, s.layer_area, s.layer_name, s.layer_namespace, s.layer_template_id as layerTypeId,l.layer_temp_name as layerTypeName,l.abbreviation
+        from `vm_satellite_layer_config` s
+        left join vm_layer_template_config l on s.layer_template_id = l.id
+        <where>
+            <if test="id != null and id !=''">
+                and s.id = #{id}
+            </if>
+        </where>
+    </select>
+
+
+
+    <update id="updateConfig" parameterType="com.chinatower.common.core.vo.SatelliteLawConfigVo">
+        UPDATE `vm_satellite_layer_config` SET
+        <if test='customName != null and customName != ""'>
+            `custom_name` = #{customName},
+        </if>
+        <if test='modifier != null and modifier != ""'>
+            `modifier` = #{modifier},
+        </if>
+        `update_time` = now()
+        WHERE `id` = #{id};
+    </update>
+
+    <update id="deleteConfig" parameterType="com.chinatower.common.core.vo.SatelliteLawConfigVo">
+        UPDATE `vm_satellite_layer_config` SET
+         `delete_flag` = '1',
+         `modifier` = #{modifier},
+         `update_time` = now()
+         WHERE `id` = #{id};
+    </update>
+
+    <select id="getConfigByOne" resultType="com.chinatower.common.core.vo.SatelliteLawConfigVo">
+        select id, file_name, alarm_type_id, layer_template_id, file_url , creator, create_time, modifier, update_time , tenant_id, industry_code, app_ver_code
+        from `vm_satellite_layer_config` s
+        <where>
+            <if test="fileName != null and fileName !=''">
+                and file_name = #{fileName}
+            </if>
+            and delete_flag = 0
+            ${dataScope}
+        </where>
+    </select>
+
+    <select id="getAlarmType" resultType="java.util.Map">
+        SELECT type_value as typeId,type_name as typeName FROM sys_alarm_type
+        <where>
+        <if test="typeList != null and typeList.size > 0">
+            and type_value in
+            <foreach item="item" index="index" collection="typeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        </where>
+    </select>
+
+    <select id="selectCustomNameCount" resultType="java.lang.Integer">
+        select count(1)
+        from vm_satellite_layer_config
+        where
+            delete_flag = '0'
+          and tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+          and custom_name = #{customName}
+    </select>
+
+    <select id="selectCustomNameCountNotId" resultType="java.lang.Integer">
+        select count(1)
+        from vm_satellite_layer_config
+        where
+            delete_flag = '0'
+          and tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+          and custom_name = #{customName}
+          and id != #{id}
+    </select>
+
+
+    <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.chinatower.bdm.modules.layer.domain.VmSatelliteLayerConfig">
+        INSERT INTO vm_satellite_layer_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="null != id and '' != id">
+                id,
+            </if>
+            <if test="null != fileName and '' != fileName">
+                file_name,
+            </if>
+            <if test="null != alarmTypeId and '' != alarmTypeId">
+                alarm_type_id,
+            </if>
+            <if test="null != layerTemplateId ">
+                layer_template_id,
+            </if>
+            <if test="null != fileUrl and '' != fileUrl">
+                file_url,
+            </if>
+            <if test="null != layerName and '' != layerName">
+                layer_name,
+            </if>
+            <if test="null != layerNamespace and '' != layerNamespace">
+                layer_namespace,
+            </if>
+            <if test="null != geoserverUrl and '' != geoserverUrl">
+                geoserver_url,
+            </if>
+            <if test="null != customName and '' != customName">
+                custom_name,
+            </if>
+            <if test="null != maxx ">
+                maxx,
+            </if>
+            <if test="null != maxy ">
+                maxy,
+            </if>
+            <if test="null != minx ">
+                minx,
+            </if>
+            <if test="null != miny ">
+                miny,
+            </if>
+            <if test="null != layerFileUrl and '' != layerFileUrl">
+                layer_file_url,
+            </if>
+            <if test="null != layerFileName and '' != layerFileName">
+                layer_file_name,
+            </if>
+            <if test="null != layerArea ">
+                layer_area,
+            </if>
+            <if test="null != polygonCount ">
+                polygon_count,
+            </if>
+            <if test="null != rootGeoserverUrl and '' != rootGeoserverUrl">
+                root_geoserver_url,
+            </if>
+            <if test="null != geoType and '' != geoType">
+                geo_type,
+            </if>
+            <if test="null != category ">
+                category,
+            </if>
+            <if test="null != creator and '' != creator">
+                creator,
+            </if>
+            <if test="null != createTime ">
+                create_time,
+            </if>
+            <if test="null != modifier and '' != modifier">
+                modifier,
+            </if>
+            <if test="null != updateTime ">
+                update_time,
+            </if>
+            <if test="null != deleteFlag and '' != deleteFlag">
+                delete_flag,
+            </if>
+            <if test="null != tenantId and '' != tenantId">
+                tenant_id,
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                industry_code,
+            </if>
+            <if test="null != appVerCode and '' != appVerCode">
+                app_ver_code,
+            </if>
+            <if test="null != acceptNode and '' != acceptNode">
+                accept_node
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="null != id and '' != id">
+                #{id},
+            </if>
+            <if test="null != fileName and '' != fileName">
+                #{fileName},
+            </if>
+            <if test="null != alarmTypeId and '' != alarmTypeId">
+                #{alarmTypeId},
+            </if>
+            <if test="null != layerTemplateId ">
+                #{layerTemplateId},
+            </if>
+            <if test="null != fileUrl and '' != fileUrl">
+                #{fileUrl},
+            </if>
+            <if test="null != layerName and '' != layerName">
+                #{layerName},
+            </if>
+            <if test="null != layerNamespace and '' != layerNamespace">
+                #{layerNamespace},
+            </if>
+            <if test="null != geoserverUrl and '' != geoserverUrl">
+                #{geoserverUrl},
+            </if>
+            <if test="null != customName and '' != customName">
+                #{customName},
+            </if>
+            <if test="null != maxx ">
+                #{maxx},
+            </if>
+            <if test="null != maxy ">
+                #{maxy},
+            </if>
+            <if test="null != minx ">
+                #{minx},
+            </if>
+            <if test="null != miny ">
+                #{miny},
+            </if>
+            <if test="null != layerFileUrl and '' != layerFileUrl">
+                #{layerFileUrl},
+            </if>
+            <if test="null != layerFileName and '' != layerFileName">
+                #{layerFileName},
+            </if>
+            <if test="null != layerArea ">
+                #{layerArea},
+            </if>
+            <if test="null != polygonCount ">
+                #{polygonCount},
+            </if>
+            <if test="null != rootGeoserverUrl and '' != rootGeoserverUrl">
+                #{rootGeoserverUrl},
+            </if>
+            <if test="null != geoType and '' != geoType">
+                #{geoType},
+            </if>
+            <if test="null != category ">
+                #{category},
+            </if>
+            <if test="null != creator and '' != creator">
+                #{creator},
+            </if>
+            <if test="null != createTime ">
+                #{createTime},
+            </if>
+            <if test="null != modifier and '' != modifier">
+                #{modifier},
+            </if>
+            <if test="null != updateTime ">
+                #{updateTime},
+            </if>
+            <if test="null != deleteFlag and '' != deleteFlag">
+                #{deleteFlag},
+            </if>
+            <if test="null != tenantId and '' != tenantId">
+                #{tenantId},
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                #{industryCode},
+            </if>
+            <if test="null != appVerCode and '' != appVerCode">
+                #{appVerCode},
+            </if>
+            <if test="null != acceptNode and '' != acceptNode">
+                #{acceptNode}
+            </if>
+        </trim>
+    </insert>
+
+    <select id="getLayerTemplate" resultType="java.util.Map">
+        SELECT id as templateId,layer_temp_name as templateName FROM vm_layer_template_config
+        <where>
+            <if test="templateList != null and templateList.size > 0">
+                and id in
+                <foreach item="item" index="index" collection="templateList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getLayerTemplateId" resultType="java.lang.String">
+        SELECT id  FROM vm_layer_template_config
+        WHERE
+                 `layer_temp_name` like CONCAT('%', #{layerTemplateName}, '%')
+    </select>
+
+    <update id="update" parameterType="com.chinatower.bdm.modules.layer.domain.VmSatelliteLayerConfig">
+        UPDATE vm_satellite_layer_config
+        <set>
+            <if test="null != fileName and '' != fileName">file_name = #{fileName},</if>
+            <if test="null != alarmTypeId and '' != alarmTypeId">alarm_type_id = #{alarmTypeId},</if>
+            <if test="null != layerTemplateId ">layer_template_id = #{layerTemplateId},</if>
+            <if test="null != fileUrl and '' != fileUrl">file_url = #{fileUrl},</if>
+            <if test="null != layerName and '' != layerName">layer_name = #{layerName},</if>
+            <if test="null != layerNamespace and '' != layerNamespace">layer_namespace = #{layerNamespace},</if>
+            <if test="null != geoserverUrl and '' != geoserverUrl">geoserver_url = #{geoserverUrl},</if>
+            <if test="null != customName and '' != customName">custom_name = #{customName},</if>
+            <if test="null != maxx ">maxx = #{maxx},</if>
+            <if test="null != maxy ">maxy = #{maxy},</if>
+            <if test="null != minx ">minx = #{minx},</if>
+            <if test="null != miny ">miny = #{miny},</if>
+            <if test="null != layerFileUrl and '' != layerFileUrl">layer_file_url = #{layerFileUrl},</if>
+            <if test="null != layerFileName and '' != layerFileName">layer_file_name = #{layerFileName},</if>
+            <if test="null != layerArea ">layer_area = #{layerArea},</if>
+            <if test="null != polygonCount ">polygon_count = #{polygonCount},</if>
+            <if test="null != rootGeoserverUrl and '' != rootGeoserverUrl">root_geoserver_url = #{rootGeoserverUrl},</if>
+            <if test="null != geoType and '' != geoType">geo_type = #{geoType},</if>
+            <if test="null != category ">category = #{category},</if>
+            <if test="null != creator and '' != creator">creator = #{creator},</if>
+            <if test="null != createTime ">create_time = #{createTime},</if>
+            <if test="null != modifier and '' != modifier">modifier = #{modifier},</if>
+            <if test="null != updateTime ">update_time = #{updateTime},</if>
+            <if test="null != deleteFlag and '' != deleteFlag">delete_flag = #{deleteFlag},</if>
+            <if test="null != tenantId and '' != tenantId">tenant_id = #{tenantId},</if>
+            <if test="null != industryCode and '' != industryCode">industry_code = #{industryCode},</if>
+            <if test="null != appVerCode and '' != appVerCode">app_ver_code = #{appVerCode},</if>
+            <if test="null != acceptNode and '' != acceptNode">accept_node = #{acceptNode}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

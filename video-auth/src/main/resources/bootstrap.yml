@@ -1,0 +1,19 @@
+server:
+  servlet:
+    context-path: /
+spring:
+  profiles:
+    active: local
+    #  loacl 本地   test 测试    specheck 专项验收   check 验收  stable 准生产   prod 生产
+  application:
+    name: video-auth
+  main:
+    banner-mode: "off"
+    allow-bean-definition-overriding: true
+
+token:
+  universalCaptcha: 1234
+
+jasypt:
+  encryptor:
+    bootstrap: false

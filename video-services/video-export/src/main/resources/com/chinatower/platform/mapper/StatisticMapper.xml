@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.StatisticMapper">
+    <select id="getEventStatisticalAnalysis"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT dataTable.warning_type_id typeId,dataTable.warning_type_name as typeName,
+        date_format(dataTable.create_date,'%Y-%m-%d') createDate,SUM(dataTable.warning_num) num
+        FROM vm_statistics_event_type dataTable
+        WHERE 1 = 1
+        ${dataScope}
+        AND dataTable.create_date >= #{queryStartTime}
+        AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+        <if test="typeList != null and typeList.size() > 0 ">
+            AND dataTable.warning_type_id IN
+            <foreach collection="typeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+        </if>
+        GROUP BY dataTable.warning_type_id,date_format(dataTable.create_date,'%Y-%m-%d')
+        <if test='otherFlag == "1" '>
+            UNION
+            SELECT "aaa666" typeId,"其他" typeName,date_format(dataTable.create_date,'%Y-%m-%d') createDate,SUM(dataTable.warning_num) num
+            FROM vm_statistics_event_type dataTable
+            WHERE 1 = 1
+            ${dataScope}
+            AND dataTable.create_date >= #{queryStartTime}
+            AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+            <if test="typeList != null and typeList.size() > 0 ">
+                AND dataTable.warning_type_id NOT IN
+                <foreach collection="typeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                    #{labelIdItem}
+                </foreach>
+            </if>
+            <if test="countyId != null and countyId != '' ">
+                AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+            </if>
+            GROUP BY date_format(dataTable.create_date,'%Y-%m-%d')
+        </if>
+    </select>
+
+    <select id="getAlarmType"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT bb.typeId,bb.typeName,cc.assigned_date as eventDate FROM
+        (SELECT DISTINCT ala.type_value typeId,ala.type_name typeName FROM sys_alarm_type ala
+        WHERE 1=1
+        <if test="typeList != null and typeList.size() > 0 ">
+            AND ala.type_value IN
+            <foreach collection="typeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        <if test='otherFlag == "1" '>
+            UNION SELECT 'aaa666' typeId,'其他' typeName
+        </if>) bb,
+        (SELECT date_format(assigned_date,'%Y-%m-%d') assigned_date
+        FROM
+        (SELECT adddate('2021-01-01',t3.i*1000 + t2.i*100 + t1.i*10 + t0.i) assigned_date
+        FROM
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3
+        ) c
+        WHERE assigned_date between SUBSTR(#{queryStartTime},1,10) and #{queryEndTime}) cc
+        <if test="typeList != null and typeList.size() > 0 ">
+            ORDER BY cc.assigned_date,FIELD(bb.typeId,
+            <foreach collection="typeList" item="labelIdItem" index="index" separator=",">
+                #{labelIdItem}
+            </foreach>
+            ,'aaa666') ASC
+        </if>
+    </select>
+
+    <select id="getEventHandleTimeNum"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT SUM(dataTable.less_one) AS lessOneHour,SUM(dataTable.one_five) AS oneFiveHour,
+        SUM(dataTable.five_ten) AS fiveTenHour,SUM(dataTable.more_ten) AS overTenHour
+        FROM vm_statistics_event_duration dataTable
+        <where>
+            <if test="provinceId != null and provinceId != '' ">
+                AND LEFT(dataTable.county_id,2) = LEFT(#{provinceId},2)
+            </if>
+            <if test="cityId != null and cityId != '' ">
+                AND LEFT(dataTable.county_id,4) = LEFT(#{cityId},4)
+            </if>
+            <if test="countyId != null and countyId != '' ">
+                AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+            </if>
+            <if test='queryStartTime != null and queryStartTime != "" and queryEndTime != null
+            and queryEndTime != ""'>
+                AND dataTable.create_date >= #{queryStartTime}
+                AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            ${dataScope}
+        </where>
+    </select>
+
+    <select id="getEventNumByHandle"  resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.AnalysisVO">
+        SELECT
+        region_name AS regionName,
+        round(sum(handle_duration)/3600/sum(duration_num),2) AS avgTime,
+        province_id AS provinceId,
+        city_id AS cityId,
+        county_id AS countyId
+        FROM
+        vm_statistics_event_handle dataTable
+        <where>
+            <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+                AND create_date >= #{queryStartTime} AND create_date <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            <if test="provinceId != null and provinceId != '' ">
+                AND province_id = #{provinceId}
+            </if>
+            <if test="cityId != null and cityId != '' ">
+                AND city_id = #{cityId}
+            </if>
+            <if test="countyId != null and countyId != '' ">
+                AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+            </if>
+            ${dataScope}
+        </where>
+        GROUP BY
+        province_id,
+        city_id,
+        county_id
+        order by avgTime desc
+    </select>
+
+    <select id="getAreaNameById" parameterType="String" resultType="String">
+        SELECT AREA_NAME FROM sys_area WHERE AREA_CODE = #{areaId}
+    </select>
+
+    <select id="getAreaCodeByPCode" parameterType="String" resultType="String">
+        SELECT AREA_CODE FROM sys_area WHERE AREA_PARENT_CODE = #{parentCode}
+    </select>
+
+    <select id="getAllAlgorithmTaskRank" resultType="java.util.Map">
+        SELECT channelCode,channelName,deviceCode,deviceName,SUM(foreAlgorithmTaskNum) as foreAlgorithmTaskNum ,SUM(startForeAlgorithmTaskNum) as startForeAlgorithmTaskNum,SUM(afterAlgorithmTaskNum) as afterAlgorithmTaskNum,SUM(startAfterAlgorithmTaskNum) as startAfterAlgorithmTaskNum,
+        SUM( foreAlgorithmTaskNum )+SUM( afterAlgorithmTaskNum ) AS taskNum,
+        SUM( startForeAlgorithmTaskNum )+SUM( startAfterAlgorithmTaskNum ) AS strTaskNum
+        FROM
+        (
+        SELECT IFNULL(b.channel_name,c.channel_name) as channelName,IFNULL(b.device_name,od.device_name) as deviceName,COUNT(1) AS foreAlgorithmTaskNum,COUNT(IF(dataTable.`status` = '0', 1, NULL)) AS startForeAlgorithmTaskNum,0 AS afterAlgorithmTaskNum,0 AS startAfterAlgorithmTaskNum, od.device_code as deviceCode,c.channel_code as channelCode FROM `vm_algorithm_give_config` dataTable
+        left join vm_device_info_t t on t.device_code = dataTable.device_code
+        left JOIN vm_order_devices od ON od.device_code = t.device_code and od.tenant_id = dataTable.tenant_id AND dataTable.industry_code = od.industry_code
+        left join vm_channel_info_t c on t.device_code = c.device_code and c.channel_code = dataTable.channel_code
+        left join vm_tenant_device_channel_rel_t b on b.device_code = od.device_code AND b.channel_code = c.channel_code AND b.industry_code = od.industry_code
+        AND b.tenant_id = od.tenant_id AND b.delete_flag='0'
+        where dataTable.delete_flag = '0' and od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and t.delete_flag = '0' and c.delete_flag = '0'
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+                and dataTable.device_code in
+                <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </if>
+        <if test='areaCodeLists != null and areaCodeLists.size() > 0'>
+            and (
+            t.province_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.city_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.county_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.town_code in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        ${dataScope}
+        GROUP BY dataTable.channel_code
+        UNION ALL
+        SELECT IFNULL(b.channel_name,c.channel_name) as channelName, IFNULL(b.device_name,od.device_name) as deviceName,0 AS foreAlgorithmTaskNum,0 AS startForeAlgorithmTaskNum,COUNT(1) AS afterAlgorithmTaskNum,COUNT(IF(dataTable.`status` = '0', 1, NULL)) AS startAfterAlgorithmTaskNum, od.device_code as deviceCode,c.channel_code as channelCode FROM `vm_algorithm_config` dataTable
+        left join vm_device_info_t t on t.device_code = dataTable.device_code
+        left JOIN vm_order_devices od ON od.device_code = t.device_code and od.tenant_id = dataTable.tenant_id AND dataTable.industry_code = od.industry_code
+        left join vm_channel_info_t c on t.device_code = c.device_code and c.channel_code = dataTable.channel_code
+        left join vm_tenant_device_channel_rel_t b on b.device_code = od.device_code AND b.channel_code = c.channel_code AND b.industry_code = od.industry_code
+        AND b.delete_flag='0' AND b.tenant_id = od.tenant_id
+        where dataTable.delete_flag = '0' and od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and t.delete_flag = '0' and c.delete_flag = '0'
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+                and dataTable.device_code in
+                <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </if>
+        <if test='areaCodeLists != null and areaCodeLists.size() > 0'>
+            and (
+            t.province_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.city_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.county_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.town_code in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        ${dataScope}
+        GROUP BY dataTable.channel_code
+        )c  GROUP BY channelCode  ORDER BY  deviceCode
+    </select>
+
+    <select id="getDeviceCodeListByDeptIds" resultType="java.lang.String">
+        SELECT DISTINCT dt.device_code
+        from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        left join vm_order_devices od on dt.device_code = od.device_code
+        WHERE od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and dt.device_type NOT IN (8,9,10) AND od.tenant_id=#{tenantId} and od.industry_code=#{industryCode}
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            and d.DEPT_ID in
+            <foreach collection="orgIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getLoginDurationRankAndNum" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+        user_id AS userId,
+        loginName,
+        SUM(onlineTime) AS onlineTime,
+        SUM(loginCount) AS loginCount,
+        tenant_id AS tenantId,
+        tenant_name AS tenantName,
+        loginUserName
+        FROM
+        (
+        SELECT
+        dataTable.tenant_id,
+        dataTable.tenant_name,
+        dataTable.login_name AS loginUserName,
+        user_id,
+        IFNULL( dataTable.nick_name, '' ) AS loginName,
+        IFNULL( cast( SUM( dataTable.login_count ) AS DECIMAL ( 10, 0 )), 0 ) AS loginCount,
+        0 AS onlineTime
+        FROM
+        vm_statistics_custom_duration AS dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY dataTable.user_id
+        union all
+        SELECT
+        tenant_id AS tenant_id,
+        '' AS tenant_name,
+        '' AS loginUserName,
+        user_id,
+        dataTable.nick_name AS loginName,
+        0 AS loginCount,
+        cast(
+        SUM( dataTable.online_time ) AS DECIMAL ( 10, 0 )) AS onlineTime
+        FROM
+        vm_statistics_user_online_time dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY dataTable.user_id
+        HAVING  onlineTime <![CDATA[>=]]> '60'
+        ) b
+        GROUP BY
+        b.user_id
+        ORDER BY onlineTime + 0 DESC, loginCount + 0 DESC, tenantId ASC
+    </select>
+
+    <sql id="queryCriteria_clonum">
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND DATE_FORMAT(dataTable.login_time,'%Y-%m-%d') <![CDATA[>=]]> DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d')
+            AND DATE_FORMAT(dataTable.login_time,'%Y-%m-%d') <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+        </if>
+        <if test="orgIdList != null and orgIdList.size() > 0 ">
+            AND(
+            <foreach collection="orgIdList" item="deptId" index="index" open="" close="" separator="or">
+                (dataTable.dept_id = #{deptId} OR dataTable.dept_id
+                IN ( SELECT t.dept_id FROM sys_dept t WHERE INSTR(ANCESTORS, #{deptId})>0 ) )
+            </foreach>
+            )
+        </if>
+        ${dataScope}
+    </sql>
+</mapper>

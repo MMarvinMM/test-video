@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.TenantDeviceAttachmentMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.device.dto.DeviceAttachmentFileUrlVO">
+        <result column="device_code" property="deviceCode"/>
+        <collection property="fileUrlList" ofType="String">
+            <result column="file_url" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <insert id="batchInsert"  parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceAttachmentVO">
+        INSERT INTO vm_tenant_device_attachment_t
+        (device_code, device_type, file_url, tenant_id, industry_code, app_ver_code, creator, create_time) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.deviceCode}, #{item.deviceType}, #{item.fileUrl}, #{item.tenantId}, #{item.industryCode},
+            #{item.appVerCode}, #{item.creator}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <delete id="deleteByDeviceCode">
+        delete from vm_tenant_device_attachment_t
+        where tenant_id = #{tenantId} and industry_code = #{industryCode}
+        and device_code = #{deviceCode} and device_type = #{deviceType}
+    </delete>
+
+    <select id="selectFileUrlByDeviceCode" resultType="java.lang.String">
+        select file_url
+        from vm_tenant_device_attachment_t
+        where tenant_id = #{tenantId} and industry_code = #{industryCode}
+        and device_code = #{deviceCode} and device_type = #{deviceType}
+    </select>
+
+    <select id="selectFileUrlByDeviceCodeOrder" resultType="java.lang.String">
+    	select file_url
+        from vm_tenant_device_attachment_t
+        where tenant_id = #{tenantId} and industry_code = #{industryCode}
+        and device_code = #{deviceCode} and device_type = #{deviceType}
+        ORDER BY
+		  CASE
+		    WHEN LOWER(file_url) LIKE '%.mp4%' THEN 0
+		    ELSE 1
+		  END
+    </select>
+
+    <select id="selectFileUrlByDeviceCodeList" resultMap="BaseResultMap">
+        select file_url, device_code
+        from vm_tenant_device_attachment_t
+        where tenant_id = #{tenantId} and industry_code = #{industryCode}
+          and device_code in
+            <foreach item="deviceCode" index="index" collection="list" open="(" separator="," close=")">
+                #{deviceCode}
+            </foreach>
+          and device_type = #{deviceType}
+    </select>
+</mapper>

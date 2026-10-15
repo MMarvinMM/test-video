@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.dao.SynchLocalizationAlarmDAO">
+
+    <select id="queryOrderList" resultType="com.chinatower.platform.modules.WarningOrderEntity">
+        SELECT t.warning_order_id,
+               t.warning_source,
+               t.task_id,
+               t.warning_type_id,
+               t.alarm_time,
+               t.tenant_id,
+               t.tenant_name,
+               t.longitude,
+               t.latitude,
+               t.alarm_body,
+               t.remark,
+               t.delete_remark      AS "deleteRemark",
+               t.description,
+               t.address,
+               t.process_id,
+               t.process_name,
+               t.group_id,
+               t.creator,
+               t.emergency_level,
+               t.order_status,
+               t.flow_node_time,
+               t.find_name,
+               t.find_mobile,
+               t.file_img_url_src,
+               t.file_img_url_icon,
+               t.video_url,
+               t.create_time,
+               t.modifier_date,
+               t.time_limit,
+               t.algorithm_code,
+               t.grid_name,
+               t.judge_time,
+               t.org_record,
+               t.user_record,
+               t.duplicate_order_id,
+               t.province_code      AS "provinceId",
+               t.province_name,
+               t.city_code          AS "cityId",
+               t.city_name,
+               t.county_code        AS "countyCode",
+               t.county_name,
+               t.town_code,
+               t.town_Name          AS "townName",
+               t.grid_id,
+               t.grid_code,
+               t.device_name,
+               t.channel_name,
+               t.device_code,
+               t.channel_code,
+               t.ptz_p              AS "pan",
+               t.ptz_t              AS "tilt",
+               t.ptz_z              AS "zoom",
+               t.alarm_code,
+               t.voice,
+               t.judge_result,
+               t.real_link_type,
+               t.flow_id,
+               t.link_id,
+               t.link_name,
+               t.flow_template,
+               t.role_id,
+               t.app_ver_code,
+               t.alarm_param,
+               t.alarm_param_value,
+               t.extra_field,
+               t.false_alarm_remark,
+               t.hori_azimuth_angle,
+               t.importance_level,
+               t.front_alarm_pic_url,
+               t.front_alarm_vedio_url,
+               t.msg_id,
+               t.msg_type           AS "msgType",
+               t.notice_resource,
+               t.confidence_level,
+               t.confidence_level_min,
+               t.comp_confidence_level,
+               t.camera_alarm_type,
+               t.is_second_judge,
+               t.second_judge_result,
+               t.is_second_identify,
+               t.second_identify_result,
+               t.linkage_algorithm,
+               t.transparent_fields AS "transparentFields",
+               t.feature_pan,
+               t.feature_tilt,
+               t.before_dispatch_flag,
+               t.preset_id,
+               t.enlarge_flag,
+               t.confidence_level_max,
+               t.enable_acceptance_mode,
+               t.time_limit_acceptance,
+               t.alarm_reason       AS "alarmReason",
+               t.device_pitch       AS "devicePitch",
+               t.device_horizontal  AS "deviceHorizontal",
+               t.delete_flag,
+               t.industry_code
+        FROM (SELECT *
+              FROM ${lastTableName}
+              WHERE (
+                      modifier_date IS NOT NULL
+                      AND modifier_date >= #{startDate}
+                      AND modifier_date <![CDATA[<]]> #{endDate}
+                  )
+                 OR (
+                      modifier_date IS NULL
+                      AND create_time >= #{startDate}
+                      AND create_time <![CDATA[<]]> #{endDate}
+                  )
+              UNION ALL
+              SELECT *
+              FROM ${tableName}
+              WHERE (
+                      modifier_date IS NOT NULL
+                      AND modifier_date >= #{startDate}
+                      AND modifier_date <![CDATA[<]]> #{endDate}
+                  )
+                 OR (
+                      modifier_date IS NULL
+                      AND create_time >= #{startDate}
+                      AND create_time <![CDATA[<]]> #{endDate}
+                  )
+        ) t
+        ORDER BY t.modifier_date DESC
+            LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="queryFlowRecordList" resultType="com.chinatower.platform.modules.OrderFlowRecordEntity">
+        SELECT
+            dataTable.order_flow_id,
+            dataTable.order_id,
+            dataTable.link_id,
+            dataTable.link_name,
+            dataTable.flow_record_name,
+            DATE_FORMAT(dataTable.flow_node_time,'%Y-%m-%d %H:%i:%s') AS "flowNodeTime",
+            IF(dataTable.flow_end_time IS NULL,'',DATE_FORMAT(dataTable.flow_end_time,'%Y-%m-%d %H:%i:%s')) AS "flowEndTime",
+            dataTable.if_current_link,
+            dataTable.process_id,
+            dataTable.process_name,
+            dataTable.group_id,
+            dataTable.if_timeout,
+            dataTable.creator,
+            dataTable.delete_flag,
+            dataTable.process_order_id,
+            dataTable.approve_order_id,
+            dataTable.remark,
+            dataTable.close_remark AS "closeRemark",
+            dataTable.time_limit,
+            dataTable.voice,
+            dataTable.process_name_list,
+            dataTable.flow_link_type,
+            dataTable.real_link_type,
+            dataTable.next_link_id,
+            dataTable.next_link_name,
+            dataTable.accept_process_id,
+            dataTable.enable_acceptance_mode
+        FROM
+            ${tableName} AS dataTable
+            WHERE dataTable.delete_flag = '0'
+            <if test="orderIdList != null and orderIdList.size()> 0 ">
+                and dataTable.order_id in
+                <foreach collection="orderIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        ORDER BY dataTable.flow_node_time DESC, dataTable.order_flow_id DESC
+    </select>
+
+    <select id="queryOperateOrderList" resultType="com.chinatower.platform.modules.OperateOrderEntity">
+        SELECT
+            a.warning_order_id,
+            a.warning_source,
+            a.tenant_id,
+            a.tenant_name,
+            a.task_id,
+            a.alarm_body,
+            a.device_code,
+            a.device_name,
+            a.channel_code,
+            a.channel_name,
+            a.warning_type_id,
+            a.warning_type_name,
+            a.alarm_time,
+            a.province_id,
+            a.province_name,
+            a.city_id,
+            a.city_name,
+            a.county_id,
+            a.county_name,
+            a.longitude,
+            a.latitude,
+            a.img_url,
+            a.create_time,
+            a.modifier_time,
+            a.delete_flag,
+            a.ptz_p,
+            a.ptz_t,
+            a.ptz_z,
+            a.address,
+            a.alarm_code,
+            a.algorithm_code,
+            a.emergency_level,
+            a.emergency_level_name,
+            a.duplicate_order_id,
+            a.false_alarm_remark,
+            a.create_user,
+            a.create_user_name,
+            a.judge_result,
+            IF(a.judge_time IS NULL,'',DATE_FORMAT(a.judge_time,'%Y-%m-%d %H:%i:%s')) AS "judgeTime",
+            a.grid_id,
+            a.grid_name,
+            a.video_url,
+            a.file_img_url_icon,
+            a.importance_level,
+            a.alarm_param,
+            a.alarm_param_value,
+            a.extra_field,
+            a.operate_type,
+            a.industry_code,
+            a.app_ver_code,
+            a.alarm_param,
+            a.alarm_param_value,
+            a.extra_field,
+            a.msg_type,
+            a.notice_resource,
+            a.confidence_level,
+            a.confidence_level_min,
+            a.comp_confidence_level,
+            a.front_alarm_pic_url,
+            a.front_alarm_vedio_url,
+            a.hori_azimuth_angle,
+            a.msg_id,
+            a.camera_alarm_type,
+            a.is_second_judge,
+            a.second_judge_result,
+            a.is_second_identify,
+            a.second_identify_result,
+            a.linkage_algorithm,
+            a.town_code,
+            a.town_name,
+            a.preset_id,
+            a.enlarge_flag,
+            a.confidence_level_max,
+            a.device_pitch AS "devicePitch",
+            a.device_horizontal AS "deviceHorizontal",
+            a.transparent_fields AS "transparentFields",
+            a.result_tab
+        FROM
+            vm_alarm_operate_t a
+        WHERE
+            a.delete_flag = '0'
+            AND (
+                ( DATE_FORMAT( a.alarm_time, '%Y-%m' ) = DATE_FORMAT( #{date}, '%Y-%m' ) )
+                OR (
+                DATE_FORMAT( a.alarm_time, '%Y-%m' ) = DATE_FORMAT( DATE_SUB( #{date}, INTERVAL 1 MONTH ), '%Y-%m' )))
+            AND ((
+                    a.modifier_time IS NOT NULL
+                    AND DATE_FORMAT( a.modifier_time, '%Y-%m-%d' ) = DATE_FORMAT( #{date}, '%Y-%m-%d' ))
+                OR (
+                a.modifier_time IS NULL
+            AND DATE_FORMAT( a.create_time, '%Y-%m-%d' ) = DATE_FORMAT( #{date}, '%Y-%m-%d' )))
+            LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="queryInterceptOrderList" resultType="com.chinatower.platform.modules.InterceptOrderEntity">
+        SELECT
+            dataTable.alarm_body AS "alarmBody",
+            dataTable.warning_order_id AS "warningOrderId",
+            dataTable.warning_source AS "warningSource",
+            dataTable.warning_type_id AS "warningTypeId",
+            dataTable.alarm_time AS "alarmTime",
+            dataTable.task_id AS "taskId",
+            dataTable.province_code AS "provinceId",
+            dataTable.province_name AS "provinceName",
+            dataTable.city_code AS "cityId",
+            dataTable.city_name AS "cityName",
+            dataTable.county_code AS "countyId",
+            dataTable.county_name AS "countyName",
+            dataTable.longitude,
+            dataTable.latitude,
+            dataTable.emergency_level AS "emergencyLevel",
+            dataTable.importance_level AS "importanceLevel",
+            dataTable.tenant_id AS "tenantId",
+            dataTable.tenant_name AS "tenantName",
+            dataTable.ptz_p,
+            dataTable.ptz_t,
+            dataTable.ptz_z,
+            dataTable.device_name AS "deviceName",
+            dataTable.channel_name AS "channelName",
+            dataTable.device_code AS "deviceCode",
+            dataTable.channel_code AS "channelCode",
+            dataTable.address,
+            dataTable.alarm_code,
+            dataTable.algorithm_code,
+            dataTable.emergency_level,
+            dataTable.customer_code,
+            dataTable.grid_id,
+            dataTable.grid_code,
+            dataTable.grid_name,
+            dataTable.video_url,
+            dataTable.file_img_url_src,
+            dataTable.file_img_url_icon,
+            dataTable.judge_result,
+            dataTable.create_time,
+            dataTable.modifier_date,
+            dataTable.delete_flag,
+            dataTable.importance_level,
+            dataTable.intercept AS intercept,
+            dataTable.prevAlarmTime,
+            dataTable.this_thresh,
+            dataTable.thresh,
+            dataTable.alarmInterval,
+            dataTable.alarmInterval_type,
+            dataTable.algorithm_time,
+            dataTable.flow_id,
+            dataTable.industry_code,
+            dataTable.alarm_param,
+            dataTable.alarm_param_value,
+            dataTable.extra_field,
+            dataTable.app_ver_code,
+            dataTable.msg_type,
+            dataTable.notice_resource AS "noticeResource",
+            dataTable.is_second_judge AS "isSecondJudge",
+            dataTable.second_judge_result AS "secondJudgeResult",
+            IFNULL( dataTable.confidence_level, '' ) AS "confidenceLevel",
+            dataTable.front_alarm_pic_url AS "frontAlarmPicUrl",
+            IFNULL( dataTable.comp_confidence_level, '' ) AS "compConfidenceLevel",
+            dataTable.confidence_level_min,
+            dataTable.confidence_level_max,
+            dataTable.front_alarm_vedio_url,
+            dataTable.hori_azimuth_angle,
+            dataTable.msg_id,
+            dataTable.camera_alarm_type,
+            dataTable.is_second_judge,
+            dataTable.second_judge_result,
+            dataTable.is_second_identify,
+            dataTable.second_identify_result,
+            dataTable.linkage_algorithm,
+            dataTable.transparent_fields AS "transparentFields",
+            dataTable.town_code,
+            dataTable.town_name,
+            dataTable.preset_id,
+            dataTable.alarm_reason AS "alarmReason",
+            dataTable.device_pitch AS "devicePitch",
+            dataTable.device_horizontal AS "deviceHorizontal",
+            dataTable.enlarge_flag
+        FROM
+            vm_warning_intercept_t dataTable
+        WHERE
+            dataTable.delete_flag = '0'
+            AND (
+                ( DATE_FORMAT( dataTable.alarm_time, '%Y-%m' ) = DATE_FORMAT( #{date}, '%Y-%m' ) )
+                OR (
+                DATE_FORMAT( dataTable.alarm_time, '%Y-%m' ) = DATE_FORMAT( DATE_SUB( #{date}, INTERVAL 1 MONTH ), '%Y-%m' )))
+            AND ((
+                    dataTable.modifier_date IS NOT NULL
+                    AND DATE_FORMAT( dataTable.modifier_date, '%Y-%m-%d' ) = DATE_FORMAT( #{date}, '%Y-%m-%d' ))
+                OR (
+                dataTable.modifier_date IS NULL
+            AND DATE_FORMAT( dataTable.create_time, '%Y-%m-%d' ) = DATE_FORMAT( #{date}, '%Y-%m-%d' )))
+            LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="getAlarmFlowConfigList" resultType="java.util.Map">
+        SELECT
+            id AS "flowId",
+            alarm_flow_name AS "alarmFlowName"
+        FROM
+            vm_alarm_flow_config
+        WHERE
+            STATUS = '1'
+    </select>
+
+    <select id="getOrderFileList" resultType="com.chinatower.event.entity.dto.OrderFileDO">
+        SELECT
+             t.order_file_id,
+             t.warning_order_id,
+             t.order_flow_id,
+             t.process_order_id,
+             t.link_id,
+             t.resource_id,
+             t.resource_url,
+             t.resource_type,
+             t.file_name,
+             t.file_size,
+             t.file_water_mark AS "fileWaterMark",
+             t.delete_flag,
+             t.create_by,
+             t.create_date,
+             t.modifier_by,
+             t.modifier_date,
+             t.remark,
+             t.process_id,
+             t.process_name
+        FROM
+            vm_order_file_t t
+            WHERE delete_flag = '0'
+    </select>
+
+    <select id="getHandlePhotos" resultType="java.util.Map">
+        SELECT
+            a.file_name AS "fileName",
+            a.file_size AS "fileSize",
+            a.process_order_id AS "processOrderId",
+            a.resource_id AS "resourceId",
+            a.resource_url AS "resourceUrl",
+            a.resource_type AS "resourceType",
+            a.file_water_mark AS "fileWaterMark"
+        FROM
+            vm_process_order_photo_t a
+        WHERE
+            a.delete_flag = '0'
+    </select>
+
+    <select id="getOrderFilesAll" resultType="com.chinatower.event.entity.dto.OrderFileDO">
+        SELECT
+            t.warning_order_id,
+            t.file_name,
+            t.file_size,
+            t.resource_id,
+            t.resource_url,
+            t.resource_type,
+            IFNULL(t.file_water_mark,'') AS "fileWaterMark"
+        FROM
+            vm_order_file_t t
+        WHERE
+            t.file_water_mark IS NOT NULL AND t.file_water_mark != ''
+            AND t.delete_flag = '0'
+    </select>
+
+    <select id="getProcessOrderPhotosAll" resultType="com.chinatower.event.entity.dto.OrderFileDO">
+        SELECT
+            p.process_order_id,
+            p.file_name,
+            p.file_size,
+            p.resource_id,
+            p.resource_url,
+            p.resource_type,
+            IFNULL(p.file_water_mark,'') AS "fileWaterMark"
+        FROM
+            vm_process_order_photo_t p
+        WHERE
+            p.file_water_mark IS NOT NULL AND p.file_water_mark != ''
+            AND p.delete_flag = '0'
+    </select>
+
+    <select id="getThirdPartyAlarmSource" resultType="java.util.Map">
+        SELECT
+            t.tenant_id AS "tenantId",
+			t.industry_code AS "industryCode",
+			t.warning_source_name AS "warningSourceName"
+		FROM
+			vm_third_party_alarm t
+		WHERE
+			t.delete_flag = 0
+    </select>
+
+    <select id="queryAlgorithmConfig" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT distinct ac.config_id as configId, ac.device_code as deviceCode, ac.channel_code as channelCode, ac.pos_type as posType,
+                        ac.tenant_id as tenantId, ac.create_time as createTime,
+                        ac.time_interval as timeInterval, ac.time_interval_unit as timeIntervalUnit,
+                        ac.algorithm_code as algorithmCode,ac.algorithm_name as algorithmName, ac.creator,ac.modifier,
+                        ac.task_id as taskId,
+                        IFNULL(vp.preset_name, ac.preset_name) AS presetName,
+                        ac.model_config as modelConfig, ac.analysis_period as analysisPeriod,
+                        (case when length(IFNULL(tdr.channel_name, '')) = 0 then ch.channel_name else tdr.channel_name end) as channelName,
+                        (case when length(IFNULL(tdr.device_name, '')) = 0 then m.device_name else tdr.device_name end) as deviceName,
+                        ac.industry_code as industryCode, ac.app_ver_code as appVerCode
+        FROM vm_algorithm_config ac
+                 LEFT JOIN vm_video_preset vp ON vp.preset_id = ac.preset_id and vp.device_code = ac.device_code
+                 LEFT JOIN vm_device_info_t m ON m.device_code = ac.device_code
+                 LEFT JOIN vm_channel_info_t ch ON ch.channel_code = ac.channel_code
+                 LEFT JOIN vm_tenant_device_channel_rel_t tdr on tdr.device_code = m.device_code
+            and tdr.channel_code = ch.channel_code and tdr.tenant_id = ac.tenant_id
+            and tdr.industry_code = ac.industry_code
+        where ch.delete_flag = 0 and m.delete_flag = 0
+    </select>
+</mapper>

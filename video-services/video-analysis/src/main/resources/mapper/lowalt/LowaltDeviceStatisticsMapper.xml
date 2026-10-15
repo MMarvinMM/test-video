@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.analysis.modules.lowalt.mapper.LowaltDeviceStatisticsMapper">
+
+    <!-- 设备数量统计 -->
+    <select id="selectDeviceStatistics" parameterType="com.chinatower.analysis.api.lowalt.domain.DeviceStatsDTO"
+            resultType="com.chinatower.analysis.api.lowalt.domain.vo.DeviceStatsVO">
+        ( SELECT case when category_code=1 and device_type=400600020003 then 2
+                    when category_code=2 and device_type=40084401 then 1
+                    when category_code=2 and device_type=40084403 then 4
+                    when category_code=2 and device_type=40084402 then 5 else null end  as deviceType,
+        SUM(CASE WHEN device_status = 0 THEN 1 ELSE 0 END) as onlineCount,
+        SUM(CASE WHEN device_status = 1 THEN 1 ELSE 0 END) as offlineCount,
+        COUNT(*) as totalCount
+        FROM vm_iot_device_t
+        WHERE delete_flag = 0
+        <include refid="queryDeviceArea"></include>
+        GROUP BY deviceType )
+        union
+        (  select 3 as deviceType,
+        SUM(CASE WHEN device_status = 0 THEN 1 ELSE 0 END) as onlineCount,
+        SUM(CASE WHEN device_status = 1 THEN 1 ELSE 0 END) as offlineCount,
+        COUNT(*) as totalCount
+        from vm_device_info_t
+        where delete_flag ='0'
+        <include refid="queryAreaLevel"></include>
+        <choose>
+            <when test="cameraDeviceCodeList != null and cameraDeviceCodeList.size() > 0">
+                AND device_code in
+                <foreach collection="cameraDeviceCodeList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+        )
+    </select>
+
+    <!-- 设备分布Top5 -->
+    <select id="selectDeviceDistributionTop5" resultType="com.chinatower.analysis.api.lowalt.domain.vo.DeviceDistributionVO">
+        SELECT t.areaCode,sum(t.device_count) as deviceCount FROM ( (SELECT
+        <choose>
+            <when test="areaLevel == 1">
+                province_id as areaCode,
+            </when>
+            <when test="areaLevel == 2">
+                city_id as areaCode,
+            </when>
+            <when test="areaLevel == 3 or areaLevel == 23">
+                county_id as areaCode,
+            </when>
+            <otherwise>
+                county_id as areaCode,
+            </otherwise>
+        </choose>
+        COUNT(*) as device_count
+        FROM vm_iot_device_t
+        WHERE delete_flag = 0
+        <include refid="queryDeviceArea"></include>
+        GROUP BY areaCode )
+        union ( select
+            <choose>
+                <when test="areaLevel == 1">
+                    province_id as areaCode,
+                </when>
+                <when test="areaLevel == 2">
+                    city_id as areaCode,
+                </when>
+                <when test="areaLevel == 3 or areaLevel == 23">
+                    county_id as areaCode,
+                </when>
+                <otherwise>
+                    county_id as areaCode,
+                </otherwise>
+            </choose>
+            COUNT(*) as device_count
+            from vm_device_info_t
+            where delete_flag ='0'
+            <include refid="queryAreaLevel"></include>
+            <choose>
+                <when test="cameraDeviceCodeList != null and cameraDeviceCodeList.size() > 0">
+                    AND device_code in
+                    <foreach collection="cameraDeviceCodeList" item="item" open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+                </when>
+                <otherwise>
+                    AND 1 = 0
+                </otherwise>
+            </choose>
+            GROUP BY areaCode
+        ) ) t
+        GROUP BY t.areaCode
+        ORDER BY deviceCount DESC limit 5
+    </select>
+
+    <select id="selectDeviceTypeCountTop5" resultType="java.util.Map">
+        SELECT
+        t.areaCode as areaCode,
+        t.deviceType as deviceType,
+        t.device_count as deviceCount
+        FROM ( (
+        SELECT
+        <choose>
+            <when test="areaLevel == 1">
+                province_id as areaCode,
+            </when>
+            <when test="areaLevel == 2">
+                city_id as areaCode,
+            </when>
+            <when test="areaLevel == 3 or areaLevel == 23">
+                county_id as areaCode,
+            </when>
+            <otherwise>
+                county_id as areaCode,
+            </otherwise>
+        </choose>
+        case when category_code=1 and device_type=400600020003 then 2
+        when category_code=2 and device_type=40084401 then 1
+        when category_code=2 and device_type=40084403 then 4
+        when category_code=2 and device_type=40084402 then 5  else null end  as deviceType,
+        COUNT(*) as device_count
+        FROM vm_iot_device_t
+        WHERE delete_flag = 0
+        AND( ( category_code=2 and device_type in
+        <foreach collection="iotDeviceTypeList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>) or (category_code=1 and device_type=400600020003) )
+        <choose>
+            <when test="iotDeviceCodeList != null and iotDeviceCodeList.size() > 0">
+                AND device_code in
+                <foreach collection="iotDeviceCodeList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+        <if test=" areaCodeList != null and areaCodeList.size() >0 ">
+            <choose>
+                <when test="areaLevel == 1">
+                    AND  province_id in
+                </when>
+                <when test="areaLevel == 2">
+                    AND  city_id in
+                </when>
+                <when test="areaLevel == 3 or areaLevel == 23">
+                    AND  county_id in
+                </when>
+                <otherwise>
+                    AND  county_id in
+                </otherwise>
+            </choose>
+            <foreach collection="areaCodeList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY areaCode,deviceType )
+        union (
+        SELECT
+        <choose>
+            <when test="areaLevel == 1">
+                province_id as areaCode,
+            </when>
+            <when test="areaLevel == 2">
+                city_id as areaCode,
+            </when>
+            <when test="areaLevel == 3 or areaLevel == 23">
+                county_id as areaCode,
+            </when>
+            <otherwise>
+                county_id as areaCode,
+            </otherwise>
+        </choose>
+        3 as deviceType,
+        COUNT(*) as device_count
+        FROM vm_device_info_t
+        WHERE delete_flag = 0
+        <choose>
+            <when test="cameraDeviceCodeList != null and cameraDeviceCodeList.size() > 0">
+                AND device_code in
+                <foreach collection="cameraDeviceCodeList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+        <if test=" areaCodeList != null and areaCodeList.size() >0 ">
+            <choose>
+                <when test="areaLevel == 1">
+                    AND  province_id in
+                </when>
+                <when test="areaLevel == 2">
+                    AND  city_id in
+                </when>
+                <when test="areaLevel == 3 or areaLevel == 23 ">
+                    AND  county_id in
+                </when>
+                <otherwise>
+                    AND  county_id in
+                </otherwise>
+            </choose>
+            <foreach collection="areaCodeList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY areaCode
+        )
+        ) t
+        ORDER BY t.device_count DESC
+    </select>
+
+    <!-- 设备在线率统计 -->
+    <select id="selectDeviceOnlineRate" resultType="com.chinatower.analysis.api.lowalt.domain.vo.DeviceOnlineRateVO">
+        (SELECT case when category_code=1 and device_type=400600020003 then 2
+        when category_code=2 and device_type=40084401 then 1
+        when category_code=2 and device_type=40084403 then 4
+        when category_code=2 and device_type=40084402 then 5 else null end  as deviceType,
+        COALESCE(SUM(CASE WHEN device_status = 0 THEN 1 ELSE 0 END), 0) as onlineCount,
+        COALESCE(COUNT(*), 0) as totalCount,
+        CASE 
+            WHEN COUNT(*) > 0 THEN ROUND(SUM(CASE WHEN device_status = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2)
+            ELSE 0.0
+        END as onlineRate
+        FROM vm_iot_device_t
+        WHERE delete_flag = 0
+        <include refid="queryDeviceArea"></include>
+        GROUP BY deviceType
+        HAVING deviceType IS NOT NULL)
+        union (
+        select 3 as deviceType,
+        COALESCE(SUM(CASE WHEN device_status = 0 THEN 1 ELSE 0 END), 0) as onlineCount,
+        COALESCE(COUNT(*), 0) as totalCount,
+        CASE 
+            WHEN COUNT(*) > 0 THEN ROUND(SUM(CASE WHEN device_status = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2)
+            ELSE 0.0
+        END as onlineRate
+        from vm_device_info_t
+        where delete_flag ='0'
+        <include refid="queryAreaLevel"></include>
+        <choose>
+            <when test="cameraDeviceCodeList != null and cameraDeviceCodeList.size() > 0">
+                AND device_code in
+                <foreach collection="cameraDeviceCodeList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+        )
+    </select>
+
+    <select id="getAreaName" resultType="java.util.Map">
+        select AREA_CODE as areaCode,AREA_NAME as areaName from sys_area where AREA_CODE in
+        <foreach collection="areaCodeList" item="areaCode" open="(" close=")" separator=",">
+            #{areaCode}
+        </foreach>
+    </select>
+
+    <sql id="queryAreaLevel">
+        <if test="areaLevel == 2  or areaLevel == 23">
+            AND province_id = #{areaCode}
+        </if>
+        <if test="areaLevel == 3 ">
+            AND city_id = #{areaCode}
+        </if>
+        <if test="areaLevel == 4 ">
+            AND county_id = #{areaCode}
+        </if>
+    </sql>
+
+    <sql id="queryDeviceArea">
+        <if test="areaLevel == 2  or areaLevel == 23">
+            AND province_id = #{areaCode}
+        </if>
+        <if test="areaLevel == 3 ">
+            AND city_id = #{areaCode}
+        </if>
+        <if test="areaLevel == 4 ">
+            AND county_id = #{areaCode}
+        </if>
+        AND( ( category_code=2 and device_type in
+        <foreach collection="iotDeviceTypeList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>) or (category_code=1 and device_type=400600020003) )
+        <choose>
+            <when test="iotDeviceCodeList != null and iotDeviceCodeList.size() > 0">
+                AND device_code in
+                <foreach collection="iotDeviceCodeList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+
+    </sql>
+
+</mapper>

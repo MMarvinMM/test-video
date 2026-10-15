@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.message.api.factory.MsgStationFallbackFactory,\
+  com.chinatower.message.api.factory.LowAltMsgFallbackFactory

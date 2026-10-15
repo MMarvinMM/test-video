@@ -1,0 +1,10 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.system.api.feign.factory.ObsEncryptFallbackFactory,\
+  com.chinatower.system.api.feign.factory.RemoteUserFallbackFactory,\
+  com.chinatower.system.api.feign.factory.SystemFeignClientFallback,\
+  com.chinatower.system.api.feign.factory.SystemFeignClientFallbackFactory,\
+  com.chinatower.system.api.config.CaffeineCacheConfigureCore,\
+  com.chinatower.system.api.deal.ObsFileUrlEncryptUtil
+
+
+

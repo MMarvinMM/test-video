@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderEnergyDeviceMapper">
+
+    <update id="cancelByOrderCode">
+        update vm_order_recorder_devices
+        set ord_status = 3, update_time = now()
+        where order_code = #{orderCode} and ord_status in (0,1,2);
+    </update>
+
+    <select id="getTenantRecorderDeviceList" resultType="com.chinatower.system.api.model.DeviceTreeVO">
+        SELECT
+        de.province_code provinceId,
+        de.city_code cityId,
+        de.county_code countyId,
+        de.device_code,
+        de.device_name,
+        ord.industry_code,
+        ord.app_ver_code as appVersion,
+        (
+        IF
+        ( de.town_code REGEXP '[^0-9]', NULL, de.town_code )) town_code
+        FROM
+        vm_order_recorder_devices ord
+        JOIN vm_recorder_device_info_t de ON de.device_code = ord.device_code
+        WHERE
+        de.delete_flag = '0'
+        AND de.province_code != ''
+        AND de.province_code IS NOT NULL
+        AND de.city_code != ''
+        AND de.city_code IS NOT NULL
+        AND de.county_code != ''
+        AND de.county_code IS NOT NULL
+        AND de.province_code REGEXP '[0-9]'
+        AND de.city_code REGEXP '[0-9]'
+        AND de.county_code REGEXP '[0-9]'
+        AND ord.order_code = #{orderCode}
+        and ord.ord_status in (0,1,2)
+        ORDER BY
+        de.province_code,
+        de.city_code,
+        de.county_code,
+        de.town_code
+    </select>
+</mapper>

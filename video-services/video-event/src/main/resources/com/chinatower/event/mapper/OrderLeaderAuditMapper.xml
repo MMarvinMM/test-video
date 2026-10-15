@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.OrderLeaderAuditMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.OrderLeaderAuditDO">
+        <id column="audit_id" property="auditId" />
+        <result column="order_id" property="orderId" />
+        <result column="content" property="content" />
+        <result column="user_id" property="userId" />
+        <result column="leader_id" property="leaderId" />
+        <result column="status" property="status" />
+        <result column="audit_content" property="auditContent" />
+        <result column="create_time" property="createTime" />
+        <result column="audit_time" property="auditTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="order_flow_id" property="orderFlowId" />
+        <result column="voice" property="voice" />
+        <result column="apply_voice" property="applyVoice" />
+        <result column="time_limit" property="timeLimit" />
+        <result column="flow_node_time" property="flowNodeTime" />
+        <result column="emergency_level" property="emergencyLevel" />
+        <result column="order_status" property="orderStatus" />
+        <result column="alarm_body" property="alarmBody" />
+        <result column="county_code" property="countyCode" />
+        <result column="county_name" property="countyName" />
+        <result column="city_code" property="cityCode" />
+        <result column="city_name" property="cityName" />
+        <result column="province_code" property="provinceCode" />
+        <result column="province_name" property="provinceName" />
+        <result column="tenant_name" property="tenantName" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="alarm_time" property="alarmTime" />
+        <result column="warning_type_id" property="warningTypeId" />
+        <result column="longitude" property="longitude" />
+        <result column="latitude" property="latitude" />
+        <result column="address" property="address" />
+        <result column="file_img_url_src" property="fileImgUrlSrc" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        audit_id, order_id, content, user_id, leader_id, status, audit_content, create_time, audit_time, delete_flag, order_flow_id, voice, apply_voice, time_limit, flow_node_time, emergency_level, order_status, alarm_body, county_code, county_name, city_code, city_name, province_code, province_name, tenant_name, tenant_id, alarm_time, warning_type_id, longitude, latitude, address, file_img_url_src
+    </sql>
+
+    <select id="getLeaderListByFlow" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+        a.order_flow_id as orderFlowId,
+        a.audit_id as auditId,
+        a.leader_id as leaderId,
+        IF(a.audit_time IS NULL,'',DATE_FORMAT(a.audit_time,'%Y-%m-%d %H:%i:%s')) as auditTime,
+        IF(a.create_time IS NULL,'',DATE_FORMAT(a.create_time,'%Y-%m-%d %H:%i:%s')) AS handleTime,
+        IFNULL(a.audit_content,'') AS auditContent,
+        a.status status
+        FROM vm_order_leader_audit_t a
+        WHERE a.order_id = #{orderId,jdbcType=VARCHAR}
+        <if test="orderFlowIdList!= null and orderFlowIdList.size() > 0 ">
+            AND a.order_flow_id in
+            <foreach collection="orderFlowIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <select id="getLeaderAuditInfo" resultType="java.util.Map" parameterType="java.lang.String">
+        SELECT
+        IFNULL(a.province_code,'') AS provinceId,
+        IFNULL(a.city_code,'') AS cityId,
+        IFNULL(a.county_code,'') AS countyId,
+        a.tenant_id AS tenantId,
+        a.order_id AS orderId,
+        a.order_flow_id AS orderFlowId,
+        a.alarm_body AS alarmBody,
+        a.warning_type_id AS warningTypeId,
+        IFNULL(a.alarm_time,'') AS alarmTime,
+        IFNULL(a.create_time,'') AS applyTime,
+        IFNULL(a.user_id,'') AS applyUserId,
+        a.`status`,
+        a.leader_id AS leaderId,
+        IFNULL(a.audit_time,'') AS auditTime,
+        a.emergency_level as emergencyLevel,
+        a.content,
+        a.voice,
+        a.apply_voice as applyVoice,
+        a.address,
+        IFNULL(a.audit_content,'') as auditContent,
+        a.order_status as orderStatus,
+               a.enable_acceptance_mode as enableAcceptanceMode
+        FROM vm_order_leader_audit_t a
+        WHERE a.audit_id = #{auditId,jdbcType=VARCHAR}
+        AND a.delete_flag = '0'
+    </select>
+
+    <update id="updateLeaderAudit"
+            parameterType="com.chinatower.event.dataobject.OrderLeaderAuditDO">
+        update vm_order_leader_audit_t
+        <set>
+            audit_time = now(),
+            <if test="orderId != null and orderId != ''">
+                order_id = #{orderId,jdbcType=VARCHAR},
+            </if>
+            <if test="content != null and content !=''">
+                content = #{content,jdbcType=VARCHAR},
+            </if>
+            <if test="userId != null and userId !=''">
+                user_id = #{userId,jdbcType=VARCHAR},
+            </if>
+            <if test="leaderId != null and leaderId !=''">
+                leader_id = #{leaderId,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null and status != ''">
+                `status` = #{status,jdbcType=CHAR},
+            </if>
+            <if test="auditContent != null and auditContent != ''">
+                audit_content = #{auditContent,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null and createTime != ''">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="deleteFlag != null and deleteFlag !=''">
+                delete_flag = #{deleteFlag,jdbcType=CHAR},
+            </if>
+            <if test="voice != null and voice !=''">
+                voice = #{voice,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where audit_id = #{auditId,jdbcType=VARCHAR}
+    </update>
+
+    <update id="updateLeaderAuditOrderStatus"
+            parameterType="com.chinatower.event.dataobject.OrderLeaderAuditDO">
+        update vm_order_leader_audit_t
+        <set>
+        <if test='orderStatus != null and orderStatus != ""'>
+            order_status = #{orderStatus},
+        </if>
+        <if test='longitude != null and longitude != ""'>
+            longitude = #{longitude},
+        </if>
+        <if test='latitude != null and latitude != ""'>
+            latitude = #{latitude},
+        </if>
+        <if test='address != null and address != ""'>
+            address = #{address},
+        </if>
+        <if test='importanceLevel != null'>
+            importance_level = #{importanceLevel},
+        </if>
+        <if test='enableAcceptanceMode != null and enableAcceptanceMode != ""'>
+            enable_acceptance_mode = #{enableAcceptanceMode},
+        </if>
+        <if test='alarmReason != null'>
+            alarm_reason = #{alarmReason},
+        </if>
+        </set>
+        where order_id = #{orderId}
+    </update>
+
+    <insert id="addLeaderAudit" keyColumn="audit_id" keyProperty="auditId" useGeneratedKeys="true"
+            parameterType="com.chinatower.event.dto.OrderLeaderAuditDTO">
+        <selectKey keyProperty="auditId" order="BEFORE" resultType="java.lang.String">
+            select UUID_SHORT() from dual
+        </selectKey>
+        insert into vm_order_leader_audit_t
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            audit_id,
+            <if test='orderId != null and orderId != ""'>
+                order_id,
+            </if>
+            <if test="content != null">
+                content,
+            </if>
+            <if test="userId != null">
+                user_id,
+            </if>
+            <if test="leaderId != null">
+                leader_id,
+            </if>
+            <if test="status != null">
+                `status`,
+            </if>
+            <if test="auditContent != null">
+                audit_content,
+            </if>
+            create_time,
+            <if test="deleteFlag != null">
+                delete_flag,
+            </if>
+            <if test="orderFlowId != null">
+                order_flow_id,
+            </if>
+            <if test='timeLimit != null and timeLimit != ""'>
+                time_limit,
+            </if>
+            <if test='flowNodeTime != null and flowNodeTime != ""'>
+                flow_node_time,
+            </if>
+            <if test='emergencyLevel != null and emergencyLevel != ""'>
+                emergency_level,
+            </if>
+            <if test='orderStatus != null and orderStatus != ""'>
+                order_status,
+            </if>
+            <if test='alarmBody != null and alarmBody != ""'>
+                alarm_body,
+            </if>
+            <if test='countyId != null and countyId != ""'>
+                county_code,
+            </if>
+            <if test='countyName != null and countyName != ""'>
+                county_name,
+            </if>
+            <if test='cityId != null and cityId != ""'>
+                city_code,
+            </if>
+            <if test='cityName != null and cityName != ""'>
+                city_name,
+            </if>
+            <if test='provinceId != null and provinceId != ""'>
+                province_code,
+            </if>
+            <if test='provinceName != null and provinceName != ""'>
+                province_name,
+            </if>
+            <if test='tenantName != null and tenantName != ""'>
+                tenant_name,
+            </if>
+            <if test='tenantId != null and tenantId != ""'>
+                tenant_id,
+            </if>
+            <if test='alarmTime != null and alarmTime != ""'>
+                alarm_time,
+            </if>
+            <if test='warningTypeId != null and warningTypeId != ""'>
+                warning_type_id,
+            </if>
+            <if test='longitude != null and longitude != ""'>
+                longitude,
+            </if>
+            <if test='latitude != null and latitude != ""'>
+                latitude,
+            </if>
+            <if test='address != null and address != ""'>
+                address,
+            </if>
+            <if test='fileImgUrlSrc != null and fileImgUrlSrc != ""'>
+                file_img_url_src,
+            </if>
+
+            <if test='deviceCode != null and deviceCode != ""'>
+                device_code,
+            </if>
+            <if test='deviceName != null and deviceName != ""'>
+                device_name,
+            </if>
+            <if test='channelCode != null and channelCode != ""'>
+                channel_code,
+            </if>
+            <if test='channelName != null and channelName != ""'>
+                channel_name,
+            </if>
+            <if test='importanceLevel != null and importanceLevel != ""'>
+                importance_level,
+            </if>
+            <if test='confidenceLevelMin != null and confidenceLevelMin != ""'>
+                confidence_level_min,
+            </if>
+            <if test='compConfidenceLevel != null and compConfidenceLevel != ""'>
+                comp_confidence_level,
+            </if>
+            <if test='warningSource != null and warningSource != ""'>
+                warning_source,
+            </if>
+            <if test='msgType != null and msgType != ""'>
+                msg_type,
+            </if>
+            <if test='noticeResource != null and noticeResource != ""'>
+                notice_resource,
+            </if>
+            <if test='cameraAlarmType != null and cameraAlarmType != ""'>
+                camera_alarm_type,
+            </if>
+            <if test='isSecondJudge != null and isSecondJudge != ""'>
+                is_second_judge,
+            </if>
+            <if test='secondJudgeResult != null and secondJudgeResult != ""'>
+                second_judge_result,
+            </if>
+            <if test='fileImgUrlIcon != null and fileImgUrlIcon != ""'>
+                file_img_url_icon,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            #{auditId},
+            <if test="orderId != null">
+                #{orderId,jdbcType=VARCHAR},
+            </if>
+            <if test="content != null">
+                #{content,jdbcType=VARCHAR},
+            </if>
+            <if test="userId != null">
+                #{userId,jdbcType=VARCHAR},
+            </if>
+            <if test="leaderId != null">
+                #{leaderId,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                #{status,jdbcType=CHAR},
+            </if>
+            <if test="auditContent != null">
+                #{auditContent,jdbcType=VARCHAR},
+            </if>
+            now(),
+            <if test="deleteFlag != null">
+                #{deleteFlag,jdbcType=CHAR},
+            </if>
+            <if test="orderFlowId != null">
+                #{orderFlowId,jdbcType=CHAR},
+            </if>
+            <if test='timeLimit != null and timeLimit != ""'>
+                #{timeLimit},
+            </if>
+            <if test='flowNodeTime != null and flowNodeTime != ""'>
+                #{flowNodeTime},
+            </if>
+            <if test='emergencyLevel != null and emergencyLevel != ""'>
+                #{emergencyLevel},
+            </if>
+            <if test='orderStatus != null and orderStatus != ""'>
+                #{orderStatus},
+            </if>
+            <if test='alarmBody != null and alarmBody != ""'>
+                #{alarmBody},
+            </if>
+            <if test='countyId != null and countyId != ""'>
+                #{countyId},
+            </if>
+            <if test='countyName != null and countyName != ""'>
+                #{countyName},
+            </if>
+            <if test='cityId != null and cityId != ""'>
+                #{cityId},
+            </if>
+            <if test='cityName != null and cityName != ""'>
+                #{cityName},
+            </if>
+            <if test='provinceId != null and provinceId != ""'>
+                #{provinceId},
+            </if>
+            <if test='provinceName != null and provinceName != ""'>
+                #{provinceName},
+            </if>
+            <if test='tenantName != null and tenantName != ""'>
+                #{tenantName},
+            </if>
+            <if test='tenantId != null and tenantId != ""'>
+                #{tenantId},
+            </if>
+            <if test='alarmTime != null and alarmTime != ""'>
+                #{alarmTime},
+            </if>
+            <if test='warningTypeId != null and warningTypeId != ""'>
+                #{warningTypeId},
+            </if>
+            <if test='longitude != null and longitude != ""'>
+                #{longitude},
+            </if>
+            <if test='latitude != null and latitude != ""'>
+                #{latitude},
+            </if>
+            <if test='address != null and address != ""'>
+                #{address},
+            </if>
+            <if test='fileImgUrlSrc != null and fileImgUrlSrc != ""'>
+                #{fileImgUrlSrc},
+            </if>
+
+            <if test='deviceCode != null and deviceCode != ""'>
+                #{deviceCode},
+            </if>
+            <if test='deviceName != null and deviceName != ""'>
+                #{deviceName},
+            </if>
+            <if test='channelCode != null and channelCode != ""'>
+                #{channelCode},
+            </if>
+            <if test='channelName != null and channelName != ""'>
+                #{channelName},
+            </if>
+            <if test='importanceLevel != null and importanceLevel != ""'>
+                #{importanceLevel},
+            </if>
+            <if test='confidenceLevelMin != null and confidenceLevelMin != ""'>
+                #{confidenceLevelMin},
+            </if>
+            <if test='compConfidenceLevel != null and compConfidenceLevel != ""'>
+                #{compConfidenceLevel},
+            </if>
+            <if test='warningSource != null and warningSource != ""'>
+                #{warningSource},
+            </if>
+            <if test='msgType != null and msgType != ""'>
+                #{msgType},
+            </if>
+            <if test='noticeResource != null and noticeResource != ""'>
+                #{noticeResource},
+            </if>
+            <if test='cameraAlarmType != null and cameraAlarmType != ""'>
+                #{cameraAlarmType},
+            </if>
+            <if test='isSecondJudge != null and isSecondJudge != ""'>
+                #{isSecondJudge},
+            </if>
+            <if test='secondJudgeResult != null and secondJudgeResult != ""'>
+                #{secondJudgeResult},
+            </if>
+            <if test='fileImgUrlIcon != null and fileImgUrlIcon != ""'>
+                #{fileImgUrlIcon},
+            </if>
+        </trim>
+    </insert>
+
+    <insert id="addLeaderAuditList" parameterType="com.chinatower.event.dto.OrderLeaderAuditDTO">
+        insert into vm_order_leader_audit_t
+            (audit_id,
+            order_id,
+            content,
+            user_id,
+            leader_id,
+            audit_content,
+            create_time,
+            order_flow_id,
+            time_limit,
+            apply_voice,
+            flow_node_time,
+            emergency_level,
+            order_status,
+            alarm_body,
+            county_code,
+            county_name,
+            city_code,
+            city_name,
+            province_code,
+            province_name,
+            tenant_name,
+            tenant_id,
+        industry_code,
+        app_ver_code,
+            alarm_time,
+            warning_type_id,
+            longitude,
+            latitude,
+            address,
+            file_img_url_src,
+            device_code,
+            device_name,
+            channel_code,
+            channel_name,
+            importance_level,
+            confidence_level_min,
+            comp_confidence_level,
+            warning_source,
+            msg_type,
+            notice_resource,
+            camera_alarm_type,
+            is_second_judge,
+            second_judge_result,
+            is_second_identify,
+            second_identify_result,
+            file_img_url_icon,
+            confidence_level_max,
+            enlarge_flag,
+            preset_id,enable_acceptance_mode,alarm_reason,device_pitch,find_name,pitch_angle,hori_field_angle,vertical_field_angle) values
+        <foreach collection="list" item="item" index="index" separator=",">
+                (#{item.auditId},
+                #{item.orderId,jdbcType=VARCHAR},
+                #{item.content,jdbcType=VARCHAR},
+                #{item.userId,jdbcType=VARCHAR},
+                #{item.leaderId,jdbcType=VARCHAR},
+                #{item.auditContent,jdbcType=VARCHAR},
+                now(),
+                #{item.orderFlowId,jdbcType=CHAR},
+                #{item.timeLimit},
+                #{item.applyVoice},
+                #{item.flowNodeTime},
+                #{item.emergencyLevel},
+                #{item.orderStatus},
+                #{item.alarmBody},
+                #{item.countyId},
+                #{item.countyName},
+                #{item.cityId},
+                #{item.cityName},
+                #{item.provinceId},
+                #{item.provinceName},
+                #{item.tenantName},
+                #{item.tenantId},
+                #{item.industryCode},
+                #{item.appVerCode},
+                #{item.alarmTime},
+                #{item.warningTypeId},
+                #{item.longitude},
+                #{item.latitude},
+                #{item.address},
+                #{item.fileImgUrlSrc},
+                #{item.deviceCode},
+                #{item.deviceName},
+                #{item.channelCode},
+                #{item.channelName},
+                #{item.importanceLevel},
+                #{item.confidenceLevelMin},
+                #{item.compConfidenceLevel},
+                #{item.warningSource},
+                #{item.msgType},
+                #{item.noticeResource},
+                #{item.cameraAlarmType},
+                #{item.isSecondJudge},
+                #{item.secondJudgeResult},
+                #{item.isSecondIdentify},
+                #{item.secondIdentifyResult},
+                #{item.fileImgUrlIcon},
+                #{item.confidenceLevelMax},
+                #{item.enlargeFlag},
+                #{item.presetId},#{item.enableAcceptanceMode},#{item.alarmReason},#{item.devicePitch},#{item.findName},
+                #{item.pitchAngle},#{item.horiFieldAngle},#{item.verticalFieldAngle})
+        </foreach>
+    </insert>
+</mapper>

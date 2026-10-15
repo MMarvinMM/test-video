@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.PolygonPatchConfigMapper">
+    <insert id="addPolygonPatchBatch">
+        INSERT INTO `vm_polygon_patch_config`
+        (`polygon_id`, `monitor_area_id`, `polygon_points`, `device_code`,
+        `channel_code`, `preset_id`, `preset_name`, `layer_id`, `layer_name`,
+        `feature_id`, `create_by`, `create_time`, `delete_flag`,
+        `industry_code`, `app_ver_code`, `tenant_id`,`polygon_no`, `tbbh`, `center_longitude`, `center_latitude`, `polygon_points_lon_lat`) VALUES
+        <foreach collection="list" item="item" index="index" separator="," >
+            (#{item.polygonId},#{item.monitorAreaId}, #{item.polygonPoints}, #{item.deviceCode},
+            #{item.channelCode}, #{item.presetId}, #{item.presetName}, #{item.layerId}, #{item.layerName},
+            #{item.featureId}, #{item.createBy}, #{item.createTime}, #{item.deleteFlag},
+            #{item.industryCode}, #{item.appVerCode}, #{item.tenantId}, #{item.polygonNo}, #{item.tbbh},
+            #{item.centerLongitude}, #{item.centerLatitude}, #{item.polygonPointsLonLat} )
+        </foreach>
+    </insert>
+    <update id="updatePolygonPatchBatch">
+        UPDATE `vm_polygon_patch_config`
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="monitor_area_id =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.monitorAreaId!=null and item.monitorAreaId != ''">
+                        when polygon_id = #{item.polygonId} then #{item.monitorAreaId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="polygon_points =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.polygonPoints!=null and item.polygonPoints != ''">
+                        when polygon_id = #{item.polygonId} then #{item.polygonPoints}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="update_by =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.updateBy!=null and item.updateBy != ''">
+                        when polygon_id = #{item.polygonId} then #{item.updateBy}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="update_time =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.updateTime!=null">
+                        when polygon_id = #{item.polygonId} then #{item.updateTime}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="center_longitude =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.centerLongitude!=null">
+                        when polygon_id = #{item.polygonId} then #{item.centerLongitude}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="center_latitude =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.centerLatitude!=null">
+                        when polygon_id = #{item.polygonId} then #{item.centerLatitude}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="polygon_points_lon_lat =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.polygonPointsLonLat!=null">
+                        when polygon_id = #{item.polygonId} then #{item.polygonPointsLonLat}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        <where>
+            delete_flag = '0' AND
+            polygon_id IN
+            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+                #{item.polygonId}
+            </foreach>
+        </where>
+    </update>
+    <update id="updateDeleteFlagById">
+        UPDATE `vm_polygon_patch_config` SET delete_flag = '1'
+        ,update_by = #{updateBy},update_time = #{updateTime}
+        WHERE polygon_id = #{polygonId}
+    </update>
+    <select id="isExistByPatchId" resultType="java.lang.Integer">
+        SELECT count(polygon_id) FROM vm_polygon_patch_config
+        WHERE delete_flag = 0
+        <if test="deviceCode != null and deviceCode != ''">
+            AND device_code = #{deviceCode}
+        </if>
+        <if test="channelCode != null and channelCode != ''">
+            AND channel_code = #{channelCode}
+        </if>
+        <if test="presetId != null and presetId != ''">
+            AND preset_id = #{presetId}
+        </if>
+        <if test="layerId != null and layerId != ''">
+            AND layer_id = #{layerId}
+        </if>
+        <if test="featureId != null and featureId != ''">
+            AND feature_id = #{featureId}
+        </if>
+        <if test='dataPermissions != null and dataPermissions != ""'>
+            ${dataPermissions}
+        </if>
+    </select>
+    <select id="queryPolygonPatchList" resultType="com.chinatower.device.entity.dto.PolygonPatchConfig">
+        SELECT
+            t1.`polygon_id` AS polygonId,
+            t1.`monitor_area_id` AS monitorAreaId,
+            t1.`polygon_points` AS polygonPoints,
+            t1.`device_code` AS deviceCode,
+            t1.`channel_code` AS channelCode,
+            t1.`preset_id` AS presetId,
+            t3.`preset_name` AS presetName,
+            t1.`layer_id` AS layerId,
+            t2.`custom_name` AS layerName,
+            t1.`feature_id` AS featureId,
+            t1.`create_by` AS createBy,
+            t1.`create_time` AS createTime,
+            t1.`update_by` AS updateBy,
+            t1.`update_time` AS updateTime,
+            t1.`polygon_no` AS polygonNo,
+            CONCAT('电子围栏',t1.polygon_no) AS polygonName,
+            t1.`tbbh` AS tbbh
+        FROM vm_polygon_patch_config t1 left join sys_layer t2 ON t1.layer_id = t2.id
+        left join vm_video_preset t3 ON t1.preset_id = t3.preset_id AND t1.device_code = t3.device_code
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0 AND t3.delete_flag = 0
+        <if test="deviceCode != null and deviceCode != ''">
+            AND t1.device_code = #{deviceCode}
+        </if>
+        <if test="channelCode != null and channelCode != ''">
+            AND t1.channel_code = #{channelCode}
+        </if>
+        <if test="presetId != null and presetId != ''">
+            AND t1.preset_id = #{presetId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND t1.industry_code = #{industryCode}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND t1.tenant_id = #{tenantId}
+        </if>
+        <if test="monitorAreaId != null and monitorAreaId != ''">
+            AND t1.monitor_area_id = #{monitorAreaId}
+        </if>
+        ${dataPermissions}
+        ORDER BY
+        <choose>
+            <when test="sortParam == 'createTime' and sortType == 'asc'">
+                t1.create_time ASC
+            </when>
+            <when test="sortParam == 'createTime' and sortType == 'desc'">
+                t1.create_time DESC
+            </when>
+            <when test="sortParam == 'updateTime' and sortType == 'asc'">
+                t1.update_time ASC
+            </when>
+            <when test="sortParam == 'updateTime' and sortType == 'desc'">
+                t1.update_time DESC
+            </when>
+            <when test="sortParam == 'updateTime' and sortType == 'asc'">
+                t1.update_time ASC
+            </when>
+            <when test="sortParam == 'updateTime' and sortType == 'desc'">
+                t1.update_time DESC
+            </when>
+            <when test="sortParam neq 'updateTime' and sortParam neq 'createTime' and sortType == 'asc'">
+                t1.monitor_area_id ASC
+            </when>
+            <when test="sortParam neq 'updateTime' and sortParam neq 'createTime' and sortType == 'desc'">
+                t1.monitor_area_id DESC
+            </when>
+        </choose>
+        <if test="queryType != null and queryType == 1 ">
+            limit 1
+        </if>
+    </select>
+    <select id="isExistLayerPatchList" resultType="java.lang.String">
+        SELECT polygon_id FROM vm_polygon_patch_config
+        WHERE
+        delete_flag = 0
+        AND industry_code = #{industryCode}
+        AND tenant_id = #{tenantId}
+        AND (device_code,channel_code,preset_id,layer_id, feature_id) IN
+        <foreach collection="list" separator="," index="index" item="item" open="(" close=")">
+            (#{item.deviceCode},#{item.channelCode},#{item.presetId},#{item.layerId},#{item.featureId})
+        </foreach>
+
+    </select>
+    <select id="queryPolygonByLayerId" resultType="java.lang.Integer">
+        SELECT count(polygon_id) FROM vm_polygon_patch_config
+        WHERE delete_flag = 0
+        <if test="layerId != null and layerId != ''">
+            AND layer_id = #{layerId}
+        </if>
+        <if test="featureId != null and featureId != ''">
+            AND feature_id = #{featureId}
+        </if>
+        <if test='dataPermissions != null and dataPermissions != ""'>
+            ${dataPermissions}
+        </if>
+    </select>
+    <select id="queryByLayerIdAndFeatureId" resultType="com.chinatower.device.entity.dto.PolygonPatchConfig">
+        SELECT
+        t1.`polygon_id` AS polygonId,
+        t1.`monitor_area_id` AS monitorAreaId,
+        t1.`polygon_points` AS polygonPoints,
+        t1.`polygon_no` AS polygonNo,
+        t1.`device_code` AS deviceCode,
+        t1.`channel_code` AS channelCode,
+        t1.`preset_id` AS presetId,
+        t1.`preset_name` AS presetName,
+        t1.`layer_id` AS layerId,
+        t2.`custom_name` AS layerName,
+        t1.`feature_id` AS featureId,
+        t1.`create_by` AS createBy,
+        t1.`create_time` AS createTime,
+        t1.`update_by` AS updateBy,
+        t1.`update_time` AS updateTime,
+        t1.`tbbh` AS tbbh
+        FROM vm_polygon_patch_config t1 left join sys_layer t2 ON t1.layer_id = t2.id
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0
+        <if test="deviceCode != null and deviceCode != ''">
+            AND t1.device_code = #{deviceCode}
+        </if>
+        <if test="channelCode != null and channelCode != ''">
+            AND t1.channel_code = #{channelCode}
+        </if>
+        <if test="presetId != null and presetId != ''">
+            AND t1.preset_id = #{presetId}
+        </if>
+        <if test="layerId != null and layerId != ''">
+            AND t1.layer_id = #{layerId}
+        </if>
+        <if test="featureId != null and featureId != ''">
+            AND t1.feature_id = #{featureId}
+        </if>
+        <if test='dataPermissions != null and dataPermissions != ""'>
+            ${dataPermissions}
+        </if>
+        ORDER BY t1.`create_time` DESC
+        LIMIT 1
+    </select>
+    <select id="queryByPolygonId" resultType="com.chinatower.device.entity.dto.PolygonPatchConfig">
+        SELECT
+        `polygon_id` AS polygonId,
+        `monitor_area_id` AS monitorAreaId,
+        `polygon_points` AS polygonPoints,
+        `device_code` AS deviceCode,
+        `channel_code` AS channelCode,
+        `preset_id` AS presetId,
+        `preset_name` AS presetName,
+        `layer_id` AS layerId,
+        `layer_name` AS layerName,
+        `feature_id` AS featureId,
+        `create_by` AS createBy,
+        `create_time` AS createTime,
+        `update_by` AS updateBy,
+        `update_time` AS updateTime
+        FROM vm_polygon_patch_config
+        WHERE delete_flag = 0
+        <if test="polygonId != null and polygonId != ''">
+            AND polygon_id = #{polygonId}
+        </if>
+    </select>
+    <select id="queryPolygonPatch" resultType="com.chinatower.device.entity.dto.PolygonPatchConfig">
+        SELECT
+        t1.`polygon_id` AS polygonId,
+        t1.`monitor_area_id` AS monitorAreaId,
+        t1.`polygon_points` AS polygonPoints,
+        t1.`device_code` AS deviceCode,
+        t1.`channel_code` AS channelCode,
+        t1.`preset_id` AS presetId,
+        t3.`preset_name` AS presetName,
+        t1.`layer_id` AS layerId,
+        t2.`custom_name` AS layerName,
+        t1.`feature_id` AS featureId,
+        t1.`create_by` AS createBy,
+        t1.`create_time` AS createTime,
+        t1.`update_by` AS updateBy,
+        t1.`update_time` AS updateTime,
+        t1.`polygon_no` AS polygonNo,
+        CONCAT('电子围栏',t1.polygon_no) AS polygonName,
+        t1.`tbbh` AS tbbh
+        FROM vm_polygon_patch_config t1 left join sys_layer t2 ON t1.layer_id = t2.id
+        left join vm_video_preset t3 ON t1.preset_id = t3.preset_id AND t1.device_code = t3.device_code
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0 AND t3.delete_flag = 0
+            AND t1.device_code = #{deviceCode}
+            AND t1.channel_code = #{channelCode}
+            AND t1.preset_id = #{presetId}
+        <if test="industryCode != null and industryCode != ''">
+            AND t1.industry_code = #{industryCode}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND t1.tenant_id = #{tenantId}
+        </if>
+        <if test="monitorAreaId != null and monitorAreaId != ''">
+            AND t1.monitor_area_id = #{monitorAreaId}
+        </if>
+        ${dataPermissions}
+        LIMIT 1
+    </select>
+    <select id="getPolygonNoByDeviceAndChannel"
+            resultType="com.chinatower.device.dto.PolygonNoByDeviceAndChannelDto">
+        SELECT
+            DISTINCT
+            MAX(polygon_no)  polygonNo,
+            `device_code` AS deviceCode,
+            `channel_code` AS channelCode,
+            `preset_id` AS presetId,
+            tenant_id,
+            industry_code
+        FROM vm_polygon_patch_config
+        WHERE delete_flag = 0
+        AND (device_code, channel_code, preset_id, tenant_id, industry_code) in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            (#{item.deviceCode}, #{item.channelCode}, #{item.presetId}, #{item.tenantId}, #{item.industryCode})
+        </foreach>
+        GROUP BY device_code,channel_code,preset_id,tenant_id,industry_code
+    </select>
+    
+    <select id="queryPolygonPatchShow" resultType="com.chinatower.device.entity.dto.PolygonPatchConfig">
+        SELECT
+        t1.`polygon_id` AS polygonId,
+        t1.`monitor_area_id` AS monitorAreaId,
+        t1.`polygon_points` AS polygonPoints,
+        t1.`polygon_no` AS polygonNo,
+        t1.`device_code` AS deviceCode,
+        t1.`channel_code` AS channelCode,
+        t1.`preset_id` AS presetId,
+        t1.`preset_name` AS presetName,
+        t1.`layer_id` AS layerId,
+        t2.`custom_name` AS layerName,
+        t1.`feature_id` AS featureId,
+        t1.`create_by` AS createBy,
+        t1.`create_time` AS createTime,
+        t1.`update_by` AS updateBy,
+        t1.`update_time` AS updateTime,
+        t1.`tbbh` AS tbbh
+        FROM vm_polygon_patch_config t1 left join sys_layer t2 ON t1.layer_id = t2.id
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0
+        <if test="deviceCode != null and deviceCode != ''">
+            AND t1.device_code = #{deviceCode}
+        </if>
+        <if test="channelCode != null and channelCode != ''">
+            AND t1.channel_code = #{channelCode}
+        </if>
+        <if test="presetId != null and presetId != ''">
+            AND t1.preset_id = #{presetId}
+        </if>
+        <if test="layerId != null and layerId != ''">
+            AND t1.layer_id = #{layerId}
+        </if>
+        <if test="queryType != null and queryType == 2 ">
+            <if test="featureId != null and featureId != ''">
+                AND t1.feature_id = #{featureId}
+            </if>
+        </if>
+        <if test='dataPermissions != null and dataPermissions != ""'>
+            ${dataPermissions}
+        </if>
+        <if test="queryType != null and queryType == 2 ">
+            ORDER BY t1.`create_time` DESC
+            LIMIT 1
+        </if>
+    </select>
+
+    <select id="queryPolygonPatchShowBatch" resultType="com.chinatower.device.entity.dto.PolygonPatchConfig">
+        SELECT
+        t1.`polygon_id` AS polygonId,
+        t1.`monitor_area_id` AS monitorAreaId,
+        t1.`polygon_points` AS polygonPoints,
+        t1.`polygon_no` AS polygonNo,
+        t1.`device_code` AS deviceCode,
+        t1.`channel_code` AS channelCode,
+        t1.`preset_id` AS presetId,
+        t1.`preset_name` AS presetName,
+        t1.`layer_id` AS layerId,
+        t2.`custom_name` AS layerName,
+        t1.`feature_id` AS featureId,
+        t1.`create_by` AS createBy,
+        t1.`create_time` AS createTime,
+        t1.`update_by` AS updateBy,
+        t1.`update_time` AS updateTime,
+        t1.`tbbh` AS tbbh
+        FROM vm_polygon_patch_config t1 left join sys_layer t2 ON t1.layer_id = t2.id
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0
+        <if test="list != null and list.size() &gt; 0">
+        AND (
+        <foreach collection="list" item="item" separator=" or ">
+            <trim prefix="(" suffix=")" prefixOverrides="AND |and">
+            <if test="item.deviceCode != null and item.deviceCode != ''">
+                AND t1.device_code = #{item.deviceCode}
+            </if>
+            <if test="item.channelCode != null and item.channelCode != ''">
+                AND t1.channel_code = #{item.channelCode}
+            </if>
+            <if test="item.presetId != null and item.presetId != ''">
+                AND t1.preset_id = #{item.presetId}
+            </if>
+            <if test="item.layerId != null and item.layerId != ''">
+                AND t1.layer_id = #{item.layerId}
+            </if>
+            <if test="item.featureId != null and item.featureId != ''">
+                AND t1.feature_id = #{item.featureId}
+            </if>
+            </trim>
+        </foreach>
+        )
+        </if>
+        ${dataPermissions}
+    </select>
+
+
+    <select id="queryMaxNumber" resultType="java.lang.Integer">
+        SELECT
+        t1.polygon_no polygonNo
+        FROM vm_polygon_patch_config t1 left join sys_layer t2 ON t1.layer_id = t2.id
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0
+        AND t1.device_code = #{deviceCode}
+        AND t1.channel_code = #{channelCode}
+        AND t1.preset_id = #{presetId}
+        <if test="industryCode != null and industryCode != ''">
+            AND t1.industry_code = #{industryCode}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND t1.tenant_id = #{tenantId}
+        </if>
+        <if test="monitorAreaId != null and monitorAreaId != ''">
+            AND t1.monitor_area_id = #{monitorAreaId}
+        </if>
+        ${dataPermissions}
+        ORDER BY t1.polygon_no DESC
+        LIMIT 1
+    </select>
+    <select id="isExistByLayer" resultType="java.lang.Integer">
+        SELECT count(polygon_id) FROM vm_polygon_patch_config
+        WHERE delete_flag = 0
+        <if test="layerId != null and layerId != ''">
+            AND layer_id = #{layerId}
+        </if>
+        <if test="featureId != null and featureId != ''">
+            AND feature_id = #{featureId}
+        </if>
+        <if test='dataPermissions != null and dataPermissions != ""'>
+            ${dataPermissions}
+        </if>
+    </select>
+
+    <select id="queryPendingPolygonList" resultType="com.chinatower.device.entity.dto.PolygonPatchConfig">
+        SELECT DISTINCT
+            t.*,
+            t2.pan,
+            t2.tilt,
+            t2.zoom
+        FROM
+            vm_polygon_patch_config t
+                LEFT JOIN vm_device_ref_point_valid_t t1 ON t.device_code = t1.device_code
+                LEFT JOIN vm_device_info_t t3 ON t1.device_code = t3.device_code
+                LEFT JOIN vm_video_preset t2 ON t.device_code = t2.device_code
+                AND t.preset_id = t2.preset_id
+        WHERE
+            t.delete_flag = 0
+          AND t.preset_id IS NOT NULL
+          AND t1.point_flag = '1'
+          AND t3.device_model_code IS NOT NULL
+          AND t3.height IS NOT NULL
+          AND t.center_longitude IS NULL
+          AND t2.pan IS NOT NULL
+          AND t2.tilt IS NOT NULL
+          AND t2.zoom IS NOT NULL
+    </select>
+    <select id="getDeviceCodeByLayerId" resultType="java.lang.String">
+        SELECT device_code deviceCode FROM vm_polygon_patch_config
+        WHERE
+        delete_flag = 0
+        AND industry_code = #{industryCode}
+        AND tenant_id = #{tenantId}
+        AND layer_id IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+
+    </select>
+
+    <update id="updatePolygonPatchBatchNew">
+        UPDATE `vm_polygon_patch_config`
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="center_longitude =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.centerLongitude!=null">
+                        when polygon_id = #{item.polygonId} then #{item.centerLongitude}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="center_latitude =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.centerLatitude!=null">
+                        when polygon_id = #{item.polygonId} then #{item.centerLatitude}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="polygon_points_lon_lat =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.polygonPointsLonLat!=null">
+                        when polygon_id = #{item.polygonId} then #{item.polygonPointsLonLat}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        <where>
+            delete_flag = '0' AND
+            polygon_id IN
+            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+                #{item.polygonId}
+            </foreach>
+        </where>
+    </update>
+</mapper>

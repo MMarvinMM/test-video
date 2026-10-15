@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.airline.mapper.AirStatisticsMapper">
+    <select id="queryTaskCount" resultType="com.chinatower.airline.dto.response.TaskStatisticsRsp">
+        SELECT
+            SUM(CASE WHEN t.task_status = '1' THEN 1 ELSE 0 END) AS successCount,
+            SUM(CASE WHEN t.task_status IN ('2', '4') THEN 1 ELSE 0 END) AS failCount,
+            COUNT(*) AS totalCount,
+            SUM(CASE WHEN t.task_status = '3' THEN 1 ELSE 0 END) AS runningCount,
+            SUM(CASE WHEN t.task_status = '0' THEN 1 ELSE 0 END) AS waitingCount
+        FROM
+            vm_air_task_t t
+        left join vm_air_line_t l on l.flight_route_id = t.flight_route_id
+        LEFT JOIN vm_uav_device_info_t dt ON t.uav_code = dt.device_code  COLLATE utf8mb4_general_ci
+        WHERE
+          DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') >= #{startTime}
+          and DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]> #{endTime}
+          AND t.delete_flag = '0'
+            <if test="provinceCode != null and provinceCode != ''">
+                and dt.province_code = #{provinceCode}
+            </if>
+            <if test="cityCode != null and cityCode != ''">
+                and dt.city_code = #{cityCode}
+            </if>
+            <if test="countyCode != null and countyCode != ''">
+                and dt.county_code = #{countyCode}
+            </if>
+          ${dataScope}
+    </select>
+
+    <select id="queryTaskCountDay" resultType="java.util.Map">
+        SELECT
+            DATE_FORMAT(t.plan_time,'%H') AS showTime,
+            COUNT(*) AS totalCount
+        FROM
+            vm_air_task_t t
+            left join vm_air_line_t l on l.flight_route_id = t.flight_route_id
+            LEFT JOIN vm_uav_device_info_t dt ON t.uav_code = dt.device_code  COLLATE utf8mb4_general_ci
+        WHERE
+            DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') >= #{startTime}
+          and DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]> #{endTime}
+          AND t.delete_flag = '0' AND !ISNULL(plan_time)
+            <if test="provinceCode != null and provinceCode != ''">
+                and dt.province_code = #{provinceCode}
+            </if>
+            <if test="cityCode != null and cityCode != ''">
+                and dt.city_code = #{cityCode}
+            </if>
+            <if test="countyCode != null and countyCode != ''">
+                and dt.county_code = #{countyCode}
+            </if>
+            ${dataScope}
+        GROUP BY
+            HOUR(plan_time)
+        ORDER BY
+            showTime;
+    </select>
+
+    <select id="queryTaskCountMonth" resultType="java.util.Map">
+        SELECT
+            DATE(plan_time) AS showTime,
+            COUNT(*) AS totalCount
+        FROM
+            vm_air_task_t t
+            left join vm_air_line_t l on l.flight_route_id = t.flight_route_id
+            LEFT JOIN vm_uav_device_info_t dt ON t.uav_code = dt.device_code  COLLATE utf8mb4_general_ci
+        WHERE
+            DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') >= #{startTime}
+          and DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]> #{endTime}
+          AND t.delete_flag = '0' AND !ISNULL(plan_time)
+            <if test="provinceCode != null and provinceCode != ''">
+                and dt.province_code = #{provinceCode}
+            </if>
+            <if test="cityCode != null and cityCode != ''">
+                and dt.city_code = #{cityCode}
+            </if>
+            <if test="countyCode != null and countyCode != ''">
+                and dt.county_code = #{countyCode}
+            </if>
+            ${dataScope}
+        GROUP BY
+            DATE(plan_time)
+        ORDER BY
+            showTime;
+    </select>
+
+    <select id="queryTaskCountList" resultType="com.chinatower.airline.dto.response.AirTaskStatisticsRes">
+        SELECT
+            t.plan_task_id as taskId,
+            CASE
+            WHEN l.flight_main_type = '1' THEN CONCAT('指哪飞哪', DATE_FORMAT(t.plan_time, '%Y%m%d%H%i%s'))
+            WHEN l.flight_main_type = '2' THEN CONCAT('一键起飞', DATE_FORMAT(t.plan_time, '%Y%m%d%H%i%s'))
+            ELSE t.plan_Name
+            END as taskName,
+            DATE_FORMAT(t.plan_time, '%Y-%m-%d %H:%i' ) as planTime,t.task_status as taskStatus,
+            (case when length(IFNULL(rel.device_name, '')) = 0 then dt.device_name else rel.device_name end ) as uavName,l.flight_main_type as flightMainType
+        FROM
+            vm_air_task_t t
+            left join vm_air_line_t l on l.flight_route_id = t.flight_route_id
+            LEFT JOIN vm_uav_device_info_t dt ON t.uav_code = dt.device_code  COLLATE utf8mb4_general_ci
+            LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = dt.device_code
+                and rel.tenant_id = #{tenantId}
+                and rel.industry_code = #{industryCode}
+                and rel.delete_flag = '0'
+                and rel.device_type = 1
+        WHERE
+            DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') >= #{startTime}
+          and DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]> #{endTime}
+          AND t.delete_flag = '0'
+            <if test="provinceCode != null and provinceCode != ''">
+                and dt.province_code = #{provinceCode}
+            </if>
+            <if test="cityCode != null and cityCode != ''">
+                and dt.city_code = #{cityCode}
+            </if>
+            <if test="countyCode != null and countyCode != ''">
+                and dt.county_code = #{countyCode}
+            </if>
+            ${dataScope}
+          ORDER BY
+            CASE
+            WHEN t.task_status = '1' THEN 1
+            WHEN t.task_status = '3' THEN 2
+            WHEN t.task_status = '0' THEN 3
+            WHEN t.task_status IN ('2', '4') THEN 4
+            ELSE 5
+            END,
+           planTime asc
+    </select>
+    
+    <sql id="statisticalAnalysisBaseWhere">
+        1 = 1 and t.delete_flag = 0
+        <if test="null != orgId and '' != orgId">
+            and od.dept_id = #{orgId} and od.device_code IS NOT NULL AND od.device_code != ''
+        </if>
+        <if test="null != uavCodes and uavCodes.size > 0">
+            and t.uav_code in
+            <foreach collection="uavCodes" item="uavCode" index="index" open="(" close=")" separator=",">
+                #{uavCode}
+            </foreach>
+        </if>
+        <if test="null != startTime">
+            and DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') >= #{startTime}
+        </if>
+        <if test="null != endTime">
+            and DATE_FORMAT(t.plan_time,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]> #{endTime}
+        </if>
+        ${dataScope}
+    </sql>
+    
+    <sql id="orgIdJoin">
+        <if test="null != orgId and '' != orgId">
+            LEFT JOIN vm_organ_device_rel_t od
+            on t.uav_code = od.device_code  COLLATE utf8mb4_general_ci
+            and t.tenant_id = od.tenant_id  COLLATE utf8mb4_general_ci
+            and t.industry_code = od.industry_code COLLATE utf8mb4_general_ci
+            and od.device_type = 11 and od.delete_flag = '0'
+        </if>
+    </sql>
+
+    <select id="queryStatisticsOverview" resultType="java.util.Map">
+        WITH
+        uav_usage AS (
+        SELECT count(1) as uav_usage_count
+        FROM vm_air_task_t t
+        LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        ),
+        executed_plans AS (
+        SELECT COUNT(DISTINCT t.plan_id) as executed_plan_count
+        FROM vm_air_task_t t
+        LEFT JOIN vm_air_plan_t p ON p.plan_id = t.plan_id
+        LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        AND t.task_status IN(1,2,3,4)
+        AND p.delete_flag = 0
+        ),
+        flight_count AS (
+        SELECT count(1) as flight_count
+        FROM vm_air_task_t t
+        LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        and task_status IN(1,2,3,4)
+        ),
+        flight_distance AS (
+        SELECT COALESCE(ROUND(sum(t.accumulate_mileage), 2), 0) as total_distance
+        FROM vm_air_task_t t
+        LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        ),
+        flight_duration AS (
+        SELECT COALESCE(ROUND(sum(t.fly_time) / 60, 2), 0) as total_duration
+        FROM vm_air_task_t t
+        LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        )
+        SELECT
+        COALESCE(u.uav_usage_count) as uavUsageCount,
+        COALESCE(e.executed_plan_count) as executedPlanCount,
+        COALESCE(f.flight_count) as flightCount,
+        COALESCE(d.total_distance) as totalDistance,
+        COALESCE(t.total_duration) as totalDuration
+        FROM uav_usage u, executed_plans e, flight_count f, flight_distance d, flight_duration t;
+    </select>
+
+    <select id="queryFlightDistanceTop" resultType="java.util.Map">
+        SELECT dt.device_code as deviceCode, dt.device_name as deviceName, COALESCE(ROUND(sum(t.accumulate_mileage), 2), 0) as airMileage
+        FROM vm_air_task_t t
+                 LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+                 LEFT JOIN vm_uav_device_info_t dt ON t.uav_code = dt.device_code  COLLATE utf8mb4_general_ci
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        GROUP BY t.uav_code
+        ORDER BY airMileage desc
+            LIMIT 5;
+    </select>
+
+    <select id="queryFlightDurationTop" resultType="java.util.Map">
+        SELECT dt.device_code as deviceCode, dt.device_name as deviceName, COALESCE(ROUND(sum(t.fly_time) / 60, 2), 0) as flyTime
+        FROM vm_air_task_t t
+                 LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+                 LEFT JOIN vm_uav_device_info_t dt ON t.uav_code = dt.device_code  COLLATE utf8mb4_general_ci
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        GROUP BY t.uav_code
+        ORDER BY flyTime desc
+            LIMIT 5;
+    </select>
+
+    <select id="queryFailCauseTop" resultType="java.lang.String">
+        SELECT
+            error_reason
+        FROM vm_air_task_t t
+        LEFT JOIN vm_air_line_t l ON l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+            and t.error_reason is not null
+    </select>
+
+    <select id="queryPlanUavFlyCountTop" resultType="java.util.Map">
+        SELECT dt.device_code as deviceCode,
+               dt.device_name as deviceName,
+               p.plan_name AS planName,
+               count(1) as flyCount
+        FROM vm_air_task_t t
+                 LEFT JOIN vm_air_plan_t p ON p.plan_id = t.plan_id
+                 LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+                 LEFT JOIN vm_uav_device_info_t dt ON t.uav_code = dt.device_code  COLLATE utf8mb4_general_ci
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        and task_status IN(1,2,3,4) and t.plan_id is not null and t.plan_id != ''
+        GROUP BY p.plan_id,dt.device_code,dt.device_name,p.plan_name
+        ORDER BY flyCount desc
+            LIMIT 5;
+    </select>
+
+    <select id="queryTaskStatusStatistics" resultType="java.util.Map">
+        SELECT
+        COUNT(1) AS totalCount,
+        COALESCE(SUM(CASE WHEN t.task_status = '1' AND t.is_it_enabled = '0' THEN 1 ELSE 0 END)) AS successCount,
+        COALESCE(SUM(CASE WHEN t.task_status = '0' AND t.is_it_enabled = '0' THEN 1 ELSE 0 END)) AS waitingCount,
+        COALESCE(SUM(CASE WHEN t.task_status = '3' AND t.is_it_enabled = '0' THEN 1 ELSE 0 END)) AS runningCount,
+        COALESCE(SUM(CASE WHEN t.task_status IN ('2', '4') AND t.is_it_enabled = '0' THEN 1 ELSE 0 END)) AS failCount,
+        COALESCE(SUM(CASE WHEN t.is_it_enabled = '1' THEN 1 ELSE 0 END)) AS invalidCount
+        FROM vm_air_task_t t
+        LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+    </select>
+
+    <select id="queryFlyTypeStatistics" resultType="java.util.Map">
+        SELECT
+            (CASE
+                 WHEN l.flight_main_type = '0'  THEN '计划飞行'
+                 WHEN l.flight_main_type = '1' THEN '指点飞行'
+                 WHEN l.flight_main_type = '2'  THEN '一键起飞' END) as flightMainType,
+            count(1) as totalCount
+        FROM vm_air_task_t t
+        LEFT JOIN vm_air_line_t l on l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        and task_status IN(1,2,3,4) and l.flight_main_type IS NOT NULL
+        GROUP BY l.flight_main_type;
+    </select>
+
+    <select id="queryFlyTrend" resultType="java.util.Map">
+        SELECT
+        count(1) AS totalCount,
+        <if test='flyTrendQueryType == "0"'>
+            CASE DAYOFWEEK(t.reality_time)
+            WHEN 1 THEN '周日'
+            WHEN 2 THEN '周一'
+            WHEN 3 THEN '周二'
+            WHEN 4 THEN '周三'
+            WHEN 5 THEN '周四'
+            WHEN 6 THEN '周五'
+            WHEN 7 THEN '周六'
+            END AS showTime
+        </if>
+        <if test='flyTrendQueryType == "1"'>
+            DATE_FORMAT(t.reality_time, '%d') AS showTime
+        </if>
+        <if test='flyTrendQueryType == "2"'>
+            DATE_FORMAT(t.reality_time, '%m') AS showTime
+        </if>
+        FROM
+        vm_air_task_t t
+        LEFT JOIN vm_air_line_t l ON l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        and task_status IN(1,2,3,4)
+        <if test='flyTrendQueryType == "0"'>
+            AND (
+            t.reality_time >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)
+            AND t.reality_time <![CDATA[<=]]> DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY)
+            )
+        </if>
+        <if test='flyTrendQueryType == "1"'>
+            AND (
+            t.reality_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+            AND t.reality_time <![CDATA[<]]> DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
+            )
+        </if>
+        <if test='flyTrendQueryType == "2"'>
+            AND (
+            t.reality_time >= CONCAT(YEAR(CURDATE()), '-01-01')
+            AND t.reality_time <![CDATA[<]]> DATE_ADD(CONCAT(YEAR(CURDATE()), '-01-01'), INTERVAL 1 YEAR)
+            )
+        </if>
+        GROUP BY
+        showTime
+        ORDER BY
+        <choose>
+            <when test='flyTrendQueryType == "0"'>
+                <!-- 调整星期排序：周一=1, 周二=2, ..., 周日=7 -->
+                MIN(
+                CASE DAYOFWEEK(t.reality_time)
+                WHEN 1 THEN 7  <!-- 周日排最后 -->
+                WHEN 2 THEN 1  <!-- 周一排第一 -->
+                WHEN 3 THEN 2  <!-- 周二排第二 -->
+                WHEN 4 THEN 3  <!-- 周三排第三 -->
+                WHEN 5 THEN 4  <!-- 周四排第四 -->
+                WHEN 6 THEN 5  <!-- 周五排第五 -->
+                WHEN 7 THEN 6  <!-- 周六排第六 -->
+                END
+                )
+            </when>
+            <when test='flyTrendQueryType == "1"'>
+                CAST(showTime AS UNSIGNED)  <!-- 按月：按数字日期排序 -->
+                <!-- 或者使用：CAST(DATE_FORMAT(t.reality_time, '%d') AS UNSIGNED) -->
+            </when>
+            <when test='flyTrendQueryType == "2"'>
+                CAST(showTime AS UNSIGNED)  <!-- 按年：按数字月份排序 -->
+                <!-- 或者使用：CAST(DATE_FORMAT(t.reality_time, '%m') AS UNSIGNED) -->
+            </when>
+        </choose>
+    </select>
+
+    <select id="queryFlyTimeStatistical" resultType="java.util.Map">
+        SELECT
+        count(1) AS totalCount,
+        HOUR(t.reality_time) AS showTime
+        FROM
+        vm_air_task_t t
+        LEFT JOIN vm_air_line_t l ON l.flight_route_id = t.flight_route_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+        and task_status IN(1,2,3,4)
+        <if test='flyTimeStatisticalQueryType == "0"'>
+            AND DATE(t.reality_time) = CURDATE()
+        </if>
+        <if test='flyTimeStatisticalQueryType == "1"'>
+            AND (
+            t.reality_time >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)
+            AND t.reality_time <![CDATA[<=]]> DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY)
+            )
+        </if>
+        <if test='flyTimeStatisticalQueryType == "2"'>
+            AND (
+            t.reality_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+            AND t.reality_time <![CDATA[<]]> DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)
+            )
+        </if>
+        GROUP BY
+        showTime
+        ORDER BY
+        showTime
+    </select>
+    <select id="queryTaskDetail" resultType="java.util.Map">
+        SELECT
+        t.flight_route_id AS flightRouteId,
+        t.plan_id AS planId,
+        t.plan_task_id AS planTaskId,
+        dt.device_name AS deviceName,
+        t.uav_code AS uavCode,
+        DATE_FORMAT(t.reality_time, '%Y-%m-%d %H:%i:%s') AS flyStartTime,
+        CASE
+        WHEN t.task_status = '1' THEN
+        DATE_ADD(t.reality_time, INTERVAL COALESCE(ROUND(t.fly_time / 60), 0) MINUTE)
+        ELSE
+        NULL
+        END AS flyEndTime,
+        p.plan_name AS planName,
+        CASE
+        WHEN t.task_status = '0'
+        AND t.is_it_enabled = '0' = '0' THEN
+        '待执行'
+        WHEN t.task_status = '1'
+        AND t.is_it_enabled = '0' THEN
+        '执行成功'
+        WHEN t.task_status IN ('2', '4')
+        AND t.is_it_enabled = '0' THEN
+        '执行失败'
+        WHEN t.task_status = '3'
+        AND t.is_it_enabled = '0' THEN
+        '执行中'
+        WHEN t.is_it_enabled = '1' THEN
+        '已失效'
+        ELSE
+        NULL
+        END AS taskStatus,
+        DATE_FORMAT(t.reality_time, '%Y-%m-%d %H:%i:%s') realityTime,
+        CASE
+        WHEN l.flight_main_type = '0' THEN
+        '计划飞行'
+        WHEN l.flight_main_type = '1' THEN
+        '指点飞行'
+        WHEN l.flight_main_type = '2' THEN
+        '一键起飞'
+        ELSE
+        NULL
+        END AS flightMainType,
+        l.flight_route_name AS flightRouteName,
+        CASE
+        WHEN t.task_status = '1' THEN
+        1
+        ELSE
+        NULL
+        END AS flyCount,
+        COALESCE(ROUND(t.fly_time / 60, 2), 0) AS flyTime,
+        COALESCE(ROUND(t.accumulate_mileage / 60, 2), 0) AS accumulateMileage
+        FROM
+        vm_air_task_t t
+        LEFT JOIN vm_uav_device_info_t dt ON t.uav_code = dt.device_code COLLATE utf8mb4_general_ci
+        LEFT JOIN vm_air_line_t l ON t.flight_route_id = l.flight_route_id
+        LEFT JOIN vm_air_plan_t p ON t.plan_id = p.plan_id
+        <include refid="orgIdJoin"/>
+        WHERE
+        <include refid="statisticalAnalysisBaseWhere"/>
+    </select>
+
+    <select id="queryWarningOrder" resultType="com.chinatower.airline.dto.response.ExportStatisticalAnalysisWarningOrderRep">
+        SELECT
+        dataTable.flight_route_id,
+        dataTable.task_record_id,
+        dataTable.warning_type_id,
+        dataTable.alarm_body
+        from ${tableName} as dataTable
+        <where>
+            dataTable.delete_flag = '0'
+            AND dataTable.tenant_id = #{tenantId}
+            AND dataTable.industry_code = #{industryCode}
+            AND dataTable.task_record_id IN
+            <foreach item="item" collection="taskIdList" separator="," open="(" close=")" index="">
+                #{item}
+            </foreach>
+        </where>
+
+    </select>
+
+
+</mapper>

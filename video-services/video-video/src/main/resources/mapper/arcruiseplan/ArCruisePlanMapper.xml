@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.arcruiseplan.mapper.ArCruisePlanMapper">
+    <select id="ttList" parameterType="com.chinatower.video.modules.arcruiseplan.entity.ArCruisePlanVo" resultType="com.chinatower.video.modules.arcruiseplan.entity.ArCruisePlan">
+        SELECT DISTINCT acp.id AS id,
+               acp.ar_view_id AS "arViewId",
+               acp.channel_code AS "channelCode",
+               acp.cruise_plan_number AS "cruisePlanNumber",
+               acp.cruise_plan_name AS "cruisePlanName",
+               acp.execution_status AS "executionStatus",
+               acp.execution_step AS "executionStep",
+               acp.delete_flag AS "deleteFlag",
+               acp.create_time AS "createTime",
+               acp.update_time AS "updateTime",
+               acp.creator AS creator,
+               acp.modifier AS modifier,
+               sti.tenant_name AS "tenantName",
+               acp.tenant_id AS "tenantId"
+        FROM vm_ar_cruise_plan acp
+        left join sys_tenant_info sti on sti.tenant_id = acp.tenant_id
+        WHERE acp.delete_flag = 0
+        <if test="param.arViewId != null and param.arViewId != ''">AND acp.ar_view_id = #{param.arViewId}</if>
+        <if test="param.channelCode != null and param.channelCode != ''">AND acp.channel_code = #{param.channelCode}</if>
+        <if test="param.cruisePlanName != null and param.cruisePlanName != ''">AND acp.cruise_plan_name LIKE CONCAT('%',#{param.cruisePlanName},'%')</if>
+        <if test="param.executionStatus != null and param.executionStatus != ''">AND acp.execution_status = #{param.executionStatus}</if>
+        <if test="param.queryTime != null and param.queryTime != ''">AND acp.create_time BETWEEN CONCAT(#{param.queryTime}, ' 00:00:00') AND CONCAT(#{param.queryTime}, ' 23:59:59')</if>
+        order by acp.create_time desc
+    </select>
+    <select id="getArCruisePlanByArViewId" resultType="com.chinatower.video.api.entity.ArPlanDTO">
+        WITH t1 AS (SELECT id,
+                           ar_view_id,
+                           channel_code,
+                           execution_status
+                    FROM vm_ar_cruise_plan
+                    WHERE delete_flag = 0
+                      AND ar_view_id = #{arViewId}
+                      AND channel_code = #{channelCode}
+                      AND execution_status = 1)
+        SELECT t1.id,
+               t1.ar_view_id,
+               t1.execution_status,
+               t2.id       AS      "executionStep",
+               t2.stay_duration,
+               t2.order_num,
+               t3.coordinate,
+               t3.resolutionx AS "resolutionX",
+               t3.resolutiony AS "resolutionY",
+               t1.channel_code,
+               t2.tag_id,
+               t3.preset_id AS "presetId",
+               t2.tag_class,
+               t2.id          AS "arCruisePlanRelId",
+               t3.longitude,
+               t3.latitude
+        FROM t1
+                 LEFT JOIN vm_ar_cruise_plan_rel t2 ON t1.id = t2.cruise_plan_id
+                 LEFT JOIN vm_ar_tags_info t3 ON t2.tag_id = t3.id
+        WHERE t2.delete_flag = 0
+          AND (t3.delete_flag = 0 OR t3.delete_flag IS NULL)
+          AND t2.order_num = IF(
+                    (SELECT MAX(order_num)
+                     FROM vm_ar_cruise_plan_rel
+                     WHERE cruise_plan_id = t1.id and delete_flag = 0) <![CDATA[ < ]]> #{orderNum}, 1, #{orderNum})
+    </select>
+    <select id="findTagAndOrderNum" resultType="com.chinatower.video.modules.arcruiseplan.entity.ArCruisePlan">
+        SELECT
+            t1.id,
+            t1.ar_view_id AS "arViewId",
+            t1.channel_code AS "channelCode",
+            t1.cruise_plan_number AS "cruisePlanNumber",
+            t1.cruise_plan_name AS "cruisePlanName",
+            t1.execution_status AS "executionStatus",
+            t1.execution_step AS "executionStep",
+            t2.tag_id AS "tagId",
+            t2.is_open AS "isOpen",
+            t2.order_num AS "orderNum",
+            t2.stay_duration AS "stayDuration",
+            t3.tags_type AS "tagsType",
+            t3.tags_position AS "tagsPosition",
+            t3.tags_name AS "tagsName",
+            t3.tags_desc AS "tagsDesc",
+            t3.coordinate,
+            t3.resolutionx AS "resolutionX",
+            t3.resolutiony AS "resolutionY",
+            t3.preset_id AS "presetId",
+            t1.tenant_id AS "tenantId",
+            t1.industry_code AS "industryCode",
+            t2.tag_class
+        FROM
+        vm_ar_cruise_plan t1 left join vm_ar_cruise_plan_rel t2
+        ON t1.execution_step = t2.id
+        left join vm_ar_tags_info t3 ON t2.tag_id = t3.id
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0
+        AND (t3.delete_flag = 0 OR t3.delete_flag IS NULL)
+        AND t1.ar_view_id = #{arViewId}
+        AND t1.channel_code = #{channelCode}
+        AND t1.execution_status = 1
+    </select>
+    <select id="findFirstPlan" resultType="java.lang.Integer">
+        SELECT
+        t2.id
+        FROM
+        vm_ar_cruise_plan t1 left join vm_ar_cruise_plan_rel t2
+        ON t1.id = t2.cruise_plan_id where t1.delete_flag = 0 and t2.delete_flag = 0
+        AND t1.id = #{id} ORDER BY order_num limit 1
+    </select>
+    <select id="findTags" resultType="com.chinatower.video.modules.arcruiseplan.entity.ArCruisePlan">
+        SELECT
+            t1.id,
+            t1.ar_view_id AS "arViewId",
+            t3.channel_code AS "channelCode",
+            t1.cruise_plan_number AS "cruisePlanNumber",
+            t1.cruise_plan_name AS "cruisePlanName",
+            t1.execution_status AS "executionStatus",
+            t1.execution_step AS "executionStep",
+            t3.id AS "tagId",
+            t2.is_open AS "isOpen",
+            t2.order_num AS "orderNum",
+            t2.stay_duration AS "stayDuration",
+            t3.tags_type AS "tagsType",
+            t3.tags_position AS "tagsPosition",
+            t3.tags_name AS "tagsName",
+            t3.tags_desc AS "tagsDesc",
+            t3.coordinate,
+            t3.resolutionx AS "resolutionX",
+            t3.resolutiony AS "resolutionY",
+            t3.preset_id AS "presetId",
+            t1.tenant_id AS "tenantId",
+            t1.industry_code AS "industryCode"
+        FROM
+            vm_ar_cruise_plan t1
+            left join vm_ar_cruise_plan_rel t2 ON t1.id = t2.cruise_plan_id
+            left join vm_ar_tags_info t3 ON t2.tag_id = t3.id
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0 AND t3.delete_flag = 0
+          AND t1.id = #{id}
+          AND t1.execution_status = 1 ORDER BY order_num
+    </select>
+    <select id="findTagsByArViewId" resultType="com.chinatower.video.modules.artags.dataobject.ArTagsInfo">
+        SELECT
+            t1.ar_view_id AS "arViewId",
+            t3.channel_code AS "channelCode",
+            t3.id AS tagId,
+            t2.stay_duration AS "stayDuration",
+            t3.tags_type AS "tagsType",
+            t3.tags_position AS "tagsPosition",
+            t3.tags_name AS "tagsName",
+            t3.tags_desc AS "tagsDesc",
+            t3.coordinate,
+            t3.resolutionx AS "resolutionX",
+            t3.resolutiony AS "resolutionY",
+            t3.preset_id AS "presetId",
+            t3.tag_class
+        FROM
+            vm_ar_cruise_plan t1
+                left join vm_ar_cruise_plan_rel t2 ON t1.id = t2.cruise_plan_id
+                left join vm_ar_tags_info t3 ON t2.tag_id = t3.id
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0 AND t3.delete_flag = 0
+          AND t1.ar_view_id = #{arViewId}
+          AND t1.channel_code = #{channelCode}
+          AND t1.execution_status = 1
+    </select>
+
+    <select id="pageList" parameterType="com.chinatower.video.api.entity.ArCruisePlanReq"
+            resultType="com.chinatower.video.modules.arcruiseplan.entity.ArCruisePlan">
+        SELECT
+            *
+        FROM
+            vm_ar_cruise_plan
+        WHERE
+            delete_flag = '0'
+        <if test="param.tenantId != null and param.tenantId != ''">AND tenant_id = #{param.tenantId}</if>
+        <if test="param.industryCode != null and param.industryCode != ''">AND industry_code = #{param.industryCode}</if>
+        <if test="param.arViewId != null and param.arViewId != ''">AND ar_view_id = #{param.arViewId}</if>
+        <if test="param.channelCode != null and param.channelCode != ''">AND channel_code = #{param.channelCode}</if>
+        <if test="param.cruisePlanName != null and param.cruisePlanName != ''">AND cruise_plan_name LIKE CONCAT('%',#{param.cruisePlanName},'%')</if>
+        <if test="param.executionStatus != null and param.executionStatus != ''">AND execution_status = #{param.executionStatus}</if>
+        <if test="param.queryTime != null and param.queryTime != ''">AND create_time BETWEEN CONCAT(#{param.queryTime}, ' 00:00:00') AND CONCAT(#{param.queryTime}, ' 23:59:59')</if>
+        ORDER BY
+            create_time DESC
+    </select>
+
+    <select id="findTagsByCurId" resultType="com.chinatower.video.modules.arcruiseplan.entity.ArCruisePlanRel">
+        SELECT
+            id,
+            tag_id,
+            tag_class,
+            order_num
+        FROM
+            vm_ar_cruise_plan_rel
+        WHERE delete_flag = 0
+          AND cruise_plan_id = #{cruisePlanId}
+    </select>
+
+</mapper>

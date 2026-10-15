@@ -1,0 +1,450 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.analysis.modules.statistic.dao.DeviceStatisticsDAO">
+
+
+    <select id="getCameraNumByArea" resultType="java.util.Map">
+        SELECT count(DISTINCT t.device_code) as deviceNum,
+        <choose>
+            <when test='areaBoxNum == 0'>
+                a1.area_name as provinceName,
+            </when>
+            <when test='areaBoxNum == 1'>
+                a1.area_name as provinceName,a2.area_name as cityName,
+            </when>
+            <when test='areaBoxNum == 2'>
+                a1.area_name as provinceName,a2.area_name as cityName,a3.area_name as countyName,
+            </when>
+            <when test='areaBoxNum == 3'>
+                a1.area_name as provinceName,a2.area_name as cityName,a3.area_name as countyName,a4.area_name as townName,
+            </when>
+        </choose>
+        IFNULL((case when #{areaBoxNum} = 0 then a1.area_name
+        when #{areaBoxNum} = 1 then CONCAT(a1.area_name,a2.area_name)
+        when #{areaBoxNum} = 2 then CONCAT(a1.area_name,a2.area_name,IFNULL(a3.area_name,'其他'))
+        when #{areaBoxNum} = 3 then CONCAT(a1.area_name,a2.area_name,IFNULL(a3.area_name,'其他'),IF(a3.area_name,'',IFNULL(a4.area_name,'其他'))) else a1.area_name end),'其他') as regionName
+        FROM `vm_device_info_t` t
+        INNER JOIN vm_order_devices dataTable ON dataTable.device_code = t.device_code
+        LEFT JOIN vm_channel_info_t ci ON ci.device_code = dataTable.device_code
+        LEFT JOIN sys_area a1 ON a1.AREA_CODE = t.province_id
+        LEFT JOIN sys_area a2 ON a2.AREA_CODE = t.city_id
+        LEFT JOIN sys_area a3 ON a3.AREA_CODE = t.county_id
+        LEFT JOIN sys_area a4 ON a4.AREA_CODE = t.town_code
+        where dataTable.delete_flag = '0' and dataTable.ord_status IN (0, 1, 2) and t.delete_flag = '0' and ci.delete_flag = '0'
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+                and dataTable.device_code in
+                <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </if>
+        <if test='areaCodeLists != null and areaCodeLists.size() > 0'>
+            and (
+            t.province_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.city_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.county_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.town_code in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        ${dataScope}
+        GROUP BY
+        <choose>
+            <when test='areaBoxNum == 0'>
+                province_id
+            </when>
+            <when test='areaBoxNum == 1'>
+                province_id,city_id
+            </when>
+            <when test='areaBoxNum == 2'>
+                province_id,city_id,county_id
+            </when>
+            <when test='areaBoxNum == 3'>
+                province_id,city_id,county_id,town_code
+            </when>
+        </choose>
+        ORDER BY deviceNum DESC,
+        <choose>
+            <when test='areaBoxNum == 0'>
+                province_id
+            </when>
+            <when test='areaBoxNum == 1'>
+                province_id,city_id
+            </when>
+            <when test='areaBoxNum == 2'>
+                province_id,city_id,county_id
+            </when>
+            <when test='areaBoxNum == 3'>
+                province_id,city_id,county_id,town_code
+            </when>
+        </choose>
+    </select>
+    <select id="getOrderAlgorithmRank" resultType="java.util.Map">
+        select COALESCE(b.device_name,dataTable.device_name) as 'deviceName', count(DISTINCT oa.algorithm_code) as 'algorithmNum', dataTable.device_code as 'deviceCode' from vm_order_devices dataTable
+            inner join vm_order_algorithms oa on dataTable.package_code = oa.package_code and dataTable.order_code = oa.order_code and dataTable.industry_code = oa.industry_code
+            left join (select distinct device_code, device_name,tenant_id,industry_code from vm_tenant_device_channel_rel_t where delete_flag='0') b
+            on b.device_code = dataTable.device_code and b.tenant_id = dataTable.tenant_id and b.industry_code = dataTable.industry_code
+            left join vm_device_info_t t on t.device_code = dataTable.device_code
+            LEFT JOIN vm_algorithm_info_t t2 ON oa.algorithm_code = t2.algorithm_code
+        where dataTable.delete_flag = '0' and dataTable.ord_status IN (0, 1, 2) and t.delete_flag = '0' and app_scenarios = '1'
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+                and dataTable.device_code in
+                <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </if>
+        <if test='areaCodeLists != null and areaCodeLists.size() > 0'>
+            and (
+            t.province_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.city_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.county_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.town_code in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        ${dataScope}
+        group by dataTable.device_code order by count(DISTINCT oa.algorithm_code) desc, dataTable.device_code asc
+    </select>
+    <select id="getForeAlgorithmTaskRank" resultType="java.util.Map">
+        SELECT COALESCE(b.channel_name,c.channel_name) as 'channelName', COUNT(1) AS 'foreAlgorithmTaskNum', od.device_code as 'deviceCode' FROM `vm_algorithm_give_config` ag
+        left join vm_device_info_t t on t.device_code = ag.device_code
+        left JOIN vm_order_devices od ON od.device_code = t.device_code and od.tenant_id = ag.tenant_id AND ag.industry_code = od.industry_code
+        left join vm_channel_info_t c on t.device_code = c.device_code and c.channel_code = ag.channel_code
+        left join vm_tenant_device_channel_rel_t b on b.device_code = od.device_code AND b.channel_code = c.channel_code AND b.industry_code = od.industry_code
+                                                          AND b.tenant_id = od.tenant_id AND b.delete_flag='0'
+        where ag.delete_flag = '0' and od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and t.delete_flag = '0' and c.delete_flag = '0'
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+                and ag.device_code in
+                <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </if>
+        <if test='areaCodeLists != null and areaCodeLists.size() > 0'>
+            and (
+            t.province_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.city_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.county_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.town_code in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        ${dataScope}
+        GROUP BY ag.channel_code order by count(1) desc, ag.channel_code asc
+    </select>
+    <sql id="queryParam">
+        left join vm_device_info_t t on t.device_code = ac.device_code
+        left JOIN vm_order_devices od ON od.device_code = t.device_code and od.tenant_id = ac.tenant_id AND ac.industry_code = od.industry_code
+        left join vm_channel_info_t c on t.device_code = c.device_code and c.channel_code = ac.channel_code
+        left join vm_tenant_device_channel_rel_t b on b.device_code = od.device_code AND b.channel_code = c.channel_code AND b.industry_code = od.industry_code
+                                                    AND b.delete_flag='0' AND b.tenant_id = od.tenant_id
+        where ac.delete_flag = '0' and od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and t.delete_flag = '0' and c.delete_flag = '0'
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+                and ac.device_code in
+                <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </if>
+        <if test='areaCodeLists != null and areaCodeLists.size() > 0'>
+            and (
+            t.province_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.city_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.county_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.town_code in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        ${dataScope}
+        GROUP BY ac.channel_code order by count(1) desc, ac.channel_code asc
+    </sql>
+    <select id="getAfterAlgorithmTaskRank" resultType="java.util.Map">
+        SELECT COALESCE(b.channel_name,c.channel_name) as 'channelName', COUNT(1) AS 'afterAlgorithmTaskNum', od.device_code as 'deviceCode' FROM `vm_algorithm_config` ac
+        <include refid="queryParam"/>
+    </select>
+    <select id="getAfterAlgorithmTaskRankLocal" resultType="java.util.Map">
+        SELECT /*+ set(enable_nestloop off) set (enable_index_nestloop off)*/ COALESCE(b.channel_name,c.channel_name) as 'channelName', COUNT(1) AS 'afterAlgorithmTaskNum', od.device_code as 'deviceCode' FROM `vm_algorithm_config` ac
+        <include refid="queryParam"/>
+    </select>
+    <select id="getStartForeAlgorithmTaskRank"
+            resultType="java.util.Map">
+        SELECT COALESCE(b.channel_name,c.channel_name) as 'channelName', COUNT(IF(ag.`status` = '0', 1, NULL)) AS 'startForeAlgorithmTaskNum', od.device_code as 'deviceCode' FROM `vm_algorithm_give_config` ag
+        left join vm_device_info_t t on t.device_code = ag.device_code
+        left JOIN vm_order_devices od ON od.device_code = t.device_code and od.tenant_id = ag.tenant_id AND ag.industry_code = od.industry_code
+        left join vm_channel_info_t c on t.device_code = c.device_code and c.channel_code = ag.channel_code
+        left join vm_tenant_device_channel_rel_t b on b.device_code = od.device_code AND b.channel_code = c.channel_code AND b.industry_code = od.industry_code
+                                                          AND b.tenant_id = od.tenant_id AND b.delete_flag='0'
+        where ag.delete_flag = '0' and od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and t.delete_flag = '0' and c.delete_flag = '0'
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+                and ag.device_code in
+                <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </if>
+        <if test='areaCodeLists != null and areaCodeLists.size() > 0'>
+            and (
+            t.province_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.city_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.county_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.town_code in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        ${dataScope}
+        GROUP BY ag.channel_code
+        <if test='isZero != null and isZero != "" and isZero == "1" '>
+            HAVING  startForeAlgorithmTaskNum>0
+        </if>
+        order by COUNT(IF(ag.`status` = '0', 1, NULL)) desc, ag.channel_code asc
+    </select>
+    <select id="getStartAfterAlgorithmTaskRank"
+            resultType="java.util.Map">
+        SELECT COALESCE(b.channel_name,c.channel_name) as 'channelName', COUNT(IF(ac.`status` = '0', 1, NULL)) AS 'startAfterAlgorithmTaskNum', od.device_code as 'deviceCode' FROM `vm_algorithm_config` ac
+        <include refid="queryParamOne"/>
+    </select>
+    <select id="getStartAfterAlgorithmTaskRankLocal"
+            resultType="java.util.Map">
+        SELECT /*+ set(enable_nestloop off) set (enable_index_nestloop off)*/ COALESCE(b.channel_name,c.channel_name) as 'channelName', COUNT(IF(ac.`status` = '0', 1, NULL)) AS 'startAfterAlgorithmTaskNum', od.device_code as 'deviceCode' FROM `vm_algorithm_config` ac
+        <include refid="queryParamOne"/>
+    </select>
+    <sql id="queryParamOne">
+        left join vm_device_info_t t on t.device_code = ac.device_code
+        left JOIN vm_order_devices od ON od.device_code = t.device_code and od.tenant_id = ac.tenant_id AND ac.industry_code = od.industry_code
+        left join vm_channel_info_t c on t.device_code = c.device_code and c.channel_code = ac.channel_code
+        left join vm_tenant_device_channel_rel_t b on b.device_code = od.device_code AND b.channel_code = c.channel_code AND b.industry_code = od.industry_code
+                                                          AND b.tenant_id = od.tenant_id AND b.delete_flag='0'
+        where ac.delete_flag = '0' and od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and t.delete_flag = '0' and c.delete_flag = '0'
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+                and ac.device_code in
+                <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </if>
+        <if test='areaCodeLists != null and areaCodeLists.size() > 0'>
+            and (
+            t.province_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.city_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.county_id in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            t.town_code in
+            <foreach collection="areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        ${dataScope}
+        GROUP BY ac.channel_code
+        <if test='isZero != null and isZero != "" and isZero == "1" '>
+            HAVING  startAfterAlgorithmTaskNum>0
+        </if>
+        order by COUNT(IF(ac.`status` = '0', 1, NULL)) desc, ac.channel_code asc
+    </sql>
+
+    <select id="getStartAfterAlgorithmTaskTotalNum"
+            resultType="java.util.Map">
+        SELECT COUNT(IF(ac.`status` = '0', 1, NULL)) AS 'startAfterAlgorithmTaskNum' FROM `vm_algorithm_config` ac
+          left join vm_device_info_t t on t.device_code = ac.device_code
+          left JOIN vm_order_devices od ON od.device_code = t.device_code and od.tenant_id = ac.tenant_id AND ac.industry_code = od.industry_code
+          left join vm_channel_info_t c on t.device_code = c.device_code and c.channel_code = ac.channel_code
+          left join vm_tenant_device_channel_rel_t b on b.device_code = od.device_code AND b.channel_code = c.channel_code AND b.industry_code = od.industry_code
+            AND b.tenant_id = od.tenant_id AND b.delete_flag='0'
+        where ac.delete_flag = '0' and od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and t.delete_flag = '0' and c.delete_flag = '0'
+            ${dataScope}
+    </select>
+
+    <select id="getStartAfterAlgorithmTaskTotalNumLocal"
+            resultType="java.util.Map">
+        SELECT /*+ set(enable_nestloop off) set (enable_index_nestloop off)*/ COUNT(IF(ac.`status` = '0', 1, NULL)) AS 'startAfterAlgorithmTaskNum' FROM `vm_algorithm_config` ac
+          left join vm_device_info_t t on t.device_code = ac.device_code
+          left JOIN vm_order_devices od ON od.device_code = t.device_code and od.tenant_id = ac.tenant_id AND ac.industry_code = od.industry_code
+          left join vm_channel_info_t c on t.device_code = c.device_code and c.channel_code = ac.channel_code
+          left join vm_tenant_device_channel_rel_t b on b.device_code = od.device_code AND b.channel_code = c.channel_code AND b.industry_code = od.industry_code
+            AND b.tenant_id = od.tenant_id AND b.delete_flag='0'
+        where ac.delete_flag = '0' and od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and t.delete_flag = '0' and c.delete_flag = '0'
+            ${dataScope}
+    </select>
+
+    <select id="getAlgorithmTaskTotalNum"
+            resultType="java.util.Map">
+        select count(DISTINCT oa.algorithm_code) as 'orderAlgorithmTaskNum' from vm_order_devices dataTable
+               inner join vm_order_algorithms oa on dataTable.package_code = oa.package_code and dataTable.order_code = oa.order_code and dataTable.industry_code = oa.industry_code
+               LEFT JOIN vm_algorithm_info_t t2 ON oa.algorithm_code = t2.algorithm_code
+        where dataTable.delete_flag = '0' and dataTable.ord_status IN (0, 1, 2) and t2.app_scenarios = '1'
+            ${dataScope}
+    </select>
+
+
+    <select id="getStartForeAlgorithmTaskTotalNum"
+            resultType="java.util.Map">
+        SELECT COUNT(IF(ac.`status` = '0', 1, NULL)) AS 'startForeAlgorithmTaskNum' FROM `vm_algorithm_give_config` ac
+           left join vm_device_info_t t on t.device_code = ac.device_code
+           left JOIN vm_order_devices od ON od.device_code = t.device_code and od.tenant_id = ac.tenant_id AND ac.industry_code = od.industry_code
+           left join vm_channel_info_t c on t.device_code = c.device_code and c.channel_code = ac.channel_code
+           left join vm_tenant_device_channel_rel_t b on b.device_code = od.device_code AND b.channel_code = c.channel_code AND b.industry_code = od.industry_code
+            AND b.tenant_id = od.tenant_id AND b.delete_flag='0'
+        where ac.delete_flag = '0' and od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and t.delete_flag = '0' and c.delete_flag = '0'
+            ${dataScope}
+    </select>
+
+    <select id="getAlgorithmTaskList"
+            resultType="java.util.Map">
+        select DISTINCT oa.algorithm_code as 'algorithmCode'  ,oa.algorithm_name as 'algorithmName' from vm_order_devices dataTable
+             inner join vm_order_algorithms oa on dataTable.package_code = oa.package_code and dataTable.order_code = oa.order_code and dataTable.industry_code = oa.industry_code
+             LEFT JOIN vm_algorithm_info_t t2 ON oa.algorithm_code = t2.algorithm_code
+        where dataTable.delete_flag = '0' and dataTable.ord_status IN (0, 1, 2) and t2.app_scenarios = '1'
+            ${dataScope}
+    </select>
+
+
+    <select id="getDeviceCodeListByDeptIds" resultType="java.lang.String">
+        SELECT DISTINCT dt.device_code
+        from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        left join vm_order_devices od on dt.device_code = od.device_code
+        WHERE od.delete_flag = '0' and od.ord_status IN (0, 1, 2) and dt.device_type NOT IN (8,9,10) AND od.tenant_id=#{tenantId} and od.industry_code=#{industryCode}
+        <if test='orgIdList != null and orgIdList.size() > 0'>
+            and d.DEPT_ID in
+            <foreach collection="orgIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getDeviceCodeByUser" resultType="java.lang.String">
+        SELECT DISTINCT dataTable.device_code as 'deviceCode' FROM vm_order_devices dataTable
+        INNER JOIN vm_device_info_t d ON dataTable.device_code = d.device_code
+        LEFT JOIN vm_channel_info_t ci ON ci.device_code = dataTable.device_code
+        WHERE  d.delete_flag = '0' AND dataTable.delete_flag = '0' and dataTable.ord_status in (0,1,2) and ci.delete_flag = '0'
+        ${dataScope}
+    </select>
+
+    <select id="getDeviceNumInEvent" resultType="java.util.Map">
+        select  count(DISTINCT dataTable.device_code) as 'deviceNum'
+        from vm_statistics_event_device_ref dataTable
+        <where>
+            <if test='deviceCodeList!= null and deviceCodeList.size() > 0 '>
+                AND dataTable.device_code IN
+                <foreach collection="deviceCodeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                    #{labelIdItem}
+                </foreach>
+            </if>
+            <if test="deviceCodeIndustryList != null and deviceCodeIndustryList.size()>0 ">
+                and dataTable.device_code in
+                <foreach collection="deviceCodeIndustryList" item="item" index="index" open="(" separator="," close=") ">
+                    #{item}
+                </foreach>
+            </if>
+            <if test='queryStartTime != null and queryStartTime != "" '>
+                AND dataTable.create_date <![CDATA[ >= ]]> #{queryStartTime}
+            </if>
+            <if test='queryEndTime != null and queryEndTime != "" '>
+                AND dataTable.create_date <![CDATA[ <= ]]> #{queryEndTime}
+            </if>
+            ${dataScope}
+        </where>
+    </select>
+
+    <select id="getDeviceCodeByLabelIds" resultType="java.lang.String">
+        select DISTINCT c.device_code
+        from vm_order_devices c
+        left join vm_device_labels_rel dlr on dlr.tenant_id = c.tenant_id and dlr.device_code = c.device_code
+        left join vm_tenant_label_config tlc on tlc.label_id = dlr.label_id
+        where c.tenant_id = #{tenantId}
+        <if test='deviceLabelIdList != null and deviceLabelIdList.size() > 0'>
+            and tlc.label_id in
+            <foreach collection="deviceLabelIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderPackageMapper">
+    <update id="updateTenantInfo">
+        update sys_tenant_info
+        set trade_info = #{newInfo}
+        where tenant_id = #{tenantId}
+        and del_flag = '0'
+    </update>
+
+
+    <select id="countOrderForApp" resultType="java.lang.Integer">
+
+        select count(1)
+        from vm_order_package op,vm_order_customer oc
+        where op.order_code = oc.order_code
+        and op.tenant_id = #{tenantId}
+        and oc.ord_status != '3'
+        and op.delete_flag = '0'
+        and op.industry_code = #{appCode}
+        <if test='appVerCode != null and appVerCode != ""'>
+            and op.app_ver_code = #{appVerCode}
+        </if>
+
+    </select>
+    <select id="selectTenantInfo" resultType="java.lang.String">
+
+        select trade_info
+        from sys_tenant_info
+        where tenant_id = #{tenantId}
+        and del_flag = '0'
+    </select>
+
+    <select id="getOrderPackageInfoByOrderCode" resultType="com.chinatower.common.core.domain.OrderPackageDO">
+        select cp.*
+        from vm_order_package cp
+        where cp.order_code in
+        <foreach collection="orderCodeList" item="orderCode" index="index" open="(" close=")" separator=",">
+            #{orderCode}
+        </foreach>
+        and cp.delete_flag = '0'
+        ${dataScope}
+    </select>
+
+    <select id="getOrderPackageInfoByTenantId" resultType="com.chinatower.common.core.domain.OrderPackageDO">
+        select *
+        from vm_order_package cp
+        where cp.tenant_id = #{tenantId}
+          and cp.delete_flag = '0' and ord_status in (0,1,2)
+    </select>
+
+    <select id="selectIndustryInfoByTenantId" resultType="com.chinatower.common.core.domain.OrderPackageDO">
+        select industry_code, app_ver_code
+        from vm_order_package
+        where tenant_id = #{tenantId} and accept_node = #{acceptNode}
+        and delete_flag = '0'
+    </select>
+
+    <select id="selectValidIndustryInfoByTenantId" resultType="com.chinatower.common.core.domain.OrderPackageDO">
+        select industry_code, app_ver_code
+        from vm_order_package
+        where tenant_id = #{tenantId} and ord_status in (0,1,2) and order_code != #{filterOrderCode}
+        and accept_Node = #{acceptNode}
+        and delete_flag = '0'
+    </select>
+
+    <select id="selectHisIndustryInfoByTenantId" resultType="com.chinatower.common.core.domain.OrderPackageDO">
+        select industry_code, app_ver_code
+        from vm_order_package_his
+        where tenant_id = #{tenantId} and accept_node = #{acceptNode}
+        and delete_flag = '0'
+    </select>
+
+    <update id="cancelByOrderCode">
+        update vm_order_package
+        set ord_status = 3, update_time = now()
+        where order_code = #{orderCode} and ord_status in (0,1,2);
+    </update>
+</mapper>

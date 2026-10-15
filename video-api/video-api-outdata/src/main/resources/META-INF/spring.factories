@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.outdata.api.factory.OutdataFallbackFactory,\
+  com.chinatower.outdata.api.factory.SendKafkaAPIFactory

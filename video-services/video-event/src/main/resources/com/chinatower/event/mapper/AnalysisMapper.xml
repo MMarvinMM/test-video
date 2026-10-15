@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.AnalysisMapper">
+
+    <select id="getEventNumByArea" resultType="com.chinatower.event.dto.EventNumByAreaDTO">
+        SELECT
+        province_id as provinceId,
+        city_id as cityId,
+        county_id as countyId,
+        region_name as regionName,
+        IFNULL(sum( warning_num ),0) as num
+        FROM vm_statistics_event_area dataTable
+        <where>
+            <if test='param.dimensionFlag == "1" '>
+                AND `year` = YEAR(CURDATE())
+            </if>
+            <if test='param.dimensionFlag == "2" '>
+                AND `year` = YEAR(CURDATE())
+                AND `month` = MONTH(CURDATE())
+            </if>
+            <if test='param.dimensionFlag == "3" '>
+                AND DATE_FORMAT(create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),interval 1 DAY) ,'%Y-%m-%d')
+            </if>
+            <if test='param.dimensionFlag == "4" '>
+                AND `year` = YEAR(CURDATE())
+                AND `month` = MONTH(CURDATE())
+                AND `day` = DAY(CURDATE())
+            </if>
+            <if test='param.queryStartTime != null and param.queryStartTime != ""
+            and param.queryEndTime != null and param.queryEndTime != ""'>
+                AND create_date >= #{param.queryStartTime} AND create_date <![CDATA[<=]]> #{param.queryEndTime}
+            </if>
+            <if test='param.provinceId != null and param.provinceId != ""'>
+                AND province_id = #{param.provinceId}
+            </if>
+            <if test='param.cityId != null and param.cityId != ""'>
+                AND city_id = #{param.cityId}
+            </if>
+            <if test='param.countyId != null and param.countyId != ""'>
+                AND county_id = #{param.countyId}
+            </if>
+            ${param.dataScope}
+        </where>
+        GROUP BY province_id, city_id, county_id
+        order by num desc
+    </select>
+
+    <select id="getEventNumByHour" resultType="com.chinatower.event.dto.EventNumByHourDTO">
+        SELECT t1.label,IFNULL(t2.num,0) AS num FROM (
+        SELECT 0 AS `hour`,'0:00-1:00' AS label UNION
+        SELECT 1 AS `hour`,'1:00-2:00' AS label UNION
+        SELECT 2 AS `hour`,'2:00-3:00' AS label UNION
+        SELECT 3 AS `hour`,'3:00-4:00' AS label UNION
+        SELECT 4 AS `hour`,'4:00-5:00' AS label UNION
+        SELECT 5 AS `hour`,'5:00-6:00' AS label UNION
+        SELECT 6 AS `hour`,'6:00-7:00' AS label UNION
+        SELECT 7 AS `hour`,'7:00-8:00' AS label UNION
+        SELECT 8 AS `hour`,'8:00-9:00' AS label UNION
+        SELECT 9 AS `hour`,'9:00-10:00' AS label UNION
+        SELECT 10 AS `hour`,'10:00-11:00' AS label UNION
+        SELECT 11 AS `hour`,'11:00-12:00' AS label UNION
+        SELECT 12 AS `hour`,'12:00-13:00' AS label UNION
+        SELECT 13 AS `hour`,'13:00-14:00' AS label UNION
+        SELECT 14 AS `hour`,'14:00-15:00' AS label UNION
+        SELECT 15 AS `hour`,'15:00-16:00' AS label UNION
+        SELECT 16 AS `hour`,'16:00-17:00' AS label UNION
+        SELECT 17 AS `hour`,'17:00-18:00' AS label UNION
+        SELECT 18 AS `hour`,'18:00-19:00' AS label UNION
+        SELECT 19 AS `hour`,'19:00-20:00' AS label UNION
+        SELECT 20 AS `hour`,'20:00-21:00' AS label UNION
+        SELECT 21 AS `hour`,'21:00-22:00' AS label UNION
+        SELECT 22 AS `hour`,'22:00-23:00' AS label UNION
+        SELECT 23 AS `hour`,'23:00-24:00' AS label) t1
+        LEFT JOIN
+        (SELECT warning_hour, SUM(warning_num) AS num
+        FROM vm_statistics_event_hour dataTable
+        <where>
+            <if test='param.tenantId != null and param.tenantId != ""'>
+                and dataTable.tenant_id = #{param.tenantId}
+            </if>
+            <if test='param.dimensionFlag == "1" '>
+                AND `year` = YEAR(NOW())
+            </if>
+            <if test='param.dimensionFlag == "2" '>
+                AND `year` = YEAR(NOW())
+                AND `month` = MONTH(NOW())
+            </if>
+            <if test='param.dimensionFlag == "3" '>
+                AND DATE_FORMAT(create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),interval 1 DAY) ,'%Y-%m-%d')
+            </if>
+            <if test='param.dimensionFlag == "4" '>
+                AND `year` = YEAR(NOW())
+                AND `month` = MONTH(NOW())
+                AND `day` = DAY(NOW())
+            </if>
+            <if test='param.queryStartTime != null and param.queryStartTime != ""'>
+                AND create_date >= #{param.queryStartTime} AND create_date <![CDATA[<=]]> #{param.queryEndTime}
+            </if>
+            <if test='param.provinceId != null and param.provinceId != ""'>
+                AND LEFT(dataTable.county_id,2) = LEFT(#{param.provinceId},2)
+            </if>
+            <if test='param.cityId != null and param.cityId != ""'>
+                AND LEFT(dataTable.county_id,4) = LEFT(#{param.cityId},4)
+            </if>
+            <if test='param.countyId != null and param.countyId != ""'>
+                AND dataTable.county_id = #{param.countyId}
+            </if>
+            ${param.dataScope}
+        </where>
+        GROUP BY warning_hour
+        ORDER BY warning_hour) t2 ON t1.`hour` = t2.warning_hour
+        ORDER BY t1.`hour`
+    </select>
+
+    <select id="getEventNumNew" resultType="com.chinatower.event.dto.EventNumNewDTO">
+        SELECT IFNULL(SUM(today_all), 0) AS todayAll,
+        IFNULL(SUM(today_process), 0) AS todayProcess,
+        IFNULL(SUM(today_complete), 0) AS todayComplete,
+        IFNULL(SUM(pendding_judged), 0) AS penddingJudged,
+        IFNULL(SUM(pending_dispatched), 0) AS pendingDispatched,
+        IFNULL(SUM(pedding_disposal), 0) AS peddingDisposal,
+        IFNULL(SUM(pending_approve), 0) AS pendingApprove,
+        IFNULL(SUM(pendding_leader_approve), 0) AS penddingLeaderApprove,
+        IFNULL(SUM(overtime), 0) AS overtime
+        FROM vm_statistics_event_num dataTable
+        WHERE `year` = YEAR(NOW())
+        AND `month` = MONTH(NOW())
+        AND `day` = DAY(NOW())
+        ${param.dataScope}
+    </select>
+
+    <select id="getPeddingDisposal" resultType="java.lang.Integer">
+        SELECT count(*) as num
+        FROM ${tableName}
+        WHERE link_id in ('3', '4')
+          AND (group_id = #{deptId} OR process_id = #{userId})
+    </select>
+
+    <select id="getEventNumListByArea" resultType="com.chinatower.event.entity.vo.AreaEventVO">
+        select
+        <choose>
+            <when test='param.areaBoxNum == 0'>
+                region_name as regionName,
+                province_id as areaCode,
+                province_id as provinceId,
+            </when>
+            <when test='param.areaBoxNum == 1'>
+                region_name as regionName,
+                city_id as areaCode,
+                province_id as provinceId,
+                city_id as cityId,
+            </when>
+            <when test='param.areaBoxNum == 2'>
+                region_name as regionName,
+                county_id as areaCode,
+                province_id as provinceId,
+                city_id as cityId,
+                county_id as countyId,
+            </when>
+            <when test='param.areaBoxNum == 3'>
+                street_name as regionName,
+                street_id as areaCode,
+                province_id as provinceId,
+                city_id as cityId,
+                county_id as countyId,
+                street_id as streetId,
+            </when>
+        </choose>
+        IFNULL(sum(warning_num), 0) as num
+        from vm_statistics_event_area dataTable
+        where province_id is not null
+        <if test='param.dimensionFlag == "1" '>
+            AND `year` = YEAR(NOW())
+        </if>
+        <if test='param.dimensionFlag == "2" '>
+            AND `year` = YEAR(NOW())
+            AND `month` = MONTH(NOW())
+        </if>
+        <if test="param.areaBoxNum == 3">
+            AND street_id IS NOT NULL
+            AND street_id != ''
+        </if>
+        ${param.dataScope}
+        group by
+        <choose>
+            <when test='param.areaBoxNum == 0'>
+                province_id
+            </when>
+            <when test='param.areaBoxNum == 1'>
+                city_id
+            </when>
+            <when test='param.areaBoxNum == 2'>
+                county_id
+            </when>
+            <when test='param.areaBoxNum == 3'>
+                street_id
+            </when>
+        </choose>
+        order by num desc
+        limit 5
+    </select>
+
+    <select id="getSysAreas" resultType="com.chinatower.platform.entity.admin.SysArea">
+        select AREA_CODE,
+        <choose>
+            <when test='level == 0'>
+                AREA_NAME
+            </when>
+            <when test='level == 1'>
+                concat(AREA_PARENT_NAME,AREA_NAME) as AREA_NAME
+            </when>
+            <when test='level == 2'>
+                concat(AREA_PARENT_NAME,AREA_NAME) as AREA_NAME
+            </when>
+        </choose>
+        from sys_area
+        where AREA_CODE in
+        <foreach collection="areaCodes" open="(" close=")" item="code" separator="," index="index">
+            #{code}
+        </foreach>
+    </select>
+
+    <select id="getAlarmByCode" resultType="String" parameterType="com.chinatower.platform.entity.admin.SysArea">
+        select AREA_NAME
+        from sys_area
+        where DEL_FLAG = '0'
+          AND AREA_CODE = #{areaCode}
+    </select>
+
+</mapper>

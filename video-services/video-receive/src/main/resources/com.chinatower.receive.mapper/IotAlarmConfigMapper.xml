@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.IotAlarmConfigMapper">
+
+
+    <select id="selectAllIotConfig" resultType="com.chinatower.event.entity.dto.ReceiveIotAlarmConfigDto">
+        SELECT
+        id AS configId,
+        tenant_id AS tenantId,
+        industry_code AS industryCode,
+        iot_alarm_config_name AS iotAlarmConfigName,
+        iot_alarm_type AS iotAlarmType,
+        receive_start_time AS  receiveStartTime,
+        receive_end_time AS receiveEndTime,
+        receive_period_time AS receivePeriodTime,
+        alarm_level AS alarmLevel,
+        intercept_time AS interceptTime,
+        intercept_time_unit AS interceptTimeUnit,
+        device_groups_json AS deviceGroupsJson
+        FROM
+        vm_iot_alarm_config_t
+        WHERE
+        config_status = '1' AND delete_flag = 0
+    </select>
+
+    <select id="selectAllIotGroupsInConfig" resultType="com.chinatower.event.entity.dto.ReceiveIotAlarmGroupsDto">
+        select id,groups_name,device_type,iot_config_id,anti_shake_type,anti_shake_num,anti_shake_time,anti_shake_time_unit,relation
+        FROM
+        vm_iot_alarm_groups_t
+        WHERE
+        delete_flag = 0
+        <if test="configIdList != null and configIdList.size() > 0">
+            AND iot_config_id IN
+            <foreach collection="configIdList" item="configId" index="index" open="(" close=")" separator=",">
+                #{configId}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectAllIotDeviceInConfig" resultType="com.chinatower.event.entity.dto.ReceiveIotAlarmDeviceDto">
+        SELECT
+            group_id AS groupId,
+            device_code AS deviceCode
+        FROM
+            vm_iot_alarm_device_t
+        WHERE
+            delete_flag = 0
+        <if test="groupIdList != null and groupIdList.size() > 0">
+            AND group_id IN
+            <foreach collection="groupIdList" item="groupId" index="index" open="(" close=")" separator=",">
+                #{groupId}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectAllIotFactorInConfig" resultType="com.chinatower.event.entity.dto.ReceiveIotAlarmFactorDto">
+        SELECT
+            group_id AS groupId,
+            factor_code AS factorCode,
+            factor_name AS factorName,
+            min_char AS minChar,
+            min_num AS minNum,
+            max_char AS maxChar,
+            max_num AS  maxnum,
+            value_type AS valueType,
+            sum_value AS sumValue,
+            sum_value_unit AS  sumValueUnit,
+            factor_type_code AS sensorTypeCode
+
+        FROM
+            vm_iot_alarm_factor_t
+        WHERE
+             delete_flag = 0
+        <if test="groupIdList != null and groupIdList.size() > 0">
+            AND group_id IN
+            <foreach collection="groupIdList" item="groupId" index="index" open="(" close=")" separator=",">
+                #{groupId}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getMonitorInfo" resultType="com.chinatower.receive.vo.dto.IotFactorVo">
+        SELECT
+        monitor_code AS factorCode,
+        monitor_name AS factorName,
+        monitor_units AS monitorUnits
+        FROM
+        vm_sensor_monitor_config
+        WHERE
+        delete_flag = 0
+        <if test="factoryCodeList != null and factoryCodeList.size() > 0">
+            AND monitor_code IN
+            <foreach collection="factoryCodeList" item="factorCode" index="index" open="(" close=")" separator=",">
+                #{factorCode}
+            </foreach>
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.airline.mapper.AirConfigMapper">
+    <select id="getUavPwdConfig" resultType="com.chinatower.airline.dto.request.AirPwdRes">
+        select password,error_times_limit as errorTimesLimit,
+               lock_time as lockTime,lock_time_unit as lockTimeUnit from vm_uav_flight_control_password_conf t
+        where device_code = #{deviceCode} and password_status = 1
+            ${dataScope}
+    </select>
+    <select id="getUavAdminName" resultType="java.lang.String">
+        SELECT NICK_NAME FROM `sys_user`
+        where
+            is_tenant_admin = 1
+          and
+            tenant_id = #{tenantId}
+         limit 1
+    </select>
+    <select id="getUavCodeByDeviceCode" parameterType="java.lang.String" resultType="java.lang.String">
+        select device_code from
+            vm_uav_device_info_t
+        where (uav_nest_code = #{deviceCode} or device_code = #{deviceCode})
+    </select>
+
+    <select id="queryMilepostByLocation" resultType="java.lang.String">
+        SELECT
+        biz_address_name AS bizAddressName
+        FROM
+        adm_address_stack_cfg
+        <where>
+            ROUND(6378.138*2*ASIN(SQRT(POW(SIN((#{latitude}*PI()/180-lat*PI()/180)/2),2)+COS(#{latitude}*PI()/180)*COS(lat*PI()/180)*POW(SIN((#{longitude}*PI()/180-lng*PI()/180)/2),2)))*1000) &lt;= 3000
+
+        </where>
+        order by ROUND(6378.138*2*ASIN(SQRT(POW(SIN((#{latitude}*PI()/180-lat*PI()/180)/2),2)+COS(#{latitude}*PI()/180)*COS(lat*PI()/180)*POW(SIN((#{longitude}*PI()/180-lng*PI()/180)/2),2)))*1000) asc
+        limit 1
+    </select>
+
+    <select id="queryModelCodeByUavCode" resultType="java.util.Map">
+        SELECT device_code AS uavCode, model_code AS modelCode
+        FROM vm_uav_device_info_t
+        <where>
+            model_code is not null and model_code != ''
+            and device_code IN
+            <foreach item="item" collection="list" separator="," close=")" open="(" index="">
+                #{item}
+            </foreach>
+        </where>
+    </select>
+    <select id="queryUavCameraInfoByModelCode" resultType="com.chinatower.device.entity.dto.UavDeviceDTO">
+        select
+        model.model_name,
+        model.domain, model.type, model.sub_type, model.aircraft_category, model.aircraft_type,
+        model.weight as modelWeight, model.support_camera, model.max_fly_time, model.max_level_speed, model.manufacturer_code as modelManufacturerCode,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_model_manufacturer' AND DICT_VALUE = model.manufacturer_code limit 1) modelManufacturerName
+        from  vm_uav_device_model_t model
+        where model.delete_flag = 0 and model.model_code = #{uavModelCode}
+    </select>
+</mapper>

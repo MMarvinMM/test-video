@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.licensePlateLibrary.mapper.CheckpointVehicleTypeMapper">
+    <insert id="insertVehicleType">
+        INSERT INTO `vm_checkpoint_vehicle_type_t`
+        (`vehicle_type`, `vehicle_name`, `creator`, `create_time`, `delete_flag`, `tenant_id`, `industry_code`,
+         `app_ver_code`)
+        VALUES (#{vehicleType}, #{vehicleName}, #{creator}, #{createTime}, 0, #{tenantId}, #{industryCode},
+                #{appVerCode});
+    </insert>
+
+    <update id="updateVehicleType">
+        UPDATE `vm_checkpoint_vehicle_type_t`
+        SET `vehicle_name` = #{vehicleName},
+            `modifier`     = #{modifier},
+            `update_time`  = #{updateTime}
+        WHERE `id` = #{id};
+    </update>
+
+    <delete id="deleteVehicleType">
+        UPDATE `vm_checkpoint_vehicle_type_t`
+        SET `delete_flag` = 1,
+            `modifier`    = #{modifier},
+            `update_time` = #{updateTime}
+        WHERE `id` = #{id}
+    </delete>
+
+    <select id="getVehicleTypeList" resultType="com.chinatower.bdm.api.entity.CheckpointVehicleTypeVO">
+        SELECT id, vehicle_type, vehicle_name
+        FROM `vm_checkpoint_vehicle_type_t`
+        WHERE tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          and delete_flag = 0
+        ORDER BY create_time
+    </select>
+    <select id="checkVehicleType" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM `vm_checkpoint_vehicle_type_t`
+        where delete_flag = 0
+          AND vehicle_name = #{vehicleName}
+          AND industry_code = #{industryCode}
+          AND tenant_id = #{tenantId}
+    </select>
+</mapper>

@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.emergency.mapper.EmergencyUserMapper">
+
+
+    <insert id="addCommander">
+        insert into vm_emergency_user
+        (user_id, emergency_dept_id, tenant_id, creator, create_time, app_ver_code,
+        industry_code)
+        values
+        <foreach collection="userIdList" item="item" index="index" separator=",">
+            (
+            #{item},
+            #{emergencyDeptId},
+            #{tenantId},
+            #{creator},
+            NOW(),
+            #{appVerCode},
+            #{industryCode}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="addEmergencyUserLngLat">
+        insert into vm_emergency_user_lnglat_info (user_id,industry_code, app_ver_code,
+                                                   longitude, latitude, take_point_time,tenant_id
+        ) values (#{userId},#{industryCode},#{appVerCode},#{longitude},#{latitude},#{takePointTime},#{tenantId})
+    </insert>
+
+    <insert id="batchSave">
+        insert into vm_emergency_user
+        (user_id, emergency_dept_id, tenant_id, creator, create_time, app_ver_code,
+        industry_code)
+        values
+        <foreach collection="emergencyUserList" item="item" index="index" separator=",">
+            (
+            #{item.userId},
+            #{item.emergencyDeptId},
+            #{item.tenantId},
+            #{item.creator},
+            NOW(),
+            #{item.appVerCode},
+            #{item.industryCode}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateEmergencyUserLngLat">
+        update vm_emergency_user_lnglat_info
+        set longitude       = #{longitude},
+            latitude        = #{latitude},
+            take_point_time = #{takePointTime}
+        where user_id = #{userId}
+          and industry_code = #{industryCode}
+          and tenant_id = #{tenantId}
+    </update>
+
+    <update id="updateCommander">
+        UPDATE vm_emergency_user
+        SET user_id = #{userId},
+            modifier = #{modifier},
+            update_time = now()
+        WHERE emergency_dept_id = #{emergencyDeptId}
+          and tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+    </update>
+
+    <delete id="delEmergencyUserByDept">
+        update vm_emergency_user
+        set delete_flag = 1,
+        modifier = #{modifier},
+        update_time = now()
+        where emergency_dept_id = #{emergencyDeptId}
+        and tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+        <if test="userId != null and userId != ''">
+            and user_id = #{userId}
+        </if>
+    </delete>
+    <delete id="deleteByEventCode">
+        DELETE FROM vm_emergency_user
+               WHERE emergency_dept_id IN
+                     (SELECT id FROM vm_emergency_dept WHERE event_code = #{digitalId} AND delete_flag = 0 AND commander_flag <![CDATA[<>]]> 1)
+
+    </delete>
+
+    <select id="getEmergencyUser" resultType="com.chinatower.emergency.dto.EmergencyUserVO">
+        SELECT *
+        FROM (SELECT USER_ID                        AS emergencyUserId,
+                     NICK_NAME                      AS emergencyUserName,
+                     USER_NAME                      AS emergencyUserAccount,
+                     IF(PHONENUMBER, CONCAT(SUBSTRING(PHONENUMBER, 1, 3), '****', SUBSTRING(PHONENUMBER, 8)),
+                        NULL)                       AS phoneNumber,
+                     IF(SUBSTRING(NICK_NAME, 1, 1) REGEXP '[一-龥]', firstPinyin(NICK_NAME),
+                        SUBSTRING(NICK_NAME, 1, 1)) AS nickNameGbk
+              FROM sys_user
+              WHERE DEL_FLAG = 0
+                AND USER_ID IN (SELECT DISTINCT user_id
+                                FROM vm_emergency_user
+                                WHERE delete_flag = 0
+                                  AND emergency_dept_id = #{emergencyDeptId}
+                                  AND tenant_id = #{tenantId}
+                                  AND industry_code = #{industryCode})) AS subquery
+        ORDER BY nickNameGbk
+    </select>
+
+    <select id="checkUser" resultType="com.chinatower.emergency.dto.EmergencyUserVO">
+        SELECT su.USER_ID                      AS emergencyUserId,
+               su.NICK_NAME                    AS emergencyUserName,
+               su.USER_NAME                    AS emergencyUserAccount,
+               vfc.dispatch_desk_num           as dispatchDeskNum,
+               vfc.mobile_terminal_num         AS mobileTerminalNum
+        FROM sys_user su
+        left join vm_fusion_communication_t vfc on su.USER_ID = vfc.user_id
+        WHERE DEL_FLAG = 0
+          AND su.USER_NAME = #{userName}
+        limit 1
+    </select>
+
+    <select id="checkUserLngLat" resultType="java.lang.Integer">
+        select count(user_id)
+        from vm_emergency_user_lnglat_info
+        where user_id = #{userId}
+        and industry_code = #{industryCode}
+        <if test="tenantId != null and tenantId != ''">
+            and tenant_id = #{tenantId}
+        </if>
+    </select>
+    <select id="getUserPosition" resultType="com.chinatower.emergency.dto.EmergencyUserLngLatDTO">
+        select distinct u.NICK_NAME as nickName,
+        u.USER_NAME as userName,
+        u.SEX as sex,
+        veuli.user_id,
+        longitude,
+        latitude,
+        take_point_time,
+        IF(PHONENUMBER, CONCAT(SUBSTRING(PHONENUMBER, 1, 3), '****', SUBSTRING(PHONENUMBER, 8)),
+        NULL)                       AS phoneNumber,
+        u.remark as remark,
+        (case
+        when TIMESTAMPDIFF(MINUTE, take_point_time, now())<![CDATA[ <]]> 5 then '1'
+        else '0' end) as is_line,
+        vfc.mobile_terminal_num,
+        vfc.dispatch_desk_num
+        from vm_emergency_user_lnglat_info veuli
+        left join vm_fusion_communication_t vfc on veuli.USER_ID = vfc.user_id
+        left join sys_user u on veuli.USER_ID = u.user_id
+        JOIN (WITH RECURSIVE cte AS (SELECT 1 AS n
+        UNION ALL
+        SELECT n + 1
+        FROM cte
+        WHERE n <![CDATA[<]]> 50)
+        SELECT u.user_id,
+        SUBSTRING_INDEX(SUBSTRING_INDEX(u.dept_id, ',', n), ',', -1) AS dept_id
+        FROM sys_user u
+        JOIN cte ON cte.n <![CDATA[<=]]> LENGTH(u.dept_id) - LENGTH(REPLACE(u.dept_id, ',', '')) + 1
+        WHERE u.del_flag = '0') ud ON u.user_id = ud.user_id
+        LEFT JOIN sys_dept d ON ud.dept_id = d.dept_id and d.del_flag = '0'
+        left join sys_industry_conf ic on  ic.industry_code = d.INDUSTRY_CODE and ic.delete_flag = '0'
+        where u.DEL_FLAG = '0'
+        ${dataScope}
+        <if test="longitude != null and longitude != ''">
+            AND veuli.longitude = #{longitude}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            AND veuli.latitude = #{latitude}
+        </if>
+    </select>
+    <select id="getUserByDeptId" resultType="com.chinatower.emergency.dto.EmergencyUserDTO">
+        select * from vm_emergency_user WHERE delete_flag = '0'
+        and emergency_dept_id in
+        <foreach collection="keysList" item="deptId" open="(" close=")" index="index" separator=",">
+            #{deptId}
+        </foreach>
+    </select>
+    <select id="checkImportUser" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM vm_emergency_user
+        WHERE emergency_dept_id IN
+              (SELECT id FROM vm_emergency_dept WHERE event_code = #{eventCode} AND delete_flag = 0)
+          AND delete_flag = 0;
+    </select>
+    <select id="getAllUserByEventCode" resultType="com.chinatower.emergency.dto.EmergencyUserInfoDTO">
+        SELECT
+            t2.user_id,t3.user_name,
+            t3.nick_name nickName,
+            CASE WHEN SUBSTRING(t3.nick_name, 1, 1) REGEXP '[一-龥]'
+            THEN firstPinyin(t3.nick_name) ELSE SUBSTRING(t3.nick_name, 1, 1) END AS sortName,
+            t3.PHONENUMBER phoneNumber ,t1.emergency_dept_name,t1.id deptId
+        FROM
+            vm_emergency_dept t1
+                LEFT JOIN vm_emergency_user t2 ON t1.id = t2.emergency_dept_id
+                LEFT JOIN sys_user t3 ON t3.user_id = t2.user_id
+        WHERE
+            t1.delete_flag = 0
+          AND t2.delete_flag = 0
+          AND t3.DEL_FLAG = 0
+          AND t1.commander_flag <![CDATA[<>]]> 1
+          AND t1.event_code = #{eventCode}
+        ORDER BY
+            IF(SUBSTRING(t3.nick_name, 1, 1) RLIKE '^[a-z]', 1, 2),
+            CASE
+                WHEN SUBSTRING(t3.nick_name, 1, 1) REGEXP '[一-龥]' THEN
+                    firstPinyin(t3.nick_name)
+                ELSE
+                    SUBSTRING(t3.nick_name, 1, 1)
+                END
+    </select>
+
+
+</mapper>

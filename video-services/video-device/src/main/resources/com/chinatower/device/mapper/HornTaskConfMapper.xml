@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.HornTaskConfMapper">
+
+    <sql id="baseColumns">
+        a.id,
+        a.task_name,
+        a.task_type,
+        a.task_volumn,
+        a.task_priority,
+        a.operator_type,
+        a.startup_status,
+        a.execut_status,
+        a.tenant_id,
+        a.industry_code,
+        a.app_ver_code,
+        a.creator,
+        a.modifier,
+        a.operator,
+        a.delete_flag,
+        a.create_time,
+        a.update_time,
+        a.operate_time,
+        a.horn_task_id
+    </sql>
+
+    <sql id="baseCondition">
+        where 1 = 1
+        <if test="id != null">
+            and a.id = #{id}
+        </if>
+        <if test='taskName != null and taskName != ""'>
+            and a.task_name like concat('%', #{taskName}, '%')
+        </if>
+        <if test='accurateTaskName != null and accurateTaskName != ""'>
+            and a.task_name = #{accurateTaskName}
+        </if>
+        <if test="taskType != null">
+            and a.task_type = #{taskType}
+        </if>
+        <if test="operatorType != null">
+            and a.operator_type = #{operatorType}
+        </if>
+        <if test="startupStatus != null">
+            and a.startup_status = #{startupStatus}
+        </if>
+        <if test="executStatus != null">
+            and a.execut_status = #{executStatus}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            and a.tenant_id = #{tenantId}
+        </if>
+        <if test='creator != null and creator != ""'>
+            and a.creator like concat('%', #{creator}, '%')
+        </if>
+        <if test='modifier != null and modifier != ""'>
+            and a.modifier like concat('%', #{modifier}, '%')
+        </if>
+        <if test="createTimeBegin != null">
+            and a.create_time >= #{createTimeBegin}
+        </if>
+        <if test="createTimeEnd != null">
+            AND a.create_time <![CDATA[<=]]> #{createTimeEnd}
+        </if>
+        <if test="updateTimeBegin != null">
+            and a.update_time >= #{updateTimeBegin}
+        </if>
+        <if test="updateTimeEnd != null">
+            AND a.update_time <![CDATA[<=]]> #{updateTimeEnd}
+        </if>
+        <choose>
+            <when test="deleteFlag != null">
+                and a.delete_flag = #{deleteFlag}
+            </when>
+            <otherwise>
+                 and a.delete_flag = 0
+            </otherwise>
+        </choose>
+    </sql>
+
+    <select id="getListByCondition" resultType="com.chinatower.device.entity.vo.HornTaskConfVO">
+        select <include refid="baseColumns"/>,
+                (case when a.task_type = 0 then '音频' else '文本' end) AS taskTypeName,
+                (case when a.operator_type = 0 then '未操作'
+                      when a.operator_type = 1 then '开始'
+                      else '结束' end) AS operatorTypeName,
+                (case when a.startup_status = 0 then '未启动' else '启动中' end) AS startupStatusName,
+                (CASE
+                    WHEN a.execut_status = 0 THEN '未执行'
+                    WHEN a.execut_status = 2 THEN '部分执行中'
+                    ELSE '执行中'
+                END) AS executStatusName,
+            i.industry_name AS industryName,
+            t.tenant_name AS tenantName
+        from vm_horn_task_conf a
+        INNER JOIN sys_tenant_info t on a.tenant_id = t.tenant_id AND t.del_flag = '0'
+        INNER JOIN sys_industry_conf i on a.industry_code = i.industry_code
+                <include refid="baseCondition"/>
+                ${dataScope}
+        <if test="orderColumn != null and orderColumn != ''">
+            order by
+            <choose>
+                <when test="orderColumn == 'createTime'">
+                    create_time
+                </when>
+                <when test="orderColumn == 'updateTime'">
+                    update_time
+                </when>
+                <when test="orderColumn == 'operateTime'">
+                    operate_time
+                </when>
+                <otherwise>
+                    create_time
+                </otherwise>
+            </choose>
+            <if test="sort != null and sort != ''">
+                <choose>
+                    <when test="sort == 'desc'">
+                        desc
+                    </when>
+                    <when test="sort == 'asc'">
+                        asc
+                    </when>
+                    <otherwise>
+                        desc
+                    </otherwise>
+                </choose>
+            </if>
+
+        </if>
+        <if test="orderColumn == null or orderColumn == ''">
+            order by a.create_time desc
+        </if>
+    </select>
+
+    <insert id="addTaskConf" parameterType="com.chinatower.device.entity.vo.HornTaskConfVO" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into vm_horn_task_conf(
+            `task_name`, `task_type`, `task_volumn`, `task_priority`,
+            `tenant_id`, `industry_code`, `app_ver_code`, `creator`, `create_time`, `operator`, `operate_time`, `horn_task_id`
+        ) values(
+             #{taskName}, #{taskType}, #{taskVolumn}, #{taskPriority},
+             #{tenantId}, #{industryCode}, #{appVerCode}, #{creator}, now(), #{operator}, #{operateTime}, #{hornTaskId}
+                        )
+    </insert>
+
+
+    <insert id="batchInsertContentRel">
+        insert into vm_horn_task_content_rel
+        (
+            `task_id`,
+            `content_id`,
+            `play_order`,
+            `speech_rate`,
+            `volume`,
+            `xunfei_vcn`,
+            `txt_id`
+        )
+        values
+        <foreach collection="list" item="item" separator="," >
+            (
+                #{taskId},
+                #{item.contentId},
+                #{item.playOrder},
+                #{item.speechRate},
+                #{item.volume},
+                #{item.xunfeiVcn},
+                #{item.txtId}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="batchInsertDeviceRel">
+        insert into vm_horn_task_device_rel
+        (
+            `task_id`,
+            `device_code`
+        )
+        values
+        <foreach collection="list" item="deviceCode" separator="," >
+            (
+                #{taskId},
+                #{deviceCode}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="batchInsertStrategyRel">
+        insert into vm_horn_task_strategy_conf
+        (
+            `task_id`,
+            `startup_policy` ,
+            `valid_date`,
+            `invalid_date`,
+            `cycle_date`,
+            `play_policy`,
+            `start_time` ,
+            `end_time`,
+            `play_times`,
+            `play_duration`
+        )
+        values
+        <foreach collection="list" item="item" separator="," >
+            (
+                #{taskId},
+                #{item.startupPolicy},
+                #{item.validDate},
+                #{item.invalidDate},
+                #{item.cycleDate},
+                #{item.playPolicy},
+                #{item.startTime},
+                #{item.endTime},
+                #{item.playTimes},
+                #{item.playDuration}
+            )
+        </foreach>
+    </insert>
+
+    <update id="modifyTaskConf">
+        update vm_horn_task_conf set
+            task_name =  #{taskName},
+            task_type = #{taskType},
+            task_volumn = #{taskVolumn},
+            task_priority = #{taskPriority},
+            tenant_id = #{tenantId},
+            industry_code = #{industryCode},
+            app_ver_code = #{appVerCode},
+            modifier = #{modifier},
+            update_time = now()
+        where id = #{id} and delete_flag = '0'
+    </update>
+
+    <select id="selectContentRelByTaskId" resultType="com.chinatower.device.entity.dto.VmHornTaskContentRelDO">
+        select vt.*,vc.content_title,vc.content_value,vc.file_duration,vc.resource_id
+        from vm_horn_task_content_rel vt
+               inner join vm_horn_content_conf vc on vt.content_id = vc.id
+               where task_id = #{taskId}
+    </select>
+
+
+    <select id="selectDeviceRelByTaskId" resultType="com.chinatower.device.entity.dto.VmHornTaskDeviceRelDO">
+        select * from vm_horn_task_device_rel where task_id = #{taskId}
+    </select>
+
+
+    <select id="selectStrategyRelByTaskId" resultType="com.chinatower.device.entity.dto.VmHornTaskStrategyConfDO">
+        select * from vm_horn_task_strategy_conf where task_id = #{taskId}
+    </select>
+
+
+    <delete id="deleteContentRelByTaskId">
+        delete from vm_horn_task_content_rel where task_id = #{taskId}
+    </delete>
+
+
+    <delete id="deleteDeviceRelByTaskId">
+        delete from vm_horn_task_device_rel where task_id = #{taskId}
+    </delete>
+
+
+    <delete id="deleteStrategyRelByTaskId">
+        delete from vm_horn_task_strategy_conf where task_id = #{taskId}
+    </delete>
+
+    <update id="setHornContentRelTxtIdByTaskId">
+        update vm_horn_task_content_rel set
+           txt_id =  #{txtId}
+        where task_id = #{taskId}
+    </update>
+
+    <select id="selectByTaskId" resultType="com.chinatower.device.entity.dto.VmHornTaskConfDO">
+        select <include refid="baseColumns"/> from  vm_horn_task_conf a
+        where delete_flag = 0 and id = #{taskId}
+    </select>
+
+    <update id="updateByTaskId" parameterType="com.chinatower.device.entity.dto.VmHornTaskConfDO">
+        update vm_horn_task_conf
+        <set>
+            <if test="taskName != null and taskName != ''"> task_name = #{taskName},</if>
+            <if test="taskType != null"> task_type = #{taskType},</if>
+            <if test="taskVolumn != null and taskVolumn != ''"> task_volumn = #{taskVolumn},</if>
+            <if test="taskPriority != null"> task_priority = #{taskPriority},</if>
+            <if test="operatorType != null"> operator_type = #{operatorType},</if>
+            <if test="startupStatus != null"> startup_status = #{startupStatus},</if>
+            <if test="executStatus != null"> execut_status = #{executStatus},</if>
+            <if test="tenantId != null and tenantId != ''"> tenant_id = #{tenantId},</if>
+            <if test="industryCode != null and industryCode != ''"> industry_code = #{industryCode},</if>
+            <if test="appVerCode != null and appVerCode != ''"> app_ver_code = #{appVerCode},</if>
+            <if test="creator != null and creator != ''"> creator = #{creator},</if>
+            <if test="modifier != null and modifier != ''"> modifier = #{modifier},</if>
+            <if test="operator != null and operator != ''"> operator = #{operator},</if>
+            <if test="deleteFlag != null"> delete_flag = #{deleteFlag},</if>
+            <if test="createTime != null"> create_time = #{createTime},</if>
+            <if test="updateTime != null"> update_time = #{updateTime},</if>
+            <if test="operateTime != null"> operate_time = #{operateTime},</if>
+            <if test="hornTaskId != null"> horn_task_id = #{hornTaskId},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="selectTaskByName" resultType="com.chinatower.device.entity.dto.VmHornTaskConfDO">
+        select <include refid="baseColumns"/> from  vm_horn_task_conf a
+        where delete_flag = 0 and task_name = #{taskName}  and tenant_id = #{tenantId} and industry_code = #{industryCode}
+    </select>
+
+    <insert id="addTaskPlayParam">
+        insert into vm_horn_task_play_param(`file_id`, `task_id`, `param_json`, `create_time`)
+        values
+        <foreach collection="list"  item="param" separator=",">
+            (
+            #{param.fileId}, #{param.taskId}, #{param.paramJson}, #{param.createTime}
+            )
+        </foreach>
+    </insert>
+
+    <update id="deleteTaskPlayParam" parameterType="java.util.List">
+        update
+        vm_horn_task_play_param a
+        set
+        a.delete_flag = 1,
+        a.update_time = now()
+        where a.file_id in
+        <foreach collection="fileIdList" open="(" close=")" separator="," index="index" item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="selectTaskPlayParam" resultType="com.chinatower.device.dto.HornTaskPlayParamDTO">
+        select file_id, task_id, param_json, file_url, file_md5, file_duration
+        from vm_horn_task_play_param where delete_flag = 0 and file_id in
+        <foreach collection="fileIdList" open="(" close=")" separator="," index="index" item="item">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getDeviceInfoByDeviceCodeList" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        select device_code, access_node
+        from vm_horn_device_info_t where delete_flag = 0 and device_code in
+        <foreach collection="deviceCodeList" open="(" close=")" separator="," index="index" item="deviceCode">
+            #{deviceCode}
+        </foreach>
+    </select>
+
+    <insert id="saveHornTaskDiffNodeRelBatch">
+        insert into vm_horn_task_diff_node_rel
+        (task_id, access_node, create_time)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (
+              #{taskId}, #{item.accessNode}, now()
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectHornTaskContentRelByTxtId" resultType="com.chinatower.device.entity.dto.VmHornTaskContentRelDO">
+        select task_id,content_id,play_order,speech_rate,volume,xunfei_vcn,txt_id,file_url,file_md5
+        from  vm_horn_task_conf a
+        where txt_id = #{txtId}
+    </select>
+
+    <select id="selectDiffNodeRelDOsByTaskId" resultType="com.chinatower.device.entity.dto.VmHornTaskDiffNodeRelDO">
+        select * from  vm_horn_task_diff_node_rel a
+        where task_id = #{taskId}
+    </select>
+
+    <update id="updateDiffNodeRelStatus">
+        update vm_horn_task_diff_node_rel
+        set
+            execut_status = #{executStatus},
+            update_time = now()
+        where horn_task_id = #{hornTaskId}
+    </update>
+
+    <update id="updateHornTaskDiffNodeHornTaskId">
+        update
+        vm_horn_task_diff_node_rel a
+        set
+        a.horn_task_id = #{hornTaskId},
+        a.update_time = now()
+        where a.task_id = #{taskId} and a.access_node = #{accessNode}
+    </update>
+
+    <delete id="deleteDiffNodeRelByTaskId">
+        delete from vm_horn_task_diff_node_rel where task_id = #{taskId}
+    </delete>
+
+    <insert id="moveDiffNodeRelToHis">
+        insert into vm_horn_task_diff_node_rel_his
+        (task_id,execut_status,horn_task_id,access_node, batch_id, push_fail_reason , create_time, update_time)
+        select
+            task_id,execut_status,horn_task_id,access_node, #{batchId} as batch_id, push_fail_reason, create_time, update_time
+        from vm_horn_task_diff_node_rel
+        where task_id = #{taskId}
+    </insert>
+
+    <update id="saveFailReason">
+        update
+            vm_horn_task_diff_node_rel a
+        set
+            a.push_fail_reason = #{pushFailReason},
+            a.update_time = now()
+        where a.task_id = #{taskId} and a.access_node = #{accessNode}
+    </update>
+
+
+    <select id="getByIndustryCode" parameterType="java.lang.String" resultType="com.chinatower.platform.entity.admin.SysIndustryConf">
+        select industry_id, industry_code, industry_name, industry_desc, create_time, update_time, status, creator, modifier from sys_industry_conf
+        where industry_code = #{industryCode}
+        and delete_flag = 0 limit 1
+    </select>
+
+    <select id="getAllHornTask" resultType="com.chinatower.device.entity.vo.HornTaskConfVO">
+        select <include refid="baseColumns"/>
+        from vm_horn_task_conf a
+        where 1 = 1
+        <if test="id != null">
+            and a.id = #{id}
+        </if>
+    </select>
+
+    <select id="selectById" resultType="com.chinatower.device.entity.dto.VmHornTaskConfDO">
+        select <include refid="baseColumns"/> from  vm_horn_task_conf a
+        where id = #{taskId}
+    </select>
+</mapper>

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.common.dao.VideoCommonDAO">
+    <select id="getInterfaceUrl" resultType="java.lang.String" parameterType="java.lang.String">
+        SELECT
+        p.storage_time
+        FROM
+        vm_order_package p INNER JOIN vm_order_devices d ON p.package_code = d.package_code
+        AND p.order_code = d.order_code AND p.customer_code = d.customer_code
+        WHERE
+        p.delete_flag = '1'
+        AND d.delete_flag = '1'
+        AND d.customer_code = #{customerCode}
+        AND d.device_code = #{deviceCode}
+        AND d.channel_codes_str = #{channelCodesStr}
+    </select>
+    <select id="queryOrderDevice" parameterType="com.chinatower.video.api.entity.VideoBaseReq" resultType="java.util.Map">
+        SELECT
+            order_code
+        FROM
+            vm_order_devices t
+        WHERE
+            t.device_code = #{param.deviceCode,jdbcType=VARCHAR}
+            AND t.delete_flag = '0' and t.ord_status in (0, 1, 2)
+            ${param.dataScope}
+        order by t.create_time desc limit 1
+    </select>
+
+    <select id="queryOrderUavDevice" parameterType="com.chinatower.video.api.entity.VideoBaseReq" resultType="java.util.Map">
+        SELECT
+            order_code
+        FROM
+            vm_order_uav_devices t
+        WHERE
+            t.device_code = #{param.deviceCode,jdbcType=VARCHAR}
+          AND t.delete_flag = '0' and t.ord_status in (0, 1, 2)
+            ${param.dataScope}
+        order by t.create_time desc limit 1
+    </select>
+
+    <select id="queryOrderDeviceByTableName" parameterType="com.chinatower.video.api.entity.VideoBaseReq" resultType="java.util.Map">
+        SELECT
+            order_code
+        FROM
+            ${tableName} t
+        WHERE
+            t.device_code = #{param.deviceCode,jdbcType=VARCHAR}
+          AND t.delete_flag = '0' and t.ord_status in (0, 1, 2)
+            ${param.dataScope}
+        order by t.create_time desc limit 1
+    </select>
+
+    <select id="queryOrderDeviceNoAuth" parameterType="com.chinatower.video.api.entity.VideoBaseReq" resultType="java.util.Map">
+        SELECT
+            order_code
+        FROM
+            vm_order_devices t
+        WHERE
+            t.device_code = #{param.deviceCode,jdbcType=VARCHAR}
+          AND t.delete_flag = '0' and t.ord_status in (0, 1, 2) AND
+              t.tenant_id = #{param.tenantId,jdbcType=VARCHAR}
+        order by t.create_time desc limit 1
+    </select>
+    <select id="queryOrderDeviceByTableNameNoAuth" parameterType="com.chinatower.video.api.entity.VideoBaseReq" resultType="java.util.Map">
+        SELECT
+            order_code
+        FROM
+            ${tableName} t
+        WHERE
+            t.device_code = #{param.deviceCode,jdbcType=VARCHAR}
+          AND t.delete_flag = '0' and t.ord_status in (0, 1, 2) AND
+            t.tenant_id = #{param.tenantId,jdbcType=VARCHAR}
+        order by t.create_time desc limit 1
+    </select>
+    <select id="queryOrderUavDeviceNoAuth" parameterType="com.chinatower.video.api.entity.VideoBaseReq" resultType="java.util.Map">
+        SELECT
+            order_code
+        FROM
+            vm_order_uav_devices t
+        WHERE
+            t.device_code = #{param.deviceCode,jdbcType=VARCHAR}
+          AND t.delete_flag = '0' and t.ord_status in (0, 1, 2) AND
+            t.tenant_id = #{param.tenantId,jdbcType=VARCHAR}
+        order by t.create_time desc limit 1
+    </select>
+    <select id="getErrorMsg" parameterType="java.lang.String" resultType="java.lang.String">
+		select dict_label from sys_dict_data
+		where dict_type = 92 and dict_value = #{dictValue}
+    </select>
+
+    <select id="getUserName" parameterType="com.chinatower.video.modules.videocontrol.dto.SysUserDTO"
+            resultType="com.chinatower.video.modules.videocontrol.dto.SysUserDTO">
+		SELECT CONCAT(SUBSTRING(NICK_NAME, 1, 1 ),'**') AS "desensitizeName", USER_ID AS "userId" FROM sys_user
+		WHERE DEL_FLAG = '0'
+        <if test='isTenantAdmin!= null and isTenantAdmin != "" '>
+            AND is_tenant_admin = #{isTenantAdmin}
+        </if>
+        <if test='tenantId!= null and tenantId != "" '>
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test='userId!= null and userId != "" '>
+            AND USER_ID = #{userId}
+        </if>
+        <if test='userName != null and userName != "" '>
+            AND USER_NAME = #{userName}
+        </if>
+    </select>
+
+    <select id="getUserIdBatch" parameterType="com.chinatower.video.modules.videocontrol.dto.SysUserDTO"
+            resultType="com.chinatower.video.modules.videocontrol.dto.SysUserDTO">
+        SELECT user_name, user_id FROM sys_user
+        WHERE DEL_FLAG = '0'
+        AND USER_NAME IN
+        <foreach collection="userNameList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+    <select id="queryDeviceOptAuthInfo"
+            resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceOptAuthVO">
+        SELECT config_id,device_code,tenant_id,industry_code,config_type,user_id,priority,operate_period,preset_priority,patrol_priority,guard_priority
+        FROM vm_device_operate_auth_config oac
+        where oac.delete_flag = 0
+        <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+            and oac.device_code in
+            <foreach collection="deviceCodeList" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='deviceCode != null and deviceCode != ""'>
+            AND oac.device_code = #{deviceCode}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND oac.tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND oac.industry_code = #{industryCode}
+        </if>
+        <if test='configType != null and configType != ""'>
+            AND oac.config_type = #{configType}
+        </if>
+        <if test='userId != null and userId != ""'>
+            AND oac.user_id = #{userId}
+        </if>
+    </select>
+
+    <insert id="saveBaseErrorRecord" parameterType="com.chinatower.video.api.entity.BaseErrorRecordVO" >
+        insert into vm_base_error_record_t(
+        device_code,channel_code,keywords,keywords_value,request,response
+        ,create_time,current_row,current_class)
+        values (
+        #{deviceCode} ,#{channelCode} ,#{keywords},#{keywordsValue},#{request},#{response}
+        ,now(),#{currentRow},#{currentClass}
+        )
+    </insert>
+
+    <select id="getUserInfo" parameterType="com.chinatower.video.modules.videocontrol.dto.SysUserDTO"
+            resultType="com.chinatower.video.modules.videocontrol.dto.SysUserDTO">
+        SELECT
+            CONCAT( SUBSTRING( NICK_NAME, 1, 1 ), '**' ) AS "desensitizeName",
+            NICK_NAME AS userName,
+            DEPT_ID,
+            USER_ID AS "userId"
+        FROM
+            sys_user
+        WHERE
+            DEL_FLAG = '0'
+            AND USER_ID = #{userId}
+    </select>
+
+    <select id="getDeptInfo" resultType="java.lang.String">
+        SELECT
+            DEPT_NAME
+        FROM
+            sys_dept
+        WHERE
+            DEL_FLAG = 0
+            AND dept_id IN
+            <foreach collection="deptList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+            AND INDUSTRY_CODE = #{industryCode}
+            LIMIT 1
+    </select>
+</mapper>

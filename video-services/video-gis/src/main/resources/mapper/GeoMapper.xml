@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.gis.mapper.GeoMapper">
+
+    <select id="getNumByProvinceTT" resultType="com.chinatower.gis.dataobject.Latitude">
+        select
+        t.region_code as code,
+        t.region_level as level,
+        t.region_name as areaName,
+        (select longitude from sys_area where area_code = t.region_code ) as longitude,
+        (select latitude from sys_area where area_code = t.region_code ) as latitude,
+        IFNULL((
+        SELECT sum(dataTable.today_all )
+        FROM (select t.province_id as province_code, t.city_id as city_code,t.* from vm_statistics_event_num_day_tt t)
+        dataTable
+        WHERE dataTable.province_code = t.region_code
+        <if test='param.webStartDate != null and param.webStartDate != "" and param.webEndDate != null and param.webEndDate != ""'>
+            AND dataTable.create_date <![CDATA[>=]]> DATE_FORMAT(#{param.webStartDate}, '%Y-%m-%d' )
+            AND dataTable.create_date <![CDATA[<=]]> DATE_FORMAT(#{param.webEndDate}, '%Y-%m-%d %H:%i:%s' )
+        </if>
+        ${param.dataScope}
+        ),0) as alarmNum,
+        IFNULL((
+        SELECT sum(device_num )
+        FROM vm_statistics_devices_tt
+        WHERE province_id = t.region_code
+        ),0) as deviceNum,
+        (
+        SELECT count(keeper_id)
+        FROM bm_gridkeeper
+        WHERE province_id = t.region_code
+        <![CDATA[and TIMESTAMPDIFF(MINUTE,attribute10,now())<5]]>
+        <if test="param.tenantId != null and param.tenantId != ''">
+            and tenant_id = #{param.tenantId}
+        </if>
+        )as gridkeeperNum
+        from vm_area_t t
+        where
+        t.region_level = '1'
+        <if test="param.areaCode.size()>0 and param.areaCode!=null ">
+            and t.region_code in
+            <foreach item="item" index="index" collection="param.areaCode" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        group by t.region_code having deviceNum != 0
+    </select>
+    <select id="getSubLevelCode" resultType="java.lang.String">
+        SELECT region_code
+        FROM vm_area_t
+        WHERE delete_flag = '0'
+        <if test="parentCode!=null and parentCode.size()>0">
+            and parent_code in
+            <foreach item="item" index="index" collection="parentCode" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="getNumByCityTT" resultType="com.chinatower.gis.dataobject.Latitude">
+        select
+        t.region_code as code,
+        t.region_level as level,
+        t.region_name as areaName,
+        (select longitude from sys_area where area_code = t.region_code ) as longitude,
+        (select latitude from sys_area where area_code = t.region_code ) as latitude,
+        IFNULL((
+        SELECT sum(dataTable.today_all )
+        FROM (select t.province_id as province_code, t.city_id as city_code,t.* from vm_statistics_event_num_day_tt t)
+        dataTable
+        WHERE dataTable.city_code = t.region_code
+        <if test='param.webStartDate != null and param.webStartDate != "" and param.webEndDate != null and param.webEndDate != ""'>
+            AND dataTable.create_date <![CDATA[>=]]> DATE_FORMAT(#{param.webStartDate}, '%Y-%m-%d' )
+            AND dataTable.create_date <![CDATA[<=]]> DATE_FORMAT(#{param.webEndDate}, '%Y-%m-%d %H:%i:%s' )
+        </if>
+        ${param.dataScope}
+        ),0) as alarmNum,
+        IFNULL((
+        SELECT sum(device_num)
+        FROM vm_statistics_devices_tt
+        WHERE city_id = t.region_code
+        ),0) as deviceNum,
+        (
+        SELECT count(keeper_id)
+        FROM bm_gridkeeper
+        WHERE city_id = t.region_code
+        and (case when TIMESTAMPDIFF(MINUTE,attribute10,now()) &lt;5 then '1' else '0' end) ='1'
+        <if test="param.tenantId != null and param.tenantId != ''">
+            and tenant_id = #{param.tenantId}
+        </if>
+        )as gridkeeperNum
+        from vm_area_t t
+        where
+        t.region_level = '2'
+        <if test="param.areaCode.size()>0 and param.areaCode!=null ">
+            and t.region_code in
+            <foreach item="item" index="index" collection="param.areaCode" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        group by t.region_code having deviceNum != 0
+    </select>
+</mapper>

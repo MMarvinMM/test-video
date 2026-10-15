@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.numtwin.mapper.NumTwinsMapper">
+
+
+    <insert id="save" keyColumn="id" keyProperty="id" useGeneratedKeys="true" parameterType="com.chinatower.platform.project.numtwin.entity.NumTwinsConfigDto">
+        INSERT INTO `vm_num_twins_config_t` (
+            `screen_id`,
+            `screen_name`,
+            `num_twins_address`,
+            `province_code`,
+            `city_code`,
+            `county_code`,
+            `province_name`,
+            `city_name`,
+            `county_name`,
+            `engine_type`,
+            `industry_code`,
+            `create_user`,
+            `update_user`,
+            `create_time`,
+            `update_time`,
+            `delete_flag`,
+            `tenant_id`,
+            `signal_address`,
+            `concurrency`
+        )
+        VALUES
+        (
+            #{screenId},
+            #{screenName},
+            #{numTwinsAddress},
+            #{provinceCode},
+            #{cityCode},
+            #{countyCode},
+            #{provinceName},
+            #{cityName},
+            #{countyName},
+            #{engineType},
+            #{industryCode},
+            #{createUser},
+            #{updateUser},
+            #{createTime},
+            #{updateTime},
+            #{deleteFlag},
+            #{tenantId},
+            #{signalAddress},
+            #{concurrency}
+        );
+    </insert>
+
+    <update id="update" parameterType="com.chinatower.platform.project.numtwin.entity.NumTwinsConfigDto">
+        update vm_num_twins_config_t
+        <set>
+            <if test="screenId != null">screen_id = #{screenId},</if>
+            <if test="screenName != null and screenName != ''">screen_name = #{screenName},</if>
+            <if test="numTwinsAddress != null and numTwinsAddress != ''">num_twins_address = #{numTwinsAddress},</if>
+            <if test="provinceCode != null and provinceCode != ''">province_code = #{provinceCode},</if>
+            <if test="cityCode != null and cityCode != ''">city_code = #{cityCode},</if>
+            <if test="countyCode != null and countyCode != ''">county_code = #{countyCode},</if>
+            <if test="provinceName != null and provinceName != ''">province_name = #{provinceName},</if>
+            <if test="cityName != null and cityName != ''">city_name = #{cityName},</if>
+            <if test="countyName != null and countyName != ''">county_name = #{countyName},</if>
+            <if test="engineType != null">engine_type = #{engineType},</if>
+            <if test="industryCode != null and industryCode != ''">industry_code = #{industryCode},</if>
+            <if test="signalAddress != null and signalAddress != ''">signal_address = #{signalAddress},</if>
+            <if test="concurrency != null">concurrency = #{concurrency},</if>
+            update_user = #{updateUser},
+            update_time = now()
+        </set>
+        WHERE id = #{id}
+    </update>
+    <delete id="deleteUserList">
+        DELETE from vm_num_twins_priority_t where config_id = #{configId} and user_id in
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+    </delete>
+    <select id="getAllUserId" resultType="com.chinatower.platform.project.numtwin.entity.NumTwinsPriorityDto">
+        SELECT
+        u.USER_ID AS userId
+        FROM
+        sys_user u
+        LEFT JOIN (
+            WITH RECURSIVE cte AS (
+            SELECT 1 AS n
+            UNION ALL
+            SELECT n + 1 FROM cte WHERE n <![CDATA[<]]> 50
+            )
+            SELECT
+            u2.USER_ID,
+            SUBSTRING_INDEX(SUBSTRING_INDEX(u2.DEPT_ID, ',', cte.n), ',', -1) AS dept_id
+            FROM sys_user u2
+            JOIN cte ON cte.n <![CDATA[<=]]> (LENGTH(u2.DEPT_ID) - LENGTH(REPLACE(u2.DEPT_ID, ',', '')) + 1)
+            WHERE u2.DEL_FLAG = '0'
+            AND u2.STATUS = '0'
+        ) ud ON u.USER_ID = ud.USER_ID
+        LEFT JOIN sys_dept d ON ud.dept_id = d.DEPT_ID AND d.del_flag = '0'
+        LEFT JOIN sys_industry_conf ic ON ic.industry_code = d.INDUSTRY_CODE AND ic.delete_flag = 0
+        WHERE u.DEL_FLAG = '0' and u.STATUS = '0' and u.tenant_id = #{tenantId} and d.industry_code = #{industryCode}
+    </select>
+    <select id="getInfo" resultType="com.chinatower.platform.project.numtwin.entity.NumTwinsConfigDto"
+            parameterType="com.chinatower.platform.project.numtwin.entity.NumTwinsConfigDto">
+        select
+               id,
+               `screen_id`,
+               `screen_name`,
+               `num_twins_address`,
+               `province_code`,
+               `city_code`,
+               `county_code`,
+               `province_name`,
+               `city_name`,
+               `county_name`,
+               `engine_type`,
+               `signal_address`,
+               `concurrency` from vm_num_twins_config_t where #{tenantId} and industry_code = #{industryCode}
+    </select>
+    <select id="getNumTwinsUserList" resultType="com.chinatower.platform.project.numtwin.entity.NumTwinsUser"
+            parameterType="com.chinatower.platform.project.numtwin.entity.NumTwinsUser">
+        SELECT
+            u.USER_ID userId,
+            u.USER_NAME userName,
+            u.NICK_NAME nickName,
+            u.DEPT_ID deptId,
+            GROUP_CONCAT( r.role_id ) roleId,
+            IFNULL(p.LEVEL,'1') level,
+            p.update_time,
+            p.update_user
+        FROM
+            sys_user u
+        LEFT JOIN (
+            WITH RECURSIVE cte AS (
+            SELECT 1 AS n
+            UNION ALL
+            SELECT n + 1 FROM cte WHERE n <![CDATA[<]]> 50
+            )
+            SELECT
+            u2.USER_ID,
+            SUBSTRING_INDEX(SUBSTRING_INDEX(u2.DEPT_ID, ',', cte.n), ',', -1) AS dept_id
+            FROM sys_user u2
+            JOIN cte ON cte.n <![CDATA[<=]]> (LENGTH(u2.DEPT_ID) - LENGTH(REPLACE(u2.DEPT_ID, ',', '')) + 1)
+            WHERE u2.DEL_FLAG = '0'
+            AND u2.STATUS = '0'
+        ) ud ON u.USER_ID = ud.USER_ID
+        LEFT JOIN sys_dept d ON ud.dept_id = d.DEPT_ID AND d.del_flag = '0'
+        LEFT JOIN sys_industry_conf ic ON ic.industry_code = d.INDUSTRY_CODE AND ic.delete_flag= 0
+                LEFT JOIN sys_user_role r ON u.USER_ID = r.user_id
+        left JOIN vm_num_twins_priority_t p ON u.USER_ID = p.user_id
+        <if test="configId != null and configId != ''">
+            AND p.config_id = #{configId}
+        </if>
+        WHERE
+            u.DEL_FLAG = '0' and u.STATUS = '0' and u.tenant_id = #{tenantId} and d.industry_code = #{industryCode}
+        <if test="roleId != null and roleId != ''">
+            AND r.role_id =#{roleId}
+        </if>
+        <if test="roles != null and roles.size() > 0">
+            AND r.role_id IN
+            <foreach collection="roles" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        <if test="userName != null and userName != ''">
+            AND u.USER_NAME like concat('%',#{userName},'%')
+        </if>
+        <if test="deptId != null and deptId != ''">
+            AND FIND_IN_SET(#{deptId},u.dept_id)
+        </if>
+        <if test="level != null and level != ''">
+            AND p.level = #{level}
+        </if>
+
+        GROUP BY
+            u.USER_ID
+        <choose>
+          <when test="sortName == 'updateTime'">
+            order by p.update_time
+            <if test="sort == 'desc'">
+                desc
+            </if>
+            <if test="sort == 'asc'">
+                asc
+            </if>
+          </when>
+            <when test="sortName == 'level'">
+                order by p.LEVEL
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by u.create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+    <select id="selectDeptList" resultType="com.chinatower.platform.entity.admin.SysDept"
+            parameterType="com.chinatower.platform.project.numtwin.entity.NumTwinsUser">
+        SELECT DEPT_ID deptId,DEPT_NAME deptName from sys_dept where TENANT_ID = #{tenantId} and INDUSTRY_CODE = #{industryCode}
+    </select>
+
+    <insert id="saveList" parameterType="java.util.List">
+        insert into `vm_num_twins_priority_t` ( `user_id`, `level`, `config_id`, `create_user`, `update_user`, `create_time`, `update_time`, `delete_flag` ) VALUES
+        <foreach collection="list" item="item" separator="," >
+            ( #{item.userId}, #{item.level}, #{item.configId}, #{item.createUser},#{item.updateUser}, now(), now(), '0' )
+        </foreach>
+    </insert>
+
+    <update id="updateList">
+        update vm_num_twins_priority_t
+        set update_user =#{updateUser}, update_time =now(),level = case
+        <foreach collection="list" item="item" separator="">
+            when config_id = #{item.configId} and user_id = #{item.userId} then #{item.level}
+        </foreach>
+        end
+        where
+        <foreach collection="list" item="item" separator="or">
+            (config_id = #{item.configId} and user_id = #{item.userId})
+        </foreach>
+    </update>
+</mapper>

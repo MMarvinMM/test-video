@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.dept.dao.DeptDAO">
+
+
+
+    <select id="getOrganDeviceRelAll" resultType="com.chinatower.system.api.model.SysDeptStreetRelVO" >
+        select
+            DISTINCT
+            a.tenant_id,
+            a.industry_code,
+            a.APP_VER_CODE,
+            a.dept_id,
+            a.provinceCode,
+            a.cityCode,
+            a.countyCode,
+            a.streetAreaCode
+        from(
+            SELECT
+                t1.tenant_id,
+                t1.industry_code,
+                t1.APP_VER_CODE,
+                t1.dept_id,
+                t2.province_id as provinceCode,
+                t2.city_id as cityCode,
+                t2.county_id as countyCode,
+                t2.town_code as streetAreaCode
+            FROM
+                vm_organ_device_rel_t t1
+            LEFT JOIN vm_device_info_t t2 ON t1.device_code = t2.device_code
+            where t1.delete_flag = '0' and t2.delete_flag = '0' and t1.device_type = '4'
+
+            UNION ALL
+            SELECT
+                t1.tenant_id,
+                t1.industry_code,
+                t1.APP_VER_CODE,
+                t1.dept_id,
+                t2.province_id as provinceCode,
+                t2.city_id as cityCode,
+                t2.county_id as countyCode,
+                t2.town_code as streetAreaCode
+            FROM
+                vm_organ_device_rel_t t1
+            LEFT JOIN vm_iot_device_t t2 ON t1.device_code = t2.device_code
+            where t1.delete_flag = '0' and t2.delete_flag = '0' and t1.device_type = '8' and t2.category_code= 2
+
+            UNION ALL
+            SELECT
+                t1.tenant_id,
+                t1.industry_code,
+                t1.APP_VER_CODE,
+                t1.dept_id,
+                t2.province_id as provinceCode,
+                t2.city_id as cityCode,
+                t2.county_id as countyCode,
+                t2.town_code as streetAreaCode
+            FROM
+                vm_organ_device_rel_t t1
+            LEFT JOIN vm_iot_device_t t2 ON t1.device_code = t2.device_code
+            where t1.delete_flag = '0' and t2.delete_flag = '0' and t1.device_type = '10' and t2.category_code= 1
+
+            UNION ALL
+            SELECT
+                t1.tenant_id,
+                t1.industry_code,
+                t1.APP_VER_CODE,
+                t1.dept_id,
+                t2.province_code as provinceCode,
+                t2.city_code as cityCode,
+                t2.county_code as countyCode,
+                t2.town_code as streetAreaCode
+            FROM
+                vm_organ_device_rel_t t1
+            LEFT JOIN vm_uav_device_info_t t2 ON t1.device_code = t2.device_code
+            where t1.delete_flag = '0' and t2.delete_flag = '0' and t1.device_type = '11'
+
+            UNION ALL
+            SELECT
+                t1.tenant_id,
+                t1.industry_code,
+                t1.APP_VER_CODE,
+                t1.dept_id,
+                t2.province_code as provinceCode,
+                t2.city_code as cityCode,
+                t2.county_code as countyCode,
+                t2.town_code as streetAreaCode
+            FROM
+                vm_organ_device_rel_t t1
+            LEFT JOIN vm_horn_device_info_t t2 ON t1.device_code = t2.device_code
+            where t1.delete_flag = '0' and t2.delete_flag = '0' and t1.device_type = '12'
+
+            UNION ALL
+            SELECT
+                t1.tenant_id,
+                t1.industry_code,
+                t1.APP_VER_CODE,
+                t1.dept_id,
+                t2.province_code as provinceCode,
+                t2.city_code as cityCode,
+                t2.county_code as countyCode,
+                t2.town_code as streetAreaCode
+            FROM
+                vm_organ_device_rel_t t1
+            LEFT JOIN vm_recorder_device_info_t t2 ON t1.device_code = t2.device_code
+            where t1.delete_flag = '0' and t2.delete_flag = '0' and t1.device_type = '13'
+
+            UNION ALL
+            SELECT
+                tenant_id,
+                industry_code,
+                APP_VER_CODE,
+                dept_id,
+                province_code as provinceCode,
+                city_code as cityCode,
+                county_code as countyCode,
+                street_code as streetAreaCode
+            FROM
+                vm_organ_street_rel_t
+            where delete_flag = '0' and category_code = '9'
+        )a
+    </select>
+
+
+    <delete id="deleteDeptStreetRelAll">
+        delete from sys_dept_street_rel
+    </delete>
+
+
+    <insert id="insertBatchDeptStreetRelTenantAll" parameterType="com.chinatower.system.api.model.SysDeptStreetRelVO">
+        insert into sys_dept_street_rel  (tenant_id,DEPT_ID,STREET_AREA_CODE,province_code,city_code,county_code,
+        app_ver_code,industry_code) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.tenantId},#{item.deptId},#{item.streetAreaCode},#{item.provinceCode},#{item.cityCode},
+            #{item.countyCode},#{item.appVerCode},#{item.industryCode})
+        </foreach>
+    </insert>
+
+</mapper>

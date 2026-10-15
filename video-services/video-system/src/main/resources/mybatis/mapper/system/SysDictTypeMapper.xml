@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysDictTypeMapper">
+
+	<resultMap type="com.chinatower.platform.entity.admin.SysDictType" id="SysDictTypeResult">
+		<id     property="dictId"     column="dict_id"     />
+		<result property="dictName"   column="dict_name"   />
+		<result property="dictType"   column="dict_type"   />
+		<result property="status"     column="status"      />
+		<result property="createBy"   column="create_by"   />
+		<result property="createTime" column="create_time" />
+		<result property="updateBy"   column="update_by"   />
+		<result property="updateTime" column="update_time" />
+	</resultMap>
+
+	<sql id="selectDictTypeVo">
+        select dict_id, dict_name, dict_type, status, create_by, create_time, remark
+		from sys_dict_type
+    </sql>
+
+	<select id="selectDictTypeList" parameterType="com.chinatower.platform.entity.admin.SysDictType" resultMap="SysDictTypeResult">
+	    <include refid="selectDictTypeVo"/>
+		<where>
+		    <if test="dictName != null and dictName != ''">
+				AND dict_name like CONCAT(CONCAT('%',#{dictName}),'%')
+			</if>
+			<if test="status != null and status != ''">
+				AND status = #{status}
+			</if>
+			<if test="dictType != null and dictType != ''">
+				AND dict_type like CONCAT(CONCAT('%',#{dictType}),'%')
+			</if>
+			<if test="beginTime != null and beginTime != ''"><!-- 开始时间检索 -->
+                AND create_time &gt;= STR_TO_DATE(CONCAT(#{beginTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+			</if>
+			<if test="endTime != null and endTime != ''"><!-- 结束时间检索 -->
+                AND create_time &lt;= STR_TO_DATE(CONCAT(#{endTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+			</if>
+	    </where>
+		order by
+		<choose>
+			<when test='orderByColumn != null and orderByColumn != ""'>
+				<choose>
+					<when test='orderByColumn == "dictId"'>DICT_ID</when>
+					<when test='orderByColumn == "dictName"'>DICT_NAME</when>
+					<when test='orderByColumn == "dictType"'>DICT_TYPE</when>
+					<when test='orderByColumn == "status"'>STATUS</when>
+					<when test='orderByColumn == "createTime"'>create_time</when>
+					<otherwise>create_time</otherwise>
+				</choose>
+				<choose>
+					<when test='isAsc != null and isAsc == "asc"'>ASC</when>
+					<otherwise>DESC</otherwise>
+				</choose>,
+				DICT_ID DESC
+			</when>
+			<otherwise>
+				create_time DESC, DICT_ID DESC
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="selectDictTypeAll" resultMap="SysDictTypeResult">
+		<include refid="selectDictTypeVo"/>
+	</select>
+
+	<select id="selectDictTypeById" parameterType="Long" resultMap="SysDictTypeResult">
+		<include refid="selectDictTypeVo"/>
+		where dict_id = #{dictId}
+	</select>
+
+	<select id="selectDictTypeByType" parameterType="String" resultMap="SysDictTypeResult">
+		<include refid="selectDictTypeVo"/>
+		where dict_type = #{dictType}
+	</select>
+
+	<select id="checkDictTypeUnique" parameterType="String" resultMap="SysDictTypeResult">
+		<include refid="selectDictTypeVo"/>
+		where dict_type = #{dictType}
+	</select>
+
+	<delete id="deleteDictTypeById" parameterType="Long">
+ 		delete from sys_dict_type where dict_id = #{dictId}
+ 	</delete>
+
+ 	<delete id="deleteDictTypeByIds" parameterType="Long">
+ 		delete from sys_dict_type where dict_id in
+ 		<foreach collection="array" item="dictId" open="(" separator="," close=")">
+ 			#{dictId}
+        </foreach>
+ 	</delete>
+
+ 	<update id="updateDictType" parameterType="com.chinatower.platform.entity.admin.SysDictType">
+ 		update sys_dict_type
+ 		<set>
+ 			<if test="dictName != null and dictName != ''">dict_name = #{dictName},</if>
+ 			<if test="dictType != null and dictType != ''">dict_type = #{dictType},</if>
+ 			<if test="status != null">status = #{status},</if>
+ 			<if test="remark != null">remark = #{remark},</if>
+ 			<if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+ 			update_time = #{updateTime}
+ 		</set>
+ 		where dict_id = #{dictId}
+	</update>
+
+ 	<insert id="insertDictType" parameterType="com.chinatower.platform.entity.admin.SysDictType">
+ 		insert into sys_dict_type(
+ 			<if test="dictName != null and dictName != ''">dict_name,</if>
+ 			<if test="dictType != null and dictType != ''">dict_type,</if>
+ 			<if test="status != null">status,</if>
+ 			<if test="remark != null and remark != ''">remark,</if>
+ 			<if test="createBy != null and createBy != ''">create_by,</if>
+ 			create_time
+ 		)values(
+ 			<if test="dictName != null and dictName != ''">#{dictName},</if>
+ 			<if test="dictType != null and dictType != ''">#{dictType},</if>
+ 			<if test="status != null">#{status},</if>
+ 			<if test="remark != null and remark != ''">#{remark},</if>
+ 			<if test="createBy != null and createBy != ''">#{createBy},</if>
+ 			#{createTime}
+ 		)
+	</insert>
+
+</mapper>

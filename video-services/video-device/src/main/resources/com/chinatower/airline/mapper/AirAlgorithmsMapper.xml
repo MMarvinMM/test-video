@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.airline.mapper.AirAlgorithmsMapper">
+    <insert id="edit">
+        INSERT INTO `vm_air_algorithm_t` (`task_id`,
+                                          `flight_route_id`,
+                                          `warning_type_id`,
+                                          `create_time`,
+                                          `create_user`,
+                                          `delete_flag`,
+                                          `tenant_id`,
+                                          `industry_code`,
+                                          `access_node`,
+                                          `accept_node`,status
+        <if test='algorithmType != null and algorithmType != "" '>
+            ,algorithm_type
+        </if>
+        <if test='recoveryFlag != null and recoveryFlag != "" '>
+            ,recovery_flag
+        </if>
+                                         )
+
+        VALUES (#{taskId},
+                #{flightRouteId},
+                #{algorithmCode},
+                NOW(),
+                #{createUser},
+                '0',
+                #{teanantId},
+                #{industryCode},
+                #{accessNode},
+                #{acceptNode},
+                #{status}
+        <if test='algorithmType != null and algorithmType != "" '>
+            ,#{algorithmType}
+        </if>
+        <if test='recoveryFlag != null and recoveryFlag != "" '>
+            ,#{recoveryFlag}
+        </if>
+                );
+    </insert>
+
+    <select id="getUavAlgorithmsList" parameterType="com.chinatower.device.entity.dto.AirAlarmTypeReq" resultType="java.util.Map">
+        SELECT DISTINCT t1.algorithm_code AS typeValue,
+        t2.algorithm_name AS typeName,
+        CONVERT(t2.extend_json, CHAR) as extendJson
+        FROM vm_order_algorithms t1
+        LEFT JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+        WHERE t1.delete_flag = 0
+        AND t2.delete_flag = 0
+        AND t1.ord_status IN (0, 1, 2)
+        <if test="appScenarios != null and appScenarios.size() > 0">
+            AND t2.app_scenarios in
+            <foreach collection="appScenarios" item="deviceType" index="index" open="(" close=")" separator=",">
+                #{deviceType}
+            </foreach>
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND t1.industry_code = #{industryCode}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND t1.tenant_id = #{tenantId}
+        </if>
+<!--        <if test='isPhotoContrast != null and isPhotoContrast == "1"'>-->
+<!--            and t2.extend_json like '%"supportBaselinePic": "1"%'-->
+<!--        </if>-->
+        ${dataScope}
+    </select>
+
+    <select id="queryAlId" resultType="String">
+        SELECT GROUP_CONCAT(task_id SEPARATOR ',') AS task_ids
+        FROM vm_air_algorithm_t
+        WHERE flight_route_id = #{flightRouteId};
+    </select>
+
+    <select id="queryAlList">
+        select  a.warning_type_id algorithmCode,a.task_id taskId,a.access_node as accessCode,a.flight_route_id as flightRouteId,
+        a.accept_node as acceptCode, b.device_Code deviceCode,a.tenant_id teanantId,a.industry_code as industryCode,a.create_user as createUser
+        from vm_air_algorithm_t a
+        left join vm_air_line_t b on a.flight_route_id = b.flight_route_id
+        where a.flight_route_id in
+        <foreach collection="airLineVoList" item="item" index="index" open="(" close=")" separator=",">
+            #{item.flightRouteId}
+        </foreach>
+        <if test="optType != null and optType != ''" >
+            and a.update_user = "system"
+            and a.delete_flag = 1
+        </if>
+        <if test="optType == null and optType == ''" >
+            and a.delete_flag = 0
+        </if>
+        <if test="status != null and status != ''" >
+            and a.status = #{status}
+        </if>
+         and algorithm_type = '1'
+    </select>
+</mapper>

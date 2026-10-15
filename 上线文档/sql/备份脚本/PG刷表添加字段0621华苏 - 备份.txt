@@ -1,0 +1,19 @@
+DO $$
+DECLARE
+    row record;
+BEGIN
+    -- 假设我们查找所有public模式下，名字以'mytable_'开头的表
+    FOR row IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename LIKE 'polygon_xztb_1713776714890_kgrbxd%'
+    LOOP
+		RAISE NOTICE '备份表:%  ' , row.tablename;
+		EXECUTE format('create table IF NOT EXISTS %I (like %I INCLUDING indexes including constraints including comments including defaults);', replace(row.tablename, 'polygon_xztb','polygon_xztb_bak'), row.tablename);
+		
+		EXECUTE format('CREATE SEQUENCE IF NOT EXISTS %I_gid_seq
+            INCREMENT 1
+            START 1
+            MINVALUE 1
+            MAXVALUE 2147483647
+            CACHE 1;',replace(row.tablename, 'polygon_xztb','polygon_xztb_bak'));
+		EXECUTE format('insert into %I select * from %I;',replace(row.tablename, 'polygon_xztb','polygon_xztb_bak'), row.tablename);
+    END LOOP;
+END $$;

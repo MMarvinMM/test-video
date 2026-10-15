@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.manage.mapper.SysIndustryViewRelMapper">
+
+	<resultMap type="com.chinatower.manage.dto.SysIndustryViewRelModel" id="SysIndustryViewRelResult">
+		<id property="industryId" column="industry_id"/>
+		<result property="viewList" column="view_list"/>
+		<result property="appVerCode" column="app_ver_code"/>
+		<result property="appVerDesc" column="app_ver_desc"/>
+		<result property="imgUrl" column="img_url"/>
+		<result property="createDate" column="create_date"/>
+		<result property="updateDate" column="update_date"/>
+		<result property="creator" column="creator"/>
+		<result property="modifier" column="modifier"/>
+		<result property="status" column="status"/>
+		<result property="deleteFlag" column="delete_flag"/>
+		<result property="industryName" column="industry_name"/>
+		<result property="industryCode" column="industry_code"/>
+		<result property="bannerId" column="banner_id"/>
+		<collection property="menuList" ofType="com.chinatower.manage.dto.MenuInfoDTO">
+			<result property="viewId" column="industry_view_id"/>
+			<result property="name" column="view_name"/>
+			<result property="dirId" column="page_id"/>
+			<result property="sort" column="sort"/>
+			<result property="displayType" column="display_type"/>
+		</collection>
+	</resultMap>
+
+	<select id="querySysIndustryViewRel" parameterType="com.chinatower.manage.dto.SysIndustryViewRelModel" resultMap="SysIndustryViewRelResult">
+		select conf.industry_id, vconf.app_ver_code, vconf.app_ver_desc, vconf.banner_id,
+		vconf.img_url, vconf.create_time, vconf.update_time, vconf.creator, vconf.modifier, vconf.status, vconf.delete_flag,
+		conf.industry_name, conf.industry_code, rel.industry_view_id, rel.view_name, rel.page_id, rel.sort, rel.display_type
+		from sys_industry_ver_conf as vconf
+		INNER JOIN sys_industry_view_rel as rel on vconf.industry_code = rel.industry_code and  vconf.app_ver_code = rel.app_ver_code
+		inner join sys_industry_conf as conf on vconf.industry_code = conf.industry_code and vconf.accept_node = conf.accept_node
+		<where>
+			vconf.delete_flag = '0'
+			AND conf.delete_flag='0'
+			<if test="industryName != null and industryName != ''">
+				AND conf.industry_name like CONCAT(CONCAT('%', #{industryName}),'%')
+			</if>
+			<if test="appVerCode != null and appVerCode != ''">
+				AND vconf.app_ver_code = #{appVerCode}
+			</if>
+			<if test="status != null and status != ''">
+				AND vconf.status = #{status}
+			</if>
+			<if test="industryViewId != null and industryViewId != ''">
+				AND rel.industry_view_id = #{industryViewId}
+			</if>
+			<if test="industryCode != null and industryCode != ''">
+				AND vconf.industry_code = #{industryCode}
+			</if>
+			<if test="acceptNode != null and acceptNode != ''">
+				AND vconf.accept_node = #{acceptNode}
+			</if>
+		</where>
+		order by vconf.update_time desc, rel.sort asc;
+	</select>
+
+	<select id="queryCompoByIdList" resultType="com.chinatower.manage.dto.IndustryViewBannerInfoDTO">
+		select compo_id compoId, compo_name compoName, compo_path compoPath
+		from sys_compo_config
+		where compo_id in
+		<foreach collection="list" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+
+	<select id="queryByIndustryInfo" resultType="com.chinatower.manage.api.dto.SysIndustryConfigInfoModel">
+		select rel.industry_code industryCode, rel.app_ver_code appVerCode, rel.industry_view_type viewType, rel.`sort`,
+		conf.`id` industryViewId, rel.`view_name` industryViewName, rel.display_type displayType, 0 industryViewType
+		from sys_industry_view_rel rel
+		inner join `sys_industry_view` conf on rel.`industry_view_id` = conf.`id` and rel.industry_view_type = 1
+		where rel.industry_code = #{param.industryCode} and rel.app_ver_code = #{param.appVerCode}
+		and conf.`delete_flag` = 0
+		order by rel.`sort`, rel.id
+	</select>
+
+	<select id="queryByNewIndustryInfo" resultType="com.chinatower.manage.api.dto.SysIndustryConfigInfoModel">
+		select rel.industry_code industryCode, rel.app_ver_code appVerCode, rel.industry_view_type viewType, rel.`sort`,
+		conf.`id` industryViewId, rel.`view_name` industryViewName, rel.display_type displayType, 0 industryViewType
+		from sys_industry_view_rel rel
+		inner join `sys_industry_screen` conf on rel.`industry_view_id` = conf.`id` and rel.industry_view_type = 2
+		where rel.industry_code = #{param.industryCode} and rel.app_ver_code = #{param.appVerCode}
+		and conf.`delete_flag` = 0
+		order by rel.`sort`, rel.id
+	</select>
+
+	<select id="queryThirdIndustryConfigByIndustryInfo" resultType="com.chinatower.manage.api.dto.SysIndustryConfigInfoModel">
+		select rel.tenant_id tenantId, rel.industry_code industryCode, rel.app_ver_code appVerCode,
+		conf.`id` industryViewId, rel.screen_alias industryViewName, 0 displayType, 1 industryViewType
+		from `sys_third_party_screen_tenant_rel` rel
+		inner join `sys_third_party_screen_conf` conf on rel.`third_party_screen_id` = conf.`id`
+		where rel.tenant_id = #{param.tenantId} and rel.industry_code = #{param.industryCode} and rel.app_ver_code = #{param.appVerCode}
+		and conf.`delete_flag` = 0
+		order by conf.create_time, conf.id
+	</select>
+
+	<select id="selectThirdIndustryConfigById" resultType="com.chinatower.manage.dto.SysThirdPartyScreenConfigModel">
+        select * from `sys_third_party_screen_conf` where id = #{industryViewId}
+    </select>
+
+	<select id="queryDigitalTwinScreenConfigInfo" resultType="com.chinatower.manage.dto.SysThirdPartyScreenConfigModel">
+		select conf.`id`, conf.screen_name, rel.screen_alias, rel.tenant_id, rel.industry_code
+		from sys_third_party_screen_tenant_rel rel
+		inner join `sys_third_party_screen_conf` conf on rel.`third_party_screen_id` = conf.`id`
+		where rel.tenant_id = #{tenantId} and rel.industry_code = #{industryCode}
+		and conf.`delete_flag` = 0 and conf.`screen_type` = 2
+		limit 1
+	</select>
+
+	<select id="queryByIndustryCode" resultType="com.chinatower.manage.api.dto.SysIndustryConfigInfoModel">
+		select industry_view_id, industry_view_type, topic_type, view_name as industryViewName, display_type
+		from sys_industry_view_rel
+		where industry_code = #{industryCode}
+		  and industry_view_id = #{industryViewId}
+		  and industry_view_type = #{industryViewType}
+		  and app_ver_code = #{appVerCode}
+	</select>
+
+	<select id="findBannerInfo" resultType="com.chinatower.platform.entity.admin.SysIndustryVerConfDTO">
+		SELECT banner_title, banner_id, banner_type
+		FROM sys_industry_ver_conf
+		WHERE
+			industry_code = #{industryCode}
+		  and app_ver_code = #{appVerCode}
+		  and accept_node = #{platformCode}
+		  and delete_flag = 0
+
+	</select>
+</mapper>

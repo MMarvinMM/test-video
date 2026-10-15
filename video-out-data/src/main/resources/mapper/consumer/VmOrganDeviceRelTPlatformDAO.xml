@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.consumer.dao.VmOrganDeviceRelTPlatfromDAO">
+
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        insert into vm_organ_device_rel_t
+        (
+            id,
+            tenant_id,
+            dept_id,
+            device_code,
+            create_by,
+            create_time,
+            update_by,
+            update_time,
+            delete_flag,
+            device_type,
+            APP_VER_CODE,
+            industry_code
+        )
+        values
+        <foreach collection="list" item="item" separator="," >
+            (
+                #{item.id},
+                #{item.tenantId},
+                #{item.deptId},
+                #{item.deviceCode},
+                #{item.createBy},
+                #{item.createTime},
+                #{item.updateBy},
+                #{item.updateTime},
+                #{item.deleteFlag},
+                #{item.deviceType},
+                #{item.appVerCode},
+                #{item.industryCode}
+            )
+        </foreach>
+    </insert>
+
+    <update id="batchUpdate" parameterType="java.util.List">
+        <foreach collection="list" item="item" separator=";">
+            update vm_organ_device_rel_t
+            set
+                dept_id = #{item.deptId},
+                device_code=#{item.deviceCode},
+                create_by=#{item.createBy},
+                create_time=#{item.createTime},
+                update_by=#{item.updateBy},
+                update_time=#{item.updateTime},
+                delete_flag=#{item.deleteFlag},
+                device_type= #{item.deviceType},
+                APP_VER_CODE=#{item.appVerCode},
+                industry_code= #{item.industryCode}
+            where id = #{item.id}
+        </foreach>
+    </update>
+</mapper>

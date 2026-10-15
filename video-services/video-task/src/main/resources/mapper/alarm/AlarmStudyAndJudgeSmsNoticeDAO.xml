@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.AlarmStudyAndJudgeSmsNoticeDAO">
+
+    <select id="getJudgeAlarmNumList"  parameterType="com.chinatower.platform.modules.alarm.entity.JudgeAlarmSmsNoticeVO"
+            resultType="com.chinatower.platform.modules.alarm.entity.JudgeAlarmSmsNoticeVO">
+        SELECT
+            t.warning_type_id,
+            t.warning_order_id,
+            t.flow_id,
+            a.msg_notify_type,
+            a.msg_notify_limit,
+            a.msg_notify_company,
+            t.tenant_id,
+            t.process_id
+        FROM
+            ${tableName} t,
+            vm_flow_link_attr a
+        WHERE
+            t.flow_id = a.alarm_flow_id
+            AND t.link_id = '1'
+            AND a.cur_link = '1'
+            AND a.msg_notify_type LIKE '%1%'
+            AND a.msg_notify_limit IS NOT NULL
+            AND t.warning_type_id = #{warningTypeId}
+            AND DATE_FORMAT(t.flow_node_time ,'%Y-%m-%d') = DATE_FORMAT(now() ,'%Y-%m-%d')
+    </select>
+
+    <select id="queryWarningTypeNameByWarningTypeId" resultType="java.lang.String" parameterType="java.lang.String">
+        SELECT type_name FROM sys_alarm_type a
+        WHERE a.type_value = #{warningTypeId} and a.delete_flag = '0'
+    </select>
+
+    <select id="getUserInfoById" resultType="java.util.Map"  parameterType="java.lang.String">
+        SELECT t1.DEPT_NAME org_name,t2.NICK_NAME user_name,t2.PHONENUMBER mobile_phone
+        FROM sys_dept t1,sys_user t2
+        WHERE t2.dept_id = t1.dept_id AND t2.user_id = #{userId}
+    </select>
+
+</mapper>

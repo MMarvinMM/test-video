@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.manage.api.factory.IndustryFallbackFactory,\
+  com.chinatower.platform.aspect.DynamicDataSourceAspect,\
+  com.chinatower.platform.aspect.DataScopeAspect\

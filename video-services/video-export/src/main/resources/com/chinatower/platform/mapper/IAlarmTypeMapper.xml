@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IAlarmTypeMapper">
+
+    <!--
+      与 event.findOrderAlarmAll 对齐：曾经订购（当前∪历史）回填类型名；
+      大模型下游走 model_config，不依赖有效订购/场景表。
+    -->
+    <select id="findOrderAlarmAll" resultType="com.chinatower.event.dataobject.AlarmTypeDO" parameterType="com.chinatower.event.entity.dto.AlarmTypeDTO">
+        select t.* from (
+        select DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue
+        FROM (
+            SELECT algorithm_code, tenant_id
+            FROM vm_order_algorithms
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+            UNION
+            SELECT algorithm_code, tenant_id
+            FROM vm_order_algorithms_his
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+        ) t1
+        inner JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+        inner JOIN vm_algorithm_alarm al ON t2.algo_min_type_code = al.algo_min_type
+        inner JOIN sys_alarm_type sat ON al.alarm_type = sat.type_value
+        WHERE
+        sat.alarm_source = '1'
+        and t2.app_scenarios = '1'
+        ${body.dataScope}
+        ORDER BY sat.alarm_type_id ASC
+        ) t
+        union
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue
+        FROM sys_alarm_type sat
+        WHERE sat.alarm_source in
+        <foreach collection="body.alarmSources" item="alarmSource" open="(" separator="," close=")">
+            #{alarmSource}
+        </foreach>
+        and ((sat.tenant_id is null and sat.industry_code is null) or (sat.tenant_id = #{body.tenantId} and sat.industry_code = #{body.industryCode}))
+        union
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        COALESCE(sat.type_name, cfg.itemName) AS typeName,
+        sat.icon AS icon,
+        cfg.itemCode COLLATE utf8mb4_unicode_ci AS typeValue
+        FROM (
+            SELECT algorithm_code
+            FROM vm_order_algorithms
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+              AND industry_code = #{body.industryCode}
+            UNION
+            SELECT algorithm_code
+            FROM vm_order_algorithms_his
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+              AND industry_code = #{body.industryCode}
+        ) algo
+        INNER JOIN vm_algorithm_info_t a
+            ON algo.algorithm_code = a.algorithm_code
+           AND a.delete_flag = 0
+           AND a.algorithm_model_type = 2
+        INNER JOIN JSON_TABLE(
+            a.model_config,
+            '$[*]' COLUMNS (
+                code VARCHAR(64) PATH '$.code',
+                NESTED PATH '$.dictList[*]' COLUMNS (
+                    itemCode VARCHAR(64) PATH '$.itemCode',
+                    itemName VARCHAR(128) PATH '$.itemName'
+                )
+            )
+        ) cfg
+        LEFT JOIN sys_alarm_type sat
+            ON sat.type_value = cfg.itemCode COLLATE utf8mb4_unicode_ci
+           AND sat.delete_flag = 0
+           AND (
+                (sat.source = 3 AND sat.tenant_id = #{body.tenantId} AND sat.industry_code = #{body.industryCode})
+                OR IFNULL(sat.source, 0) != 3
+           )
+        WHERE a.model_config IS NOT NULL
+          AND a.model_config != ''
+          AND LOWER(cfg.code) LIKE '%modetype%'
+          AND cfg.itemCode IS NOT NULL
+          AND cfg.itemCode != ''
+        union
+        <!-- 大模型场景：工单 warning_type_id 为场景 UUID(source=3)；与 event.findOrderAlarmAll 对齐 -->
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue
+        FROM sys_alarm_type sat
+        WHERE sat.delete_flag = 0
+          AND IFNULL(sat.source, 0) = 3
+          AND sat.tenant_id = #{body.tenantId}
+          AND sat.industry_code = #{body.industryCode}
+          AND sat.type_value IS NOT NULL
+          AND sat.type_value != ''
+    </select>
+
+    <select id="devByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        select count(*) from
+        vm_order_devices where
+        tenant_id = #{body.tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{body.industryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="uavByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        select count(*)
+        from vm_order_uav_devices where
+        tenant_id = #{body.tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{body.industryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="iotDevByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        select  count(*)
+        from vm_order_sensor_devices
+        where tenant_id = #{body.tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{body.industryCode}
+        and category_code = #{body.categoryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="serviceByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        select count(*)
+        from vm_order_services_rel
+        where tenant_id = #{body.tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{body.industryCode}
+        and service_code = '9'
+        and delete_flag = 0
+    </select>
+
+    <select id="getAlarmLableByIds" resultType="com.chinatower.event.entity.dto.AlarmLableRelDTO">
+
+        select rel.lable_id,rel.lable_name,rel.waring_order_id,rel.table_time,rel.lable_rel_id
+        from vm_alarm_lable_rel rel
+        <where>
+            <if test='waringOrderId != null and waringOrderId != ""'>
+                AND rel.waring_order_id = #{waringOrderId}
+            </if>
+            <if test='idList != null and idList.size() != 0'>
+                and rel.lable_id in
+                <foreach collection="idList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+
+    </select>
+
+    <select id="getAlarmLableByOrderIds" resultType="com.chinatower.event.entity.dto.AlarmLableRelDTO">
+        SELECT
+            rel.waring_order_id,
+            group_concat( rel.lable_name SEPARATOR ',' ) AS lable_name
+        FROM
+            vm_alarm_lable_rel rel
+        <where>
+            <if test='orderIdList != null and orderIdList.size() > 0'>
+                and rel.waring_order_id in
+                <foreach collection="orderIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY
+            rel.waring_order_id
+    </select>
+
+</mapper>

@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.order.api.factory.VideoOrderFallbackFactory,\
+  com.chinatower.order.api.factory.WeatherApiFallbackFactory,\
+  com.chinatower.order.api.factory.UavDeviceApiFallbackFactory\

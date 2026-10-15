@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.OrgIotDevRelMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.OrganIotDevRelDO">
+        <id column="org_iot_dev_rel_id" property="orgIotDevRelId" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="org_id" property="orgId" />
+        <result column="device_code" property="deviceCode" />
+        <result column="category_code" property="categoryCode" />
+        <result column="creator" property="creator" />
+        <result column="creator_date" property="creatorDate" />
+        <result column="modifier" property="modifier" />
+        <result column="modifier_date" property="modifierDate" />
+        <result column="delete_flag" property="deleteFlag" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        org_iot_dev_rel_id, tenant_id, org_id, device_code, category_code, creator, creator_date, modifier, modifier_date, delete_flag
+    </sql>
+
+    <select id="queryOrgIotDevRels" resultType="com.chinatower.platform.entity.devicemgmt.vo.OrganDeviceRelVO">
+        select t.id, t.tenant_id, t.dept_id, t.device_code, d.dept_name,t.industry_code
+        from vm_organ_device_rel_t t left join sys_dept d on t.dept_id = d.dept_id
+        where t.delete_flag='0' and d.del_flag='0'
+        and t.tenant_id = #{tenantId}
+        <if test='industryCode != null and industryCode != ""'>
+            and t.industry_code = #{industryCode}
+        </if>
+        <if test='deviceCode != null and deviceCode != ""'>
+            and t.device_code like CONCAT('%', #{deviceCode}, '%')
+        </if>
+        <if test="deviceType != null" >
+            and t.device_type = #{deviceType}
+        </if>
+    </select>
+</mapper>

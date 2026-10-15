@@ -1,0 +1,25 @@
+# Tomcat
+server:
+  port: 12105
+
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: video-device-sync
+  profiles:
+    # 环境配置
+    active: local
+  main:
+    allow-bean-definition-overriding: true
+# mybatis配置
+mybatis:
+  # 搜索指定包别名
+  typeAliasesPackage: com.chinatower.device.mapper,com.chinatower.algorithm.mapper
+  # 配置mapper的扫描，找到所有的mapper.xml映射文件
+  mapperLocations: classpath:mapper/**/*.xml
+  # 重点！！！spring boot集成mybatis的方式打印sql
+
+jasypt:
+  encryptor:
+    bootstrap: false

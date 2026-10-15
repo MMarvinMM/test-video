@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IFlowLinkAttrMapper">
+
+
+    <select id="getFlowLinkAttrByCondition" parameterType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto">
+        SELECT template_id,tenant_id, link_id,alarm_flow_id,user_type,msg_notify_type,msg_notify_limit,
+                msg_notify_company,leader_flag,sign_flag,rollback_flag,time_limit,notify_admin_flag,delete_flag,
+                app_ver_code,industry_code,id as attr_id,msg_send_time_interval as msgSendTimeInterval,
+        real_link_type realLinkType,data_filter_permiss dataFilterPermiss,custom_admin customAdmin,time_start_alram timeStartAlram,
+        time_end_alram timeEndAlram,voice_alram voiceAlram, time_remind timeRemind,time_remind_auto timeRemindAuto,time_remind_number timeRemindNumber,
+        if_later_remind ifLaterRemind,later_remind_company laterRemindCompany,time_push_type timePushType,time_limit_push timeLimitPush,enable_acceptance_mode enableAcceptanceMode,time_limit_acceptance timeLimitAcceptance
+        FROM vm_flow_link_attr
+        WHERE  link_id = #{linkId} AND alarm_flow_id = #{alarmFlowId}
+        <if test="templateId != null and templateId != ''">
+            AND template_id =  #{templateId}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND tenant_id =  #{tenantId}
+        </if>
+    </select>
+    <select id="getFlowLinkByUserId" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto">
+        select attr.alarm_flow_id,u.link_id from vm_flow_link_user u
+            LEFT JOIN vm_flow_link_attr attr on attr.id = u.attr_id
+          where u.user_id = #{userId}
+           GROUP BY attr.alarm_flow_id,u.link_id
+    </select>
+    <select id="getFlowLinkByRoleId" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto">
+            select fll.template_id as alarm_flow_id,flic.link_id from vm_flow_link_industry_config flic
+            INNER JOIN vm_flow_template_link as fll on flic.link_id = fll.cur_link
+            INNER JOIN vm_flow_template as ft on ft.template_id = fll.template_id and flic.app_ver_code = ft.app_ver_code and flic.industry_code = ft.industry_code
+            where  flic.delete_flag = 0 and flic.app_ver_code =#{appVerCode} and flic.industry_code =#{industryCode}
+                  and FIND_IN_SET(#{roleId},flic.role_id)
+            GROUP BY fll.template_id,flic.link_id
+            UNION all
+				select fll.template_id as alarm_flow_id,flic.link_id from vm_flow_link_industry_config flic
+                INNER JOIN vm_flow_template_link as fll on flic.link_id = fll.cur_link
+                INNER JOIN vm_flow_template as ft on ft.template_id = fll.template_id and ft.app_ver_code is null and ft.industry_code is null
+            where  flic.delete_flag = 0 and flic.app_ver_code is null and flic.industry_code is null
+                  and FIND_IN_SET(#{roleId},flic.role_id)
+            GROUP BY fll.template_id,flic.link_id
+            union all
+            select attr.alarm_flow_id,r.link_id from vm_flow_link_role r
+              LEFT JOIN vm_flow_link_attr attr on attr.id = r.attr_id
+            where r.role_id = #{roleId}   and attr.app_ver_code =#{appVerCode} and attr.industry_code =#{industryCode}
+            GROUP BY attr.alarm_flow_id,r.link_id
+    </select>
+    <select id="getFlowLinkAttr" parameterType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto">
+        SELECT template_id,tenant_id, link_id,alarm_flow_id,user_type,msg_notify_type,msg_notify_limit,
+        msg_notify_company,leader_flag,sign_flag,rollback_flag,time_limit,notify_admin_flag,delete_flag,
+        app_ver_code,industry_code,id as attr_id
+        FROM vm_flow_link_attr
+        <where>
+            <if test="alarmFlowId != null and alarmFlowId != ''">
+                AND alarm_flow_id = #{alarmFlowId}
+            </if>
+        </where>
+        limit 1
+    </select>
+    <select id="getAttrUserOrRoleInfo" parameterType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto" resultType="java.util.Map">
+        <if test="attrId != null and attrId != ''">
+            select attrSub.attr_id as attrId,attrSub.link_id as linkId,userOrRoles from vm_flow_link_attr attr
+            <if test="userType == 1">
+                left join (select attr_id,group_concat(user_id SEPARATOR',') as userOrRoles
+                from vm_flow_link_user where attr_id=#{attrId} and link_id=#{linkId}) as attrSub on attrSub.attr_id = attr.id
+            </if>
+            <if test="userType == 2">
+                left join (select attr_id,link_id,group_concat(role_id SEPARATOR',') as userOrRoles
+                from vm_flow_link_role where attr_id=#{attrId} and link_id=#{linkId}) as attrSub on attrSub.attr_id = attr.id
+            </if>
+        </if>
+        <if test="attrId==null">
+            select config.link_id as linkId,config.role_id as userOrRoles from vm_flow_link_industry_config  config
+            where config.link_id=#{linkId}
+            <if test="appVerCode==null ">
+                and app_ver_code is not null and industry_code is not null
+            </if>
+            <if test="appVerCode!=null and  appVerCode!=''">
+                and app_ver_code =#{appVerCode}
+            </if>
+            <if test="industryCode!=null  and  industryCode!=''">
+                and industry_code=#{industryCode}
+            </if>
+
+        </if>
+    </select>
+    <select id="getFlowLinkByRoleIdList" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto">
+        select fll.template_id as alarm_flow_id,flic.link_id from vm_flow_link_industry_config flic
+        INNER JOIN vm_flow_template_link as fll on flic.link_id = fll.cur_link
+        INNER JOIN vm_flow_template as ft on ft.template_id = fll.template_id and flic.app_ver_code = ft.app_ver_code and flic.industry_code = ft.industry_code
+        where  flic.delete_flag = 0 and flic.app_ver_code =#{param.appVerCode} and flic.industry_code =#{param.industryCode}
+        <if test="param.roleIdList!=null and param.roleIdList.size()>0">
+            and
+            <foreach collection="param.roleIdList" item="item" index="index" open="(" close=")" separator="or">
+                FIND_IN_SET(#{item},flic.role_id)
+            </foreach>
+        </if>
+        GROUP BY fll.template_id,flic.link_id
+        UNION all
+        select fll.template_id as alarm_flow_id,flic.link_id from vm_flow_link_industry_config flic
+        INNER JOIN vm_flow_template_link as fll on flic.link_id = fll.cur_link
+        INNER JOIN vm_flow_template as ft on ft.template_id = fll.template_id and ft.app_ver_code is null and ft.industry_code is null
+        where  flic.delete_flag = 0 and flic.app_ver_code is null and flic.industry_code is null
+        <if test="param.roleIdList!=null and param.roleIdList.size()>0">
+            and
+            <foreach collection="param.roleIdList" item="item" index="index" open="(" close=")" separator="or">
+                FIND_IN_SET(#{item},flic.role_id)
+            </foreach>
+        </if>
+        GROUP BY fll.template_id,flic.link_id
+        union all
+        select attr.alarm_flow_id,r.link_id from vm_flow_link_role r
+        LEFT JOIN vm_flow_link_attr attr on attr.id = r.attr_id
+        where attr.tenant_id = #{param.tenantId} and attr.app_ver_code =#{param.appVerCode} and attr.industry_code =#{param.industryCode}
+        <if test="param.roleIdList!=null and param.roleIdList.size()>0">
+            and r.role_id in
+            <foreach collection="param.roleIdList" item="item" index="index" open="(" close=")" separator=",">
+                 #{item}
+            </foreach>
+        </if>
+        GROUP BY attr.alarm_flow_id,r.link_id
+    </select>
+
+    <select id="queryAdminUser" resultType="com.chinatower.event.entity.dto.SysInfo">
+        select
+            su.user_id as userId,
+            su.NICK_NAME as userName,
+            su.dept_id as deptId,
+            su.user_id as nodeId,
+            su.user_name as nodeName,
+            su.user_name as nickName,
+            su.AVATAR as avatar,
+            su.is_tenant_admin as tenantAdmin,
+            '1' as purviewFlag
+        from sys_user as su where su.DEL_FLAG='0' and su.STATUS='0' and su.tenant_id = #{tenantId} and su.is_tenant_admin ='1' limit 1
+
+    </select>
+
+</mapper>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.timeline.mapper.VmSensingAlgorithmTaskInfoMapper">
+
+    <resultMap type="com.chinatower.bdm.modules.timeline.entity.VmSensingAlgorithmTaskInfo" id="VmSensingAlgorithmTaskInfoMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="taskName" column="task_name" jdbcType="VARCHAR"/>
+        <result property="taskStatus" column="task_status" jdbcType="INTEGER"/>
+        <result property="algorithmCode" column="algorithm_code" jdbcType="VARCHAR"/>
+        <result property="algorithmName" column="algorithm_name" jdbcType="VARCHAR"/>
+        <result property="layerOneInfo" column="layer_one_info" jdbcType="VARCHAR"/>
+        <result property="layerTwoInfo" column="layer_two_info" jdbcType="VARCHAR"/>
+        <result property="defaultFlag" column="default_flag" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+        <result property="industryCode" column="industry_code" jdbcType="VARCHAR"/>
+        <result property="appVerCode" column="app_ver_code" jdbcType="VARCHAR"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="tenantName" column="tenant_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="modifier" column="modifier" jdbcType="VARCHAR"/>
+        <result property="errorMsg" column="error_msg" jdbcType="LONGVARCHAR"/>
+        <result property="taskBatchId" column="task_batch_id" jdbcType="VARCHAR"/>
+        <result property="secondRecogResult" column="second_recog_result" jdbcType="LONGVARCHAR"/>
+    </resultMap>
+
+    <resultMap type="com.chinatower.bdm.modules.timeline.vo.VmSensingAlgorithmTaskInfoVo" id="VmSensingAlgorithmTaskInfoVoMap">
+        <result property="id" column="id" jdbcType="BIGINT"/>
+        <result property="taskName" column="task_name" jdbcType="VARCHAR"/>
+        <result property="taskStatus" column="task_status" jdbcType="INTEGER"/>
+        <result property="algorithmCode" column="algorithm_code" jdbcType="VARCHAR"/>
+        <result property="algorithmName" column="algorithm_name" jdbcType="VARCHAR"/>
+        <result property="defaultFlag" column="default_flag" jdbcType="INTEGER"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+        <result property="industryCode" column="industry_code" jdbcType="VARCHAR"/>
+        <result property="appVerCode" column="app_ver_code" jdbcType="VARCHAR"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="tenantName" column="tenant_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="modifier" column="modifier" jdbcType="VARCHAR"/>
+        <result property="errorMsg" column="error_msg" jdbcType="LONGVARCHAR"/>
+        <result property="layerOneInfoStr" column="layer_one_info" jdbcType="VARCHAR"/>
+        <result property="layerTwoInfoStr" column="layer_two_info" jdbcType="VARCHAR"/>
+        <result property="taskBatchId" column="task_batch_id" jdbcType="VARCHAR"/>
+        <result property="secondRecogResult" column="second_recog_result" jdbcType="LONGVARCHAR"/>
+    </resultMap>
+
+    <!-- 伪列 -->
+    <sql id="Base_Column_List">
+        id, task_name, task_status, algorithm_code, algorithm_name, layer_one_info, layer_two_info,
+        default_flag, delete_flag, industry_code, app_ver_code,
+        tenant_id, tenant_name, create_time, update_time, creator, modifier, error_msg,task_batch_id,second_recog_result
+    </sql>
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="VmSensingAlgorithmTaskInfoMap">
+        select
+        <include refid="Base_Column_List"/>
+        from vm_sensing_algorithm_task_info
+        where id = #{id}
+        and delete_flag = 0
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" parameterType="com.chinatower.bdm.modules.timeline.dto.VmSensingAlgorithmTaskInfoQueryDto" resultMap="VmSensingAlgorithmTaskInfoVoMap">
+        select
+        id, task_name, task_status, algorithm_code, algorithm_name,layer_one_info,layer_two_info,
+        default_flag, delete_flag, industry_code, app_ver_code,
+        tenant_id, tenant_name, create_time, update_time, creator, modifier, error_msg,task_batch_id,second_recog_result
+        from vm_sensing_algorithm_task_info t
+        <where>
+            and t.delete_flag = 0
+            ${dataScope}
+            <!-- 任务名称模糊查询 -->
+            <if test="taskName != null and taskName != ''">
+                and t.task_name like concat('%',#{taskName, jdbcType=VARCHAR},'%')
+            </if>
+            <!-- 算法名称模糊查询 -->
+            <if test="algorithmName != null and algorithmName != ''">
+                and t.algorithm_name like concat('%',#{algorithmName, jdbcType=VARCHAR},'%')
+            </if>
+            <if test="algorithmCode != null and algorithmCode != ''">
+                and t.algorithm_code like concat('%',#{algorithmCode, jdbcType=VARCHAR},'%')
+            </if>
+            <!-- 任务状态查询 -->
+            <if test="taskStatus != null">
+                and t.task_status = #{taskStatus, jdbcType=INTEGER}
+            </if>
+            <!-- 创建时间范围查询 -->
+            <if test="createTimeStart != null">
+                and t.create_time &gt;= #{createTimeStart, jdbcType=TIMESTAMP}
+            </if>
+            <if test="createTimeEnd != null">
+                and t.create_time &lt;= #{createTimeEnd, jdbcType=TIMESTAMP}
+            </if>
+            <!-- 修改时间范围查询 -->
+            <if test="updateTimeStart != null">
+                and t.update_time &gt;= #{updateTimeStart, jdbcType=TIMESTAMP}
+            </if>
+            <if test="updateTimeEnd != null">
+                and t.update_time &lt;= #{updateTimeEnd, jdbcType=TIMESTAMP}
+            </if>
+            <!-- 创建人查询 -->
+            <if test="creator != null and creator != ''">
+                and t.creator like concat('%',#{creator, jdbcType=VARCHAR},'%')
+            </if>
+            <!-- 修改人查询 -->
+            <if test="modifier != null and modifier != ''">
+                and t.modifier like concat('%',#{modifier, jdbcType=VARCHAR},'%')
+            </if>
+        </where>
+        order by t.create_time desc
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into vm_sensing_algorithm_task_info(task_name, task_status, algorithm_code, algorithm_name,
+                                                   layer_one_info, layer_two_info,
+                                                   default_flag, delete_flag, industry_code, app_ver_code,
+                                                   tenant_id, tenant_name, create_time, update_time, creator, modifier)
+        values (#{taskName}, #{taskStatus}, #{algorithmCode}, #{algorithmName},
+                #{layerOneInfo}, #{layerTwoInfo},
+                #{defaultFlag}, #{deleteFlag}, #{industryCode}, #{appVerCode},
+                #{tenantId}, #{tenantName}, #{createTime}, #{updateTime}, #{creator}, #{modifier})
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update vm_sensing_algorithm_task_info
+        <set>
+            <if test="defaultFlag != null">
+                default_flag = #{defaultFlag},
+            </if>
+            <if test="taskName != null and taskName != ''">
+                task_name = #{taskName},
+            </if>
+            <if test="layerOneInfo != null and layerOneInfo != ''">
+                layer_one_info = #{layerOneInfo},
+            </if>
+            <if test="layerTwoInfo != null and layerTwoInfo != ''">
+                layer_two_info = #{layerTwoInfo},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier},
+            </if>
+            <if test="taskBatchId != null and taskBatchId != ''">
+                task_batch_id = #{taskBatchId},
+            </if>
+            <if test="secondRecogResult != null and secondRecogResult != ''">
+                second_recog_result = #{secondRecogResult},
+            </if>
+            <if test="taskStatus != null and taskStatus != ''">
+                task_status = #{taskStatus},
+            </if>
+            <if test="errorMsg != null and errorMsg != ''">
+                error_msg = #{errorMsg},
+            </if>
+        </set>
+        where id = #{id}
+        and delete_flag = 0
+    </update>
+
+    <!--通过主键删除（软删除）-->
+    <update id="deleteById">
+        update vm_sensing_algorithm_task_info
+        set delete_flag = 1, update_time = now()
+        where id = #{id}
+    </update>
+
+    <!--取消所有任务的默认状态-->
+    <update id="updateAllDefaultFlagToZero">
+        update vm_sensing_algorithm_task_info
+        set default_flag = 0
+        where delete_flag = 0
+          and default_flag = 1
+            ${dataScope}
+    </update>
+
+</mapper>

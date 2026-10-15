@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.StbhhxCeshitableMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.gis.modules.gis.entity.StbhhxCeshitable" >
+        <result column="gid" property="gid" />
+        <result column="geom" property="geom" />
+        <result column="layertype" property="layertype" />
+        <result column="calarea" property="calarea" />
+        <result column="bsm" property="bsm" />
+        <result column="ysdm" property="ysdm" />
+        <result column="xzqdm" property="xzqdm" />
+        <result column="xzqmc" property="xzqmc" />
+        <result column="sheng" property="sheng" />
+        <result column="shi" property="shi" />
+        <result column="xian" property="xian" />
+        <result column="hxbm" property="hxbm" />
+        <result column="hxmc" property="hxmc" />
+        <result column="hxlx" property="hxlx" />
+        <result column="lxbm" property="lxbm" />
+        <result column="mj" property="mj" />
+        <result column="zrbhdmc" property="zrbhdmc" />
+        <result column="zrbhdjb" property="zrbhdjb" />
+        <result column="zrbhdlx" property="zrbhdlx" />
+        <result column="zrbhdfq" property="zrbhdfq" />
+        <result column="xtyzblx" property="xtyzblx" />
+        <result column="gkcs" property="gkcs" />
+        <result column="szxjxzqdm" property="szxjxzqdm" />
+        <result column="szxjxzqmc" property="szxjxzqmc" />
+        <result column="bz" property="bz" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        gid,
+                geom,
+                layertype,
+                calarea,
+                bsm,
+                ysdm,
+                xzqdm,
+                xzqmc,
+                sheng,
+                shi,
+                xian,
+                hxbm,
+                hxmc,
+                hxlx,
+                lxbm,
+                mj,
+                zrbhdmc,
+                zrbhdjb,
+                zrbhdlx,
+                zrbhdfq,
+                xtyzblx,
+                gkcs,
+                szxjxzqdm,
+                szxjxzqmc,
+                bz
+    </sql>
+
+    <insert id="createTable">
+        create table IF NOT EXISTS ${tableName} (like stbhhx_ceshitable INCLUDING indexes including constraints including comments including defaults) ;
+        CREATE SEQUENCE IF NOT EXISTS ${tableName}_gid_seq
+            INCREMENT 1
+            START 1
+            MINVALUE 1
+            MAXVALUE 2147483647
+            CACHE 1;
+        alter table ${tableName} alter column "gid" set default nextval('${tableName}_gid_seq');
+    </insert>
+
+    <insert id="createTableView">
+        CREATE VIEW view_${tableName} AS
+        SELECT gid, geom, bsm, minx, miny, maxx, maxy, HXBM, HXMC, HXLX, ZRBHDJB, MJ
+        FROM ${tableName}
+    </insert>
+
+    <update id="updateCalarea">
+        update ${tableName}
+        set minx = ST_X ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 1 ) ) ),
+            miny = ST_Y ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 1 ) ) ),
+            maxx = ST_X ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 3 ) ) ),
+            maxy = ST_Y ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 3 ) ) ),
+            calarea=st_area (st_transform ( geom, CAST ( ( FLOOR ( ( ST_X ( st_centroid ( geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER ) ) )
+        where calarea is null;
+    </update>
+    <insert id="saveBatch">
+        insert into ${tableName}
+            (
+        <if test="list.get(0).containsKey('the_geom')">
+            geom
+        </if>
+        <if test="layerType != null and layerType != ''">
+            ,layertype
+        </if>
+        <if test="list.get(0).containsKey('calarea')">
+            ,calarea
+        </if>
+        <if test="list.get(0).containsKey('bsm')">
+            ,bsm
+        </if>
+        <if test="list.get(0).containsKey('ysdm')">
+            ,ysdm
+        </if>
+        <if test="list.get(0).containsKey('xzqdm')">
+            ,xzqdm
+        </if>
+        <if test="list.get(0).containsKey('xzqmc')">
+            ,xzqmc
+        </if>
+        <if test="list.get(0).containsKey('sheng')">
+            ,sheng
+        </if>
+        <if test="list.get(0).containsKey('shi')">
+            ,shi
+        </if>
+        <if test="list.get(0).containsKey('xian')">
+            ,xian
+        </if>
+        <if test="list.get(0).containsKey('hxbm')">
+            ,hxbm
+        </if>
+        <if test="list.get(0).containsKey('hxmc')">
+            ,hxmc
+        </if>
+        <if test="list.get(0).containsKey('hxlx')">
+            ,hxlx
+        </if>
+        <if test="list.get(0).containsKey('lxbm')">
+            ,lxbm
+        </if>
+        <if test="list.get(0).containsKey('mj')">
+            ,mj
+        </if>
+        <if test="list.get(0).containsKey('zrbhdmc')">
+            ,zrbhdmc
+        </if>
+        <if test="list.get(0).containsKey('zrbhdjb')">
+            ,zrbhdjb
+        </if>
+        <if test="list.get(0).containsKey('zrbhdlx')">
+            ,zrbhdlx
+        </if>
+        <if test="list.get(0).containsKey('zrbhdfq')">
+            ,zrbhdfq
+        </if>
+        <if test="list.get(0).containsKey('xtyzblx')">
+            ,xtyzblx
+        </if>
+        <if test="list.get(0).containsKey('gkcs')">
+            ,gkcs
+        </if>
+        <if test="list.get(0).containsKey('szxjxzqdm')">
+            ,szxjxzqdm
+        </if>
+        <if test="list.get(0).containsKey('szxjxzqmc')">
+            ,szxjxzqmc
+        </if>
+        <if test="list.get(0).containsKey('szxjxzqmc')">
+            ,bz
+        </if>
+            )
+        values
+        <foreach collection="list" item="item" separator=",">
+        (
+            <if test="list.get(0).containsKey('the_geom')">
+                ST_GeomFromText(#{item.the_geom},4326)
+            </if>
+            <if test="layerType != null and layerType != ''">
+                ,#{layerType}
+            </if>
+            <if test="list.get(0).containsKey('calarea')">
+                ,#{item.calarea}
+            </if>
+            <if test="list.get(0).containsKey('bsm')">
+                ,#{item.bsm}
+            </if>
+            <if test="list.get(0).containsKey('ysdm')">
+                ,#{item.ysdm}
+            </if>
+            <if test="list.get(0).containsKey('xzqdm')">
+                ,#{item.xzqdm}
+            </if>
+            <if test="list.get(0).containsKey('xzqmc')">
+                ,#{item.xzqmc}
+            </if>
+            <if test="list.get(0).containsKey('sheng')">
+                ,#{item.sheng}
+            </if>
+            <if test="list.get(0).containsKey('shi')">
+                ,#{item.shi}
+            </if>
+            <if test="list.get(0).containsKey('xian')">
+                ,#{item.xian}
+            </if>
+            <if test="list.get(0).containsKey('hxbm')">
+                ,#{item.hxbm}
+            </if>
+            <if test="list.get(0).containsKey('hxmc')">
+                ,#{item.hxmc}
+            </if>
+            <if test="list.get(0).containsKey('hxlx')">
+                ,#{item.hxlx}
+            </if>
+            <if test="list.get(0).containsKey('lxbm')">
+                ,#{item.lxbm}
+            </if>
+            <if test="list.get(0).containsKey('mj')">
+                ,CAST(#{item.mj} AS double precision)
+            </if>
+            <if test="list.get(0).containsKey('zrbhdmc')">
+                ,#{item.zrbhdmc}
+            </if>
+            <if test="list.get(0).containsKey('zrbhdjb')">
+                ,#{item.zrbhdjb}
+            </if>
+            <if test="list.get(0).containsKey('zrbhdlx')">
+                ,#{item.zrbhdlx}
+            </if>
+            <if test="list.get(0).containsKey('zrbhdfq')">
+                ,#{item.zrbhdfq}
+            </if>
+            <if test="list.get(0).containsKey('xtyzblx')">
+                ,#{item.xtyzblx}
+            </if>
+            <if test="list.get(0).containsKey('gkcs')">
+                ,#{item.gkcs}
+            </if>
+            <if test="list.get(0).containsKey('szxjxzqdm')">
+                ,#{item.szxjxzqdm}
+            </if>
+            <if test="list.get(0).containsKey('szxjxzqmc')">
+                ,#{item.szxjxzqmc}
+            </if>
+            <if test="list.get(0).containsKey('bz')">
+                ,#{item.bz}
+            </if>
+            )
+        </foreach>
+    </insert>
+
+    <select id="inspectionRoute" resultType="java.lang.String"
+            parameterType="com.chinatower.gis.api.entity.layer.GetXjxlFeaturesByIdsReq">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        SELECT
+        'FeatureCollection' AS type,
+        '212' AS id,
+        array_to_json(array_agg(f)) AS features
+        FROM (
+        SELECT
+        'Feature' AS type
+        <if test="req.returnGeometry">
+            ,ST_AsGeoJSON(geom)::json as geometry
+        </if>
+        ,(
+        SELECT
+        row_to_json(t)
+        FROM (
+        SELECT hxbm as tbbh,bsm,'' as dlmc,'' as zldwmc
+        <if test="req.returnAllCols">
+            ,ysdm,ysdm,xzqdm,xzqmc,sheng,shi,xian,hxbm,hxmc,hxlx,lxbm,mj,zrbhdmc,zrbhdjb,zrbhdlx,zrbhdfq,xtyzblx,gkcs,szxjxzqdm,szxjxzqmc,bz
+        </if>
+        ) AS t
+        ) AS properties
+        FROM ${tableName}
+        <where>
+            <if test="req.tbbhs != null and req.tbbhs.size() > 0">
+                and bsm in
+                <foreach collection="req.tbbhs" item="item"  open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        ) AS f
+        ) AS fc
+    </select>
+
+    <select id="inspectionRouteCount" resultType="java.lang.Integer">
+        select
+        count(1)
+        from ${tableName}
+        <where>
+            <if test="req.tbbhs != null and req.tbbhs.size() > 0">
+                and bsm in
+                <foreach collection="req.tbbhs" item="item"  open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getXlsjFeatures" resultType="java.lang.String">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        SELECT
+        'FeatureCollection' AS type,
+        '212' AS id,
+        array_to_json(array_agg(f)) AS features
+        FROM (
+        SELECT
+        'Feature' AS type
+        <if test="req.returnGeometry">
+            ,ST_AsGeoJSON(geom)::json as geometry
+        </if>
+        ,(
+        SELECT
+        row_to_json(t)
+        FROM (
+        SELECT hxbm as tbbh, bsm,mj as area
+        ) AS t
+        ) AS properties
+        FROM ${tableName}
+        <where>
+            <if test="req.tbbh != null and req.tbbh != ''">
+                and hxbm like concat('%',#{req.tbbh},'%')
+            </if>
+        </where>
+        limit ${size} offset ${offset}
+        ) AS f
+        ) AS fc
+    </select>
+    <select id="getXlsjFeaturesCount" resultType="java.lang.Integer">
+        select
+            count(1)
+        from ${tableName}
+        <where>
+            <if test="req.tbbh != null and req.tbbh != ''">
+                and hxbm like concat('%',#{req.tbbh},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="getLayerArea" resultType="java.lang.Double">
+        select
+            sum(mj)
+        from ${tableName}
+    </select>
+
+    <delete id="deleteBadData">
+        delete from ${tableName} where HXBM is null or MJ is null
+    </delete>
+
+</mapper>

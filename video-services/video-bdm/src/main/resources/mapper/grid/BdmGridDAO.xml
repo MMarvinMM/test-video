@@ -1,0 +1,836 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.grid.dao.BdmGridDAO">
+    <resultMap id="custOrganMap" type="com.chinatower.bdm.api.entity.CustOrganVO">
+        <result column="DEPT_ID" property="deptId" jdbcType="VARCHAR" />
+        <result column="DEPT_NAME" property="deptName" jdbcType="VARCHAR" />
+        <result column="PARENT_ID" property="parentId" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <!-- 查询网格列表信息-->
+    <select id="getGridList" resultType="com.chinatower.bdm.api.entity.GridListVO" parameterType="com.chinatower.bdm.api.entity.GridParam">
+        SELECT
+        distinct
+        t.parent_name,
+        t.grid_id,
+        t.is_end,
+        t.grid_code,
+        t.grid_name,
+        t.parent_id,
+        t.parent_code,
+        t.grid_level,
+        t.create_time,
+        t.point_status,
+        t.color,
+        t.grid_center,
+        t.grid_range,
+        t.grid_em_center,
+        t.border_color,
+        t.border_color_transparency,
+        t.border_color_line_thickness,
+        t.color_transparency
+        FROM
+        (
+            SELECT
+            distinct
+            (select b.grid_name from bm_grid b where b.delete_flag = 0 and b.grid_code=a.parent_code) as parent_name,
+            a.grid_id,
+            a.is_end,
+            a.grid_code,
+            a.grid_name,
+            a.parent_id,
+            a.parent_code,
+            a.grid_level,
+            a.create_time,
+            a.point_status,
+            a.color,
+            a.grid_center,
+            a.grid_range,
+            a.grid_em_center,
+            c.keeper_name,
+            a.border_color,
+            a.border_color_transparency,
+            a.border_color_line_thickness,
+            a.color_transparency
+            FROM
+            bm_grid a
+            left join bm_grid_keeper_ref b on b.grid_id = a.grid_id AND b.delete_flag = 0
+            left join bm_gridkeeper c on c.keeper_id = b.keeper_id AND  c.delete_flag = 0 AND c.keeper_type = '1'
+            WHERE
+            a.delete_flag = 0
+            <if test='parentId != null and parentId != ""'>
+                and a.parent_id = #{parentId}
+            </if>
+            <if test='excludeGridId != null and excludeGridId != ""'>
+                and a.grid_id = #{excludeGridId}
+            </if>
+            <if test='tenantId != null and tenantId != ""'>
+                and a.tenant_id = #{tenantId}
+            </if>
+            <if test='industryCode != null and industryCode != ""'>
+                and a.industry_code = #{industryCode}
+            </if>
+
+
+            <choose>
+                <when test="sortName == 'gridName'">
+                    order by CONVERT(a.grid_name USING GBK)
+                    <if test="sort == 'desc'">
+                        desc
+                    </if>
+                    <if test="sort == 'asc'">
+                        asc
+                    </if>
+                </when>
+                <when test="sortName == 'keeperName'">
+                    order by CONVERT(c.keeper_name USING GBK)
+                    <if test="sort == 'desc'">
+                        desc
+                    </if>
+                    <if test="sort == 'asc'">
+                        asc
+                    </if>
+                </when>
+                <when test="sortName == 'gridCode'">
+                    order by a.grid_code
+                    <if test="sort == 'desc'">
+                        desc
+                    </if>
+                    <if test="sort == 'asc'">
+                        asc
+                    </if>
+                </when>
+                <when test="sortName == 'createTime'">
+                    order by a.create_time
+                    <if test="sort == 'desc'">
+                        desc
+                    </if>
+                    <if test="sort == 'asc'">
+                        asc
+                    </if>
+                </when>
+                <when test="sortName == 'pointStatus'">
+                    order by a.point_status
+                    <if test="sort == 'desc'">
+                        desc
+                    </if>
+                    <if test="sort == 'asc'">
+                        asc
+                    </if>
+                </when>
+                <otherwise>
+                    order by a.create_time desc
+                </otherwise>
+            </choose>
+            ,a.grid_id desc
+        ) t
+    </select>
+
+
+
+    <!-- 查询网格列表信息-->
+    <select id="getGridLayerList" resultType="com.chinatower.bdm.api.entity.GridListVO" parameterType="com.chinatower.bdm.api.entity.GridLayerParam">
+        SELECT
+        (select b.grid_name from bm_grid b where b.delete_flag = 0 and b.grid_code=a.parent_code and b.tenant_id = a.tenant_id and b.industry_code = a.industry_code) as parent_name,
+        a.grid_id,
+        a.is_end,
+        a.grid_code,
+        a.grid_name,
+        a.parent_id,
+        a.parent_code,
+        a.grid_level,
+        a.create_time,
+        a.point_status,
+        a.color,
+        a.grid_center,
+        a.grid_range,
+        a.border_color,
+        a.border_color_transparency,
+        a.border_color_line_thickness,
+        a.color_transparency,
+        a.province_id as provinceCode,
+        a.city_id as cityCode,
+        a.province_name,
+        a.city_name
+        FROM
+        bm_grid a
+        WHERE
+        a.delete_flag = 0
+        <if test='gridLevelCode != null and gridLevelCode != ""'>
+            and a.grid_level_code  like concat('%',#{gridLevelCode},'%')
+        </if>
+        <if test='gridId != null and gridId != ""'>
+            and a.grid_id = #{gridId}
+        </if>
+        <if test='parentId != null and parentId != ""'>
+            and a.parent_id = #{parentId}
+        </if>
+        <if test='excludeGridId != null and excludeGridId != ""'>
+            and a.grid_id != #{excludeGridId}
+        </if>
+        <if test='provinceId != null and provinceId != ""'>
+            and a.province_id = #{provinceId}
+        </if>
+        <if test='cityId != null and cityId != ""'>
+            and a.city_id = #{cityId}
+        </if>
+        <if test="regionList != null and regionList.size() > 0">
+            AND (a.province_id, a.city_id) IN
+            <foreach item="item" index="index" collection="regionList" open="(" separator="," close=")">
+                (#{item.provinceId}, #{item.cityId})
+            </foreach>
+        </if>
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        order by a.grid_sort
+    </select>
+
+
+    <update id="updateGridInfoSelective" parameterType="com.chinatower.bdm.api.entity.GridVO">
+        update bm_grid
+        <set>
+            <if test="gridCode != null">
+                grid_code = #{gridCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gridName != null">
+                grid_name = #{gridName,jdbcType=VARCHAR},
+            </if>
+            <if test="gbCode != null">
+                gb_code = #{gbCode,jdbcType=VARCHAR},
+            </if>
+            <if test="parentId != null">
+                parent_id = #{parentId,jdbcType=BIGINT},
+            </if>
+            <if test="parentCode != null">
+                parent_code = #{parentCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gridClassification != null">
+                grid_classification = #{gridClassification,jdbcType=VARCHAR},
+            </if>
+            <if test="gridLevel != null">
+                grid_level = #{gridLevel,jdbcType=VARCHAR},
+            </if>
+            <if test="gridLevelCode != null">
+                grid_level_code = #{gridLevelCode,jdbcType=VARCHAR},
+            </if>
+            <if test="gridProperty != null">
+                grid_property = #{gridProperty,jdbcType=VARCHAR},
+            </if>
+            <if test="isEnd != null">
+                is_end = #{isEnd,jdbcType=CHAR},
+            </if>
+            <if test="gridAddress != null">
+                grid_address = #{gridAddress,jdbcType=VARCHAR},
+            </if>
+            <if test="gridIntroduce != null">
+                grid_introduce = #{gridIntroduce,jdbcType=VARCHAR},
+            </if>
+            <if test="gridPicture != null">
+                grid_picture = #{gridPicture,jdbcType=VARCHAR},
+            </if>
+            <if test="reginScopeDesc != null">
+                regin_scope_desc = #{reginScopeDesc,jdbcType=VARCHAR},
+            </if>
+            <if test="gridSort != null">
+                grid_sort = #{gridSort,jdbcType=INTEGER},
+            </if>
+            <if test="pointStatus != null and pointStatus != '0'.toString()">
+                point_status = #{pointStatus,jdbcType=VARCHAR},
+            </if>
+            <if test="pointStatus != null and pointStatus == '0'.toString()">
+                point_status = #{pointStatus,jdbcType=VARCHAR},grid_range = '',grid_center = '',color = '',province_id = '',city_id = '',
+            </if>
+            <if test="gridEmCenter != null and gridEmCenter != ''">
+                grid_em_center = #{gridEmCenter,jdbcType=VARCHAR},
+            </if>
+            <if test="@com.chinatower.platform.common.utils.StringUtils@isEmpty(gridEmCenter)">
+                grid_em_center = null,
+            </if>
+            <if test="gridBeginTime != null">
+                grid_begin_time = #{gridBeginTime,jdbcType=VARCHAR},
+            </if>
+            <if test="gridEndTime != null">
+                grid_end_time = #{gridEndTime,jdbcType=VARCHAR},
+            </if>
+            <if test="gridArea != null">
+                grid_area = #{gridArea,jdbcType=VARCHAR},
+            </if>
+            <if test="isValid != null">
+                is_valid = #{isValid,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+                update_time = now(),
+            <if test="deleteFlag != null">
+                delete_flag = #{deleteFlag,jdbcType=INTEGER},
+            </if>
+            <if test="color != null">
+                color = #{color,jdbcType=VARCHAR},
+            </if>
+            <if test="gridCenter != null">
+                grid_center = #{gridCenter,jdbcType=VARCHAR},
+            </if>
+            <if test="gridRange != null">
+                grid_range = #{gridRange,jdbcType=VARCHAR},
+            </if>
+            <if test="provinceCode != null">
+                province_id = #{provinceCode,jdbcType=VARCHAR},
+            </if>
+            <if test="cityCode != null">
+                city_id = #{cityCode,jdbcType=VARCHAR},
+            </if>
+            <if test="provinceName != null">
+                province_name = #{provinceName,jdbcType=VARCHAR},
+            </if>
+            <if test="cityName != null">
+                city_name = #{cityName,jdbcType=VARCHAR},
+            </if>
+            <if test="borderColor != null">
+                border_color = #{borderColor,jdbcType=VARCHAR},
+            </if>
+            <if test="borderColorTransparency != null">
+                border_color_transparency = #{borderColorTransparency,jdbcType=VARCHAR},
+            </if>
+            <if test="borderColorLineThickness != null">
+                border_color_line_thickness = #{borderColorLineThickness,jdbcType=VARCHAR},
+            </if>
+            <if test="colorTransparency != null">
+                color_transparency = #{colorTransparency,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where grid_id = #{gridId,jdbcType=BIGINT}
+    </update>
+
+    <select id="findOne" resultType="com.chinatower.bdm.api.entity.GridVO">
+        select
+        a.grid_picture,
+        a.grid_level_code,
+        a.parent_id,a.tenant_id,
+        a.grid_id, a.grid_code, a.grid_name, a.gb_code, a.parent_code, a.grid_classification,
+        a.grid_level, a.grid_property, a.is_end, a.grid_address, a.grid_introduce, a.grid_picture, a.regin_scope_desc,
+        a.grid_sort, a.point_status, a.grid_em_center,
+        DATE_FORMAT(a.grid_end_time,'%Y-%m-%d') as grid_end_time,
+        DATE_FORMAT(a.grid_begin_time,'%Y-%m-%d') as grid_begin_time,
+        a.grid_area,
+        a.is_valid, a.creator, a.create_time, a.modifier, a.update_time, a.delete_flag,
+        a.is_end,
+        a.grid_level,
+        a.grid_classification,
+        a.grid_property,
+        a.color,
+        a.grid_center,
+        a.grid_range,
+        a.city_id cityCode,
+        a.province_id provinceCode,
+        a.industry_code,
+        a.border_color,
+        a.border_color_transparency,
+        a.border_color_line_thickness,
+        a.color_transparency
+        from bm_grid a
+        where a.grid_id = #{gridId,jdbcType=BIGINT}
+    </select>
+
+    <select id="getOrganInfo" resultMap="custOrganMap" parameterType="String">
+
+        select DEPT_ID,DEPT_NAME,PARENT_ID from sys_dept WHERE DEPT_ID = #{orgId} and STATUS = '0' and DEL_FLAG = 0
+
+    </select>
+
+
+    <!-- 查询网格树全部节点信息-->
+    <select id="getGridTree" resultType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT
+        a.grid_id,
+        a.grid_code,
+        a.grid_name,
+        a.parent_id,
+        a.parent_code,
+        a.is_end
+        FROM
+        bm_grid a
+        where a.delete_flag=0
+       <!-- <if test="tenantId != null">
+            and a.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null">
+            and a.industry_code = #{industryCode}
+        </if>-->
+        ${dataScope}
+        ORDER BY
+        a.grid_sort,
+        a.create_time desc
+    </select>
+    <!-- 查询网格树全部节点信息-->
+    <select id="getAllGridTree" resultType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT
+        a.grid_id,
+        a.grid_code,
+        a.grid_name,
+        a.parent_id,
+        a.parent_code,
+        a.is_end
+        FROM
+        bm_grid a
+        where 1=1
+        ${dataScope}
+        ORDER BY
+        a.grid_sort,
+        a.create_time desc
+    </select>
+
+
+    <!-- 查询网格树全部节点信息-->
+    <select id="getGridTreeNew" resultType="com.chinatower.bdm.api.entity.GridVO" parameterType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT
+        a.grid_id,
+        a.grid_code,
+        a.grid_name,
+        a.parent_id,
+        a.parent_code,
+        a.is_end
+        FROM
+        bm_grid a
+        where a.delete_flag=0
+        <if test="gridIdList != null and gridIdList.size() > 0">
+            and a.grid_id in
+            <foreach item="item" index="index" collection="gridIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+        ORDER BY
+        a.grid_sort,
+        a.create_time desc
+    </select>
+
+
+    <insert id="insertGridInfo" keyColumn="grid_id" keyProperty="gridId" parameterType="com.chinatower.bdm.api.entity.GridVO" useGeneratedKeys="true">
+        INSERT INTO bm_grid
+        (grid_id, grid_code, grid_name, gb_code, parent_id, parent_code, grid_classification, grid_level, grid_level_code, grid_property, is_end, grid_address,
+        grid_introduce, grid_picture, regin_scope_desc, grid_sort, point_status, grid_em_center, grid_begin_time, grid_end_time, grid_area, is_valid, creator,
+        create_time, delete_flag, color, grid_center, grid_range, tenant_id,industry_code,app_ver_code)
+        values (#{gridId,jdbcType=BIGINT},#{gridCode,jdbcType=VARCHAR}, #{gridName,jdbcType=VARCHAR}, #{gbCode,jdbcType=VARCHAR},
+        #{parentId,jdbcType=BIGINT}, #{parentCode,jdbcType=VARCHAR}, #{gridClassification,jdbcType=VARCHAR},
+        #{gridLevel,jdbcType=VARCHAR}, #{gridLevelCode,jdbcType=VARCHAR},#{gridProperty,jdbcType=VARCHAR}, #{isEnd,jdbcType=CHAR},
+        #{gridAddress,jdbcType=VARCHAR}, #{gridIntroduce,jdbcType=VARCHAR}, #{gridPicture,jdbcType=VARCHAR},
+        #{reginScopeDesc,jdbcType=VARCHAR}, #{gridSort,jdbcType=INTEGER}, #{pointStatus,jdbcType=VARCHAR},
+        #{gridEmCenter,jdbcType=VARCHAR}, #{gridBeginTime,jdbcType=TIMESTAMP}, #{gridEndTime,jdbcType=TIMESTAMP},
+        #{gridArea,jdbcType=VARCHAR}, #{isValid,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR},
+        now(), 0 ,#{color,jdbcType=VARCHAR},#{gridCenter,jdbcType=VARCHAR},#{gridRange,jdbcType=VARCHAR},
+        #{tenantId,jdbcType=VARCHAR},#{industryCode,jdbcType=VARCHAR},#{appVerCode,jdbcType=VARCHAR})
+    </insert>
+    <insert id="insertGridInfoList">
+        INSERT INTO bm_grid (grid_id, grid_code, grid_name, gb_code, parent_id, parent_code, grid_classification, grid_level, grid_level_code, grid_property, is_end, grid_address,
+        grid_introduce, grid_picture, regin_scope_desc, grid_sort, point_status, grid_em_center, grid_begin_time, grid_end_time, grid_area, is_valid, creator,
+        create_time, delete_flag, color, grid_center, grid_range, tenant_id,industry_code,app_ver_code) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.gridId},#{item.gridCode},#{item.gridName},#{item.gbCode},#{item.parentId},#{item.parentCode},#{item.gridClassification},#{item.gridLevel},#{item.gridLevelCode},
+            #{item.gridProperty},#{item.isEnd},#{item.gridAddress},#{item.gridIntroduce},#{item.gridPicture},#{item.reginScopeDesc},#{item.gridSort},#{item.pointStatus},
+             #{item.gridEmCenter},#{item.gridBeginTime},#{item.gridEndTime},#{item.gridArea},#{item.isValid},#{item.creator},now(),0,#{item.color},
+             #{item.gridCenter},#{item.gridRange},#{item.tenantId},#{item.industryCode},#{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <select id="checkGridRef" resultType="java.lang.Integer" >
+        SELECT
+        count(a.ref_id) as `count`
+        FROM
+        bm_grid_keeper_ref a
+        WHERE
+        a.delete_flag=0
+        and a.grid_id = #{gridId}
+    </select>
+
+    <update id="deleteGridInfo" >
+        update bm_grid set delete_flag = 1
+        where grid_id = #{gridId,jdbcType=BIGINT}
+    </update>
+
+    <select id="getMessageByLngLat" resultType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT
+         a.tenant_id,a.grid_id,a.grid_name, a.color,a.grid_range,a.grid_level,a.grid_center,a.industry_code
+        FROM bm_grid a
+        WHERE a.delete_flag = 0 AND a.point_status='1'
+        AND a.tenant_id IN
+        <if test="tenantIdList != null and tenantIdList.size() > 0">
+            <foreach item="item" index="index" collection="tenantIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        ORDER BY a.grid_level desc
+    </select>
+
+    <select id="getMessageByLngLatNew" resultType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT
+        a.tenant_id,a.grid_id,a.grid_name, a.color,a.grid_range,a.grid_level,a.grid_center,a.industry_code
+        FROM bm_grid a
+        WHERE a.delete_flag = 0 AND a.point_status='1'
+        AND
+        <foreach item="item" index="index" collection="tenantList" open="(" separator="OR" close=")">
+            (a.tenant_id = #{item.tenantId} AND a.industry_code = #{item.industryCode})
+        </foreach>
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        ORDER BY a.grid_level desc
+    </select>
+
+    <select id="getGridIdByGridName" resultType="java.lang.String">
+        SELECT grid_id FROM bm_grid WHERE grid_name = #{gridName} AND delete_flag = 0 LIMIT 1
+    </select>
+
+    <select id="getGridIdByGridNameNew" resultType="java.lang.String" parameterType="com.chinatower.bdm.api.entity.GridNoPageVO">
+        SELECT GROUP_CONCAT(grid_id) FROM bm_grid WHERE delete_flag = 0
+        <if test="tenantId != null and tenantId != '' ">
+            and tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            and industry_code = #{industryCode}
+        </if>
+        <if test="gridNameList != null and gridNameList.size() > 0">
+            and grid_name in
+            <foreach collection="gridNameList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="checkChildrenGrid" resultType="java.lang.Integer">
+        SELECT COUNT(1) AS count FROM bm_grid a
+        WHERE a.parent_id = #{gridId}
+        AND a.delete_flag = 0
+    </select>
+
+    <select id="checkTwiceGirdName" resultType="java.lang.Integer" parameterType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT COUNT(1) AS count FROM bm_grid a
+        WHERE a.grid_name = #{gridName}
+          AND a.delete_flag = 0
+        <if test="tenantId != null">
+            and a.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null">
+            and a.industry_code = #{industryCode}
+        </if>
+    </select>
+
+
+
+    <select id="getGridListByTenantAll" resultType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT
+            a.grid_id, a.grid_code, a.grid_name, a.gb_code, a.parent_id, a.parent_code, a.grid_classification, a.grid_level, a.grid_level_code, a.grid_property, a.is_end, a.grid_address,
+            a.grid_introduce, a.grid_picture, a.regin_scope_desc, a.grid_sort, a.point_status, a.grid_em_center, a.grid_begin_time, a.grid_end_time, a.grid_area, a.is_valid, a.creator,
+            a.create_time, a.delete_flag, a.color, a.grid_center, a.grid_range, a.tenant_id, a.industry_code,
+            a.border_color,a.border_color_transparency,a.border_color_line_thickness,a.color_transparency
+        FROM
+            bm_grid a
+        WHERE
+        a.delete_flag = 0
+        <if test="tenantId != null">
+            and a.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null">
+            and a.industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="getGridListByTenantId" resultType="com.chinatower.bdm.api.entity.GridVO" parameterType="com.chinatower.bdm.api.entity.GridAllParam">
+        SELECT
+            a.grid_id, a.grid_code, a.grid_name, a.gb_code, a.parent_id, a.parent_code, a.grid_classification, a.grid_level, a.grid_level_code, a.grid_property, a.is_end, a.grid_address,
+            a.grid_introduce, a.grid_picture, a.regin_scope_desc, a.grid_sort, a.point_status, a.grid_em_center, a.grid_begin_time, a.grid_end_time, a.grid_area, a.is_valid, a.creator,
+            a.create_time, a.delete_flag, a.color, a.grid_center, a.grid_range, a.tenant_id, a.industry_code
+        FROM
+            bm_grid a
+        WHERE
+        a.delete_flag = 0
+        ${dataScope}
+        and FIND_IN_SET(a.grid_em_center,#{deptIds})
+    </select>
+
+    <select id="getGridListHasChildren" resultType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT
+            a.grid_id, a.grid_code, a.grid_name, a.gb_code, a.parent_id, a.parent_code, a.grid_classification, a.grid_level, a.grid_level_code, a.grid_property, a.is_end, a.grid_address,
+            a.grid_introduce, a.grid_picture, a.regin_scope_desc, a.grid_sort, a.point_status, a.grid_em_center, a.grid_begin_time, a.grid_end_time, a.grid_area, a.is_valid, a.creator,
+            a.create_time, a.delete_flag, a.color, a.grid_center, a.grid_range, a.tenant_id, a.industry_code
+        FROM
+            bm_grid a
+        WHERE a.delete_flag = 0
+        <if test="list != null and list.size() > 0">
+            <foreach item="item" index="index" collection="list" open="and (" separator="or" close=")">
+                a.grid_level_code LIKE concat('%',#{item.gridCode},'%')
+            </foreach>
+        </if>
+    </select>
+    <select id="getGridNameByGridId" resultType="com.chinatower.bdm.api.entity.GridVO" >
+        SELECT
+            a.grid_id, a.grid_code, a.grid_name, a.gb_code, a.parent_id, a.parent_code, a.grid_classification, a.grid_level, a.grid_level_code, a.grid_property, a.is_end, a.grid_address,
+            a.grid_introduce, a.grid_picture, a.regin_scope_desc, a.grid_sort, a.point_status, a.grid_em_center, a.grid_begin_time, a.grid_end_time, a.grid_area, a.is_valid, a.creator,
+            a.create_time, a.delete_flag, a.color, a.grid_center, a.grid_range, a.tenant_id, a.industry_code,
+            a.border_color,a.border_color_transparency,a.border_color_line_thickness,a.color_transparency
+        FROM
+            bm_grid a
+        WHERE a.delete_flag = 0
+        <if test="gridIdList != null and gridIdList.size() > 0">
+            and a.grid_id in
+            <foreach item="item" index="index" collection="gridIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+<!--    <select id="findFirstGrid" resultType="java.util.Map">-->
+<!--        select t.num from-->
+<!--        <foreach collection="list" item="item" index="index" separator="union all" open="(" close=") t">-->
+<!--        SELECT-->
+<!--            COUNT(1) num-->
+<!--        FROM bm_grid-->
+<!--        WHERE parent_id = '0'-->
+<!--        and parent_code = '0'-->
+<!--        and grid_level = '1'-->
+<!--        and delete_flag = '0'-->
+<!--        and tenant_id = #{item.tenantId} and industry_code = #{item.industryCode}-->
+<!--        </foreach>-->
+<!--    </select>-->
+    <select id="getTenantInfo" resultType="com.chinatower.platform.entity.admin.SysTenantInfo">
+        select tenant_id,tenant_name from sys_tenant_info where tenant_id = #{tenantId} and `status` = '1' and del_flag = '0'
+    </select>
+    <select id="getIndustryCodeInfo" resultType="com.chinatower.platform.entity.admin.SysIndustryConf">
+        select industry_id,industry_code,industry_name from sys_industry_conf where industry_code = #{industryCode} and `status` = '1' and delete_flag = '0'
+        and accept_node = #{platformCode}
+    </select>
+    <select id="findFirstGrid" resultType="java.lang.Integer">
+        SELECT
+            COUNT(1)
+        FROM bm_grid
+        WHERE parent_id = '0' and parent_code = '0' and grid_level = '1' and delete_flag = '0' and tenant_id = #{tenantId} and industry_code = #{industryCode}
+    </select>
+
+    <select id="getPonitGridList" resultType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT
+            a.grid_id, a.grid_code, a.grid_name, a.gb_code, a.parent_id, a.parent_code, a.grid_classification, a.grid_level, a.grid_level_code, a.grid_property, a.is_end, a.grid_address,
+            a.grid_introduce, a.grid_picture, a.regin_scope_desc, a.grid_sort, a.point_status, a.grid_em_center, a.grid_begin_time, a.grid_end_time, a.grid_area, a.is_valid, a.creator,
+            a.create_time, a.delete_flag, a.color, a.grid_center, a.grid_range, a.tenant_id, a.industry_code
+        FROM
+            bm_grid a
+        WHERE a.delete_flag = 0 and a.point_status = '1' and a.tenant_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getInfoBygridParentId" resultType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT industry_code,tenant_id,grid_level_code,grid_level
+        FROM bm_grid
+        WHERE delete_flag = 0
+          AND grid_id = #{gridId}
+    </select>
+
+
+    <update id="updateGridAreaInfo">
+            UPDATE bm_grid
+            <set>
+                <trim prefix="grid_center = case" suffix="end,">
+                    <foreach collection="list" item="item">
+                        <if test="item.gridId != null">
+                            WHEN grid_id = #{item.gridId} THEN #{item.gridCenter}
+                        </if>
+                    </foreach>
+                </trim>
+                <trim prefix="province_id = case" suffix="end,">
+                    <foreach collection="list" item="item">
+                        <if test="item.gridId != null">
+                            WHEN grid_id = #{item.gridId} THEN #{item.provinceCode}
+                        </if>
+                    </foreach>
+                </trim>
+                <trim prefix="city_id = case" suffix="end,">
+                    <foreach collection="list" item="item">
+                        <if test="item.gridId != null">
+                            WHEN grid_id = #{item.gridId} THEN #{item.cityCode}
+                        </if>
+                    </foreach>
+                </trim>
+                <trim prefix="province_name = case" suffix="end,">
+                    <foreach collection="list" item="item">
+                        <if test="item.gridId != null">
+                            WHEN grid_id = #{item.gridId} THEN #{item.provinceName}
+                        </if>
+                    </foreach>
+                </trim>
+                <trim prefix="city_name = case" suffix="end,">
+                    <foreach collection="list" item="item">
+                        <if test="item.gridId != null">
+                            WHEN grid_id = #{item.gridId} THEN #{item.cityName}
+                        </if>
+                    </foreach>
+                </trim>
+            </set>
+            WHERE
+            <if test="list != null and list.size()>0 ">
+                grid_id in
+                <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                    #{item.gridId}
+                </foreach>
+            </if>
+    </update>
+
+    <select id="getUserListByGridList" resultType="com.chinatower.bdm.modules.grid.entity.GridUserVO"
+        parameterType="com.chinatower.bdm.api.entity.GridByLngLat">
+            SELECT DISTINCT
+                a.staff_id as userId,
+                b.grid_id
+            FROM
+                bm_gridkeeper a
+                LEFT JOIN bm_grid_keeper_ref b ON b.keeper_id = a.keeper_id
+            WHERE
+                a.delete_flag = 0
+              AND a.`status` = '0'
+              AND b.delete_flag = 0
+              AND b.grid_id IN
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item.gridId}
+            </foreach>
+    </select>
+
+    <!-- 查询网格列表信息-->
+    <select id="getPointGridList" resultType="com.chinatower.bdm.api.entity.GridListVO"
+            parameterType="com.chinatower.bdm.api.entity.GridNoPageVO">
+        SELECT
+            grid_id,
+            grid_range,
+            color,
+            grid_center,
+            border_color,
+            border_color_transparency,
+            border_color_line_thickness,
+            color_transparency
+        FROM
+            bm_grid
+        WHERE
+            delete_flag = 0
+        AND point_status = '1'
+        <if test="gridIdList != null and gridIdList.size() > 0 ">
+            AND grid_id IN
+            <foreach collection="gridIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="getBmGridList" resultType="java.lang.String">
+        select
+        a.grid_id
+        from bm_grid a
+        where a.grid_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateGridBatch" parameterType="com.chinatower.bdm.api.entity.GridVO">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update bm_grid
+            <set>
+                <if test="item.gridRange != null and item.gridRange != ''">
+                    grid_range = #{item.gridRange},
+                </if>
+                <if test="item.borderColor != null and item.borderColor != ''">
+                    border_color = #{item.borderColor},
+                </if>
+                <if test="item.borderColorLineThickness != null and item.borderColorLineThickness != ''">
+                    border_color_line_thickness = #{item.borderColorLineThickness},
+                </if>
+                <if test="item.borderColorTransparency != null and item.borderColorTransparency != ''">
+                    border_color_transparency = #{item.borderColorTransparency},
+                </if>
+                <if test="item.colorTransparency != null and item.colorTransparency != ''">
+                    color_transparency = #{item.colorTransparency},
+                </if>
+                update_time = NOW()
+            </set>
+            where grid_id = #{item.gridId}
+
+        </foreach>
+    </update>
+    <select id="getDeviceInfoVOS" resultType="com.chinatower.bdm.modules.grid.entity.CommonRegionVO">
+        SELECT
+            device_id id,longitude,latitude
+        FROM
+            vm_device_info_t
+        WHERE
+            delete_flag = '0'
+          AND longitude IS NOT NULL
+          AND longitude != ''
+          AND latitude IS NOT NULL
+          AND latitude != ''
+        order by creator_date
+        limit #{offset},#{limit}
+    </select>
+    <select id="getGridkeeperVOS" resultType="com.chinatower.bdm.modules.grid.entity.CommonRegionVO">
+        SELECT
+            keeper_id id,longitude,latitude
+        FROM
+            bm_gridkeeper
+        WHERE
+            delete_flag = '0'
+          AND longitude IS NOT NULL
+          AND longitude != ''
+          AND latitude IS NOT NULL
+          AND latitude != ''
+        order by create_time
+        limit #{offset},#{limit}
+    </select>
+
+    <update id="updateAllTable">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_device_info_t
+            set province_id = #{item.provinceCode}
+            , city_id = #{item.cityCode}
+            , county_id = #{item.countyCode}
+            , town_code = #{item.townCode}
+            where longitude = #{item.longitude}
+            and latitude = #{item.latitude};
+            update bm_gridkeeper
+            set province_id = #{item.provinceCode}
+            , city_id = #{item.cityCode}
+            , county_id = #{item.countyCode}
+            where longitude = #{item.longitude}
+            and latitude = #{item.latitude}
+        </foreach>
+    </update>
+
+    <select id="screenFindGridInfo" parameterType="com.chinatower.bdm.api.entity.GridInfoParam" resultType="com.chinatower.bdm.api.entity.GridVO">
+        select a.grid_id from bm_grid a where a.grid_id = #{gridId,jdbcType=BIGINT}
+        <if test="dataScope != null and dataScope != ''">
+            ${dataScope}
+        </if>
+    </select>
+
+    <select id="findGridList" resultType="com.chinatower.bdm.api.entity.GridVO">
+        select
+        a.grid_id,
+        a.grid_name,
+        a.grid_center
+        from bm_grid a
+        where a.delete_flag = 0
+        <if test="gridName != null">
+            and a.grid_name  like concat('%',#{gridName},'%')
+        </if>
+        <if test="tenantId != null">
+            and a.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null">
+            and a.industry_code = #{industryCode}
+        </if>
+        <if test="provinceId != null">
+            and a.province_id = #{provinceId}
+        </if>
+        <if test="cityId != null">
+            and a.city_id = #{cityId}
+        </if>
+    </select>
+</mapper>

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysTutorialMapper" >
+
+    <insert id="insert" parameterType="com.chinatower.platform.project.system.domain.vo.SysVideoTutorialVO" >
+        insert into sys_tutorial_video (tutorial_id, video_url, tutorail_title, creator, create_time, delete_flag,tenant_is_look,tower_is_look,model_id,file_name,industry_code)
+        values (#{tutorialId}, #{videoUrl}, #{tutorailTitle}, #{creator}, now(), 0,#{tenantIsLook},#{towerIsLook},#{modelId},#{fileName},#{industryCode})
+    </insert>
+
+    <update id="updateVideoTutorial" parameterType="com.chinatower.platform.project.system.domain.vo.SysVideoTutorialVO">
+        update sys_tutorial_video set
+          video_url = #{videoUrl},
+          tutorail_title = #{tutorailTitle},
+          update_by = #{updateBy},
+          update_time = NOW(),
+          tenant_is_look = #{tenantIsLook},
+          tower_is_look = #{towerIsLook},
+          model_id = #{modelId},
+          file_name = #{fileName},
+          industry_code = #{industryCode}
+        WHERE tutorial_id = #{tutorialId}
+    </update>
+
+    <select id="checkSysVideoTutorialInfo" parameterType="com.chinatower.platform.project.system.domain.vo.SysVideoTutorialVO" resultType="com.chinatower.platform.project.system.domain.vo.SysVideoTutorialVO">
+        SELECT
+        tutorial_id,
+        tutorail_title
+        FROM
+        sys_tutorial_video
+        WHERE
+        delete_flag = 0
+        <if test='tutorailTitle != null and tutorailTitle != ""'>
+            AND tutorail_title = #{tutorailTitle}
+        </if>
+        <if test='tutorialId != null and tutorialId != ""'>
+            AND tutorial_id != #{tutorialId}
+        </if>
+    </select>
+
+    <select id="getTutorialVideoList" resultType="com.chinatower.platform.project.system.domain.vo.SysVideoTutorialVO" parameterType="com.chinatower.platform.project.system.domain.vo.SysVideoTutorialVO">
+        select  t1.tutorial_id, t1.tutorail_title,t1.creator, t1.create_time,
+        t1.update_by, t1.update_time,t2.model_id,t2.model_name,t1.industry_code,
+        case when t1.tenant_is_look = '1' AND t1.tower_is_look = '0' then '客户'
+        when t1.tenant_is_look = '0' AND t1.tower_is_look = '1' then '铁塔'
+        when t1.tenant_is_look = '1' AND t1.tower_is_look = '1' then '铁塔，客户'  end as visibility
+        from  sys_tutorial_video t1
+        left join vm_model_config_t t2 on t1.model_id = t2.model_id and t2.delete_flag = 0
+        WHERE t1.delete_flag = 0
+        <if test="tutorialId != null and tutorialId != ''">
+            AND t1.tutorial_id =  #{tutorialId}
+        </if>
+        <if test='tutorailTitle != null and tutorailTitle != ""'>
+            AND t1.tutorail_title like CONCAT('%', #{tutorailTitle}, '%')
+        </if>
+        <if test='tenantIsLook != null'>
+            AND t1.tenant_is_look =  #{tenantIsLook}
+        </if>
+        <if test='towerIsLook != null'>
+            AND t1.tenant_is_look =  #{towerIsLook}
+        </if>
+        <if test="modelId != null">
+            AND t1.model_id =  #{modelId}
+        </if>
+        <if test="null != visibility and '' != visibility">
+            <if test='visibility == "1"'>
+                and t1.tenant_is_look = '0' and t1.tower_is_look = '1'
+            </if>
+            <if test='visibility == "2"'>
+                and t1.tenant_is_look = '1' and t1.tower_is_look = '0'
+            </if>
+            <if test='visibility == "3"'>
+                and t1.tenant_is_look = '1' and t1.tower_is_look = '1'
+            </if>
+        </if>
+        <if test="createTimeStart != null and createTimeStart != ''">
+            AND t1.create_time BETWEEN  DATE_FORMAT(#{createTimeStart},'%y-%m-%d 00:00:00') AND DATE_FORMAT(#{createTimeEnd},'%y-%m-%d 23:59:59')
+        </if>
+        <if test="updateTimeStart != null and updateTimeStart != ''">
+            AND t1.update_time BETWEEN  DATE_FORMAT(#{updateTimeStart},'%y-%m-%d 00:00:00') AND DATE_FORMAT(#{updateTimeEnd},'%y-%m-%d 23:59:59')
+        </if>
+        <if test="creator != null and creator != ''">
+            AND t1.creator like CONCAT('%',#{creator},'%')
+        </if>
+        <if test="updateBy != null and updateBy != ''">
+            AND t1.update_by like CONCAT('%',#{updateBy},'%')
+        </if>
+        <if test="null != industryCode and '' != industryCode"> and t1.industry_code like CONCAT('%',#{industryCode},'%')</if>
+        <if test="industryCodeList != null and industryCodeList.size() > 0 ">
+            AND
+            <foreach collection="industryCodeList" item="industryCode" index="index" open="(" close=")" separator="or">
+                FIND_IN_SET(#{industryCode},t1.industry_code)
+            </foreach>
+        </if>
+        <choose>
+            <when test="orderByColumn != null and orderByColumn != '' and isAsc != null and isAsc != '' ">
+                <choose>
+                    <when test='orderByColumn == "createTime"'>
+                        order by t1.create_time
+                        <if test='isAsc == "desc"'>
+                            desc
+                        </if>
+                    </when>
+                    <when test='orderByColumn == "updateTime"'>
+                        order by t1.update_time
+                        <if test='isAsc == "desc"'>
+                            desc
+                        </if>
+                    </when>
+                    <otherwise>
+                        order by t1.update_time desc,t1.create_time desc,t1.tutorial_id desc
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                order by t1.update_time desc,t1.create_time desc,t1.tutorial_id desc
+            </otherwise>
+        </choose>
+    </select>
+
+
+
+    <select id="getVideoTutorialInfo" resultType="com.chinatower.platform.project.system.domain.vo.SysVideoTutorialVO"
+            parameterType="com.chinatower.platform.project.system.domain.vo.SysVideoTutorialVO">
+        SELECT
+            t1.tutorial_id,
+            t1.video_url,
+            t1.tutorail_title,
+            t1.tenant_is_look,
+            t1.tower_is_look,
+            t1.model_id,
+            t1.file_name,
+            t1.industry_code,
+            t2.model_name
+        FROM
+            sys_tutorial_video t1
+            left join vm_model_config_t t2 on t1.model_id = t2.model_id and t2.delete_flag = 0
+        WHERE
+            t1.delete_flag = 0
+          AND t1.tutorial_id = #{tutorialId}
+    </select>
+
+
+
+
+    <update id="delete" parameterType="com.chinatower.platform.project.system.domain.vo.SysVideoTutorialVO">
+        update sys_tutorial_video set delete_flag = 1,update_by = #{updateBy},update_time = now()
+        where tutorial_id = #{tutorialId}
+    </update>
+
+
+
+
+
+
+</mapper>

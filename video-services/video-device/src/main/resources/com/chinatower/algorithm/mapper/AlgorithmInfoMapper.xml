@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.algorithm.mapper.AlgorithmInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.industry.dto.AlgorithmInfoDO">
+        <id column="algorithm_id" property="algorithmId" />
+        <result column="algorithm_code" property="algorithmCode" />
+        <result column="algorithm_name" property="algorithmName" />
+        <result column="algo_min_type_code" property="algoMinTypeCode" />
+        <result column="algo_min_type_name" property="algoMinTypeName" />
+        <result column="algo_type_code" property="algoTypeCode" />
+        <result column="algo_type_name" property="algoTypeName" />
+        <result column="algo_sub_type_code" property="algoSubTypeCode" />
+        <result column="algo_sub_type_name" property="algoSubTypeName" />
+        <result column="product_name" property="productName" />
+        <result column="product_code" property="productCode" />
+        <result column="chip_platform" property="chipPlatform" />
+        <result column="algorithm_description" property="algorithmDescription" />
+        <result column="app_scenarios" property="appScenarios" />
+        <result column="document_url" property="documentUrl" />
+        <result column="logo_url" property="logoUrl" />
+        <result column="version" property="version" />
+        <result column="publish_time" property="publishTime" />
+        <result column="algorithm_shape" property="algorithmShape" />
+        <result column="status" property="status" />
+        <result column="function_code" property="functionCode" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        algorithm_id, algorithm_code, algorithm_name, algo_min_type_code, algo_min_type_name, algo_type_code, algo_type_name, algo_sub_type_code, algo_sub_type_name, product_name, product_code, chip_platform, algorithm_description, app_scenarios, document_url, logo_url, version, publish_time, algorithm_shape, status, function_code, create_time, update_time, delete_flag
+    </sql>
+
+    <select id="getAlgorithmInfo" resultType="com.chinatower.industry.dto.AlgorithmInfoDO"
+            parameterType="com.chinatower.industry.dto.AlgorithmInfoDO">
+        SELECT algorithm_id, algorithm_code, algorithm_name,algorithm_description,confidence,model_config
+        FROM vm_algorithm_info_t
+        WHERE delete_flag = '0' AND algorithm_code = #{algorithmCode}
+    </select>
+    <select id="queryByTenantId" resultType="com.chinatower.industry.dto.IndustryAlgorithmDTO">
+        SELECT
+        DISTINCT(t1.algorithm_code) algorithmCode,
+        t2.algorithm_name algorithmName,
+        t4.type_value alarmType,
+        t4.type_name typeName
+        FROM
+        vm_order_algorithms t1
+        LEFT JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+        LEFT JOIN vm_algorithm_alarm t3 ON t2.algo_min_type_code = t3.algo_min_type
+        LEFT JOIN sys_alarm_type t4 ON t3.alarm_type = t4.type_value
+        WHERE
+        t1.delete_flag = 0
+        AND t2.delete_flag = 0
+        AND t3.delete_flag = '0'
+        AND t4.delete_flag = 0
+        AND t1.ord_status IN (0,1,2)
+        <if test="appScenarios != null and appScenarios != ''">
+            AND t2.app_scenarios = #{appScenarios}
+        </if>
+        ${dataScope}
+    </select>
+    <select id="queryByTenantIdAndDevice" resultType="com.chinatower.industry.dto.IndustryAlgorithmDTO">
+        SELECT
+        DISTINCT
+        t5.algorithm_code algorithmCode,
+        t2.algorithm_name algorithmName,
+        t4.type_value alarmType,
+        t4.type_name typeName
+        FROM
+        vm_order_devices t1
+        LEFT JOIN vm_order_algorithms t5 ON t5.order_code = t1.order_code AND t5.package_code = t1.package_code
+        LEFT JOIN vm_algorithm_info_t t2 ON t5.algorithm_code = t2.algorithm_code
+        LEFT JOIN vm_algorithm_alarm t3 ON t2.algo_min_type_code = t3.algo_min_type
+        LEFT JOIN sys_alarm_type t4 ON t3.alarm_type = t4.type_value
+        WHERE
+        t1.delete_flag = 0
+        AND t2.delete_flag = 0
+        AND t3.delete_flag = '0'
+        AND t4.delete_flag = 0
+        AND t5.delete_flag = 0
+        AND t1.ord_status IN (0,1,2)
+        AND t2.app_scenarios = '1'
+        <if test="deviceCode != null and deviceCode != ''">
+            AND t1.device_code = #{deviceCode}
+        </if>
+        <if test="deviceCodeList != null and deviceCodeList != '' and deviceCodeList.size() > 0">
+            and t1.device_code IN
+            <foreach collection="deviceCodeList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+    </select>
+    <select id="queryConfigByTenantId" resultType="com.chinatower.industry.dto.IndustryAlgorithmDTO">
+        SELECT
+        DISTINCT
+        t5.algorithm_code algorithmCode,
+        t5.algorithm_name algorithmName,
+        t4.type_value alarmType,
+        t4.type_name typeName,
+        t1.device_code,
+        '0' AS algorithmType,
+        t5.status
+        FROM
+        vm_algorithm_config t5
+        LEFT JOIN vm_order_devices t1 ON t1.device_code = t5.device_code AND t1.delete_flag = 0 AND t5.delete_flag = 0
+        LEFT JOIN vm_algorithm_info_t t2 ON t5.algorithm_code = t2.algorithm_code AND t2.delete_flag = '0'
+        LEFT JOIN vm_algorithm_alarm t3 ON t2.algo_min_type_code = t3.algo_min_type AND t3.delete_flag = '0'
+        LEFT JOIN sys_alarm_type t4 ON t3.alarm_type = t4.type_value AND t4.delete_flag = 0
+        WHERE
+        t1.ord_status IN (0,1,2)
+        AND t2.app_scenarios = '1'
+        <if test="deviceCodeList != null and deviceCodeList != '' and deviceCodeList.size() > 0">
+            and t1.device_code IN
+            <foreach collection="deviceCodeList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+    </select>
+    <select id="queryGivenByTenantId" resultType="com.chinatower.industry.dto.IndustryAlgorithmDTO">
+        SELECT DISTINCT
+        t5.algorithm_code algorithmCode,
+        t5.algorithm_name algorithmName,
+        t5.alarm_type alarmType,
+        t5.alarm_type_name typeName,
+        t1.device_code,
+        '1' AS algorithmType,
+        t5.STATUS
+        FROM
+        vm_algorithm_give_config t5
+        LEFT JOIN vm_order_devices t1 ON t1.device_code = t5.device_code
+        AND t1.delete_flag = 0
+        AND t5.delete_flag = 0
+        WHERE
+        t1.ord_status IN (0,1,2)
+        <if test="deviceCodeList != null and deviceCodeList != '' and deviceCodeList.size() > 0">
+            and t1.device_code IN
+            <foreach collection="deviceCodeList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+    </select>
+    <select id="queryByTenantIdWithExtendJson" resultType="com.chinatower.industry.dto.IndustryAlgorithmDTO">
+        SELECT
+        DISTINCT(t1.algorithm_code) algorithmCode,
+        t2.algorithm_name algorithmName,
+        t4.type_value alarmType,
+        t4.type_name typeName,
+        t2.extend_json extendJson
+        FROM
+        vm_order_algorithms t1
+        LEFT JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+        LEFT JOIN vm_algorithm_alarm t3 ON t2.algo_min_type_code = t3.algo_min_type
+        LEFT JOIN sys_alarm_type t4 ON t3.alarm_type = t4.type_value
+        WHERE
+        t1.delete_flag = 0
+        AND t2.delete_flag = 0
+        AND t3.delete_flag = '0'
+        AND t4.delete_flag = 0
+        AND t1.ord_status IN (0,1,2)
+        <if test="appScenarios != null and appScenarios != ''">
+            AND t2.app_scenarios = #{appScenarios}
+        </if>
+        ${dataScope}
+    </select>
+    <select id="getAlgAndSceList" resultType="com.chinatower.platform.entity.device.AlgorithmAreaVO">
+        SELECT
+            config_id,
+            algorithm_code,
+            algorithm_name,
+            preset_id
+            ,scene_code
+        FROM
+            vm_algorithm_config t1
+        WHERE
+            t1.delete_flag = 0
+          AND t1.device_code = #{deviceCode}
+          AND t1.channel_code = #{channelCode}
+          AND t1.pos_type = #{posType}
+            ${dataScope}
+    </select>
+
+    <select id="getSceneInfoListByTenant" resultType="com.chinatower.platform.entity.device.AlgAndSceSceVO">
+        SELECT
+        scene_id,
+        scene_name,
+        tenant_id,
+        industry_code,
+        type_value
+        FROM
+        sys_scene_config
+        WHERE
+        delete_flag = 0
+        <if test="list != null and list != '' and list.size() > 0">
+            AND (tenant_id, industry_code, type_value) IN
+            <foreach collection="list" item="item" open=" (" close=")" separator=",">
+                (#{item.tenantId}, #{item.industryCode}, #{item.typeValue})
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getSceneInfoList" resultType="com.chinatower.platform.entity.device.AlgAndSceSceVO">
+        SELECT
+        scene_id,
+        scene_name
+        FROM
+        sys_scene_config
+        WHERE
+        delete_flag = 0
+        <if test="sceneList != null and sceneList != '' and sceneList.size() > 0">
+            AND scene_id IN
+            <foreach collection="sceneList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="getHisConfigList" resultType="com.chinatower.device.dataobject.AlgorithmConfigDO">
+        SELECT
+            config_id,
+            algorithm_code,
+            model_config,
+            points,
+            oil_gas_pipelines,
+            trip_thread,
+            text_labels,
+            tenant_id,
+            industry_code,
+            time_interval,
+            time_interval_unit,
+            analysis_period
+        FROM
+            vm_algorithm_config
+        WHERE
+            delete_flag = '0'
+          AND algorithm_code IN ( SELECT DISTINCT algorithm_code FROM vm_algorithm_info_t WHERE delete_flag = '0' AND algorithm_model_type = '2' )
+          AND scene_code IS NULL
+        <if test="configIdList != null and configIdList != '' and configIdList.size() > 0">
+            and config_id IN
+            <foreach collection="configIdList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <update id="updateAlgorithmHisBatch">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            UPDATE vm_algorithm_config
+            SET algorithm_status = '3',
+            update_time = NOW(),
+            model_config = #{item.modelConfig},
+            points = #{item.points},
+            oil_gas_pipelines = #{item.oilGasPipelines},
+            trip_thread = #{item.tripThread},
+            text_labels = #{item.textLabels},
+            scene_code = #{item.sceneCode}
+            WHERE config_id = #{item.configId}
+        </foreach>
+    </update>
+
+    <select id="getAreaNameByCode" resultType="java.lang.String">
+        SELECT
+            area_name
+        FROM
+            sys_area
+        WHERE
+            DEL_FLAG = '0'
+          AND STATUS = '0'
+          AND area_code = #{areaCode}
+            LIMIT 1
+    </select>
+</mapper>

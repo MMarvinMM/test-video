@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderAlgorithmsMapper">
+
+    <select id="getAlgorithmAreaByOrder"
+            resultType="com.chinatower.order.vo.AlgorithmOneVO"
+            parameterType="com.chinatower.order.vo.AlgorithmByOrderVO">
+        SELECT
+        ch.channel_code as channelCode,
+        ch.channel_name as channelName,
+        de.device_code as deviceCode,
+        de.device_name as deviceName,
+        ac.config_id AS configId,
+        ac.preset_id as presetId,
+        ac.preset_name as presetName,
+        ac.algorithm_code AS algorithmCode,
+        ac.algorithm_name AS algorithmName,
+        ac.points,
+        ac.img,
+        ac.task_id AS taskId,
+        ac.status,
+        ac.pos_type AS posType,
+        ac.industry_code AS industryCode,
+        ac.industry_code_his AS industryCodeHis,
+        ac.app_ver_code AS appVerCode,
+        ac.app_ver_code_his AS appVerCodeHis
+        FROM
+        vm_algorithm_config ac
+        LEFT JOIN vm_device_info_t de on de.device_code = ac.device_code
+        LEFT JOIN vm_channel_info_t ch on ch.channel_code = ac.channel_code
+        WHERE
+        ac.tenant_id = #{customerCode}
+        and ac.order_code = #{orderCode}
+        <if test="deviceCodeList!= null and deviceCodeList.size() > 0 ">
+            AND ac.device_code in
+            <foreach collection="deviceCodeList" item="item" index="index" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="algorithmCodeList!= null and algorithmCodeList.size() > 0 ">
+            AND(
+            <trim suffixOverrides="or">
+                <foreach collection="algorithmCodeList" item="item" index="index" open="" close="" separator="or">
+                    (ac.algorithm_code = #{item.algorithmCode} and ac.device_code = #{item.deviceCode})
+                </foreach>
+            </trim>
+            )
+        </if>
+        <if test="deleteFlag != null">
+            AND ac.delete_flag = #{deleteFlag}
+        </if>
+        <if test="status != null">
+            AND ac.status = #{status}
+        </if>
+        <if test="industryCode != null and industryCode!= '' ">
+            AND ac.industry_code = #{industryCode}
+        </if>
+        <if test="industryCodeList != null and industryCodeList.size() > 0 ">
+            AND ac.industry_code in
+            <foreach collection="industryCodeList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="appVerCode != null and appVerCode!= '' ">
+            AND ac.app_ver_code = #{appVerCode}
+        </if>
+    </select>
+
+    <update id="updateAlgorithmStatus">
+        update vm_algorithm_config
+        set algorithm_status = #{onstatus}, status =#{status}, modifier = 'system', update_time = now()
+        <if test='status.toString() == "1".toString() '>
+            , delete_flag = 1
+        </if>
+        <if test='status.toString() == "0".toString() '>
+            , delete_flag = 0
+        </if>
+        where config_id in
+        <foreach collection="configIdList" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        <if test='status.toString() == "1".toString() '>
+            and delete_flag = 0
+        </if>
+        <if test='status.toString() == "0".toString() '>
+            and delete_flag = 1 and modifier = 'system'
+        </if>
+    </update>
+
+    <update id="updateAlgorithmStatus2Enable">
+        update vm_algorithm_config
+        set algorithm_status = #{onstatus}, status =#{status}, modifier = 'system', update_time = now(), delete_flag = 0
+        where config_id in
+        <foreach collection="configIdList" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        and delete_flag = 1 and modifier = 'system'
+    </update>
+
+    <update id="updateAlgorithmStatus2Disable">
+        update vm_algorithm_config
+        set algorithm_status = #{onstatus}, status =#{status}, modifier = 'system', update_time = now(), delete_flag = 1
+        where config_id in
+        <foreach collection="configIdList" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        and delete_flag = 0
+    </update>
+
+    <select id="getPresetIdAndNameByTaskId" resultType="java.util.Map">
+        SELECT c.preset_id presetId, c.preset_name presetName, c.task_id taskId
+        FROM vm_algorithm_config c
+        where c.delete_flag = '0' and c.task_id in
+        <foreach collection="taskIdList" item="taskId" open="(" close=")" separator=",">
+            #{taskId}
+        </foreach>
+    </select>
+    <select id="getCustomerAlgorithm" resultType="com.chinatower.platform.entity.order.OrderAlgorithmsVO">
+        select distinct a.algorithm_code,a.algorithm_name,b.algorithm_shape
+        from vm_order_algorithms a
+        inner join vm_algorithm_info_t b on b.algorithm_code = a.algorithm_code and b.delete_flag = '0'
+        left join vm_order_devices e on e.order_code = a.order_code and e.tenant_id = a.tenant_id and
+        a.package_code = e.package_code and e.delete_flag = '0'
+        left join vm_order_customer voc on a.order_code = voc.order_code and voc.delete_flag = '0'
+        where a.delete_flag = '0'
+        and voc.ord_status in (0,1,2)
+        <if test='tenantId!= null and tenantId != "" '>
+            and a.tenant_id =#{tenantId}
+        </if>
+        <if test='deviceCode!= null and deviceCode != "" '>
+            and e.device_code =#{deviceCode}
+        </if>
+        <if test='industryCode != null and industryCode != "" '>
+            and a.industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <update id="cancelByOrderCode">
+        update vm_order_algorithms
+        set ord_status = 3, update_time = now()
+        where order_code = #{orderCode} and ord_status in (0,1,2);
+    </update>
+
+    <select id="queryTenantAlgorithmList" resultType="com.chinatower.system.api.model.AlgoTreeVO">
+        SELECT
+            inf.algo_type_code AS algoTypeCode,
+            inf.algo_type_name AS algoTypeName,
+            inf.algorithm_code,
+            inf.algorithm_name,
+            oa.industry_code,
+            oa.app_ver_code as appVersion
+        FROM
+            vm_order_algorithms oa
+                JOIN vm_algorithm_info_t inf ON oa.algorithm_code = inf.algorithm_code
+                JOIN vm_function_type fun ON inf.algo_min_type_code = fun.function_code
+        WHERE
+            oa.delete_flag = 0
+          AND oa.ord_status IN ( 0, 1, 2 )
+          AND inf.delete_flag = 0
+          AND fun.delete_flag = 0
+          and inf.algo_type_code is not null
+          and inf.algorithm_code is not null
+          and oa.order_code = #{orderCode}
+        ORDER BY
+            inf.algo_sub_type_code,
+            inf.algorithm_code
+    </select>
+</mapper>

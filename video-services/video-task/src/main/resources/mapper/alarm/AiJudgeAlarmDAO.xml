@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.AiJudgeAlarmDAO">
+
+    <select id="selectPendingList" resultType="com.chinatower.platform.modules.alarm.entity.AiJudgePendingVO">
+        SELECT
+            CONCAT(warning_order_id, '') AS warningOrderId,
+            alarm_body AS alarmBody,
+            msg_type AS msgType,
+            importance_level AS importanceLevel,
+            IF(alarm_time IS NULL, '', DATE_FORMAT(alarm_time, '%Y-%m-%d %H:%i:%s')) AS alarmTime,
+            latitude,
+            longitude,
+            ptz_z AS zoom,
+            ptz_p AS pan,
+            ptz_t AS tilt,
+            comp_confidence_level AS compConfidenceLevel,
+            device_code AS deviceCode,
+            device_name AS deviceName,
+            channel_code AS channelCode,
+            channel_name AS channelName,
+            alarm_code AS alarmCode,
+            algorithm_code AS algorithmCode,
+            warning_type_id AS warningTypeId,
+            warning_source AS warningSource,
+            task_id AS taskId,
+            video_url AS videoUrl,
+            file_img_url_src AS fileImgUrlSrc,
+            file_img_url_icon AS fileImgUrlIcon,
+            industry_code AS industryCode,
+            scene_template AS sceneTemplate,
+            tenant_id AS tenantId,
+            tenant_name AS tenantName,
+            address,
+            province_code AS provinceCode,
+            city_code AS cityCode,
+            county_code AS countyCode
+        FROM ${tableName}
+        WHERE delete_flag = '0'
+          AND ai_judge_status = 0
+        ORDER BY alarm_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <update id="updateStatusToProcessing">
+        UPDATE ${tableName}
+        SET ai_judge_status = #{toStatus},
+            modifier_date = NOW()
+        WHERE warning_order_id = #{warningOrderId}
+          AND ai_judge_status = #{fromStatus}
+    </update>
+
+    <update id="updateAiJudgeStatus">
+        UPDATE ${tableName}
+        SET ai_judge_status = #{aiJudgeStatus},
+            modifier_date = NOW()
+        WHERE warning_order_id = #{warningOrderId}
+    </update>
+
+    <update id="resetStuckProcessing">
+        UPDATE ${tableName}
+        SET ai_judge_status = #{pendingStatus},
+            modifier_date = NOW()
+        WHERE delete_flag = '0'
+          AND ai_judge_status = #{processingStatus}
+          AND modifier_date &lt; DATE_SUB(NOW(), INTERVAL #{timeoutMinutes} MINUTE)
+    </update>
+
+    <!-- 调 Dify 前落库气象等扩展字段 -->
+    <update id="updateAgentExtendField">
+        UPDATE ${tableName}
+        SET agent_extend_field = #{agentExtendField},
+            modifier_date = NOW()
+        WHERE warning_order_id = #{warningOrderId}
+    </update>
+
+</mapper>

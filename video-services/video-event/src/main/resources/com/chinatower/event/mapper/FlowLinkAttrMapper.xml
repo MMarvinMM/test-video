@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.FlowLinkAttrMapper">
+
+	<resultMap type="com.chinatower.event.entity.dto.FlowLinkAttrModel" id="FlowLinkAttrResult">
+		<id property="flowLinkId" column="flow_link_id"/>
+		<result property="flowId" column="flow_id"/>
+		<result property="curLink" column="cur_link"/>
+		<result property="linkType" column="link_type"/>
+		<result property="preLink" column="pre_link"/>
+		<result property="nextLink" column="next_link"/>
+		<result property="userType" column="user_type"/>
+		<result property="roleId" column="role_id"/>
+		<result property="orgId" column="org_id"/>
+		<result property="alarmFlowId" column="alarm_flow_id"/>
+		<result property="msgNotifyType" column="msg_notify_type"/>
+		<result property="leaderFlag" column="leader_flag"/>
+		<result property="signFlag" column="sign_flag"/>
+		<result property="rollbackFlag" column="rollback_flag"/>
+		<result property="timeLimit" column="time_limit"/>
+		<result property="attrFlag" column="attr_flag"/>
+		<result property="linkName" column="link_name"/>
+		<result property="notifyAdminFlag" column="notify_admin_flag"/>
+		<result property="msgNotifyLimit" column="msg_notify_limit"/>
+		<result property="msgNotifyCompany" column="msg_notify_company"/>
+	</resultMap>
+
+	<resultMap id="deptUsers" type="com.chinatower.event.entity.dto.SysInfo">
+		<result column="parentId" property="parentId"/>
+		<result column="deptId" property="deptId"/>
+		<result column="deptName" property="deptName"/>
+		<result column="deptId" property="nodeId"/>
+		<result column="deptName" property="nodeName"/>
+		<collection property="children" ofType="com.chinatower.event.entity.dto.SysInfo">
+			<result column="u_userId" property="userId"/>
+			<result column="u_userName" property="userName"/>
+			<result column="u_deptId" property="deptId"/>
+			<result column="u_userId" property="nodeId"/>
+			<result column="u_userName" property="nodeName"/>
+		</collection>
+	</resultMap>
+
+	<insert id="addFlowLinkAttr" parameterType="com.chinatower.event.entity.dto.FlowLinkAttrModel" keyColumn="flow_link_id" keyProperty="flowLinkId" useGeneratedKeys="true">
+		insert into vm_flow_link_attr(flow_id, cur_link, link_type, pre_link, next_link, user_type, role_id, org_id, msg_notify_type, leader_flag, sign_flag, rollback_flag, time_limit, attr_flag, alarm_flow_id, notify_admin_flag, msg_notify_limit, msg_notify_company)
+        values (#{flowId}, #{curLink}, #{linkType}, #{preLink}, #{nextLink}, #{userType}, #{roleId}, #{orgId}, #{msgNotifyType}, #{leaderFlag}, #{signFlag}, #{rollbackFlag}, #{timeLimit}, #{attrFlag}, #{alarmFlowId}, #{notifyAdminFlag}, #{msgNotifyLimit}, #{msgNotifyCompany})
+	</insert>
+
+	<insert id="batchAddFlowLinkAttr" parameterType="java.util.List">
+		insert into vm_flow_link_attr(flow_id, cur_link, link_type, pre_link, next_link, user_type, role_id, org_id, msg_notify_type, leader_flag, sign_flag, rollback_flag, time_limit, attr_flag, alarm_flow_id, notify_admin_flag, msg_notify_limit, msg_notify_company) values
+		<foreach collection ="list" item="flowLinkAttr" index="index" separator =",">
+			(#{flowLinkAttr.flowId}, #{flowLinkAttr.curLink}, #{flowLinkAttr.linkType}, #{flowLinkAttr.preLink}, #{flowLinkAttr.nextLink}, #{flowLinkAttr.userType}, #{flowLinkAttr.roleId}, #{flowLinkAttr.orgId}, #{flowLinkAttr.msgNotifyType}, #{flowLinkAttr.leaderFlag}, #{flowLinkAttr.signFlag}, #{flowLinkAttr.rollbackFlag}, #{flowLinkAttr.timeLimit}, #{flowLinkAttr.attrFlag}, #{flowLinkAttr.alarmFlowId}, #{flowLinkAttr.notifyAdminFlag}, #{flowLinkAttr.msgNotifyLimit}, #{flowLinkAttr.msgNotifyCompany})
+		</foreach>
+	</insert>
+
+	<select id="queryFlowLinkAttr" parameterType="com.chinatower.event.entity.dto.FlowLinkAttrModel" resultMap="FlowLinkAttrResult">
+		select
+		       flow_link_id,
+		       flow_id,
+		       cur_link,
+		       link_type,
+		       pre_link,
+		       next_link,
+		       user_type,
+		       role_id,
+		       org_id,
+		       msg_notify_type,
+		       leader_flag,
+		       sign_flag,
+		       rollback_flag,
+		       time_limit,
+		       attr_flag,
+		       alarm_flow_id,
+		       notify_admin_flag,
+		       msg_notify_limit,
+		       msg_notify_company
+		from vm_flow_link_attr
+		<where>
+			<if test="flowLinkId != null and flowLinkId != ''">
+				AND flow_link_id = #{flowLinkId}
+			</if>
+			<if test="flowId != null and flowId != ''">
+				AND flow_id = #{flowId}
+			</if>
+			<if test="curLink != null and curLink != ''">
+				AND cur_link = #{curLink}
+			</if>
+			<if test="attrFlag != null and attrFlag != ''">
+				AND attr_flag = #{attrFlag}
+			</if>
+			<if test="alarmFlowId != null and alarmFlowId != ''">
+				AND alarm_flow_id = #{alarmFlowId}
+			</if>
+		</where>
+	</select>
+
+	<select id="queryNextFlowLinkAttr" parameterType="com.chinatower.event.entity.dto.FlowLinkAttrModel" resultMap="FlowLinkAttrResult">
+		select
+		flow_link_id,
+		flow_id,
+		cur_link,
+		link_type,
+		pre_link,
+		next_link,
+		user_type,
+		role_id,
+		org_id,
+		msg_notify_type,
+		leader_flag,
+		sign_flag,
+		rollback_flag,
+		time_limit,
+		attr_flag,
+		alarm_flow_id,
+		notify_admin_flag,
+		msg_notify_limit,
+		msg_notify_company
+		from vm_flow_link_attr
+		<where>
+			<if test="flowId != null and flowId != ''">
+				AND flow_id = #{flowId}
+			</if>
+			<if test="curLink != null and curLink != ''">
+				AND cur_link = #{curLink}
+			</if>
+			<if test="attrFlag != null and attrFlag != ''">
+				AND attr_flag = #{attrFlag}
+			</if>
+			<if test="alarmFlowId != null and alarmFlowId != ''">
+				AND alarm_flow_id = #{alarmFlowId}
+			</if>
+		</where>
+	</select>
+
+	<select id="queryFlowLinkAttr4Temp" parameterType="com.chinatower.event.entity.dto.FlowLinkAttrModel" resultMap="FlowLinkAttrResult">
+		select flow_link_id, flow_id, cur_link, link_type, pre_link, next_link, user_type, role_id, org_id, msg_notify_type, leader_flag, sign_flag, rollback_flag, time_limit, attr_flag, alarm_flow_id, notify_admin_flag, msg_notify_limit, msg_notify_company
+		from vm_flow_link_attr
+		<where>
+			<if test="flowLinkId != null and flowLinkId != ''">
+				AND flow_link_id = #{flowLinkId}
+			</if>
+			<if test="flowId != null and flowId != ''">
+				AND flow_id = #{flowId}
+			</if>
+			<if test="curLink != null and curLink != ''">
+				AND cur_link = #{curLink}
+			</if>
+			<if test="attrFlag != null and attrFlag != ''">
+				AND attr_flag = #{attrFlag}
+			</if>
+			<if test="alarmFlowId != null and alarmFlowId != ''">
+				AND alarm_flow_id = #{alarmFlowId}
+			</if>
+		</where>
+	</select>
+
+	<select id="queryByFlowIds" parameterType="java.util.List" resultMap="FlowLinkAttrResult">
+		select flow_link_id, flow_id, cur_link, link_type, pre_link, next_link, user_type, role_id, org_id, msg_notify_type, leader_flag, sign_flag, rollback_flag, time_limit, attr_flag, alarm_flow_id, notify_admin_flag, msg_notify_limit, msg_notify_company
+		from vm_flow_link_attr where flow_id in
+		<foreach collection="list" item="flowId" index="index" open="(" close=")" separator=",">
+			#{flowId}
+		</foreach>
+	</select>
+
+	<select id="queryByCurLinks" resultMap="FlowLinkAttrResult">
+		select fla.flow_link_id, fla.alarm_flow_id flow_id, fla.cur_link, fla.link_type, fla.pre_link, fla.next_link, fla.user_type, fla.role_id, fla.org_id, fla.msg_notify_type, fla.leader_flag, fla.sign_flag, fla.rollback_flag, fla.time_limit, fla.attr_flag, fla.alarm_flow_id, fla.notify_admin_flag, flc.link_name, fla.msg_notify_limit, fla.msg_notify_company
+		from vm_flow_link_attr as fla left join vm_flow_link_config as flc on fla.cur_link = flc.link_id
+		where fla.alarm_flow_id = #{alarmFlowId} and fla.cur_link in
+		<foreach collection="list" item="curLink" index="index" open="(" close=")" separator=",">
+			#{curLink}
+		</foreach>
+		and attr_flag = '1'
+	</select>
+
+	<update id="modifyFlowLinkAttr" parameterType="com.chinatower.event.entity.dto.FlowLinkAttrModel">
+		update vm_flow_link_attr
+		<set>
+			<if test='flowId != null and flowId != ""'>
+				flow_id = #{flowId},
+			</if>
+			<if test='curLink != null and curLink != ""'>
+				cur_link = #{curLink},
+			</if>
+			<if test='linkType != null and linkType != ""'>
+				link_type = #{linkType},
+			</if>
+			<if test='preLink != null and preLink != ""'>
+				pre_link = #{preLink},
+			</if>
+			<if test='nextLink != null and nextLink != ""'>
+				next_link = #{nextLink},
+			</if>
+			<if test='userType != null and userType != ""'>
+				user_type = #{userType},
+			</if>
+			<if test='roleId != null and roleId != ""'>
+				role_id = #{roleId},
+			</if>
+			<if test='orgId != null and orgId != ""'>
+				org_id = #{orgId},
+			</if>
+			<if test='msgNotifyType != null and msgNotifyType != ""'>
+				msg_notify_type = #{msgNotifyType},
+			</if>
+			<if test='leaderFlag != null and leaderFlag != ""'>
+				leader_flag = #{leaderFlag},
+			</if>
+			<if test='signFlag != null and signFlag != ""'>
+				sign_flag = #{signFlag},
+			</if>
+			<if test='rollbackFlag != null and rollbackFlag != ""'>
+				rollback_flag = #{rollbackFlag},
+			</if>
+			<if test='timeLimit != null and timeLimit != ""'>
+				time_limit = #{timeLimit},
+			</if>
+			<if test='attrFlag != null and attrFlag != ""'>
+				attr_flag = #{attrFlag},
+			</if>
+			<if test='notifyAdminFlag != null and notifyAdminFlag != ""'>
+				notify_admin_flag = #{notifyAdminFlag},
+			</if>
+			<if test='msgNotifyLimit != null and msgNotifyLimit != ""'>
+				msg_notify_limit = #{msgNotifyLimit},
+			</if>
+			<if test='msgNotifyCompany != null and msgNotifyCompany != ""'>
+				msg_notify_company = #{msgNotifyCompany},
+			</if>
+		</set>
+		where flow_link_id = #{flowLinkId}
+	</update>
+
+	<delete id="deleteByFlowId" parameterType="java.lang.Long">
+ 		delete from vm_flow_link_attr where flow_id = #{flowId}
+ 	</delete>
+	<delete id="deleteByAlarmFlowId" parameterType="java.lang.Long">
+ 		delete from vm_flow_link_attr where alarm_flow_id = #{alarmFlowId}
+ 	</delete>
+	<select id="checkLinkUse" parameterType="java.lang.Long" resultType="java.util.Map">
+		select em.flow_json,em.flow_name from vm_flow_template em
+		where em.flow_json like CONCAT('%',#{linkId},'%')
+		and em.flow_json like CONCAT('%',(select link_name from vm_flow_link_config where link_id = #{linkId}),'%')
+		and em.status = '1'
+		and em.delete_flag = 0
+	</select>
+
+	<select id="queryDepts" resultType="com.chinatower.event.entity.dto.SysInfo">
+		SELECT
+			dept_id AS deptId,
+			dept_name AS deptName,
+			parent_id AS parentId,
+			dept_id AS nodeId,
+			dept_name AS nodeName
+		FROM
+			sys_dept
+		WHERE
+		dept_id IN
+		<foreach collection="deptList" item="deptId" index="index" open="(" close=")" separator=",">
+			#{deptId}
+		</foreach>
+		<if test="tenantId != null and tenantId != ''">
+			and tenant_id = #{tenantId}
+		</if>
+	</select>
+
+	<select id="queryDeptsNew" resultType="com.chinatower.event.entity.dto.SysInfo">
+		SELECT
+			dept_id AS deptId,
+			dept_name AS deptName,
+			parent_id AS parentId,
+			dept_id AS nodeId,
+			dept_name AS nodeName
+		FROM
+			sys_dept
+		WHERE STATUS='0' and DEL_FLAG='0' and
+		dept_id IN
+		<foreach collection="deptList" item="deptId" index="index" open="(" close=")" separator=",">
+			#{deptId}
+		</foreach>
+		${param.dataScope}
+	</select>
+
+	<select id="queryOrderInfoDepts" parameterType="com.chinatower.event.entity.dto.usertree.OrderInfoUserTreeReq" resultType="com.chinatower.event.entity.dto.SysInfo">
+		SELECT
+		dept_id AS deptId,
+		dept_name AS deptName,
+		parent_id AS parentId,
+		dept_id AS nodeId,
+		dept_name AS nodeName
+		FROM
+		sys_dept
+		WHERE STATUS='0' and DEL_FLAG='0' and
+		dept_id IN
+		<foreach collection="deptList" item="deptId" index="index" open="(" close=")" separator=",">
+			#{deptId}
+		</foreach>
+		<if test="param.tenantId != null and param.tenantId != ''">
+			and tenant_id = #{param.tenantId}
+		</if>
+		<if test="param.industryCode != null and param.industryCode != ''">
+			and industry_code = #{param.industryCode}
+		</if>
+	</select>
+
+	<select id="queryRoles" resultType="com.chinatower.event.entity.dto.SysInfo">
+		select distinct sr.role_id as roleId, sr.role_name as roleName
+		from sys_role as sr
+		left join sys_user_role sur on sr.ROLE_ID = sur.role_id
+		left join sys_user su on sur.USER_ID = su.USER_ID
+		where su.DEPT_ID in
+		<foreach collection="deptList" item="deptId" index="index" open="(" close=")" separator=",">
+			#{deptId}
+		</foreach>
+		or sr.role_type = '1'
+	</select>
+
+	<select id="queryUserByDeptIds" parameterType="java.util.List" resultType="com.chinatower.event.entity.dto.SysInfo">
+		SELECT
+			su.user_id AS userId,
+			su.user_name AS userName,
+			su.dept_id AS deptId,
+			su.user_id AS nodeId,
+			su.user_name AS nodeName
+		FROM
+			sys_user AS su
+		WHERE
+			su.del_flag = '0'
+			and su.dept_id IN
+		<foreach collection="deptList" item="deptId" index="index" open="(" close=")" separator=",">
+			#{deptId}
+		</foreach>
+	</select>
+	<select id="queryOrderFlowLink" resultType="com.chinatower.event.entity.dto.FlowLinkAttrModel">
+		SELECT
+			ftl.cur_link,
+			flc.link_name,
+			ftl.pre_link,
+			ftl.next_link
+		FROM vm_flow_template_link as ftl
+			INNER JOIN vm_flow_link_attr as fla on fla.link_id = ftl.cur_link and fla.template_id = ftl.template_id
+			LEFT JOIN ${warnTableName} wo on fla.alarm_flow_id = wo.flow_id
+			LEFT JOIN vm_flow_link_config flc on ftl.cur_link = flc.link_id
+		WHERE
+			wo.warning_order_id = #{orderId}
+	</select>
+	<select id="queryOrderIndustryFlowLink" resultType="com.chinatower.event.entity.dto.FlowLinkAttrModel">
+		SELECT
+			ftl.cur_link,
+			flc.link_name,
+			ftl.pre_link,
+			ftl.next_link
+		FROM vm_flow_template_link as ftl
+			INNER JOIN ${warnTableName} wo on ftl.template_id = wo.flow_template
+			LEFT JOIN vm_flow_link_config flc on ftl.cur_link = flc.link_id
+		WHERE
+			wo.warning_order_id = #{orderId}
+	</select>
+
+	<select id="queryUserByRoleId" parameterType="java.util.List" resultType="com.chinatower.event.entity.dto.SysInfo">
+		select distinct
+		       su.user_id as userId,
+		       su.NICK_NAME as userName,
+		       su.dept_id as deptId,
+		       su.user_id as nodeId,
+		       su.user_name as nodeName,
+		                su.user_name as nickName,
+		                su.AVATAR as avatar
+		from sys_user as su
+		<if test='model.userType == "2"'>
+			left join sys_user_role as sur on su.user_id = sur.user_id
+		</if>
+		where su.DEL_FLAG='0' and su.STATUS='0' and
+		<foreach collection="deptList" item="deptId" index="index" open="(" close=")" separator="or">
+			FIND_IN_SET( #{deptId} ,su.dept_id)
+		</foreach>
+		<if test="model.tenantId != null and model.tenantId != ''">
+			and su.tenant_id = #{model.tenantId}
+		</if>
+		<choose>
+			<when test='model.userType == "1"'>
+				<if test="userList != null and userList.size() > 0 ">
+					and su.user_id IN
+					<foreach collection="userList" item="userId" index="index" open="(" close=")" separator=",">
+						#{userId}
+					</foreach>
+				</if>
+			</when>
+			<when test='model.userType == "2"'>
+				<if test="roleList != null and roleList.size() > 0 ">
+					and sur.role_id IN
+					<foreach collection="roleList" item="roleId" index="index" open="(" close=")" separator=",">
+						#{roleId}
+					</foreach>
+				</if>
+			</when>
+		</choose>
+		group by su.user_id
+	</select>
+
+
+	<!--<select id="queryUserByRoleIdNew1" parameterType="java.util.List" resultType="com.chinatower.event.entity.dto.SysInfo">
+		<if test="userList != null and userList.size() > 0 ">
+			select distinct
+			su.user_id as userId,
+			su.NICK_NAME as userName,
+			su.dept_id as deptId,
+			su.user_id as nodeId,
+			su.user_name as nodeName,
+			su.user_name as nickName,
+			su.AVATAR as avatar,
+			'0' as purviewFlag
+			from sys_user as su
+			where su.DEL_FLAG='0' and su.STATUS='0' and
+			<foreach collection="deptList" item="deptId" index="index" open="(" close=")" separator="or">
+				FIND_IN_SET( #{deptId} ,su.dept_id)
+			</foreach>
+			<if test="model.tenantId != null and model.tenantId != ''">
+				and su.tenant_id = #{model.tenantId}
+			</if>
+			and su.user_id IN
+			<foreach collection="userList" item="userId" index="index" open="(" close=")" separator=",">
+				#{userId}
+			</foreach>
+			<if test="model.userName != null and model.userName != '' ">
+				and su.NICK_NAME like concat('%', #{model.userName}, '%')
+			</if>
+			group by su.user_id
+		</if>
+		<if test="userList != null and userList.size() > 0 and roleList != null and roleList.size() > 0">
+				union all
+		</if>
+		<if test="roleList != null and roleList.size() > 0">
+			select distinct
+			su.user_id as userId,
+			su.NICK_NAME as userName,
+			su.dept_id as deptId,
+			su.user_id as nodeId,
+			su.user_name as nodeName,
+			su.user_name as nickName,
+			su.AVATAR as avatar,
+			'0' as purviewFlag
+			from sys_user as su
+			left join sys_user_role as sur on su.user_id = sur.user_id
+			where su.DEL_FLAG='0' and su.STATUS='0' and
+			<foreach collection="deptList" item="deptId" index="index" open="(" close=")" separator="or">
+				FIND_IN_SET( #{deptId} ,su.dept_id)
+			</foreach>
+			<if test="model.tenantId != null and model.tenantId != ''">
+				and su.tenant_id = #{model.tenantId}
+			</if>
+			and sur.role_id IN
+			<foreach collection="roleList" item="roleId" index="index" open="(" close=")" separator=",">
+				#{roleId}
+			</foreach>
+			<if test="model.userName != null and model.userName != '' ">
+				and su.NICK_NAME like concat('%', #{model.userName}, '%')
+			</if>
+			group by su.user_id
+		</if>
+	</select>-->
+
+	<select id="queryUserByRoleIdNew" parameterType="java.util.List"
+			resultType="com.chinatower.event.entity.dto.SysInfo">
+		select distinct
+		su.user_id as userId,
+		su.NICK_NAME as userName,
+		su.dept_id as deptId,
+		su.user_id as nodeId,
+		su.user_name as nodeName,
+		su.user_name as nickName,
+		su.AVATAR as avatar,
+		'0' as tenantAdmin,
+		'0' as purviewFlag
+		from sys_user as su
+		<if test="roleList != null and roleList.size() > 0">
+			left join sys_user_role as sur on su.user_id = sur.user_id
+		</if>
+		where su.DEL_FLAG='0' and su.STATUS='0' and
+		<foreach collection="deptList" item="deptId" index="index" open="(" close=")" separator="or">
+			FIND_IN_SET( #{deptId} ,su.dept_id)
+		</foreach>
+		<if test="model.tenantId != null and model.tenantId != ''">
+			and su.tenant_id = #{model.tenantId}
+		</if>
+		and (
+		<if test="userList != null and userList.size() > 0 ">
+			su.user_id IN
+			<foreach collection="userList" item="userId" index="index" open="(" close=")" separator=",">
+				#{userId}
+			</foreach>
+		</if>
+		<if test="userList != null and userList.size() > 0 and roleList != null and roleList.size() > 0">
+			or
+		</if>
+		<if test="roleList != null and roleList.size() > 0">
+			sur.role_id IN
+			<foreach collection="roleList" item="roleId" index="index" open="(" close=")" separator=",">
+				#{roleId}
+			</foreach>
+		</if>
+			    )
+		<if test="model.userName != null and model.userName != '' ">
+			and su.NICK_NAME like concat('%', #{model.userName}, '%')
+		</if>
+		group by su.user_id
+	</select>
+	<select id="queryUserId" resultType="java.lang.String">
+		select user_id
+		from vm_flow_link_user vla
+		<where>
+			<if test='flowLinkId != null'>
+				and vla.flow_link_id = #{flowLinkId}
+			</if>
+		</where>
+	</select>
+
+	<select id="queryAdminUser" resultType="com.chinatower.event.entity.dto.SysInfo">
+		select
+			su.user_id as userId,
+			su.NICK_NAME as userName,
+			su.dept_id as deptId,
+			su.user_id as nodeId,
+			su.user_name as nodeName,
+			su.user_name as nickName,
+			su.AVATAR as avatar,
+			su.is_tenant_admin as tenantAdmin,
+		       '1' as purviewFlag
+		from sys_user as su where su.DEL_FLAG='0' and su.STATUS='0' and su.tenant_id = #{tenantId} and su.is_tenant_admin ='1' limit 1
+
+	</select>
+
+	<select id="queryDeptUsers" resultMap="deptUsers">
+		SELECT
+		sd.parent_id AS parentId,
+		sd.dept_id   AS deptId,
+		sd.dept_name AS deptName,
+		sd.dept_id   AS nodeId,
+		sd.dept_name AS nodeName,
+		su.user_id   AS u_userId,
+		su.user_name AS u_userName,
+		su.dept_id   AS u_deptId,
+		su.user_id   AS u_nodeId,
+		su.user_name AS u_nodeName
+		FROM sys_dept sd
+		left join sys_user su on sd.DEPT_ID = su.DEPT_ID and su.STATUS = '0' and su.DEL_FLAG = '0'
+		where sd.DEL_FLAG = '0'
+		and sd.STATUS = '0'
+		and sd.dept_id in
+		<foreach collection="deptIdList" item="deptId" index="index" open="(" close=")" separator=",">
+			#{deptId}
+		</foreach>
+		order by sd.DEPT_LEVEL
+	</select>
+</mapper>

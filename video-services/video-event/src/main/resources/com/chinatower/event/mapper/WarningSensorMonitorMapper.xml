@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.WarningSensorMonitorMapper">
+
+    <insert id="batchInsert" parameterType="com.chinatower.event.entity.vo.WarningSensorMonitorVO">
+        insert into ${tableName}
+        (monitor_code,monitor_name,monitor_value,threshold_value,remark,warning_order_id) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.monitorCode}, #{item.monitorName},  #{item.monitorValue}, #{item.thresholdValue}, #{item.remark}
+            , #{item.warningOrderId})
+        </foreach>
+    </insert>
+
+    <update id="createNewTable" parameterType="java.lang.String">
+        CREATE TABLE IF NOT EXISTS ${tableNewName} LIKE ${tableOldName}
+    </update>
+</mapper>

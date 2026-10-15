@@ -1,0 +1,23 @@
+# Spring配置样例
+spring:
+  profiles:
+    #local, dev, test, uat, check, prod
+    active: local
+  main:
+    banner-mode: "off"
+    allow-bean-definition-overriding: true
+  application:
+    name: video-export
+  cloud:
+    nacos:
+      config:
+        server-addr: 117.78.10.90:8848
+        namespace: 4fb199fc-12ab-4762-995e-c359152759b9
+        file-extension: yaml
+      discovery:
+        server-addr: 117.78.10.90:8848
+        namespace: 4fb199fc-12ab-4762-995e-c359152759b9
+
+jasypt:
+  encryptor:
+    bootstrap: false

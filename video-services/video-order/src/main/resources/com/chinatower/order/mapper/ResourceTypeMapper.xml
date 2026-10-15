@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.ResourceTypeMapper">
+
+    <select id="getResourceTypeInt"
+            resultType="com.chinatower.bdm.api.entity.ResourceTypeInt">
+        SELECT
+        d.resource_type_id,
+        d.resource_type_name,
+        d.parent_id,
+        d.attr_type,
+        d.parent_name,
+        d.order_num,
+        d.remark,
+        d.icon,
+        d.approve,
+        d.industry_code,
+        d.app_ver_code
+        FROM
+        resource_type_int d
+        where d.industry_code = #{industryCode}
+        <if test="appVerCode != null and appVerCode != ''">
+            AND d.app_ver_code = #{appVerCode}
+        </if>
+    </select>
+
+    <select id="selectResourceTypeList" parameterType="com.chinatower.bdm.api.entity.ResourceType"
+            resultType="com.chinatower.bdm.api.entity.ResourceType">
+        SELECT
+        d.id,
+        d.resource_type_id,
+        d.resource_type_name,
+        d.parent_id,
+        d.parent_name,
+        d.order_num,
+        d.`status`,
+        d.delete_flag,
+        d.creator,
+        d.create_time,
+        d.modifier,
+        d.update_time,
+        d.tenant_id,
+        s.tenant_name,
+        d.remark,
+        d.icon,
+        d.approve,
+        d.industry_code,
+        d.app_ver_code,
+        a.AREA_NAME as province_name,
+        b.AREA_NAME as city_name
+        FROM
+        resource_type d
+        LEFT JOIN sys_tenant_info s ON d.tenant_id = s.tenant_id
+        LEFT JOIN sys_area a on a.AREA_CODE=s.province_id
+        LEFT JOIN sys_area b on b.AREA_CODE=s.city_id
+        WHERE
+        d.delete_flag = 0
+        <if test="parentId != null and parentId != ''">
+            AND d.parent_id = #{parentId}
+        </if>
+        <if test="resourceTypeName != null and resourceTypeName != ''">
+            AND d.resource_type_name like CONCAT(CONCAT('%',#{resourceTypeName}),'%')
+        </if>
+        <if test="status != null and status != ''">
+            AND d.status = #{status}
+        </if>
+        <if test="approve != null and approve != ''">
+            AND d.approve = #{approve}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND d.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND d.industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND d.app_ver_code = #{appVerCode}
+        </if>
+        <if test="tenantName != null and tenantName != ''">
+            AND s.tenant_name like CONCAT(CONCAT('%',#{tenantName}),'%')
+        </if>
+        <!-- 数据范围过滤 -->
+        order by d.update_time desc
+    </select>
+
+
+    <insert id="insertResourceTypeInitData" parameterType="java.util.List" keyColumn="id" keyProperty="id"  useGeneratedKeys="true">
+        insert into resource_type (
+        resource_type_id,
+        resource_type_name,
+        parent_id,
+        parent_name,
+        order_num,
+        `status`,
+        delete_flag,
+        creator,
+        create_time,
+        tenant_id,
+        resource_property,
+        remark,
+        icon,
+        approve,
+        type_level_url,
+        industry_code,
+        app_ver_code
+        ) values
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            (
+            #{item.resourceTypeId,jdbcType=VARCHAR},
+            #{item.resourceTypeName,jdbcType=VARCHAR},
+            #{item.parentId,jdbcType=VARCHAR},
+            #{item.parentName,jdbcType=VARCHAR},
+            #{item.orderNum,jdbcType=DECIMAL},
+            '0',
+            0,
+            #{item.creator,jdbcType=VARCHAR},
+            now(),
+            #{item.tenantId,jdbcType=VARCHAR},
+            #{item.attrType},
+            #{item.remark,jdbcType=VARCHAR},
+            #{item.icon,jdbcType=VARCHAR},
+            #{item.approve,jdbcType=VARCHAR},
+            #{item.typeLevelUrl,jdbcType=VARCHAR},
+            #{item.industryCode,jdbcType=VARCHAR},
+            #{item.appVerCode,jdbcType=VARCHAR}
+            )
+        </foreach>
+    </insert>
+</mapper>

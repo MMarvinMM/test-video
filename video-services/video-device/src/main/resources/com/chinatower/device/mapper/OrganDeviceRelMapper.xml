@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.OrganDeviceRelMapper">
+
+
+    <select id="getDeptNoDeviceCode" resultType="java.lang.String">
+
+        SELECT
+            dept.dept_id
+        FROM
+            sys_dept dept
+        WHERE
+            dept.TENANT_ID = #{tenantId}
+          AND dept.DEL_FLAG = '0'
+          AND dept.dept_id NOT IN (
+              SELECT odr.dept_id
+              FROM vm_organ_device_rel_t odr
+              where odr.device_type = 4
+                AND odr.TENANT_ID = #{tenantId} )
+
+    </select>
+
+    <select id="getDeptRel" resultType="com.chinatower.device.dto.StreetDeptDTO">
+        SELECT
+            d.dept_id AS deptId,
+            t.province_id AS provinceId,
+            t.city_id AS cityId,
+            t.county_id AS countyId,
+            t.town_code as townCode
+        FROM
+            vm_organ_device_rel_t d
+            LEFT JOIN vm_device_info_t t ON d.device_code = t.device_code
+        WHERE
+            d.tenant_id = #{tenantId}
+          AND t.delete_flag = '0'
+          AND d.industry_code = #{industryCode}
+        GROUP BY
+            d.dept_id,
+            t.province_id,
+            t.city_id,
+            t.county_id,
+            t.town_code
+        UNION
+        SELECT
+            d.dept_id AS deptId,
+            it.province_id AS provinceId,
+            it.city_id AS cityId,
+            it.county_id AS countyId,
+            it.town_code as townCode
+        FROM
+            vm_organ_device_rel_t d
+            LEFT JOIN vm_iot_device_t it ON d.device_code = it.device_code
+        WHERE
+            d.tenant_id = #{tenantId}
+          AND it.delete_flag = '0'
+          AND d.industry_code = #{industryCode}
+        GROUP BY
+            d.dept_id,
+            it.province_id,
+            it.city_id,
+            it.county_id,
+            it.town_code
+        UNION
+        SELECT
+            d.dept_id AS deptId,
+            d.province_code AS provinceId,
+            d.city_code AS cityId,
+            d.county_code AS countyId,
+            d.street_code as townCode
+        FROM
+            vm_organ_street_rel_t d
+        WHERE
+            d.tenant_id = #{tenantId}
+        AND d.delete_flag = '0'
+        AND d.category_code = 9
+        AND d.industry_code = #{industryCode}
+        GROUP BY
+            d.dept_id,
+            d.province_code,
+            d.city_code,
+            d.county_code,
+            d.street_code
+    </select>
+
+    <insert id="insertBatchDeptStreetRelNew" parameterType="com.chinatower.system.api.model.SysDeptStreetRelVO">
+        insert into sys_dept_street_rel
+        (DEPT_ID,STREET_AREA_CODE,PROVINCE_CODE,CITY_CODE,COUNTY_CODE,TENANT_ID,industry_code,app_ver_code) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.deptId},#{item.streetAreaCode},#{item.provinceCode},#{item.cityCode},#{item.countyCode},
+            #{item.tenantId},#{item.industryCode},#{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <select id="getStreetDeptRel" resultType="com.chinatower.device.dto.StreetDeptDTO">
+        select
+            DEPT_ID as deptId,
+            PROVINCE_CODE as provinceId,
+            CITY_CODE as cityId,
+            COUNTY_CODE as countyId
+        FROM sys_dept_street_rel
+        where DEPT_ID like concat(#{tenantId},'-%')
+    </select>
+
+    <delete id="deleteDeptStreetRel" parameterType="com.chinatower.system.api.model.SysDeptStreetRelVO">
+        delete from sys_dept_street_rel
+        where TENANT_ID = #{tenantId} AND industry_code = #{industryCode}
+        <if test='type != null and type != ""'>
+            and  TYPE = #{type}
+        </if>
+    </delete>
+</mapper>
+

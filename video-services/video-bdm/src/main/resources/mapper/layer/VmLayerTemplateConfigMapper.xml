@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.VmLayerTemplateConfigMapper">
+
+	<sql id="Base_Column_List" >
+		t.id,
+		t.layer_temp_name,
+		t.warning_source AS warningSource,
+		case when t.warning_source = '9' then '卫星告警' else '' end AS warningSourceName,
+		t.alarm_type,
+		t.alarm_type_name AS alarmTypeName,
+		t.category,
+		t.abbreviation,
+		t.super_type_name AS superTypeName,
+		t.initial_type_name AS initialTypeName,
+		t.tenant_id,
+		t.industry_code,
+		t.platform_code,
+		t.creator,
+		t.create_time,
+		t.modifier,
+		t.update_time
+	</sql>
+
+	<select id="getLayerTempConfigList" parameterType="com.chinatower.common.core.dto.bdm.VmLayerTempConfigDTO"
+			resultType="com.chinatower.common.core.dto.bdm.LayerTempConfigVO">
+		select * from
+		(
+		(SELECT <include refid="Base_Column_List"/> FROM vm_layer_template_config t WHERE t.delete_flag = '0' AND t.tenant_id IS NULL AND t.industry_code IS NULL AND t.platform_code IS NULL)
+			union
+		(SELECT
+			<include refid="Base_Column_List"/>
+		FROM
+			vm_layer_template_config t
+		<where>
+			t.delete_flag = '0'
+			<if test="tenantId != null and tenantId != ''">
+				AND t.tenant_id = #{tenantId}
+			</if>
+			<if test="industryCode != null and industryCode != ''">
+				AND t.industry_code = #{industryCode}
+			</if>
+			<if test="platformCode != null and platformCode != ''">
+				AND t.platform_code = #{platformCode}
+			</if>
+			${dataScope}
+		</where>)
+		) e
+		<where>
+			<if test="layerTempName != null and layerTempName != ''">
+				AND layer_temp_name LIKE CONCAT('%', #{layerTempName}, '%')
+			</if>
+			<if test="alarmType != null and alarmType != ''">
+				AND alarm_type = #{alarmType}
+			</if>
+			<if test="creator != null and creator != ''">
+				AND creator LIKE CONCAT('%', #{creator}, '%')
+			</if>
+			<if test="modifier != null and modifier != ''">
+				AND modifier LIKE CONCAT('%', #{modifier}, '%')
+			</if>
+			<if test='createTimeStart != null and createTimeStart != "" and createTimeEnd != null and createTimeEnd != "" '>
+				AND create_time <![CDATA[>=]]> #{createTimeStart} AND create_time <![CDATA[<=]]> #{createTimeEnd}
+			</if>
+			<if test='updateTimeStart != null and updateTimeStart != "" and updateTimeEnd != null and updateTimeEnd != "" '>
+				AND update_time <![CDATA[>=]]> #{updateTimeStart} AND update_time <![CDATA[<=]]> #{updateTimeEnd}
+			</if>
+		</where>
+		<choose>
+			<when test="sortName == 'createTime'">
+				order by create_time
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<when test="sortName == 'updateTime'">
+				order by update_time
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<otherwise>
+				order by create_time desc
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="queryLayerTemplateIsExists" parameterType="com.chinatower.common.core.dto.bdm.VmLayerTempConfigDTO"
+			resultType="com.chinatower.common.core.dto.bdm.LayerTempConfigVO">
+		SELECT
+			t1.id,
+			t1.layer_temp_name,
+			t1.abbreviation,
+			t1.category,
+			t1.area_ref,
+			t1.tbbh_ref,
+			t1.super_type_name,
+		 	t1.initial_type_name
+		FROM
+			vm_layer_template_config t1
+		<where>
+			t1.delete_flag = '0'
+			<if test="id != null and id != ''">
+				AND t1.id = #{id}
+			</if>
+			<if test="tenantId != null and tenantId != ''">
+				AND t1.tenant_id = #{tenantId}
+			</if>
+			<if test="industryCode != null and industryCode != ''">
+				AND t1.industry_code = #{industryCode}
+			</if>
+			<if test="platformCode != null and platformCode != ''">
+				AND t1.platform_code = #{platformCode}
+			</if>
+			<if test="abbreviation != null and abbreviation != ''">
+				AND t1.abbreviation = #{abbreviation}
+			</if>
+		</where>
+	</select>
+
+	<select id="selectLayerTempById" resultType="com.chinatower.common.core.dto.bdm.LayerTempConfigVO">
+		SELECT
+			t.id,
+			t.layer_temp_name AS layerTempName,
+			t.warning_source AS warningSource,
+			case when t.warning_source = '9' then '卫星告警' else '' end AS warningSourceName,
+			t.alarm_type AS alarmType,
+			t.alarm_type_name AS alarmTypeName,
+			t.category,
+			t.abbreviation,
+			t.tenant_id AS tenantId,
+			t.industry_code AS industryCode,
+			t.platform_code AS platformCode,
+			t.creator,
+			t.create_time AS createTime,
+			t.modifier,
+			t.update_time AS updateTime
+		FROM
+			vm_layer_template_config t
+		WHERE t.delete_flag = '0' AND t.id = #{id}
+	</select>
+
+	<select id="getLayerTempByTypeList" parameterType="com.chinatower.common.core.dto.bdm.VmLayerTempConfigDTO" resultType="java.util.Map">
+		SELECT
+			id AS layerTempId,
+			layer_temp_name AS layerTempName
+		FROM
+			vm_layer_template_config
+		WHERE
+			delete_flag = '0'
+			AND alarm_type = #{alarmType,jdbcType=VARCHAR}
+			AND ((tenant_id = #{tenantId,jdbcType=VARCHAR}
+			AND industry_code = #{industryCode,jdbcType=VARCHAR}
+			AND platform_code = #{platformCode,jdbcType=VARCHAR}) OR
+			(tenant_id IS NULL AND industry_code IS NULL AND platform_code IS NULL))
+	</select>
+
+	<select id="selectInitLayerTempByType" parameterType="com.chinatower.common.core.dto.bdm.VmLayerTempConfigDTO" resultType="com.chinatower.common.core.dto.bdm.LayerTempConfigVO">
+		SELECT
+			abbreviation,
+			area_ref AS areaRef,
+			tbbh_ref AS tbbhRef
+		FROM
+			vm_layer_template_config
+		where
+			delete_flag = '0' and category = 0
+			AND alarm_type = #{alarmType}
+	</select>
+
+	<select id="getLayerTempNameCount" resultType="int">
+		select count(1) from vm_layer_template_config
+		where layer_temp_name = #{layerTempName}
+		and delete_flag = '0'
+		${dataScope}
+		<if test="id != null and id != ''">
+			and id != #{id}
+		</if>
+		<if test="tenantId != null and tenantId != ''">
+			AND tenant_id = #{tenantId}
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			AND industry_code = #{industryCode}
+		</if>
+		<if test="platformCode != null and platformCode != ''">
+			AND platform_code = #{platformCode}
+		</if>
+	</select>
+
+	<insert id="addVmLayerTemplateConfig" parameterType="com.chinatower.common.core.dto.bdm.LayerTempConfigVO">
+		insert into vm_layer_template_config
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null and id != ''">id,</if>
+			<if test="layerTempName != null and layerTempName != ''">layer_temp_name,</if>
+			<if test="alarmType != null and alarmType != ''">alarm_type,</if>
+			<if test="alarmTypeName != null and alarmTypeName != ''">alarm_type_name,</if>
+			<if test="tenantId != null and tenantId != ''">tenant_id,</if>
+			<if test="category != null and category != ''">category,</if>
+			<if test="abbreviation != null and abbreviation != ''">abbreviation,</if>
+			<if test="superTypeName != null and superTypeName != ''">super_type_name,</if>
+			<if test="initialTypeName != null and initialTypeName != ''">initial_type_name,</if>
+			<if test="areaRef != null and areaRef != ''">area_ref,</if>
+			<if test="tbbhRef != null and tbbhRef != ''">tbbh_ref,</if>
+			<if test="creator != null and creator != ''">creator,</if>
+			<if test="createTime != null "> create_time,</if>
+			<if test="updateTime != null "> update_time,</if>
+			<if test="modifier != null and modifier != ''">modifier,</if>
+			<if test="appVerCode != null and appVerCode != ''">app_ver_code,</if>
+			<if test="industryCode != null and industryCode != ''">industry_code,</if>
+			<if test="platformCode != null and platformCode != ''">platform_code,</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null and id != ''">#{id},</if>
+			<if test="layerTempName != null and layerTempName != ''">#{layerTempName},</if>
+			<if test="alarmType != null and alarmType != ''">#{alarmType},</if>
+			<if test="alarmTypeName != null and alarmTypeName != ''">#{alarmTypeName},</if>
+			<if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+			<if test="category != null and category != ''">#{category},</if>
+			<if test="abbreviation != null and abbreviation != ''">#{abbreviation},</if>
+			<if test="superTypeName != null and superTypeName != ''">#{superTypeName},</if>
+			<if test="initialTypeName != null and initialTypeName != ''">#{initialTypeName},</if>
+			<if test="areaRef != null and areaRef != ''">#{areaRef},</if>
+			<if test="tbbhRef != null and tbbhRef != ''">#{tbbhRef},</if>
+			<if test="creator != null and creator != ''">#{creator},</if>
+			<if test="createTime != null "> #{createTime},</if>
+			<if test="updateTime != null "> #{updateTime},</if>
+			<if test="modifier != null and modifier != ''">#{modifier},</if>
+			<if test="appVerCode != null and appVerCode != '' ">#{appVerCode},</if>
+			<if test="industryCode != null and industryCode != '' ">#{industryCode},</if>
+			<if test="platformCode != null and platformCode != ''">#{platformCode},</if>
+		</trim>
+	</insert>
+
+	<update id="updateLayerTempConfigById">
+		UPDATE vm_layer_template_config
+		<set>
+			<if test="layerTempName != null and layerTempName != ''">layer_temp_name = #{layerTempName},</if>
+			<if test="alarmType != null and alarmType != ''">alarm_type = #{alarmType},</if>
+			<if test="alarmTypeName != null and alarmTypeName != ''">alarm_type_name = #{alarmTypeName},</if>
+			<if test="creator != null and creator != ''">creator = #{creator},</if>
+			<if test="createTime != null">create_time = #{createTime},</if>
+			<if test="modifier != null and modifier != ''">modifier = #{modifier},</if>
+			<if test="updateTime != null">update_time = #{updateTime},</if>
+			<if test="deleteFlag !=  null">delete_flag = #{deleteFlag},</if>
+			<if test="tenantId != null and tenantId != ''">tenant_id = #{tenantId},</if>
+			<if test="industryCode != null and industryCode != ''">industry_code = #{industryCode},</if>
+			<if test="appVerCode != null and appVerCode != ''">app_ver_code = #{appVerCode},</if>
+			<if test="platformCode != null and platformCode != ''">platform_code = #{platformCode},</if>
+			<if test="category != null and category != ''">category = #{category},</if>
+			<if test="abbreviation != null and abbreviation != ''">abbreviation = #{abbreviation},</if>
+			<if test="superTypeName != null and superTypeName != ''">super_type_name = #{superTypeName},</if>
+			<if test="initialTypeName != null and initialTypeName != ''">initial_type_name = #{initialTypeName},</if>
+			<if test="areaRef != null and areaRef != ''">area_ref = #{areaRef},</if>
+			<if test="tbbhRef != null and tbbhRef != ''">tbbh_ref = #{tbbhRef},</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+	<select id="selectSatelliteLayerCount" resultType="java.lang.Integer">
+        select count(1)
+        from vm_satellite_layer_config
+        where
+            delete_flag = 0
+          and tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+          and accept_node = #{platformCode}
+          and layer_template_id = #{layerTempId}
+    </select>
+
+	<select id="selectLayerByAbbreviation" resultType="com.chinatower.common.core.dto.bdm.LayerTempConfigVO">
+		SELECT
+			abbreviation
+		FROM
+			vm_layer_template_config
+		<where>
+			delete_flag = '0'
+			<if test="list != null and list.size()>0 ">
+				and
+				<foreach item="item" collection="list" open="(" separator="or" close=")">
+					 abbreviation like concat('%', #{item.abbreviation},'%')
+				</foreach>
+			</if>
+		</where>
+	</select>
+
+	<update id="delLayerTempById">
+		update vm_layer_template_config
+		set delete_flag = 1
+		where id = #{id,jdbcType=VARCHAR}
+	</update>
+
+</mapper>

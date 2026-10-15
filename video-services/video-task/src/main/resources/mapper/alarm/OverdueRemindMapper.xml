@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.OverdueRemindMapper">
+
+
+    <select id="getOverdueRemindList" resultType="com.chinatower.event.entity.dto.OverdueRemindDto"
+            parameterType="java.lang.String">
+        SELECT
+            t.address address,
+            t.app_ver_code AS 'appVerCode',
+            t.industry_code AS 'industryCode',
+            t.remind_time AS 'remindTime',
+            t.link_id AS 'linkId',
+            t.order_status AS 'orderStatus',
+            t.overdue_remind_sign AS 'overdueRemindSign',
+            t.remind_process_id AS 'remindProcessId',
+            t.warning_order_id AS 'warningOrderId',
+            t.warning_type_id warningType_id,
+            t.alarm_time AS 'alarmTime'
+        FROM
+            `vm_overdue_remind_t` t
+        where DATE_FORMAT(t.remind_time,'%Y-%m-%d %H:%i') = #{remindTime}
+    </select>
+</mapper>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true">
+    <!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径-->
+    <!-- /Data/logs/logs/${SYSTEM_CODE}/ 为系统日志的标准输出目录 -->
+    <!-- /Data/logs/trans/${SYSTEM_CODE}/ 为业务交易报文明细输出目录 -->
+    <!-- ${SYSTEM_CODE}为业务系统编码，各业务系统在使用前务必此处调整为本系统编码，编码以ESB系统编码为准，本样例中40.4004为项目管理系统 -->
+    <property name="SYSTEM_LOG" value="/app/logs/video-apply-api/system"/>
+    <property name="TRANS_LOG" value="/app/logs/video-apply-api/transaction"/>
+    <springProfile name="local">
+        <property name="APPNAME" value="video-apply-system-local"/>
+        <!--<property name="logstashIp" value="119.3.239.84:49601"/>-->
+    </springProfile>
+    <springProfile name="dev">
+        <property name="APPNAME" value="video-apply-system-dev"/>
+        <!--<property name="logstashIp" value="10.16.24.7:9601"/>-->
+    </springProfile>
+    <springProfile name="uat">
+        <property name="APPNAME" value="video-apply-system-uat"/>
+        <!--<property name="logstashIp" value="10.38.26.5:9601"/>-->
+    </springProfile>
+    <springProfile name="pro">
+        <property name="APPNAME" value="video-apply-system-pro"/>
+        <!--<property name="logstashIp" value="10.19.30.7:9601"/>-->
+    </springProfile>
+    <!-- 控制台输出 -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator> <!-- 默认为 ch.qos.logback.classic.boolex.JaninoEventEvaluator -->
+                <expression>return message.contains("ELK-LOG:");</expression>
+            </evaluator>
+            <OnMatch>DENY</OnMatch>
+            <OnMismatch>ACCEPT</OnMismatch>
+        </filter>　　　　　
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p][%c][%M][%L]-> %m%n</pattern>
+        </encoder>
+    </appender>
+    <!-- 按照每天生成日志文件 -->
+    <appender name="SYSTEM" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator> <!-- 默认为 ch.qos.logback.classic.boolex.JaninoEventEvaluator -->
+                <expression>return message.contains("ELK-LOG:");</expression>
+            </evaluator>
+            <OnMatch>DENY</OnMatch>
+            <OnMismatch>ACCEPT</OnMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--日志文件输出的文件名-->
+            <FileNamePattern>${SYSTEM_LOG}-%d{yyyy-MM-dd}.%i.log</FileNamePattern>
+            <!--日志文件保留天数-->
+            <MaxHistory>90</MaxHistory>
+            <maxFileSize>20MB</maxFileSize>
+            <totalSizeCap>4GB</totalSizeCap>
+            <!--			<cleanHistoryOnStart>true</cleanHistoryOnStart>-->
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+            <!-- <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p][%c][%M][%L]-> %m%n</pattern> -->
+            <pattern>[%d{yyyyMMdd HH:mm:ss:SSS\} %-5p] %c{3\}.%M\(%L\)
+                [%X{X-B3-TraceId:-},%X{X-B3-SpanId:-},%X{X-Span-Export:-}] -%m%n
+            </pattern>
+        </encoder>
+        <!--日志文件最大的大小-->
+        <!-- <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>2048MB</MaxFileSize>
+        </triggeringPolicy> -->
+    </appender>
+    <appender name="TRANS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!--日志文件输出的文件名-->
+            <FileNamePattern>${TRANS_LOG}-%d{yyyy-MM-dd}.%i.log</FileNamePattern>
+            <!--日志文件保留天数-->
+            <MaxHistory>90</MaxHistory>
+            <maxFileSize>20MB</maxFileSize>
+            <totalSizeCap>4GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+            <pattern>[%d{yyyyMMdd HH:mm:ss:SSS\} %-5p] %c{3\}.%M\(%L\)
+                [%X{X-B3-TraceId:-},%X{X-B3-SpanId:-},%X{X-Span-Export:-}] -%m%n
+            </pattern>
+        </encoder>
+        <!--日志文件最大的大小-->
+        <!-- <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>2048MB</MaxFileSize>
+        </triggeringPolicy> -->
+    </appender>
+
+    <!--<appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${logstashIp}</destination>
+        &lt;!&ndash; encoder is required &ndash;&gt;
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"appname":"${APPNAME}"}</customFields>
+        </encoder>
+    </appender>-->
+
+    <!--    <appender name="stash2" class="net.logstash.logback.appender.LogstashAccessTcpSocketAppender">-->
+    <!--        <destination>10.1.2.48:9601</destination>-->
+    <!--        &lt;!&ndash; encoder is required &ndash;&gt;-->
+    <!--        <encoder class="net.logstash.logback.encoder.LogstashAccessEncoder" />-->
+    <!--    </appender>-->
+
+    <logger name="TransLog" additivity="false" level="INFO">
+        <appender-ref ref="TRANS"/>
+    </logger>
+
+    <logger name="com.chinatower.product.demo.dao" level="DEBUG"></logger>
+    <logger name="com.chinatower.product.demo.mapper" level="DEBUG"></logger>
+    <logger name="com.chinatower.provider.call.file.client" level="DEBUG">
+    </logger>
+    <!-- 日志输出级别 -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="SYSTEM"/>
+        <!--        <appender-ref ref="stash2" />-->
+        <!--<appender-ref ref="LOGSTASH"/>-->
+    </root>
+</configuration>

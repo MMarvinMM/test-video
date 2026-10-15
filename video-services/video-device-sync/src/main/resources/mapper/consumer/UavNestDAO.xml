@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.UavNestDAO">
+
+    <update id="updateDeviceBatch" parameterType="com.chinatower.sync.consumer.item.UavNestDeviceReport">
+        <foreach collection="list" item="item" separator=";">
+            update `vm_uav_nest_device_info`
+            set
+            resource_device_code = #{item.resourceDeviceCode},
+            device_name = #{item.deviceName},
+            `resource_status` = #{item.resourceStatus},
+            site_id = #{item.siteId},
+            `ip` = #{item.ip},
+            `port` = #{item.port},
+            `account` = #{item.account},
+            `password` = #{item.password},
+            adaptability = #{item.adaptability},
+            rights_properties = #{item.rightsProperties},
+            rights_unit = #{item.rightsUnit},
+            bussiness_type = #{item.bussinessType},
+            resource_type = #{item.resourceType},
+            device_type = #{item.deviceType},
+            manufacturer_code = #{item.manufacturer},
+            model_code = #{item.deviceModel},
+            expiration_date = #{item.expirationDate},
+            install_date = #{item.installDate},
+            maintenance_type = #{item.maintenanceType},
+            maintenance_manufacturer = #{item.maintenanceManufacturer},
+            installationsite = #{item.installationsite},
+            transmission_mode = #{item.transmissionMode},
+            `delete_flag` = #{item.delFlag},
+            update_by = #{item.updateBy},
+            update_time = #{item.updateTime},
+            `remark` = #{item.remark},
+            access_time = #{item.accessTime},
+            device_serial_id = #{item.deviceSerialId},
+            hanging_type = #{item.hangingType},
+            hanging_height = #{item.hangingHeight},
+            weight = #{item.weight},
+            access_protocols = #{item.accessProtocols},
+            transport_protocols = #{item.transportProtocols},
+            synch_state = #{item.synchState},
+            access_type = #{item.accessType},
+            environment = #{item.environment},
+            `desc` = #{item.desc},
+            access_node = #{item.accessNode},
+            org_code = #{item.orgCode},
+            device_industry = #{item.deviceIndustry},
+            features = #{item.features},
+            device_industry_sub = #{item.deviceIndustrySub},
+            product_series = #{item.productSeries},
+            sync_action = #{item.syncAction},
+            customer_id = #{item.customerId},
+            rights_customer_id = #{item.rightsCustomerId},
+            horizon_from = #{item.horizonFrom},
+            horizon_to = #{item.horizonTo},
+            vertical_from = #{item.verticalFrom},
+            vertical_to = #{item.verticalTo},
+            visual_from = #{item.visualFrom},
+            visual_to = #{item.visualTo},
+            platform_code = #{item.platformCode},
+            platform_name = #{item.platformName},
+            is_cascade = #{item.isCascade},
+            south_platform_id = #{item.southPlatformId},
+            device_cascade_id = #{item.deviceCascadeId},
+            register_id = #{item.registerId},
+            pms_request_id = #{item.pmsRequestId},
+            sum_offline_time = #{item.sumOfflineTime},
+            project_id = #{item.projectId},
+            add_type = #{item.addType},
+            device_attribute = #{item.deviceAttribute},
+            nest_sn = #{item.nestSn},
+            address = #{item.address},
+            longitude = #{item.longitude},
+            latitude = #{item.latitude},
+            dept = #{item.dept},
+            admin_area = #{item.adminArea},
+            cus_industry_type = #{item.cusIndustryType},
+            location_code = #{item.locationCode},
+            secret_key = #{item.secretKey},
+            altitude = #{item.altitude},
+            inspection_radius = #{item.inspectionRadius},
+            running_state = #{item.runningState},
+            position_fix = #{item.positionFix},
+            province_code = #{item.provinceCode},
+            city_code = #{item.cityCode},
+            county_code = #{item.countyCode},
+            <if test='item.latLonUpdateTime != null'>
+                lat_lon_update_time = #{item.latLonUpdateTime},
+            </if>
+            town_code = #{item.townCode}
+            where device_code = #{item.deviceCode}
+            <if test='item.updateTime != null'>
+                and (update_time <![CDATA[<=]]> #{item.updateTime} or update_time is null)
+            </if>
+        </foreach>
+    </update>
+
+    <update id="updateDeviceModBatch" parameterType="com.chinatower.sync.consumer.item.UavDeviceReport">
+        <foreach collection="list" item="item" separator=";">
+            update `vm_uav_nest_device_info`
+            set
+            resource_device_code = #{item.resourceDeviceCode},
+            `resource_status` = #{item.resourceStatus},
+            site_id = #{item.siteId},
+            `ip` = #{item.ip},
+            `port` = #{item.port},
+            `account` = #{item.account},
+            `password` = #{item.password},
+            adaptability = #{item.adaptability},
+            rights_properties = #{item.rightsProperties},
+            rights_unit = #{item.rightsUnit},
+            bussiness_type = #{item.bussinessType},
+            resource_type = #{item.resourceType},
+            device_type = #{item.deviceType},
+            manufacturer_code = #{item.manufacturer},
+            model_code = #{item.deviceModel},
+            expiration_date = #{item.expirationDate},
+            install_date = #{item.installDate},
+            maintenance_type = #{item.maintenanceType},
+            maintenance_manufacturer = #{item.maintenanceManufacturer},
+            installationsite = #{item.installationsite},
+            transmission_mode = #{item.transmissionMode},
+            `delete_flag` = #{item.delFlag},
+            `remark` = #{item.remark},
+            access_time = #{item.accessTime},
+            device_serial_id = #{item.deviceSerialId},
+            hanging_type = #{item.hangingType},
+            hanging_height = #{item.hangingHeight},
+            weight = #{item.weight},
+            access_protocols = #{item.accessProtocols},
+            transport_protocols = #{item.transportProtocols},
+            synch_state = #{item.synchState},
+            access_type = #{item.accessType},
+            environment = #{item.environment},
+            `desc` = #{item.desc},
+            access_node = #{item.accessNode},
+            org_code = #{item.orgCode},
+            device_industry = #{item.deviceIndustry},
+            features = #{item.features},
+            device_industry_sub = #{item.deviceIndustrySub},
+            product_series = #{item.productSeries},
+            sync_action = #{item.syncAction},
+            customer_id = #{item.customerId},
+            rights_customer_id = #{item.rightsCustomerId},
+            horizon_from = #{item.horizonFrom},
+            horizon_to = #{item.horizonTo},
+            vertical_from = #{item.verticalFrom},
+            vertical_to = #{item.verticalTo},
+            visual_from = #{item.visualFrom},
+            visual_to = #{item.visualTo},
+            platform_code = #{item.platformCode},
+            platform_name = #{item.platformName},
+            is_cascade = #{item.isCascade},
+            south_platform_id = #{item.southPlatformId},
+            device_cascade_id = #{item.deviceCascadeId},
+            register_id = #{item.registerId},
+            pms_request_id = #{item.pmsRequestId},
+            sum_offline_time = #{item.sumOfflineTime},
+            project_id = #{item.projectId},
+            add_type = #{item.addType},
+            device_attribute = #{item.deviceAttribute},
+            nest_sn = #{item.nestSn},
+            address = #{item.address},
+            dept = #{item.dept},
+            admin_area = #{item.adminArea},
+            cus_industry_type = #{item.cusIndustryType},
+            location_code = #{item.locationCode},
+            secret_key = #{item.secretKey},
+            inspection_radius = #{item.inspectionRadius},
+            running_state = #{item.runningState}
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <insert id="insertDeviceBatch" parameterType="com.chinatower.sync.consumer.item.UavNestDeviceReport">
+        insert into `vm_uav_nest_device_info`
+        (`device_code`, `resource_device_code`, `device_name`, `resource_status`, `site_id`, `ip`, `port`, `account`,
+        `password`, `adaptability`, `rights_properties`, `rights_unit`, `bussiness_type`, `resource_type`, `device_type`,
+        `manufacturer_code`, `model_code`, `expiration_date`, `install_date`, `maintenance_type`, `maintenance_manufacturer`,
+        `installationsite`, `transmission_mode`, `delete_flag`, `create_by`, `create_time`, `update_by`, `update_time`,
+        `remark`, `access_time`, `device_serial_id`, `hanging_type`, `hanging_height`, `weight`, `access_protocols`,
+        `transport_protocols`, `synch_state`, `access_type`, `environment`, `desc`, `access_node`, `org_code`,
+        `device_industry`, `features`, `device_industry_sub`, `product_series`, `sync_action`, `customer_id`,
+        `rights_customer_id`, `horizon_from`, `horizon_to`, `vertical_from`, `vertical_to`, `visual_from`, `visual_to`,
+        `platform_code`, `platform_name`, `is_cascade`, `south_platform_id`, `device_cascade_id`, `register_id`,
+        `pms_request_id`, `sum_offline_time`, `project_id`, `add_type`, `device_attribute`, `nest_sn`, `address`,
+        `longitude`, `latitude`, `dept`, `admin_area`, `cus_industry_type`, `location_code`, `secret_key`, `altitude`,
+        `inspection_radius`, `running_state`, `position_fix`, `province_code`, `city_code`, `county_code`,
+        `lat_lon_update_time`, `town_code`) values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode}, #{item.resourceDeviceCode}, #{item.deviceName}, #{item.resourceStatus}, #{item.siteId}, #{item.ip}, #{item.port}, #{item.account},
+            #{item.password}, #{item.adaptability}, #{item.rightsProperties}, #{item.rightsUnit}, #{item.bussinessType}, #{item.resourceType}, #{item.deviceType},
+            #{item.manufacturer}, #{item.deviceModel}, #{item.expirationDate}, #{item.installDate}, #{item.maintenanceType}, #{item.maintenanceManufacturer},
+            #{item.installationsite}, #{item.transmissionMode}, #{item.delFlag}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime},
+            #{item.remark}, #{item.accessTime}, #{item.deviceSerialId}, #{item.hangingType}, #{item.hangingHeight}, #{item.weight}, #{item.accessProtocols},
+            #{item.transportProtocols}, #{item.synchState}, #{item.accessType}, #{item.environment}, #{item.desc}, #{item.accessNode}, #{item.orgCode},
+            #{item.deviceIndustry}, #{item.features}, #{item.deviceIndustrySub}, #{item.productSeries}, #{item.syncAction}, #{item.customerId},
+            #{item.rightsCustomerId}, #{item.horizonFrom}, #{item.horizonTo}, #{item.verticalFrom}, #{item.verticalTo}, #{item.visualFrom}, #{item.visualTo},
+            #{item.platformCode}, #{item.platformName}, #{item.isCascade}, #{item.southPlatformId}, #{item.deviceCascadeId}, #{item.registerId},
+            #{item.pmsRequestId}, #{item.sumOfflineTime}, #{item.projectId}, #{item.addType}, #{item.deviceAttribute}, #{item.nestSn}, #{item.address},
+            #{item.longitude}, #{item.latitude}, #{item.dept}, #{item.adminArea}, #{item.cusIndustryType}, #{item.locationCode}, #{item.secretKey}, #{item.altitude},
+            #{item.inspectionRadius}, #{item.runningState}, #{item.positionFix}, #{item.provinceCode}, #{item.cityCode}, #{item.countyCode},
+            #{item.latLonUpdateTime}, #{item.townCode})
+        </foreach>
+    </insert>
+
+    <select id="queryDeviceAppModInfo" resultType="com.chinatower.sync.consumer.item.DeviceAppModVO">
+        select device_code, IFNULL(app_mod_flag, 0) appModFlag, longitude, latitude
+        from vm_uav_nest_device_info
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateDeviceChannelBatch" parameterType="com.chinatower.sync.consumer.item.UavNestChannelReport">
+        <foreach collection="list" item="item" separator=";">
+            update `vm_uav_nest_channel_info`
+            set
+            device_code = #{item.deviceCode},
+            channel_name = #{item.channelName},
+            channel_type = #{item.channelType},
+            `status` = #{item.status},
+            channel_type_name = #{item.channelTypeName},
+            visual_range = #{item.visualRange},
+            horizontal_radiation_angle = #{item.horizontalRadiationAngle},
+            vertical_radiation_angle = #{item.verticalRadiationAngle},
+            pixel = #{item.pixel},
+            access_proctrol = #{item.accessProctrol},
+            national_code = #{item.nationalCode},
+            `del_flag` = #{item.delFlag},
+            update_by = #{item.updateBy},
+            update_time = #{item.updateTime},
+            remark = #{item.remark},
+            max_guard = #{item.maxGuard},
+            max_preset = #{item.maxPreset},
+            max_patrol = #{item.maxPatrol},
+            stream_type = #{item.streamType},
+            height = #{item.height},
+            facade = #{item.facade},
+            busin_status = #{item.businStatus},
+            device_code_nvr = #{item.deviceCodeNvr},
+            monitor_discription = #{item.monitorDiscription},
+            monitor_name = #{item.monitorName},
+            monitor_status = #{item.monitorStatus},
+            monitor_time = #{item.monitorTime}
+            where channel_code = #{item.channelCode}
+        </foreach>
+    </update>
+
+    <insert id="insertDeviceChannelBatch" parameterType="com.chinatower.sync.consumer.item.UavNestChannelReport">
+        insert into `vm_uav_nest_channel_info`
+        (`device_code`, `channel_code`, `channel_name`, `channel_type`, `status`, `channel_type_name`, `visual_range`,
+        `horizontal_radiation_angle`, `vertical_radiation_angle`, `pixel`, `access_proctrol`, `national_code`, `del_flag`,
+        `create_by`, `create_time`, `update_by`, `update_time`, `remark`, `max_guard`, `max_preset`, `max_patrol`,
+        `stream_type`, `height`, `facade`, `busin_status`, `device_code_nvr`, `monitor_discription`, `monitor_name`,
+        `monitor_status`, `monitor_time`) VALUES
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode}, #{item.channelCode},  #{item.channelName}, #{item.channelType}, #{item.status}, #{item.channelTypeName}, #{item.visualRange},
+            #{item.horizontalRadiationAngle}, #{item.verticalRadiationAngle},  #{item.pixel}, #{item.accessProctrol}, #{item.nationalCode}, #{item.delFlag},
+            #{item.createBy}, #{item.createTime},  #{item.updateBy}, #{item.updateTime}, #{item.remark}, #{item.maxGuard}, #{item.maxPreset},#{item.maxPatrol},
+            #{item.streamType}, #{item.height},  #{item.facade}, #{item.businStatus}, #{item.deviceCodeNvr}, #{item.monitorDiscription}, #{item.monitorName},
+            #{item.monitorStatus}, #{item.monitorTime})
+        </foreach>
+    </insert>
+
+
+    <select id="queryExistChannelCodeList" resultType="java.lang.String">
+        select channel_code
+        from vm_uav_nest_channel_info
+        where channel_code in
+        <foreach collection="channelCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryExistUavNestYgIdList" resultType="java.lang.String">
+        select yg_id
+        from vm_uav_nest_device_model_t
+        where yg_id in
+        <foreach collection="ygIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="insertUavNestModelBatch" parameterType="com.chinatower.sync.consumer.item.UavNestModelReport">
+        insert into vm_uav_nest_device_model_t(
+        `yg_id`, `model_code`, `model_name`, `manufacturer_code`, `inspection_radius`,
+        `creator`, `create_time`, `modifier`, `update_time`, `delete_flag`
+        ) values
+        <foreach collection="list"  item="item" separator=",">
+            (
+            #{item.id}, #{item.dictCode}, #{item.dictLabel}, #{item.manufacturerCode}, #{item.radius},
+            #{item.createBy}, #{item.createTime}, #{item.updateBy},#{item.updateTime}, #{item.delFlag}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateUavNestModelBatch">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_nest_device_model_t set
+            model_code = #{item.dictCode},
+            model_name =  #{item.dictLabel},
+            manufacturer_code = #{item.manufacturerCode},
+            inspection_radius = #{item.radius},
+            creator = #{item.createBy},
+            create_time = #{item.createTime},
+            modifier = #{item.updateBy},
+            update_time = #{item.updateTime},
+            delete_flag = #{item.delFlag}
+            where yg_id = #{item.id}
+        </foreach>
+    </update>
+
+    <delete id="deleteUavNestModelBatch">
+        delete from vm_uav_nest_device_model_t
+        where yg_id in
+        <foreach collection="ygIdList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="getAllUavNestModelYgId" resultType="java.lang.String">
+        select yg_id
+        from `vm_uav_nest_device_model_t`
+    </select>
+
+    <update id="updateDeviceStatusBatch" parameterType="com.chinatower.sync.consumer.item.UavDeviceStatusReport">
+        <foreach collection="list" item="item" separator=";">
+            update `vm_uav_nest_device_info`
+            set
+            running_state = #{item.runStatus},
+            resource_status = #{item.deviceStatus}
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <update id="updateDeviceChannelStatusBatch" parameterType="com.chinatower.sync.consumer.entity.ChannelStatusReq">
+        <foreach collection="list" item="item" separator=";">
+            update `vm_uav_nest_channel_info`
+            set
+            `status` = #{item.channelStatus}
+            where channel_code = #{item.channelCode}
+        </foreach>
+    </update>
+
+    <update id="updateUavNestDeviceLocationInfo" parameterType="com.chinatower.sync.consumer.item.UavCameraModelReport">
+        <foreach collection="locationInfoList" item="param" separator=";">
+            update vm_uav_nest_device_info
+            set province_code = #{param.provinceCode},
+            city_code = #{param.cityCode},
+            county_code = #{param.countyCode},
+            town_code = #{param.townCode},
+            address = #{param.address},
+            latitude = #{param.latitude},
+            longitude = #{param.longitude},
+            altitude = #{param.altitude},
+            update_time = now()
+            where
+            device_code = #{param.deviceCode}
+            and delete_flag = '0'
+        </foreach>
+    </update>
+</mapper>

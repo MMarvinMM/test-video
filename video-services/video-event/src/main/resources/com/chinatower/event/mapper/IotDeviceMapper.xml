@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.IotDeviceMapper">
+
+    <select id="queryRadarListPage" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        SELECT distinct
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        (CASE WHEN m.device_status = '0' THEN '在线'
+        WHEN m.device_status = '1' THEN '离线'
+        WHEN m.device_status = '2' THEN '从未连接'
+        END) deviceStatusName,
+        m.category_code,
+        od.ord_status as orderStatus,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        m.w_zone,
+        m.device_period,
+        m.par_angle,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id,
+        town.area_code as town_code,
+        town.area_name as town_name,
+        <if test="param.isMonitorFlag != null and param.isMonitorFlag != ''">
+            case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        </if>
+        st.tenant_name as tenantName
+        FROM vm_order_sensor_devices od
+        LEFT JOIN vm_order_customer oc on od.order_code = oc.order_code
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 1
+        LEFT JOIN sys_tenant_info st on st.tenant_id = od.tenant_id
+        LEFT JOIN sys_area pro on pro.area_code = m.province_id
+        LEFT JOIN sys_area city on city.area_code = m.city_id
+        LEFT JOIN sys_area county on county.area_code = m.county_id
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        <if test="param.isMonitorFlag != null and param.isMonitorFlag != ''">
+            left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+            AND dct.coll_obj_type = '8' AND dct.user_id = #{param.userId}
+        </if>
+        LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+        and vod.delete_flag = '0'
+        and vod.tenant_id = od.tenant_id
+        where od.delete_flag = '0' and m.delete_flag = '0' and od.category_code = 1
+        and od.tenant_id =#{param.tenantId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <if test='param.deviceTypeList != null and param.deviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="deviceType">
+                #{deviceType}
+            </foreach>
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and od.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and od.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+        <choose>
+            <when test="param.sortName == 'deviceCode'">
+                order by od.device_code
+            </when>
+            <when test="param.sortName == 'deviceName'">
+                order by device_name
+            </when>
+            <when test="param.sortName == 'deviceStatus'">
+                order by m.device_status
+            </when>
+            <when test="param.sortName == 'modelCode'">
+                order by m.model_code
+            </when>
+            <when test="param.sortName == 'orgName'">
+                order by vod.dept_id
+            </when>
+            <when test="param.sortName == 'orderStatus'">
+                order by od.ord_status
+            </when>
+            <when test="param.sortName == 'provinceName'">
+                order by provinceName
+            </when>
+            <when test="param.sortName == 'cityName'">
+                order by cityName
+            </when>
+            <when test="param.sortName == 'countyName'">
+                order by countyName
+            </when>
+            <when test="param.sortName == 'townName'">
+                order by town_name
+            </when>
+            <otherwise>
+                order by m.device_code
+            </otherwise>
+        </choose>
+        <if test="param.sort == 'desc'">
+            desc
+        </if>
+        <if test="param.sort == 'asc'">
+            asc
+        </if>
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="queryIotDeviceList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        SELECT DISTINCT
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        (CASE WHEN m.device_status = '0' THEN '在线'
+        WHEN m.device_status = '1' THEN '离线'
+        END) deviceStatusName,
+        m.device_type as deviceType,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        m.category_code,
+        od.ord_status as orderStatus,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id,
+        town.area_code as town_code,
+        town.area_name as town_name,
+        <if test="param.isMonitorFlag != null and param.isMonitorFlag != ''">
+            case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        </if>
+        (CASE
+        WHEN (
+        SELECT count(*) > 0
+        FROM vm_tenant_iot_device_conf_t ac
+        WHERE ac.device_code = m.device_code
+        AND ac.tenant_id = od.tenant_id
+        )
+        THEN '1'
+        ELSE '0'
+        END) AS hasLinkConf
+        FROM vm_order_sensor_devices od
+        LEFT JOIN vm_order_customer oc on od.order_code = oc.order_code
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 2
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        LEFT JOIN sys_area pro on pro.area_code = m.province_id
+        LEFT JOIN sys_area city on city.area_code = m.city_id
+        LEFT JOIN sys_area county on county.area_code = m.county_id
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        <if test='param.deptIds !=null and param.deptIds.size() > 0 or param.dataScope.contains("dept_id")'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+            and vod.delete_flag = '0'
+            and vod.tenant_id = od.tenant_id
+        </if>
+        <if test="param.isMonitorFlag != null and param.isMonitorFlag != ''">
+            left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+            AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        </if>
+        where od.delete_flag = '0' and m.delete_flag = '0'
+        and od.category_code = 2
+        and od.tenant_id =#{param.tenantId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.deviceType != null and param.deviceType != ""'>
+            and m.device_type = #{param.deviceType}
+        </if>
+        <if test='param.deviceTypeList != null and param.deviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and od.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and od.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        <if test='param.hasLinkConf!= null and param.hasLinkConf != "" '>
+            AND
+            <if test='param.hasLinkConf == "1" '>exists</if>
+            <if test='param.hasLinkConf == "0" '>not exists</if>
+            (
+            select 1 from vm_tenant_iot_device_conf_t ac
+            where ac.device_code = m.device_code
+            and ac.tenant_id = od.tenant_id
+            )
+        </if>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+        <choose>
+            <when test="param.sortName == 'deviceCode'">
+                order by od.device_code
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by pro.area_code, city.area_code, county.area_code,od.device_code
+            </otherwise>
+        </choose>
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+</mapper>

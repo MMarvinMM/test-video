@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.AnalysisMapper">
+
+    <select id="getStatisticsDevices" resultType="java.util.Map">
+        SELECT IFNULL(sum(device_num), 0) as deviceCountTotal,
+        IFNULL(sum(dev_online_num), 0) as devCountOnline,
+        IFNULL(sum(dev_offline_num), 0) as devCountOffline,
+        IFNULL(sum(channel_num), 0) as channelCountTotal,
+        IFNULL(sum(channel_online_num), 0) as channelCountOnline,
+        IFNULL(sum(channel_offline_num), 0) as channelCountOffline
+        FROM vm_statistics_devices dataTable
+        where dataTable.tenant_id = #{param.tenantId}
+        AND `year` = YEAR(NOW())
+        AND `month` = MONTH(NOW())
+        AND `day` = DAY(NOW())
+        <if test='param.appVerCode!=null and param.appVerCode!=""'>
+            and dataTable.app_ver_code = #{param.appVerCode}
+        </if>
+        <if test='param.industryCode!=null and param.industryCode!=""'>
+            and dataTable.industry_code = #{param.industryCode}
+        </if>
+        ${param.dataScope}
+    </select>
+
+    <select id="getStatisticsDevicesUser" parameterType="com.chinatower.device.dto.AnalysisDTO"
+            resultType="java.util.Map">
+        select count(distinct(t.device_code)) as deviceCountTotal,
+        count(distinct case when t.device_status = 1 then t.device_code end) as devCountOffline,
+        count(distinct case when t.device_status = 0 then t.device_code end) as devCountOnline
+        from vm_order_devices o
+        inner join vm_device_info_t t on o.device_code = t.device_code
+        inner join vm_channel_info_t c on c.device_code = t.device_code
+        where o.delete_flag = '0' and t.delete_flag = '0' and o.ord_status in (0,1,2)
+        ${param.dataScope}
+    </select>
+
+    <select id="getStatisticsChannelUser" parameterType="com.chinatower.device.dto.AnalysisDTO"
+            resultType="java.util.Map">
+        select count(distinct(t.channel_code)) as channelCountTotal,
+        count(distinct case when t.channel_status = 0 then t.channel_code end) as channelCountOnline,
+        count(distinct case when t.channel_status = 1 then t.channel_code end) as channelCountOffline
+        from vm_order_devices o
+        inner join vm_channel_info_t t on o.device_code = t.device_code
+        where o.delete_flag = '0' and t.delete_flag = '0' and o.ord_status in (0,1,2)
+        ${param.dataScope}
+    </select>
+
+    <select id="getStatisticsDevicesUserInd" parameterType="com.chinatower.device.entity.dto.IndTenantDeviceDTO"
+            resultType="java.util.Map">
+        select distinct device_code, status
+        from (SELECT d.device_code, d.device_status as status, t.tenant_id, vop.app_ver_code as app_ver_code, vop.industry_code as industry_code,t.accept_node as accept_node
+        FROM  vm_device_info_t d
+        LEFT JOIN vm_order_devices t ON d.device_code = t.device_code and t.delete_flag = '0'
+        LEFT JOIN vm_order_package vop on t.order_code = vop.order_code and t.delete_flag = '0'
+        LEFT JOIN vm_order_customer voc on t.order_code = voc.order_code
+        <if test='categoryCode!=null and categoryCode == 5'>
+            join vm_checkpoint_device_info_t vcdit on vcdit.device_code = d.device_code  and vcdit.delete_flag = '0' and  t.tenant_id = vcdit.tenant_id and vcdit.industry_code =t.industry_code  AND vcdit.industry_code = vop.industry_code
+        </if>
+        WHERE d.delete_flag = '0'
+        and voc.delete_flag = '0'
+        and voc.ord_status in (0,1,2)
+        <if test="categoryCode!=null and categoryCode!=5">
+            and d.category_code = #{categoryCode}
+        </if>
+        ) dataTable
+        where dataTable.tenant_id = #{tenantId} ${dataScope}
+    </select>
+
+    <select id="getStatisticsChannelUserInd" parameterType="com.chinatower.device.entity.dto.IndTenantDeviceDTO"
+            resultType="java.util.Map">
+        SELECT ch.channel_code, ch.channel_status as status
+        FROM (select ord.device_code,
+                     ord.tenant_id,
+                     vop.app_ver_code as app_ver_code, vop.industry_code as industry_code,ord.accept_node as accept_node
+              from vm_order_devices ord
+                       left join vm_order_package vop on vop.order_code = ord.order_code
+                    LEFT JOIN vm_order_customer voc on ord.order_code = voc.order_code
+              where ord.delete_flag = '0'
+                and vop.delete_flag = '0'
+                and voc.delete_flag = '0'
+                and voc.ord_status in (0,1,2)
+        ) dataTable
+                 LEFT JOIN vm_channel_info_t ch
+                           ON dataTable.device_code = ch.device_code
+        <if test='categoryCode!=null and categoryCode == 5'>
+            join vm_checkpoint_device_info_t vcdit on vcdit.device_code = ch.device_code  and vcdit.delete_flag = '0' and  dataTable.tenant_id = vcdit.tenant_id and vcdit.industry_code =dataTable.industry_code
+        </if>
+        WHERE ch.delete_flag = '0'
+        ${dataScope}
+    </select>
+
+    <select id="getSysAreas" resultType="com.chinatower.platform.entity.admin.SysArea">
+        select AREA_CODE,
+        <choose>
+            <when test='level == 0'>
+                AREA_NAME
+            </when>
+            <when test='level == 1'>
+                concat(AREA_PARENT_NAME,AREA_NAME) as AREA_NAME
+            </when>
+            <when test='level == 2'>
+                concat(AREA_PARENT_NAME,AREA_NAME) as AREA_NAME
+            </when>
+        </choose>
+        from sys_area
+        where AREA_CODE in
+        <foreach collection="areaCodes" open="(" close=")" item="code" separator="," index="index">
+            #{code}
+        </foreach>
+    </select>
+</mapper>

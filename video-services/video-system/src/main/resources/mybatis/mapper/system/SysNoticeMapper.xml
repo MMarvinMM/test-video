@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysNoticeMapper">
+    <sql id="selectNoticeVo">
+        SELECT
+        DISTINCT a.notice_id,
+            a.notice_title,
+            a.notice_type,
+            a.notice_content,
+            a.STATUS,
+            a.publish_time,
+            a.receive_end,
+            a.valid_time,
+            a.invalid_time,
+            a.if_all_receive,
+            a.receive_depts,
+            a.receive_roles,
+            a.receive_users,
+            CONVERT
+            ( a.notice_banner, CHAR ) notice_banner,
+            a.remark,
+            a.create_by,
+            a.create_time,
+            a.update_by,
+            a.update_time,
+            a.dept_id,
+            a.tenant_id,
+            b.tenant_name,
+            a.industry_code,
+            ic.industry_name,
+            a.app_ver_code,
+            ivc.app_ver_name,
+            t.NICK_NAME as createByName
+        FROM
+            sys_notice a
+        LEFT JOIN sys_tenant_info b ON a.tenant_id = b.tenant_id and b.del_flag = 0
+        LEFT JOIN sys_industry_conf ic ON a.industry_code = ic.industry_code and ic.delete_flag = 0
+        LEFT JOIN sys_industry_ver_conf ivc ON ivc.app_ver_code = a.app_ver_code AND ivc.industry_code = a.industry_code
+        LEFT JOIN sys_user t ON t.USER_NAME = a.create_by and t.DEL_FLAG = '0'
+    </sql>
+
+    <select id="selectNoticeById" parameterType="com.chinatower.platform.project.system.domain.dto.NoticeQueryDTO" resultType="com.chinatower.system.api.request.notice.SysNotice">
+        <include refid="selectNoticeVo"/>
+        where notice_id = #{noticeId}
+        and ic.accept_node = #{platformCode}
+        and ivc.accept_node = #{platformCode}
+    </select>
+
+    <select id="selectNoticeList" parameterType="com.chinatower.system.api.request.notice.SysNotice"
+            resultType="com.chinatower.system.api.request.notice.SysNotice">
+        <include refid="selectNoticeVo"/>
+        where 1=1
+        and ic.accept_node = #{platformCode}
+        and ivc.accept_node = #{platformCode}
+        <if test="noticeTitle != null and noticeTitle != ''">
+            AND notice_title like CONCAT(CONCAT('%',#{noticeTitle}),'%')
+        </if>
+        <if test="noticeType != null and noticeType != ''">
+            AND notice_type = #{noticeType}
+        </if>
+        <if test="receiveEnd != null and receiveEnd != ''">
+            AND s.receive_end like CONCAT(CONCAT('%',#{receiveEnd}),'%')
+        </if>
+        <if test="createBy != null and createBy != ''">
+            AND a.create_by like CONCAT(CONCAT('%',#{createBy}),'%')
+        </if>
+        <if test='status != null and status == "1"'>
+            AND a.PUBLISH_TIME is not null
+        </if>
+        <if test='status != null and status == "0"'>
+            AND a.PUBLISH_TIME is null
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND (a.tenant_id like CONCAT(CONCAT('%',#{tenantId}),'%') or b.tenant_name like CONCAT(CONCAT('%',#{tenantId}),'%') )
+        </if>
+        <if test="beginTime != null">
+            AND a.create_time between  DATE_FORMAT(#{beginTime},'%Y-%m-%d 00:00:00') and DATE_FORMAT(#{endTime},'%Y-%m-%d 23:59:59')
+        </if>
+        ${dataScope}
+        ORDER BY NOTICE_ID DESC
+    </select>
+
+
+    <select id="getNoticeList" parameterType="com.chinatower.system.api.request.notice.SysNotice"
+            resultType="com.chinatower.system.api.request.notice.SysNotice">
+        <include refid="selectNoticeVo"/>
+        where
+        ic.accept_node = #{platformCode}
+        and ivc.accept_node = #{platformCode}
+        and a.tenant_id = #{tenantId} AND a.industry_code = #{industryCode}
+        and (a.IF_ALL_RECEIVE='1' or a.RECEIVE_USERS LIKE concat('%',#{userId},'%'))  AND a.status = '1'
+        <if test="noticeType != null and noticeType != ''">
+            AND a.notice_type = #{noticeType}
+        </if>
+        <if test="receiveEnd != null and receiveEnd != ''">
+            and a.receive_end like concat('%',#{receiveEnd},'%')
+        </if>
+
+        ${dataScope}
+        ORDER BY NOTICE_ID DESC
+    </select>
+
+
+    <select id="selectToReadNoticeByUser" parameterType="com.chinatower.platform.entity.admin.SysUser"
+            resultType="com.chinatower.system.api.request.notice.SysNotice">
+        <include refid="selectNoticeVo"/>
+        where a.status='1' AND a.receive_end like '%1%'
+        and ic.accept_node = #{platformCode}
+        and ivc.accept_node = #{platformCode}
+        AND current_timestamp between a.VALID_TIME and a.INVALID_TIME
+        AND NOT EXISTS (SELECT 1 FROM sys_notice_read Ar WHERE Ar.NOTICE_ID = a.NOTICE_ID AND Ar.USER_ID = #{userId})
+        AND (
+            INSTR(a.RECEIVE_USERS, #{userId})>0
+            OR INSTR(a.RECEIVE_DEPTS, #{deptId})>0
+            OR (a.IF_ALL_RECEIVE = '1'
+                AND (
+                    a.DEPT_ID =#{deptId}
+                    OR EXISTS ( SELECT 1 FROM SYS_DEPT D WHERE D.DEPT_ID=#{deptId} AND INSTR(D.ANCESTORS, a.DEPT_ID)>0 )
+                )
+            )
+        )
+        and PUBLISH_TIME is not null
+        ORDER BY a.PUBLISH_TIME DESC
+    </select>
+
+    <select id="selectAppToReadNoticeByUser" parameterType="com.chinatower.platform.project.system.domain.vo.GetNoticeReqVo"
+            resultType="com.chinatower.system.api.request.notice.SysNotice">
+        <include refid="selectNoticeVo"/>
+        where a.status='1' AND a.receive_end like '%2%'
+        and ic.accept_node = #{platformCode}
+        and ivc.accept_node = #{platformCode}
+        AND current_timestamp between a.VALID_TIME and a.INVALID_TIME
+        AND NOT EXISTS (SELECT 1 FROM sys_notice_read Ar WHERE Ar.NOTICE_ID = a.NOTICE_ID AND Ar.USER_ID = #{userId})
+        AND (
+            INSTR(a.RECEIVE_USERS, #{userId})>0
+            OR INSTR(a.RECEIVE_DEPTS, #{deptId})>0
+            OR (a.IF_ALL_RECEIVE = '1'
+                AND (
+                    a.DEPT_ID =#{deptId}
+                    OR EXISTS ( SELECT 1 FROM SYS_DEPT D WHERE D.DEPT_ID=#{deptId} AND INSTR(D.ANCESTORS, a.DEPT_ID)>0 )
+                )
+            )
+        )
+        and PUBLISH_TIME is not null
+        ORDER BY a.PUBLISH_TIME DESC
+    </select>
+
+
+    <insert id="insertNotice" parameterType="com.chinatower.system.api.request.notice.SysNotice">
+        insert into sys_notice (
+            <if test="noticeTitle != null and noticeTitle != '' ">notice_title, </if>
+            <if test="noticeType != null and noticeType != '' ">notice_type, </if>
+            <if test="noticeContent != null and noticeContent != '' ">notice_content, </if>
+            <if test="status != null and status != '' ">status, </if>
+            <if test="remark != null and remark != ''">remark,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            <if test="deptId != null and deptId != ''">dept_id,</if>
+            <if test="publishTime != null ">publish_time,</if>
+            <if test="validTime != null ">valid_time,</if>
+            <if test="inValidTime != null ">invalid_time,</if>
+            <if test="ifAllReceive != null and ifAllReceive != ''">if_all_receive,</if>
+            <if test="receiveDepts != null and receiveDepts != ''">receive_depts,</if>
+            <if test="receiveRoles != null and receiveRoles != ''">receive_roles,</if>
+            <if test="receiveUsers != null and receiveUsers != ''">receive_users,</if>
+            <if test="noticeBanner != null and noticeBanner != ''">notice_banner,</if>
+            <if test="tenantId != null and tenantId != ''">tenant_id,</if>
+            <if test="receiveEnd != null and receiveEnd != ''">receive_end,</if>
+            app_ver_code,
+            industry_code,
+            create_time
+        )values(
+            <if test="noticeTitle != null and noticeTitle != ''">#{noticeTitle}, </if>
+            <if test="noticeType != null and noticeType != ''">#{noticeType}, </if>
+            <if test="noticeContent != null and noticeContent != ''">#{noticeContent}, </if>
+            <if test="status != null and status != ''">#{status}, </if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            <if test="deptId != null and deptId != ''">#{deptId},</if>
+            <if test="publishTime != null ">#{publishTime},</if>
+            <if test="validTime != null ">#{validTime},</if>
+            <if test="inValidTime != null ">#{inValidTime},</if>
+            <if test="ifAllReceive != null and ifAllReceive != ''">#{ifAllReceive},</if>
+            <if test="receiveDepts != null and receiveDepts != ''">#{receiveDepts},</if>
+            <if test="receiveRoles != null and receiveRoles != ''">#{receiveRoles},</if>
+            <if test="receiveUsers != null and receiveUsers != ''">#{receiveUsers},</if>
+            <if test="noticeBanner != null and noticeBanner != ''">#{noticeBanner},</if>
+            <if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+            <if test="receiveEnd != null and receiveEnd != ''">#{receiveEnd},</if>
+            #{appVerCode},
+            #{industryCode},
+            #{createTime}
+        )
+    </insert>
+
+    <select id="countNoticeReadRecord" resultType="java.lang.Integer">
+        select count(0) from sys_notice_read where NOTICE_ID = #{noticeId} and USER_ID = #{userId}
+    </select>
+
+    <insert id="insertNoticeRead" parameterType="com.chinatower.system.api.request.notice.SysNotice">
+        insert into sys_notice_read (notice_id,user_id,create_time)values(#{noticeId},#{userId},current_timestamp)
+    </insert>
+
+    <update id="updateNotice" parameterType="com.chinatower.system.api.request.notice.SysNotice">
+        update sys_notice
+        <set>
+            <if test="noticeTitle != null and noticeTitle != ''">notice_title = #{noticeTitle}, </if>
+            <if test="noticeType != null and noticeType != ''">notice_type = #{noticeType}, </if>
+            <if test="noticeContent != null">notice_content = #{noticeContent}, </if>
+            <if test="status != null and status != ''">status = #{status}, </if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            <if test="validTime != null ">valid_time = #{validTime},</if>
+            <if test="publishTime != null ">publish_time = #{publishTime},</if>
+            <if test="inValidTime != null ">invalid_time = #{inValidTime},</if>
+            <if test="ifAllReceive != null and ifAllReceive != ''">IF_ALL_RECEIVE = #{ifAllReceive},</if>
+            <if test="receiveDepts != null ">RECEIVE_DEPTS = #{receiveDepts},</if>
+            <if test="receiveRoles != null ">RECEIVE_ROLES = #{receiveRoles},</if>
+            <if test="receiveUsers != null ">RECEIVE_USERS = #{receiveUsers},</if>
+            notice_banner = #{noticeBanner},
+            <if test="tenantId != null ">tenant_id = #{tenantId},</if>
+            <if test="receiveEnd != null and receiveEnd != ''">receive_end = #{receiveEnd},</if>
+ 			update_time = #{updateTime}
+        </set>
+        where notice_id = #{noticeId}
+    </update>
+
+    <delete id="deleteNoticeById" parameterType="com.chinatower.platform.project.system.domain.dto.NoticeQueryDTO">
+        delete from sys_notice where notice_id = #{noticeId}
+    </delete>
+
+    <delete id="deleteNoticeByIds" parameterType="com.chinatower.platform.project.system.domain.dto.NoticeQueryDTO">
+        delete from sys_notice where notice_id in
+        <foreach item="noticeId" collection="noticeIds" open="(" separator="," close=")">
+            #{noticeId}
+        </foreach>
+    </delete>
+
+    <select id="selectAppNoticeByUser" parameterType="com.chinatower.platform.project.system.domain.vo.GetNoticeReqVo"
+            resultType="com.chinatower.system.api.request.notice.SysNotice">
+        select notice_id, notice_title, notice_type, notice_content, status, publish_time, receive_end,
+         valid_time, invalid_time, if_all_receive, receive_depts, receive_roles, receive_users, notice_banner, remark,
+         create_by, create_time, update_by, update_time, dept_id, tenant_id,
+         (SELECT if(count(1)>=1 ,1,0) FROM sys_notice_read A WHERE A.NOTICE_ID = T.NOTICE_ID and A.USER_ID = #{userId}) as ifRead
+		from sys_notice T
+        where T.status='1' AND T.receive_end like '%2%'
+        <if test="noticeType != null and noticeType != ''">
+            and T.NOTICE_TYPE = #{noticeType}
+        </if>
+        <if test=" ifRead == 0 ">
+        AND NOT EXISTS (SELECT 1 FROM sys_notice_read A WHERE A.NOTICE_ID = T.NOTICE_ID AND A.USER_ID = #{userId})
+        </if>
+        <if test=" ifRead == 1 ">
+            AND EXISTS (SELECT 1 FROM sys_notice_read A WHERE A.NOTICE_ID = T.NOTICE_ID AND A.USER_ID = #{userId})
+        </if>
+        AND (
+        INSTR(T.RECEIVE_USERS, #{userId})>0
+        OR INSTR(T.RECEIVE_DEPTS, #{deptId})>0
+        OR (T.IF_ALL_RECEIVE = '1'
+        AND (
+        T.DEPT_ID =#{deptId}
+        OR EXISTS ( SELECT 1 FROM SYS_DEPT D WHERE D.DEPT_ID=#{deptId} AND INSTR(D.ANCESTORS, T.DEPT_ID)>0 )
+        )
+        )
+        )
+        ORDER BY T.PUBLISH_TIME DESC
+    </select>
+
+    <select id="countNoticeReadRecordByUserId" parameterType="com.chinatower.platform.project.system.domain.vo.GetNoticeReqVo" resultType="java.lang.Integer">
+        select count(0) from sys_notice T
+        where T.status='1' AND T.receive_end like '%2%'
+        AND current_timestamp between T.VALID_TIME and T.INVALID_TIME
+        AND NOT EXISTS (SELECT 1 FROM sys_notice_read A WHERE A.NOTICE_ID = T.NOTICE_ID AND A.USER_ID = #{userId})
+        AND (
+            INSTR(T.RECEIVE_USERS, #{userId})>0
+            OR INSTR(T.RECEIVE_DEPTS, #{deptId})>0
+            OR (T.IF_ALL_RECEIVE = '1'
+                AND (
+                    T.DEPT_ID =#{deptId}
+                    OR EXISTS ( SELECT 1 FROM SYS_DEPT D WHERE D.DEPT_ID=#{deptId} AND INSTR(D.ANCESTORS, T.DEPT_ID)>0 )
+                )
+            )
+        )
+    </select>
+
+    <update id="updateStatus" parameterType="com.chinatower.platform.project.system.domain.dto.NoticeQueryDTO">
+        update sys_notice set status = #{status,jdbcType=VARCHAR} where notice_id=#{noticeId}
+    </update>
+
+
+    <insert id="insertNoticeReadBatch" parameterType="com.chinatower.platform.project.system.domain.vo.GetNoticeReqVo">
+        INSERT INTO sys_notice_read (
+            notice_id,
+            user_id,
+            create_time
+        ) SELECT
+            NOTICE_ID,
+            #{userId},
+            CURRENT_TIMESTAMP
+        FROM
+            sys_notice T
+        WHERE
+            T.status='1' AND T.receive_end like '%2%'
+            <if test="noticeType != null and noticeType != ''">
+                and T.NOTICE_TYPE = #{noticeType}
+            </if>
+        AND NOT EXISTS (
+            SELECT
+                1
+            FROM
+                sys_notice_read A
+            WHERE
+                A.NOTICE_ID = T.NOTICE_ID
+            AND A.USER_ID = #{userId})
+            AND (
+                INSTR(
+                    T.RECEIVE_USERS,
+                    #{userId})>0
+                OR INSTR(
+                    T.RECEIVE_DEPTS,
+                    #{deptId})>0
+                OR (
+                    T.IF_ALL_RECEIVE = '1'
+                    AND (
+                        T.DEPT_ID = #{deptId}
+                        OR EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                SYS_DEPT D
+                            WHERE
+                                D.DEPT_ID = #{deptId}
+                            AND INSTR(D.ANCESTORS, T.DEPT_ID) > 0
+                        )
+                    )
+                )
+                )
+
+    </insert>
+
+</mapper>

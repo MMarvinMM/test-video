@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.FlowLinkIndustryConfigMapper">
+
+
+    <select id="getFlowLinkIndustryConfigByCondition" parameterType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto"
+            resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto">
+        SELECT
+        link_id,link_name,role_id,screen_url,msg_notify_type,msg_notify_limit,msg_notify_company,leader_flag,sign_flag,rollback_flag,time_limit,notify_admin_flag,delete_flag,pc_url,`status`,app_url,attr_flag,
+        app_ver_code,industry_code,link_id realLinkType,data_filter_permiss dataFilterPermiss,custom_admin customAdmin,time_start_alram timeStartAlram,
+        time_end_alram timeEndAlram,voice_alram voiceAlram, time_remind timeRemind,time_remind_auto timeRemindAuto,time_remind_number timeRemindNumber,
+        if_later_remind ifLaterRemind,later_remind_company laterRemindCompany,time_push_type timePushType,time_limit_push timeLimitPush,user_type userType,'0' as enableAcceptanceMode
+        FROM vm_flow_link_industry_config
+        WHERE `status` = '1'
+        AND link_id = #{linkId}
+        AND	delete_flag = '0'
+        <if test="industryCode == null">
+            AND app_ver_code is null AND industry_code is null
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND app_ver_code = #{appVerCode}
+        </if>
+    </select>
+
+    <select id="queryFlowLinkIndustryConfig" parameterType="com.chinatower.event.entity.dto.AlarmFlowConfigModel" resultType="com.chinatower.event.entity.dto.FlowModel">
+        select
+        fll.cur_link as linkId,
+        fll.cur_link as curLink,
+        fll.pre_link as preLink,
+        fll.next_link as nextLink,
+        fll.link_type as linkType,
+        fla.data_filter_permiss as dataFilterPermiss,
+        fla.custom_admin as customAdmin,
+        fla.user_type as userType,
+        <if test="gridFlag != null and gridFlag != ''">
+            fla.role_id as roleId,
+        </if>
+        <if test="gridFlag == null or gridFlag == ''">
+            (select CONCAT(IFNULL(fla.role_id,''), ',', IFNULL(fla.grid_sign_role,''))) as roleId,
+        </if>
+        fla.msg_notify_type as msgNotifyType,
+        fla.leader_flag as leaderFlag,
+        fla.sign_flag as signFlag,
+        fla.rollback_flag as rollbackFlag,
+        (select link_name from vm_flow_link_config where link_id = fla.link_id) as linkName,
+        ft.flow_name as flowName,
+        fla.time_limit as timeLimit,
+        fla.id as flowLinkId,
+        ft.template_id as flowId,
+        fll.real_link_type as realLinkType,
+        fll.template_id templateId,
+        '0' as turnFlag,
+        '0' as enableAcceptanceMode
+        from vm_flow_link_industry_config as fla
+        INNER JOIN vm_flow_template_link as fll on fla.link_id = fll.cur_link
+        left join vm_flow_template as ft on fll.template_id = ft.template_id
+        where  fla.status = '1' and fla.delete_flag ='0'
+        <if test="id != null and id != ''">
+           and  fll.template_id = #{id}
+        </if>
+        <if test="linkId != null and linkId != ''">
+            and fla.link_id = #{linkId}
+        </if>
+        <if test="industryCode == null">
+            AND fla.app_ver_code is null AND fla.industry_code is null
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND fla.industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND fla.app_ver_code = #{appVerCode}
+        </if>
+        <if test="linkList != null and linkList.size() > 0 ">
+            and fla.link_id in
+            <foreach collection="linkList" item="curLink" index="index" open="(" close=")" separator=",">
+                #{curLink}
+            </foreach>
+        </if>
+        GROUP BY fll.template_id,fll.cur_link
+    </select>
+
+
+    <select id="queryAllNextFlowLinkIndustryConfig" parameterType="com.chinatower.event.entity.dto.AlarmFlowConfigModel" resultType="com.chinatower.event.entity.dto.FlowModel">
+        select * from (
+        select t1.*,
+        if(find_in_set(t1.preLink, @pids) > 0, @pids := concat(@pids, ',', t1.linkId), 0) as ischild
+        from (
+        select
+        ftl.cur_link as linkId,
+        ftl.pre_link as preLink,
+        ftl.next_link as nextLink,
+        ftl.link_type as linkType,
+        fla.user_type as userType,
+        fla.role_id as roleId,
+        fla.msg_notify_type as msgNotifyType,
+        fla.leader_flag as leaderFlag,
+        fla.sign_flag as signFlag,
+        fla.rollback_flag as rollbackFlag,
+        (select link_name from vm_flow_link_config where link_id = fla.link_id) as linkName,
+        ft.flow_name as flowName,
+        fla.time_limit as timeLimit,
+        ftl.flow_id as flowId,
+        fla.id as flowLinkId
+        from vm_flow_link_industry_config as fla
+        INNER JOIN vm_flow_template_link as ftl on fla.link_id = ftl.cur_link and ftl.delete_flag = 0
+        left join vm_flow_template as ft on ftl.template_id = ft.template_id and ft.delete_flag = 0
+        where ftl.template_id = #{id}  AND fla.status = '1'
+        <if test="industryCode == null">
+            AND fla.app_ver_code is null AND fla.industry_code is null
+        </if>
+        <if test="templateId != null and templateId != ''">
+            AND fla.template_id =  #{templateId}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND fla.tenant_id =  #{tenantId}
+        </if>
+        order by ftl.pre_link, ftl.cur_link
+        ) t1,
+        (select @pids := #{linkId} linkId) t2
+        ) t3 where ischild != 0
+    </select>
+
+    <select id="queryFlowLinkByFlowId" parameterType="com.chinatower.event.entity.dto.AlarmFlowConfigModel" resultType="com.chinatower.event.entity.dto.FlowModel">
+        select
+        fll.cur_link as linkId,
+        fll.cur_link as curLink,
+        fll.pre_link as preLink,
+        fll.next_link as nextLink,
+        fll.link_type as linkType,
+        fla.data_filter_permiss as dataFilterPermiss,
+        fla.custom_admin as customAdmin,
+        fla.user_type as userType,
+        <if test="gridFlag != null and gridFlag != ''">
+            fla.role_id as roleId,
+        </if>
+        <if test="gridFlag == null or gridFlag == ''">
+            (select CONCAT(IFNULL(fla.role_id,''), ',', IFNULL(fla.grid_sign_role,''))) as roleId,
+        </if>
+        fla.msg_notify_type as msgNotifyType,
+        fla.leader_flag as leaderFlag,
+        fla.sign_flag as signFlag,
+        fla.rollback_flag as rollbackFlag,
+        (select link_name from vm_flow_link_config where link_id = fla.link_id) as linkName,
+        ft.flow_name as flowName,
+        fla.time_limit as timeLimit,
+        fla.id as flowLinkId,
+        ft.id as  flowId,
+        fll.cur_link as realLinkType,
+        fll.template_id templateId,
+        '0' as turnFlag,
+        '0' as enableAcceptanceMode
+        from vm_flow_link_industry_config as fla
+        INNER JOIN vm_flow_template_link as fll on fla.link_id = fll.cur_link
+        left join vm_alarm_flow_config as ft on fll.template_id = ft.template_id
+        where  fla.status = '1' and fla.delete_flag='0'
+        <if test="id != null and id != ''">
+            and  ft.id = #{id}
+        </if>
+        <if test="linkId != null and linkId != ''">
+            and fla.link_id = #{linkId}
+        </if>
+        <if test="industryCode == null">
+            AND fla.app_ver_code is null AND fla.industry_code is null
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND fla.industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND fla.app_ver_code = #{appVerCode}
+        </if>
+        <if test="linkList != null and linkList.size() > 0 ">
+            and fla.link_id in
+            <foreach collection="linkList" item="curLink" index="index" open="(" close=")" separator=",">
+                #{curLink}
+            </foreach>
+        </if>
+    </select>
+</mapper>

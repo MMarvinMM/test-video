@@ -1,0 +1,9 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.bdm.api.factory.GridFallbackFactory,\
+  com.chinatower.bdm.api.factory.ResourceFallbackFactory,\
+  com.chinatower.bdm.api.factory.ResourceTypeFallbackFactory,\
+  com.chinatower.bdm.api.factory.LayerFallbackFactory,\
+  com.chinatower.bdm.api.factory.GeoserverFallbackFactory,\
+  com.chinatower.bdm.api.factory.UnionTargetJsFallbackFactory
+
+

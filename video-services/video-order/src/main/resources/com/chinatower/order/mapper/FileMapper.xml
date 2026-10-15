@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderCustomerMapper">
+
+    <select id="getOrderCustomerByParam" resultType="com.chinatower.platform.entity.order.OrderInfoVO">
+
+        select
+        DISTINCT co.order_code,
+        co.ord_status,
+        co.order_time,
+        co.accept_node locationNode,
+        co.subscriber_code,
+        co.customer_name,
+        co.valid_time,
+        co.invalid_time,
+        co.tenant_id,
+        co.accept_node locationCode,
+        c.`platform_name` locationName,
+        (case when  compro.dept_level = '3'
+        then comAll.dept_name else compro.dept_name end) as provinceName,
+        (case when  comcty.dept_level = '5'
+        then compro.dept_name else comcty.dept_name end) as cityName
+        from vm_order_customer co
+        inner join vm_order_package cp on co.order_code = cp.order_code
+        left join sys_dept comcty on comcty.dept_id = co.business_org
+        left join sys_dept compro on compro.dept_id = comcty.parent_id
+        left join sys_dept comAll on comAll.dept_id = compro.parent_id
+        left join `vm_platform_data_config` c on co.accept_node = c.`platform_code` and c.delete_flag = 0
+        <if test='(deviceCode!= null and deviceCode != "") or deviceName!= null and deviceName != "" '>
+            left join vm_order_devices do on do.order_code = co.order_code
+        </if>
+        <if test='(sensorDeviceName!= null and sensorDeviceName != "") or (sensorDeviceCode!= null and sensorDeviceCode != "")'>
+            left join vm_order_sensor_devices osd on osd.order_code = co.order_code
+        </if>
+        <if test='(radarName!= null and radarName != "") or (radarCode!= null and radarCode != "")'>
+            left join vm_order_sensor_devices radarOsd on radarOsd.order_code = co.order_code
+        </if>
+        <if test='(uavName!= null and uavName != "") or (uavCode!= null and uavCode != "")'>
+            left join vm_order_uav_devices uav on uav.order_code = co.order_code
+        </if>
+        <if test='(uavNestName!= null and uavNestName != "") or (uavNestCode!= null and uavNestCode != "")'>
+            left join vm_order_uav_nest_devices nest on nest.order_code = co.order_code
+        </if>
+        <if test='(hornName!= null and hornName != "") or (hornCode!= null and hornCode != "")'>
+            left join vm_order_horn_devices horn on horn.order_code = co.order_code
+        </if>
+        <if test='(recorderName!= null and recorderName != "") or (recorderCode != null and recorderCode != "")'>
+            left join vm_order_recorder_devices recorder on recorder.order_code = co.order_code
+        </if>
+        <if test='algorithmName!= null and algorithmName != ""'>
+            left join vm_order_algorithms ao on ao.order_code = co.order_code
+        </if>
+        <if test='satelliteName!= null and satelliteName != ""'>
+            left join vm_order_services_rel serrel on serrel.order_code = co.order_code
+        </if>
+        WHERE
+        co.tenant_id = #{tenantId}
+        <if test='deviceCode!= null and deviceCode != "" '>
+            and do.device_code like CONCAT('%', #{deviceCode}, '%')
+        </if>
+        <if test='deviceName!= null and deviceName != ""'>
+            and do.device_name like CONCAT('%', #{deviceName}, '%')
+        </if>
+        <if test='sensorDeviceCode!= null and sensorDeviceCode != "" '>
+            and osd.category_code = 2 and osd.device_code like CONCAT('%', #{sensorDeviceCode}, '%')
+        </if>
+        <if test='sensorDeviceName!= null and sensorDeviceName != ""'>
+            and osd.category_code = 2 and osd.device_name like CONCAT('%', #{sensorDeviceName}, '%')
+        </if>
+        <if test='algorithmName!= null and algorithmName != ""'>
+            and ao.algorithm_name like CONCAT('%', #{algorithmName}, '%')
+        </if>
+        <if test='radarName!= null and radarName != ""'>
+            and radarOsd.category_code = 1 and radarOsd.device_name like CONCAT('%', #{radarName}, '%')
+        </if>
+        <if test='radarCode!= null and radarCode != ""'>
+            and radarOsd.category_code = 1 and radarOsd.device_code like CONCAT('%', #{radarCode}, '%')
+        </if>
+        <if test='uavName!= null and uavName != ""'>
+            and uav.device_name like CONCAT('%', #{uavName}, '%')
+        </if>
+        <if test='uavCode!= null and uavCode != ""'>
+            and uav.device_code like CONCAT('%', #{uavCode}, '%')
+        </if>
+        <if test='uavNestName!= null and uavNestName != ""'>
+            and nest.device_name like CONCAT('%', #{uavNestName}, '%')
+        </if>
+        <if test='uavNestCode!= null and uavNestCode != ""'>
+            and nest.device_code like CONCAT('%', #{uavNestCode}, '%')
+        </if>
+        <if test='hornName!= null and hornName != ""'>
+            and horn.device_name like CONCAT('%', #{hornName}, '%')
+        </if>
+        <if test='hornCode!= null and hornCode != ""'>
+            and horn.device_code like CONCAT('%', #{hornCode}, '%')
+        </if>
+        <if test='recorderName!= null and recorderName != ""'>
+            and recorder.device_name like CONCAT('%', #{recorderName}, '%')
+        </if>
+        <if test='recorderCode!= null and recorderCode != ""'>
+            and recorder.device_code like CONCAT('%', #{recorderCode}, '%')
+        </if>
+        <if test='satelliteName!= null and satelliteName != ""'>
+            and serrel.service_code = '9' and serrel.service_name like CONCAT('%', #{satelliteName}, '%')
+        </if>
+        <if test='orderStatusArr!= null and orderStatusArr != ""'>
+            and co.ord_status in
+            <foreach collection="orderStatusArr" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="startTime != null"><!-- 开始时间检索 -->
+            AND STR_TO_DATE(co.order_time,'%Y-%m-%d %H:%i:%s') &gt;= #{startTime}
+        </if>
+        <if test="endTime != null"><!-- 结束时间检索 -->
+            AND STR_TO_DATE(co.order_time,'%Y-%m-%d %H:%i:%s') &lt;= #{endTime}
+        </if>
+        <if test='locationCode != null and locationCode != ""'>
+            and co.accept_node = #{locationCode}
+        </if>
+        ${dataScope}
+        <choose>
+            <when test="sortName == 'orderTime'">
+                order by co.order_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'validTime'">
+                order by co.valid_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'invalidTime'">
+                order by co.invalid_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by co.order_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="validAppCode" resultType="java.lang.Integer">
+        select count(1)
+        from sys_industry_ver_conf
+        where industry_code = #{appCode}
+        and app_ver_code = #{appVerCode}
+        and accept_node = #{acceptNode}
+        and status = '1'
+        and delete_flag = '0'
+    </select>
+
+    <select id="validLocationAppCode" resultType="java.lang.Integer">
+        select count(1)
+        from sys_localization_industry_ver_conf
+        where industry_code = #{appCode}
+        and app_ver_code = #{appVerCode}
+        and accept_node = #{acceptNode}
+        and status = '1'
+        and delete_flag = '0'
+    </select>
+
+    <update id="cancelByOrderCode">
+        update vm_order_customer
+        set ord_status = 3, update_time = now()
+        where order_code = #{orderCode} and ord_status in (0,1,2);
+    </update>
+
+    <select id="countOrder" resultType="java.lang.Integer">
+        select count(1)
+        from vm_order_customer cp
+        where cp.tenant_id = #{tenantId}
+          and cp.delete_flag = '0' and ord_status in (0,1,2)
+    </select>
+
+    <select id="getParentCodeListByLocationCode" resultType="java.lang.String">
+        select code_path
+        from `vm_platform_data_config`
+        where platform_code = #{locationCode} and delete_flag = 0
+    </select>
+
+    <select id="getLocationLevelByCode" resultType="java.lang.String">
+        select platform_level from vm_platform_data_config where platform_code = #{locationCode} and delete_flag = 0
+    </select>
+
+    <select id="getLocationCodeWithoutCenterCode" resultType="java.lang.String">
+        select platform_code
+        from vm_platform_data_config
+        where platform_level != 0 and delete_flag = 0 and platform_code in
+        <foreach collection="locationCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="countByUserName" resultType="java.lang.Integer">
+        select count(*) from vm_order_customer where admin = #{userName} and accept_node = #{currentAcceptNode}
+    </select>
+
+    <select id="queryValidAccessNodeList" resultType="java.lang.String">
+        select platform_code
+        from vm_platform_data_config
+        where code_path like CONCAT(CONCAT('%', #{acceptNode}), '%')
+    </select>
+
+</mapper>

@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.VmAlarmTransferConfigMapper">
+
+	<sql id="Base_Column_List" >
+		t.id,
+		t.alarm_transfer_name AS alarmTransferName,
+		t.tenant_id AS tenantId,
+		t.never_process_flag AS neverProcessFlag,
+		t.order_status AS orderStatus,
+		t.alarm_transfer_time AS alarmTransferTime,
+		t.transfer_date AS transferDate,
+		t.transfer_interval AS transferInterval,
+		t.creator,
+		t.create_time AS createTime,
+		t.modifier,
+		t.update_time AS updateTime
+	</sql>
+
+	<select id="getAlarmTransferConfigList" parameterType="com.chinatower.event.entity.dto.VmAlarmTransferConfigDTO"
+			resultType="com.chinatower.event.entity.vo.VmAlarmTransferConfigVO">
+		SELECT
+			t.id,
+			t.alarm_transfer_name AS alarmTransferName,
+			t.tenant_id AS tenantId,
+			t.creator,
+			t.create_time AS createTime,
+			t.modifier,
+			t.update_time AS updateTime,
+		    t.industry_code AS industryCode
+		FROM
+			vm_alarm_transfer_config t
+		WHERE
+			t.delete_flag = '0'
+			${dataScope}
+		<if test="tenantId != null and tenantId != ''">
+			AND t.tenant_id = #{tenantId}
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			AND t.industry_code = #{industryCode}
+		</if>
+		<if test="alarmTransferName != null and alarmTransferName != ''">
+			AND t.alarm_transfer_name LIKE CONCAT('%', #{alarmTransferName}, '%')
+		</if>
+		<if test="creator != null and creator != ''">
+			AND t.creator LIKE CONCAT('%', #{creator}, '%')
+		</if>
+		<if test="modifier != null and modifier != ''">
+			AND t.modifier LIKE CONCAT('%', #{modifier}, '%')
+		</if>
+		<if test='createTimeStart != null and createTimeStart != "" and createTimeEnd != null and createTimeEnd != "" '>
+			AND t.create_time <![CDATA[>=]]> #{createTimeStart} AND t.create_time <![CDATA[<=]]> #{createTimeEnd}
+		</if>
+		<if test='updateTimeStart != null and updateTimeStart != "" and updateTimeEnd != null and updateTimeEnd != "" '>
+			AND t.update_time <![CDATA[>=]]> #{updateTimeStart} AND t.update_time <![CDATA[<=]]> #{updateTimeEnd}
+		</if>
+		<choose>
+			<when test="sortName == 'createTime'">
+				order by t.create_time
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<when test="sortName == 'updateTime'">
+				order by t.update_time
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<otherwise>
+				order by t.create_time desc
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="queryAlarmTransferConfigById" parameterType="Long" resultType="com.chinatower.event.entity.vo.VmAlarmTransferConfigVO">
+		SELECT
+		<include refid="Base_Column_List"/>
+		FROM
+		vm_alarm_transfer_config t
+		WHERE t.delete_flag = 0
+		AND t.id = #{id}
+	</select>
+
+	<select id="getAlarmTypeByTransferId" parameterType="Long" resultType="com.chinatower.event.entity.vo.VmAlarmTypeTransferVO">
+		SELECT
+			id,
+			alarm_transfer_id,
+			tenant_id,
+			warning_source,
+			alarm_type,
+			creator,
+			modifier,
+			create_time,
+			update_time,
+			delete_flag
+		FROM
+			vm_alarm_type_transfer
+		WHERE delete_flag = 0
+		<if test="alarmTransferId != null and alarmTransferId != ''">
+			AND alarm_transfer_id = #{alarmTransferId}
+		</if>
+	</select>
+
+	<select id="queryAlarmTransferConfigAndType" parameterType="com.chinatower.event.entity.dto.VmAlarmTransferConfigDTO"
+			resultType="com.chinatower.event.entity.vo.VmAlarmTransferConfigVO">
+		SELECT
+			t1.alarm_transfer_name,
+			t1.tenant_id,
+			t2.id,
+			t2.alarm_transfer_id,
+			t2.warning_source,
+			t2.alarm_type
+		FROM
+			vm_alarm_transfer_config t1
+		LEFT JOIN vm_alarm_type_transfer t2 ON t1.id = t2.alarm_transfer_id
+		<where>
+			t1.delete_flag = 0
+			<if test="tenantId != null and tenantId != ''">
+				AND t1.tenant_id = #{tenantId}
+			</if>
+			<if test="industryCode != null and industryCode != ''">
+				AND t1.industry_code = #{industryCode}
+			</if>
+			<if test="alarmSourceAndTypeList != null and alarmSourceAndTypeList.size() > 0">
+				AND concat(t2.alarm_type, '-', t2.warning_source)
+				<foreach collection="alarmSourceAndTypeList" item="item" index="index" open=" in (" close=")" separator=",">
+					concat(#{item.alarmType}, '-', #{item.warningSource})
+				</foreach>
+			</if>
+		</where>
+	</select>
+
+	<select id="queryUsers" parameterType="java.util.List" resultType="com.chinatower.platform.entity.admin.SysUser">
+		select user_id as userId, user_name as userName, dept_id as deptId, nick_name as nickName
+		from sys_user where user_id in
+		<foreach collection="list" item="userId" index="index" open="(" close=")" separator=",">
+			#{userId}
+		</foreach>
+	</select>
+
+	<select id="queryTenantList" parameterType="java.util.List" resultType="com.chinatower.platform.entity.admin.SysTenantInfo">
+		select tenant_id as tenantId, tenant_name as tenantName
+		from sys_tenant_info where tenant_id in
+		<foreach collection="list" item="tenantId" index="index" open="(" close=")" separator=",">
+			#{tenantId}
+		</foreach>
+	</select>
+
+	<select id="getAutoTransferName" resultType="java.lang.String">
+		SELECT
+			IF(a.alarm_transfer_name <![CDATA[ <> ]]> 0, concat('告警转移策略', MAX(CAST(a.alarm_transfer_name AS SIGNED)) + 1), '告警转移策略1')
+		FROM
+			(
+				SELECT
+					SUBSTRING( alarm_transfer_name, 7 ) AS alarm_transfer_name
+				FROM
+					vm_alarm_transfer_config
+				WHERE
+					alarm_transfer_name LIKE '告警转移策略%'
+				  AND delete_flag = 0
+				  AND tenant_id = #{tenantId}
+				  AND industry_code = #{industryCode}
+			) a
+	</select>
+
+	<select id="getTransferNameCount" resultType="int">
+		select count(1) from vm_alarm_transfer_config
+		where alarm_transfer_name = #{alarmTransferName}
+		and delete_flag = '0'
+		and tenant_id = #{tenantId}
+		and industry_code = #{industryCode}
+		<if test="id != null and id != ''">
+			and id != #{id}
+		</if>
+	</select>
+
+	<insert id="addVmAlarmTransferConfig" parameterType="com.chinatower.event.entity.dto.VmAlarmTransferConfigDTO" keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+		insert into vm_alarm_transfer_config
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="alarmTransferName != null and alarmTransferName != ''">alarm_transfer_name,</if>
+			<if test="tenantId != null and tenantId != ''">tenant_id,</if>
+			<if test="neverProcessFlag != null and neverProcessFlag != ''">never_process_flag,</if>
+			<if test="orderStatus != null and orderStatus != ''">order_status,</if>
+			<if test="alarmTransferTime != null and alarmTransferTime != ''">alarm_transfer_time,</if>
+			<if test="transferDate != null and transferDate != ''">transfer_date,</if>
+			<if test="transferInterval != null and transferInterval != ''">transfer_interval,</if>
+			<if test="creator != null and creator != ''">creator,</if>
+			create_time,
+			update_time,
+			modifier,
+			<if test="appVerCode != null and appVerCode != ''">app_ver_code,</if>
+			<if test="industryCode != null and industryCode != ''">industry_code,</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="alarmTransferName != null and alarmTransferName != ''">#{alarmTransferName},</if>
+			<if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+			<if test="neverProcessFlag != null and neverProcessFlag != ''">#{neverProcessFlag},</if>
+			<if test="orderStatus != null and orderStatus != ''">#{orderStatus},</if>
+			<if test="alarmTransferTime != null and alarmTransferTime != ''">#{alarmTransferTime},</if>
+			<if test="transferDate != null and transferDate != ''">#{transferDate},</if>
+			<if test="transferInterval != null and transferInterval != ''">#{transferInterval},</if>
+			<if test="creator != null and creator != ''">#{creator},</if>
+			<choose>
+				<when test="createTime != null">
+					#{createTime},
+					now(),
+					#{modifier},
+				</when>
+				<otherwise>
+					NOW(),
+					null,
+					'',
+				</otherwise>
+			</choose>
+			<if test="appVerCode != null and appVerCode != '' ">#{appVerCode},</if>
+			<if test="industryCode != null and industryCode != '' ">#{industryCode},</if>
+		</trim>
+	</insert>
+
+	<insert id="batchAddAlarmTypeTransfer" parameterType="java.util.List">
+		INSERT INTO vm_alarm_type_transfer( alarm_transfer_id, tenant_id, warning_source, alarm_type, creator, modifier, create_time, update_time, industry_code)
+		VALUES
+		<foreach collection="transferTypeList" item="item" index="index" separator=",">
+			(#{item.alarmTransferId},
+			#{item.tenantId},
+			#{item.warningSource},
+			#{item.alarmType},
+			#{item.creator},
+			#{item.modifier},
+			NOW(),
+			NOW(),
+			#{item.industryCode})
+		</foreach>
+	</insert>
+
+	<update id="modAlarmTransferConfigById">
+		UPDATE vm_alarm_transfer_config
+		<set>
+			<if test="alarmTransferName != null and alarmTransferName != ''">
+				alarm_transfer_name = #{alarmTransferName,jdbcType=VARCHAR},
+			</if>
+			<if test="tenantId != null and tenantId != ''">
+				tenant_id = #{tenantId,jdbcType=VARCHAR},
+			</if>
+			<if test="neverProcessFlag != null and neverProcessFlag != ''">
+				never_process_flag = #{neverProcessFlag,jdbcType=VARCHAR},
+			</if>
+			<if test="orderStatus != null and orderStatus != ''">
+				order_status = #{orderStatus,jdbcType=BIGINT},
+			</if>
+			<if test="alarmTransferTime != null and alarmTransferTime != ''">
+				alarm_transfer_time = #{alarmTransferTime,jdbcType=VARCHAR},
+			</if>
+			<if test="transferDate != null and transferDate != ''">
+				transfer_date = #{transferDate,jdbcType=VARCHAR},
+			</if>
+			<if test="transferInterval != null and transferInterval != ''">
+				transfer_interval = #{transferInterval,jdbcType=VARCHAR},
+			</if>
+			<if test="deleteFlag != null and deleteFlag != ''">
+				delete_flag = #{deleteFlag,jdbcType=INTEGER},
+			</if>
+			<if test="modifier != null and modifier != ''">
+				modifier = #{modifier,jdbcType=VARCHAR},
+			</if>
+			update_time = NOW(),
+			<if test="industryCode != null and industryCode != ''">
+				industry_code = #{industryCode,jdbcType=VARCHAR},
+			</if>
+		</set>
+		WHERE id = #{id, jdbcType=BIGINT}
+	</update>
+
+	<update id="delAlarmTypeList" parameterType="com.chinatower.event.entity.dto.VmAlarmTransferConfigDTO">
+		update vm_alarm_type_transfer
+		set delete_flag = 1
+		where tenant_id = #{tenantId}
+		and industry_code = #{industryCode,jdbcType=VARCHAR}
+		AND concat(alarm_type, '-', warning_source)
+		<foreach collection="alarmSourceAndTypeList" item="item" index="index" open=" in (" close=")" separator=",">
+			concat(#{item.alarmType}, '-', #{item.warningSource})
+		</foreach>
+		<if test="id != null and id != ''">
+			and alarm_transfer_id != #{id}
+		</if>
+		and delete_flag= 0
+	</update>
+
+	<select id="getTransferIdByAlarmType" parameterType="com.chinatower.event.entity.dto.VmAlarmTransferConfigDTO" resultType="String">
+		SELECT
+		t.alarm_transfer_id
+		FROM
+		vm_alarm_type_transfer t
+		WHERE t.tenant_id = #{tenantId}
+		AND t.industry_code = #{industryCode,jdbcType=VARCHAR}
+		AND t.delete_flag = 0
+		AND concat(t.alarm_type, '-', t.warning_source)
+		<foreach collection="alarmSourceAndTypeList" item="item" index="index" open=" in (" close=")" separator=",">
+			concat(#{item.alarmType}, '-', #{item.warningSource})
+		</foreach>
+	</select>
+
+	<select id="selectEmptyTransferIds" resultType="java.lang.Long">
+		select distinct id from vm_alarm_transfer_config where
+		delete_flag= 0
+		and tenant_id = #{model.tenantId}
+		and industry_code = #{model.industryCode,jdbcType=VARCHAR}
+		and id in
+		<foreach collection="alarmTransferIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and id not in
+		(select distinct alarm_transfer_id
+		from vm_alarm_type_transfer
+		where tenant_id = #{model.tenantId}
+		and industry_code = #{model.industryCode,jdbcType=VARCHAR}
+		and delete_flag= 0 and alarm_transfer_id in
+		<foreach collection="alarmTransferIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>)
+	</select>
+
+	<update id="delAlarmTransferConfig">
+		update vm_alarm_transfer_config
+		set delete_flag = 1
+		where tenant_id = #{tenantId}
+		and id in
+		<foreach collection="alarmTransferIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0
+	</update>
+
+	<update id="delAlarmTypeByTransferId">
+		update vm_alarm_type_transfer
+		set delete_flag = 1
+		where tenant_id = #{tenantId}
+		and alarm_transfer_id in
+		<foreach collection="alarmTransferIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0
+	</update>
+
+</mapper>

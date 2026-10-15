@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.ModelConfigMapper">
+    <insert id="addModelConfig" parameterType="com.chinatower.platform.project.system.domain.vo.TutorialModelConfigVO" useGeneratedKeys="true" keyProperty="modelId">
+        insert into vm_model_config_t(model_name,creator,create_time,delete_flag) values(#{modelName},#{creator},NOW(),0)
+    </insert>
+    <update id="updateModelConfig" parameterType="com.chinatower.platform.project.system.domain.vo.TutorialModelConfigVO">
+        update vm_model_config_t set
+               model_name = #{modelName},
+               update_time = NOW(),
+               modifier = #{modifier}
+        WHERE model_id = #{modelId}
+    </update>
+    <delete id="deleteModelConfig">
+        delete from vm_model_config_t where model_id = #{modelId}
+    </delete>
+    <select id="queryModelConfigList" resultType="com.chinatower.platform.project.system.domain.vo.TutorialModelConfigVO">
+        SELECT
+            model_id,
+            model_name
+        FROM
+            vm_model_config_t where delete_flag = 0
+        <if test='modelId != null and modelId != ""'>
+            AND model_id = #{modelId}
+        </if>
+        ORDER BY create_time ASC
+    </select>
+    <select id="checkConfigInfo" resultType="com.chinatower.platform.project.system.domain.vo.TutorialModelConfigVO">
+        SELECT
+        model_id,
+        model_name
+        FROM
+        vm_model_config_t
+        WHERE
+        delete_flag = 0
+        <if test='modelName != null and modelName != ""'>
+            AND model_name = #{modelName}
+        </if>
+        <if test='modelId != null and modelId != ""'>
+            AND model_id != #{modelId}
+        </if>
+    </select>
+
+</mapper>

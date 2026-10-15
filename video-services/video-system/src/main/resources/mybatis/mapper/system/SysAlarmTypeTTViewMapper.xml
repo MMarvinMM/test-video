@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysAlarmTypeTTViewMapper">
+    <insert id="addAlarmsTypeList">
+        insert into sys_alarm_type
+        (alarm_source,type_code,type_name,source,icon,delete_flag,creator,create_time)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.alarmSource,jdbcType=VARCHAR},
+            #{item.typeCode,jdbcType=VARCHAR},
+            #{item.typeName,jdbcType=VARCHAR},
+            '2',
+            #{item.icon,jdbcType=VARCHAR},
+            '0',
+            #{item.creator,jdbcType=VARCHAR},
+            now()
+            )
+        </foreach>
+    </insert>
+    <update id="updateAlarmsType">
+        update sys_alarm_type set icon = #{icon},modifier = #{modifier},update_time = #{updateTime} where alarm_type_id = #{alarmTypeId}
+    </update>
+    <update id="removeAlarmType">
+        update sys_alarm_type set delete_flag = '1',modifier = #{modifier},update_time = #{updateTime} where alarm_type_id = #{alarmTypeId}
+    </update>
+
+    <select id="getAlarmsTypeList" resultType="com.chinatower.platform.project.system.domain.SysAlarmType">
+        select u.alarm_type_id,u.alarm_source,u.type_code,u.type_name,u.icon,u.creator,u.create_time,u.modifier,u.update_time
+        from sys_alarm_type u
+        where
+        u.source = '2' and u.delete_flag = '0'
+        <if test="alarmSource != null and alarmSource != ''">
+            AND u.alarm_source = #{alarmSource}
+        </if>
+        <if test="typeName != null and typeName != ''">
+            AND u.type_name like CONCAT('%',#{typeName},'%')
+        </if>
+        <if test="creator != null and creator != ''">
+            AND u.creator like CONCAT('%',#{creator},'%')
+        </if>
+        <if test="createBeginTime != null and createBeginTime != '' and createBeginTime != 'null'"><!-- 开始时间检索 -->
+            AND u.create_time &gt;= STR_TO_DATE(CONCAT(#{createBeginTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test="createEndTime != null and createEndTime != '' and createEndTime != 'null'"><!-- 结束时间检索 -->
+            AND u.create_time &lt;= STR_TO_DATE(CONCAT(#{createEndTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test="modifier != null and modifier != ''">
+            AND u.modifier like CONCAT('%',#{modifier},'%')
+        </if>
+        <if test="updateBeginTime != null and updateBeginTime != '' and updateBeginTime != 'null'"><!-- 开始时间检索 -->
+            AND u.update_time &gt;= STR_TO_DATE(CONCAT(#{updateBeginTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test="updateEndTime != null and updateEndTime != '' and updateEndTime != 'null'"><!-- 结束时间检索 -->
+            AND u.update_time &lt;= STR_TO_DATE(CONCAT(#{updateEndTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        ${dataScope}
+        order by u.create_time  desc
+    </select>
+
+    <select id="checkAlarmsName"  resultType="java.lang.Integer">
+        select count(*)
+        from sys_alarm_type u
+        where
+            u.type_name =  #{typeName} and u.delete_flag = '0'
+    </select>
+</mapper>

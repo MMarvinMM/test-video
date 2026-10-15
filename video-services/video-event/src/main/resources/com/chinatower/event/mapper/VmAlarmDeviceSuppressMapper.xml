@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.VmAlarmDeviceSuppressMapper">
+	<resultMap id="BaseResultMap" type="com.chinatower.event.vo.entity.VmAlarmDeviceSuppressVO">
+		<id column="device_id" jdbcType="INTEGER" property="deviceId" />
+		<result column="alarm_suppress_id" jdbcType="INTEGER" property="alarmSuppressId" />
+		<result column="device_code" jdbcType="VARCHAR" property="deviceCode" />
+		<result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+		<result column="creater_by" jdbcType="VARCHAR" property="createrBy" />
+		<result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+		<result column="update_by" jdbcType="VARCHAR" property="updateBy" />
+		<result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+		<result column="delete_flag" jdbcType="VARCHAR" property="deleteFlag" />
+	</resultMap>
+
+	<insert id="insert" keyColumn="device_id" keyProperty="deviceId" useGeneratedKeys="true" >
+	   insert into vm_alarm_device_suppress (alarm_suppress_id,device_code,tenant_id,creater_by,create_time,update_by,update_time) values (#{alarmSuppressId,jdbcType=INTEGER},#{deviceCode,jdbcType=VARCHAR},#{tenantId,jdbcType=VARCHAR},#{createrBy,jdbcType=VARCHAR},#{createTime,jdbcType=TIMESTAMP},#{updateBy,jdbcType=VARCHAR},#{updateTime,jdbcType=TIMESTAMP})
+	</insert>
+    <insert id="batchInsert" parameterType="java.util.List">
+		insert into vm_alarm_device_suppress (alarm_suppress_id,device_code,tenant_id,creater_by,create_time, update_by, update_time ) values
+		<foreach collection="list" item="item" separator="," >
+			( #{item.alarmSuppressId,jdbcType=INTEGER}, #{item.deviceCode,jdbcType=VARCHAR}, #{item.tenantId,jdbcType=VARCHAR}, #{item.createrBy,jdbcType=VARCHAR}, now(), #{item.updateBy,jdbcType=VARCHAR}, #{item.updateTime,jdbcType=TIMESTAMP} )
+		</foreach>
+	</insert>
+
+    <delete id="deleteByPrimaryKey" >
+		<!--delete from  vm_alarm_device_suppress where device_id = #{deviceId}-->
+	</delete>
+	<delete id="deleteByStrategyId">
+		UPDATE vm_alarm_device_suppress SET delete_flag = 1,update_time =now() ,update_by=#{updateBy} WHERE alarm_suppress_id = #{id}
+	</delete>
+
+	<update id="update" >
+		update vm_alarm_device_suppress
+		<set>
+			<if test="alarmSuppressId!=null">alarm_suppress_id = #{alarmSuppressId,jdbcType=INTEGER}, </if>
+			<if test="deviceCode!=null and deviceCode!=''">device_code = #{deviceCode,jdbcType=VARCHAR}, </if>
+			<if test="tenantId!=null and tenantId!=''">tenant_id = #{tenantId,jdbcType=VARCHAR}, </if>
+			<if test="createrBy!=null and createrBy!=''">creater_by = #{createrBy,jdbcType=VARCHAR}, </if>
+			<if test="createTime!=null">create_time = #{createTime,jdbcType=TIMESTAMP}, </if>
+			<if test="updateBy!=null and updateBy!=''">update_by = #{updateBy,jdbcType=VARCHAR}, </if>
+			<if test="updateTime!=null">update_time = #{updateTime,jdbcType=TIMESTAMP}, </if>
+			<if test="deleteFlag!=null and deleteFlag!=''">delete_flag = #{deleteFlag,jdbcType=VARCHAR}, </if>
+		</set>
+		where device_id=#{deviceId}
+
+	</update>
+
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" >
+		SELECT device_id,
+		 alarm_suppress_id,
+		 device_code,
+		 tenant_id,
+		 creater_by,
+		 create_time,
+		 update_by,
+		 update_time,
+		 delete_flag
+		FROM vm_alarm_device_suppress
+		WHERE device_id = #{deviceId,jdbcType=INTEGER}
+
+	</select>
+
+	<select id="selectAll" resultMap="BaseResultMap" >
+		SELECT device_id,
+		alarm_suppress_id,
+		device_code,
+		tenant_id,
+		creater_by,
+		create_time,
+		update_by,
+		update_time,
+		delete_flag
+		FROM vm_alarm_device_suppress
+		WHERE delete_flag = 0
+		<if test="deviceId!=null "> and device_id = #{deviceId,jdbcType=INTEGER}</if>
+		<if test="alarmSuppressId!=null "> and alarm_suppress_id = #{alarmSuppressId,jdbcType=INTEGER}</if>
+		<if test="deviceCode!=null and deviceCode!=''"> and device_code = #{deviceCode,jdbcType=VARCHAR}</if>
+		<if test="tenantId!=null and tenantId!=''"> and tenant_id = #{tenantId,jdbcType=VARCHAR}</if>
+		<if test="createrBy!=null and createrBy!=''"> and creater_by = #{createrBy,jdbcType=VARCHAR}</if>
+		<if test="createTime!=null "> and create_time = #{createTime,jdbcType=TIMESTAMP}</if>
+		<if test=" startDate!=null and startDate!='' and endDate!=null and endDate!='' "> and create_time BETWEEN #{startDate} and #{endDate}</if>
+		<if test="updateBy!=null and updateBy!=''"> and update_by = #{updateBy,jdbcType=VARCHAR}</if>
+		<if test="updateTime!=null "> and update_time = #{updateTime,jdbcType=TIMESTAMP}</if>
+		<if test="deleteFlag!=null and deleteFlag!=''"> and delete_flag = #{deleteFlag,jdbcType=VARCHAR}</if>
+		<if test="strategyIdList!=null and strategyIdList.size()>0 "> and alarm_suppress_id in
+			<foreach collection="strategyIdList" item="strategyId" index="index" open="(" close=")" separator=",">
+				#{strategyId}
+			</foreach>
+		</if>
+		<choose>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				order by create_time asc
+			</when>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				order by create_time desc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				order by update_time asc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				order by update_time desc
+			</when>
+          <otherwise>
+              order by device_id desc
+          </otherwise>
+      </choose>
+
+	</select>
+
+	<select id="selectList" resultMap="BaseResultMap" >
+		SELECT device_id,
+		alarm_suppress_id,
+		device_code,
+		tenant_id,
+		creater_by,
+		create_time,
+		update_by,
+		update_time,
+		delete_flag
+		FROM vm_alarm_device_suppress
+		WHERE delete_flag =0
+		<if test="id != null and id != ''">
+	     	AND alarm_suppress_id = #{id} </if>
+		<if test="strategyIdList!=null ">
+			AND alarm_suppress_id IN
+		<foreach collection="strategyIdList" item="strategyId" index="index" open="(" close=")" separator=",">
+		 #{strategyIdList}
+		</foreach>
+	    </if>
+		   <choose>
+			   <when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				   order by create_time asc
+			   </when>
+			   <when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				   order by create_time desc
+			   </when>
+			   <when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				   order by update_time asc
+			   </when>
+			   <when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				   order by update_time desc
+			   </when>
+			   <otherwise>
+				ORDER BY  device_id DESC
+			</otherwise>
+		 </choose>
+	</select>
+
+	<select id="getLntlagConfig" resultType="com.chinatower.event.vo.SysLntlagConfigVO">
+        select dm.model_id as id, 0 as z0,dm.min_focus as f0, 1 as n, 1 as `m`,dm.pic_sensor_width as d, dm.pic_sensor_length as c
+          , d.device_code , d.model_code as model_id ,dm.focus_range, dm.verti_down_neg
+        from vm_device_info_t d join vm_device_model_t dm on d.device_model_code = dm.device_model_code and d.model_code = dm.mfgr_code
+        where d.device_code = #{deviceCode}
+    </select>
+</mapper>

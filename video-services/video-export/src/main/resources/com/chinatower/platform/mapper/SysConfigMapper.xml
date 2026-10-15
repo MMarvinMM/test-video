@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.SysConfigMapper">
+
+    <resultMap type="com.chinatower.platform.entity.export.SysConfigDto" id="SysConfigResult">
+    	<id     property="configId"      column="config_id"      />
+        <result property="configName"    column="config_name"    />
+        <result property="configKey"     column="config_key"     />
+        <result property="configValue"   column="config_value"   />
+        <result property="configType"    column="config_type"    />
+        <result property="creator"      column="creator"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="modifier"      column="modifier"      />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="exportConfigVo">
+        select config_id, config_name, config_key, config_value, case when config_type = 0 then '否' else '是' end config_type, creator, create_time, modifier, update_time, remark
+		from sys_config
+    </sql>
+
+    <select id="exportConfigList" parameterType="com.chinatower.platform.entity.export.SysConfigDto" resultMap="SysConfigResult">
+        <include refid="exportConfigVo"/>
+        <where>
+            <if test="configName != null and configName != ''">
+                AND config_name like CONCAT(CONCAT('%', #{configName}),'%')
+            </if>
+            <if test="configType != null and configType != ''">
+                AND config_type = #{configType}
+            </if>
+            <if test="configKey != null and configKey != ''">
+                AND config_key like CONCAT(CONCAT('%', #{configKey}),'%')
+            </if>
+            <if test="beginTime != null and beginTime != ''"><!-- 开始时间检索 -->
+                AND create_time &gt;= STR_TO_DATE(CONCAT(#{beginTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+            <if test="endTime != null and endTime != ''"><!-- 结束时间检索 -->
+                AND create_time &lt;= STR_TO_DATE(CONCAT(#{endTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+        </where>
+        ORDER BY CREATE_TIME desc
+    </select>
+
+</mapper>

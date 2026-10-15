@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.SecondRecogConfigMapper">
+
+
+    <!-- 定义 Result Map -->
+    <resultMap id="getAutoConfigNameResultMap" type="java.lang.String">
+        <!-- 映射关系 -->
+        <result property="new_second_recog_name" column="new_second_recog_name" />
+        <!-- 其他映射关系 -->
+    </resultMap>
+
+    <resultMap id="alarmSourceResultMap" type="com.chinatower.event.entity.vo.AlarmTVo">
+        <id property="id" column="type_value"/>
+        <result property="name" column="type_name"/>
+    </resultMap>
+
+    <resultMap id="CombinedResultMap" type="com.chinatower.event.entity.vo.CombinationVo">
+        <id property="id" column="id"/>
+        <result property="combined_result" column="combinedResult"/>
+        <result property="alarm_second_recog_id" column="alarmSecondRecogId"/>
+    </resultMap>
+
+
+    <!-- 二次识别配置列表查询-->
+    <select id="findByCondition" resultType="com.chinatower.event.entity.vo.SecondRecogConfigVO">
+        select id, second_recog_name, second_alarm_source, linkage_camera, linkage_action, select_algorithm, creator, create_time, modifier, update_time, delete_flag, tenant_id, industry_code, app_ver_code, platform_code
+        from `vm_second_recog_config_t`
+        <where>
+            <if test="vo.secondRecogName != null and vo.secondRecogName !=''">
+                 second_recog_name like CONCAT('%', #{vo.secondRecogName}, '%')
+            </if>
+            <if test="vo.creator != null and vo.creator !=''">
+                and creator like CONCAT('%', #{vo.creator}, '%')
+            </if>
+            <if test="vo.modifier != null and vo.modifier !=''">
+                and modifier like CONCAT('%', #{vo.modifier}, '%')
+            </if>
+            <if test="vo.createStartTime != null and vo.createStartTime !=''">
+                and create_time &gt;= #{vo.createStartTime}
+            </if>
+            <if test="vo.createEndTime != null and vo.createEndTime !=''">
+                and create_time &lt;= #{vo.createEndTime}
+            </if>
+            <if test="vo.updateStartTime != null and vo.updateStartTime !=''">
+                and update_time &gt;= #{vo.updateStartTime}
+            </if>
+            <if test="vo.updateEndTime != null and vo.updateEndTime !=''">
+                and update_time &lt;= #{vo.updateEndTime}
+            </if>
+            and delete_flag = 0 ${vo.dataScope}
+        </where>
+        <choose>
+            <when test="vo.createDateOrder != null and vo.createDateOrder.toLowerCase() == 'asc'">
+                order by create_time asc
+            </when>
+            <when test="vo.createDateOrder != null and vo.createDateOrder.toLowerCase() == 'desc'">
+                order by create_time desc
+            </when>
+            <when test="vo.updateDateOrder != null and vo.updateDateOrder.toLowerCase() == 'asc'">
+                order by update_time asc
+            </when>
+            <when test="vo.updateDateOrder != null and vo.updateDateOrder.toLowerCase() == 'desc'">
+                order by update_time desc
+            </when>
+            <otherwise>
+                order by create_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <!--    根据id查询二次识别配置-->
+    <select id="findSecondRecogConfigById" parameterType="java.lang.Integer" resultType="com.chinatower.event.entity.vo.SecondRecogConfigVO">
+        SELECT id,second_recog_name,second_alarm_source,linkage_camera,linkage_action,select_algorithm,creator,create_time,modifier,update_time,delete_flag,tenant_id,industry_code,app_ver_code
+        from `vm_second_recog_config_t`
+        where id = #{id}
+    </select>
+
+    <!--    默认名称：“二次识别配置名称+数字”（数字累加即可）-->
+    <select id="getAutoConfigName" parameterType="java.lang.String" resultMap="getAutoConfigNameResultMap">
+        SELECT
+            IFNULL(CONCAT('二次识别配置名称', MAX_ID + 1), '二次识别配置名称1') AS new_second_recog_name
+        FROM
+            (
+                SELECT
+                    MAX(CAST(SUBSTRING(second_recog_name, 9) AS SIGNED)) AS MAX_ID
+                FROM
+                    `vm_second_recog_config_t`
+                WHERE
+                    second_recog_name LIKE '二次识别配置名称%'
+                    AND tenant_id = #{tenantId} AND industry_code = #{industryCode}
+                    AND delete_flag IN (0,1)
+            ) a;
+    </select>
+
+    <!-- 二次识别配置修改   -->
+    <update id="findUpdateById" parameterType="com.chinatower.event.entity.vo.SecondRecogConfigVO">
+        UPDATE `vm_second_recog_config_t` SET
+        <if test='secondRecogName != null and secondRecogName != ""'>
+        `second_recog_name` = #{secondRecogName},
+        </if>
+        <if test='secondAlarmSource != null and secondAlarmSource != ""'>
+            `second_alarm_source` = #{secondAlarmSource},
+        </if>
+        <if test='linkageCamera != null and linkageCamera != ""'>
+            `linkage_camera` = #{linkageCamera},
+        </if>
+        <if test='linkageAction != null and linkageAction != ""'>
+            `linkage_action` = #{linkageAction},
+        </if>
+        <if test='selectAlgorithm != null and selectAlgorithm != ""'>
+            `select_algorithm` = #{selectAlgorithm},
+        </if>
+        <if test='creator != null and creator != ""'>
+            `creator` = #{creator},
+        </if>
+        <if test='createTime != null'>
+            `create_time` = #{createTime},
+        </if>
+        <if test='modifier != null and modifier != ""'>
+            `modifier` = #{modifier},
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            `tenant_id` = #{tenantId},
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            `industry_code` = #{industryCode},
+        </if>
+        <if test='appVerCode != null and appVerCode != ""'>
+            `app_ver_code` = #{appVerCode},
+        </if>
+        `update_time` = now()
+        WHERE `id` = #{id};
+    </update>
+
+    <!--    二次识别配置添加-->
+    <insert id="SaveSecondRecogConfig" parameterType="com.chinatower.event.entity.vo.SecondRecogConfigVO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `vm_second_recog_config_t`
+        (`second_recog_name`, `second_alarm_source`, `linkage_camera`, `linkage_action`, `select_algorithm`, `creator`, `create_time`, `modifier`, `delete_flag`, `tenant_id`, `industry_code`, `app_ver_code`,`platform_code`)
+        VALUES
+        (
+        #{secondRecogName},#{secondAlarmSource}, #{linkageCamera}, #{linkageAction}, #{selectAlgorithm}, #{creator}, now(), #{modifier}, 0, #{tenantId}, #{industryCode}, #{appVerCode}, #{platformCode});
+    </insert>
+
+    <!-- 二次识别配置逻辑删除 -->
+    <update id="findUpdateDeleteFlagById" parameterType="com.chinatower.event.entity.vo.SecondRecogConfigVO">
+        UPDATE `vm_second_recog_config_t` SET
+         `delete_flag` = '1',
+         `modifier` = #{modifier},
+         `update_time` = now()
+         WHERE `id` = #{id};
+    </update>
+
+    <select id="selectSecondRecogByOne" resultType="com.chinatower.event.entity.vo.SecondRecogReceiveVO">
+        select c.id, c.second_alarm_source, c.linkage_camera, c.linkage_action, c.select_algorithm, t.alarm_type_value
+        from `vm_alarm_type_second_recog` t
+        LEFT JOIN vm_second_recog_config_t c ON t.alarm_second_recog_id = c.id and c.delete_flag =0
+        <where>
+            <if test="alarmSourceValue != null and alarmSourceValue !=''">
+                and t.alarm_source_value = #{alarmSourceValue}
+            </if>
+            <if test="alarmTypeValue != null and alarmTypeValue !=''">
+                and t.alarm_type_value = #{alarmTypeValue}
+            </if>
+            <if test="tenantId != null and tenantId !=''">
+                and t.tenant_id = #{tenantId}
+            </if>
+            <if test="industryCode != null and industryCode !=''">
+                and t.industry_code = #{industryCode}
+            </if>
+            <if test="appVerCode != null and appVerCode !=''">
+                and t.app_ver_code = #{appVerCode}
+            </if>
+            and t.delete_flag = 0
+        </where>
+    </select>
+
+    <select id="selectSecondRecogByOnes" resultType="com.chinatower.event.entity.vo.SecondRecogReceiveVO">
+        select c.id, c.linkage_camera, c.linkage_action, c.select_algorithm,c.tenant_id,c.industry_code,c.app_ver_code, t.alarm_type_value,t.alarm_source_value
+        from `vm_alarm_type_second_recog` t
+        LEFT JOIN vm_second_recog_config_t c ON t.alarm_second_recog_id = c.id and c.delete_flag =0
+        <where>
+            AND CONCAT(t.alarm_source_value, '-', t.alarm_type_value) IN
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            and t.delete_flag = 0
+        </where>
+    </select>
+
+    <!--  根据二次识别配置名称查询id  -->
+    <select id="findIdBySecondRecogName" resultType="java.lang.Integer" parameterType="java.lang.String">
+        SELECT id FROM `vm_second_recog_config_t` WHERE second_recog_name = #{name}
+    </select>
+
+    <!--  去vm_alarm_type_second_recog表中查出 包含前端传来的  告警来源值-告警类型编码   8-1979  -->
+    <select id="getCombinedResults" resultMap="CombinedResultMap">
+        SELECT id,alarm_second_recog_id,CONCAT(alarm_source_value, '-', alarm_type_value) AS combined_result
+        FROM vm_alarm_type_second_recog
+        WHERE delete_flag = 0 AND tenant_id = #{tenantId} AND industry_code = #{industryCode}
+        <if test="list != null and list.size() > 0">
+            AND CONCAT(alarm_source_value, '-', alarm_type_value) IN
+            <foreach collection="list" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <!--    批量删除vm_second_recog_config_t表数据-->
+    <update id="updateDeleteFlag" parameterType="com.chinatower.event.entity.vo.CombinationVo">
+        UPDATE vm_second_recog_config_t t set t.delete_flag = 1
+        WHERE t.delete_flag = 0
+        <if test="list != null and list.size() > 0">
+            and t.id IN
+            <foreach collection="list" item="item" open="(" separator="," close=")">
+                #{item.alarmSecondRecogId}
+            </foreach>
+        </if>
+        and (SELECT COUNT(g.id) FROM vm_alarm_type_second_recog g WHERE g.alarm_second_recog_id = t.id and g.delete_flag = 0)=0
+    </update>
+
+    <!--  根据租户id、行业编码以及二次识别配置名称查询  -->
+    <select id="secondRecogNameIsRepeat" resultType="com.chinatower.event.entity.vo.SecondRecogConfigVO">
+        select id, second_recog_name, second_alarm_source, linkage_camera, linkage_action, select_algorithm, creator, create_time, modifier, update_time, delete_flag, tenant_id, industry_code, app_ver_code, platform_code
+        from vm_second_recog_config_t
+        WHERE tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+        and second_recog_name = #{secondRecogName}
+        and delete_flag = 0
+    </select>
+
+</mapper>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IVmFlowTemplateMapper">
+
+    <select id="selectFlowTemplate" parameterType="com.chinatower.event.entity.dto.VmFlowTemplateModel"
+            resultType="com.chinatower.event.entity.dto.FlowAlarmTemplateDto">
+        SELECT template_id,tenant_id,flow_name,init_source,app_ver_code,industry_code FROM vm_flow_template
+        WHERE delete_flag = 0 AND `status` = '1'
+        <if test="flowType != null and flowType != ''">
+            AND flow_type = #{flowType}
+        </if>
+        <if test="flowType == '1' and industryCode == null">
+            AND app_ver_code is null AND industry_code is null
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND app_ver_code = #{appVerCode}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND industry_code = #{industryCode}
+        </if>
+        <if test="initSource != null and initSource != ''">
+            AND init_source like CONCAT('%', #{initSource}, '%')
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND tenant_id = #{tenantId}
+        </if>
+
+    </select>
+
+</mapper>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.chinatower.platform</groupId>
+        <artifactId>video-platform</artifactId>
+        <version>2.6.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <version>2.6.1</version>
+
+    <modules>
+		<module>video-api-message</module>
+        <module>video-api-system</module>
+        <module>video-api-video</module>
+        <module>video-msg-api</module>
+        <module>video-api-order</module>
+        <module>video-api-device</module>
+        <module>video-api-bdm</module>
+        <module>video-api-gis</module>
+        <module>video-api-analysis</module>
+        <module>video-api-event</module>
+        <module>video-api-manage</module>
+        <module>video-api-outdata</module>
+        <module>video-api-log</module>
+        <module>video-data-sdk</module>
+        <module>video-api-file</module>
+        <module>video-api-cascade-config</module>
+        <module>video-api-auth</module>
+        <module>video-api-receive</module>
+    </modules>
+
+    <groupId>com.chinatower.platform</groupId>
+    <artifactId>video-api</artifactId>
+    <packaging>pom</packaging>
+
+    <description>
+        video-api系统接口
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+        <!-- 使用 feign 自己的 httpclient 发送协议，实现get请求方式传递对象-->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-httpclient</artifactId>
+            <version>10.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-annotation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.chinatower</groupId>
+            <artifactId>comp-tech-common</artifactId>
+            <version>${comp.tech.core.version}</version>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.chinatower</groupId>-->
+<!--            <artifactId>comp-tech-feign</artifactId>-->
+<!--        </dependency>-->
+        <dependency>
+            <groupId>com.chinatower.platform</groupId>
+            <artifactId>common-core</artifactId>
+        </dependency>
+    </dependencies>
+    <repositories>
+        <repository>
+            <id>chinatower-component-release</id>
+            <url>http://10.199.117.80:8081/repository/maven-public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
+</project>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.OrderFileMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.entity.dto.OrderFileDO">
+        <result column="order_file_id" property="orderFileId" />
+        <result column="warning_order_id" property="warningOrderId" />
+        <result column="order_flow_id" property="orderFlowId" />
+        <result column="link_id" property="linkId" />
+        <result column="resource_id" property="resourceId" />
+        <result column="resource_url" property="resourceUrl" />
+        <result column="resource_type" property="resourceType" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="create_by" property="createBy" />
+        <result column="create_date" property="createDate" />
+        <result column="modifier_by" property="modifierBy" />
+        <result column="modifier_date" property="modifierDate" />
+        <result column="remark" property="remark" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        order_file_id, warning_order_id, order_flow_id, link_id, resource_id, resource_url, resource_type, delete_flag, create_by, create_date, modifier_by, modifier_date, remark
+    </sql>
+
+</mapper>

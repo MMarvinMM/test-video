@@ -1,0 +1,54 @@
+# 告警分级（AI研判）配置示例 —— 实际上线见：上线文档/服务配置文件/0804告警分级AI研判-配置.txt
+#
+# ---------- video-event 查询兼容 ----------
+# ai.judge.column-since-month: 202608
+# 生效月份及之后的月表查真实 AI 字段；老月表 SELECT 用 NULL 占位，筛选/排序自动降级
+# getOrderInfo 天气字段从 agent_extend_field 拆分返回
+#
+# ---------- video-receive 回调 ----------
+# POST /alarm/receive/aiJudgeCallback
+# 成功回填独立字段 risk_level、scene_code（由回调 sceneCode 映射）、ai_judge_status=2
+# 上报命中配置写 scene_template；Kafka 载荷字段 scene_template
+# 回调 sceneCode 枚举：烟+明火→smokeFire / 单独烟→smoke / 单独明火→fire / 未识别不映射
+# agent_extend_field：与库中已有气象字段合并后再覆盖
+# {
+#   "riskLevel":"1",
+#   "temperature":"25",
+#   "humidity":"60",
+#   "windSpeed":"12",
+#   "windDir":"东北风",
+#   "fireLevel":2,
+#   "surroundings":"林地",
+#   "judgmentBasis":"研判依据",
+#   "disposalSuggestion":"处置建议"
+# }
+#
+# ---------- video-task（Nacos 追加）----------
+# Topic: alarm_grading_ai_judge
+# XXL Handler: aiJudgeDispatchHandler  参数可选 {"limit":50}
+# 消费时：查气象 → 写 agent_extend_field → 调 Dify
+# Dify Body:
+# {
+#   "inputs": { "alarm_params": "<告警JSON含气象>" },
+#   "user": "<alarmCode>",
+#   "query": "森林智保烟火告警研判"
+# }
+#
+# ai:
+#   judge:
+#     kafka:
+#       group-id: video-task-ai-judge
+#     dispatch:
+#       scan-months: 2
+#       stuck-timeout-minutes: 30
+#     dify:
+#       url: https://{dify-host}/v1/chat-messages
+#       api-key: {dify-api-key}
+#       timeout-ms: 60000
+#       max-retry: 3
+#       query: 森林智保烟火告警研判
+#
+# ---------- video-event（Nacos 追加）----------
+# ai:
+#   judge:
+#     column-since-month: 202608

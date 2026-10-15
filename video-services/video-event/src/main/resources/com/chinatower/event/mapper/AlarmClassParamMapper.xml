@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.event.mapper.AlarmClassParamMapper">
+  <insert id="save" parameterType="com.chinatower.common.core.vo.AlarmClassParamVO">
+    insert into sys_alarm_class_param (
+    alarm_type_class_id,
+    thresh,
+    alarm_interval,
+    alarm_interval_type,
+    algorithm_time,
+    tenant_id,
+    alarm_type_id)
+    values
+    <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+      (#{item.alarmTypeClassId,jdbcType=VARCHAR},
+      #{item.thresh},
+      #{item.alarmInterval},
+      #{item.alarmIntervalType,jdbcType=INTEGER},
+      #{item.algorithmTimeJosn,jdbcType=INTEGER},
+      #{item.tenantId,jdbcType=VARCHAR},
+      #{item.alarmTypeId,jdbcType=VARCHAR}
+      )
+    </foreach>
+  </insert>
+
+  <delete id="delete" parameterType="java.lang.String" >
+    delete from sys_alarm_class_param
+    where alarm_type_class_id = #{alarmTypeClassId,jdbcType=VARCHAR}
+  </delete>
+
+  <select id="getInfo" resultType="com.chinatower.common.core.vo.AlarmClassParamVO" parameterType="com.chinatower.common.core.vo.AlarmClassParamVO" >
+    SELECT
+      t.alarm_type_class_id,
+      t.thresh,
+      t.alarm_interval,
+      t.alarm_interval_type,
+      t.algorithm_time as algorithmTimeJosn,
+      t.tenant_id
+    FROM
+    sys_alarm_class_param t
+    WHERE 1 = 1
+    <if test="alarmTypeClassId != null and alarmTypeClassId != ''">
+      AND t.alarm_type_class_id =  #{alarmTypeClassId,jdbcType=VARCHAR}
+    </if>
+  </select>
+</mapper>

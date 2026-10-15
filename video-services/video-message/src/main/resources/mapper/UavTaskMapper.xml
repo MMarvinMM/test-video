@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.message.station.mapper.UavTaskMapper">
+    <update id="updateTaskStatus" parameterType="com.chinatower.message.station.entity.UavVideoFrameMsg">
+        update vm_air_result_extraction_t
+        set extract_count = #{count},
+            extract_total_count = #{totalCount},
+            extract_status = #{state}
+        where task_id = #{id} and extract_status != '2'
+    </update>
+
+    <update id="updateUavNestCode">
+        update vm_uav_device_info_t
+        set uav_nest_code = #{uavNestCode}
+        where device_code = #{uavDeviceCode}
+    </update>
+
+    <select id="selectNestInfoByCode" resultType="com.chinatower.message.station.entity.UavNestBriefInfo">
+        select device_code, longitude, latitude, position_fix
+        from vm_uav_nest_device_info
+        where device_code = #{uavNestCode} and delete_flag = 0
+        limit 1
+    </select>
+
+    <select id="qryExtractionTaskData" resultType="com.chinatower.message.station.entity.UavVideoFrameMsg">
+        select
+            tenant_id,
+            industry_code
+        from vm_air_result_extraction_t
+        where task_id = #{id}
+    </select>
+
+    <update id="updateUavNestPosition">
+        update vm_uav_nest_device_info
+        set
+        update_time = now()
+        <if test='altitude != null and altitude != ""'>
+            ,altitude = #{altitude}
+        </if>
+        <if test='calibration != null'>
+            ,calibration_status = #{calibration}
+        </if>
+
+        <if test='longitude != null and longitude != ""'>
+            ,longitude = #{longitude}
+        </if>
+        <if test='latitude != null and latitude != ""'>
+            ,latitude = #{latitude}
+        </if>
+        <if test='latLonUpdateTime != null'>
+            ,lat_lon_update_time = #{latLonUpdateTime}
+        </if>
+        where device_code = #{uavNestCode}
+    </update>
+</mapper>

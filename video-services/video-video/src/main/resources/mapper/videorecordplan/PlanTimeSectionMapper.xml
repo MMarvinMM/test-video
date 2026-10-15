@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.videorecordplan.mapper.PlanTimeSectionMapper">
+
+    <delete id="deletePlanTimeSection" parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        DELETE FROM vm_plan_time_section_t WHERE record_plan_id = #{recordPlanId}
+        <if test='industryCode != null and industryCode != "" '>
+            AND industry_code = #{industryCode}
+        </if>
+    </delete>
+
+</mapper>

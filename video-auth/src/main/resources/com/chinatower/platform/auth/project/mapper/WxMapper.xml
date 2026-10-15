@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 消息通知管理信息表(vm_message_send_info_t) -->
+<mapper namespace="com.chinatower.platform.auth.project.mapper.WxMapper">
+
+    <select id="loginByWx" resultType="java.util.Map"
+            parameterType="java.lang.String">
+        SELECT
+            t.union_id AS unionId,
+            t1.open_id AS openId,
+            t1.mini_open_id AS miniOpenId,
+            t1.nick_name as nickName,
+            t2.user_id AS userId,
+            t2.user_name AS userName,
+            t2.user_type AS userType,
+            t2.phonenumber As phonenumber,
+            t2.`PASSWORD` AS passwd
+        FROM
+            bs_wx_user_link t
+                inner JOIN bs_wx_user t1 ON t1.union_id = t.union_id
+                LEFT JOIN sys_user t2 ON t2.user_id = t.user_id
+        WHERE
+            t.union_id = #{unionId}
+          AND t.is_active = 'Y'
+          AND t.delete_flag = '0'
+          And t2.DEL_FLAG = '0' and t2.STATUS = '0'
+            LIMIT 1
+    </select>
+
+    <select id="getIndustryCodeByWx" resultType="java.util.Map"
+            parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        SELECT
+        t.industry_code AS industryCode
+        FROM
+        bs_wx_user_link t
+        WHERE
+        t.union_id = #{unionId}
+        AND t.is_active = 'Y'
+        LIMIT 1
+    </select>
+    <select id="getReceiveMsgState" resultType="java.lang.String"
+            parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        SELECT
+            t.RECEIVE_MSG AS receiveMsg
+        FROM
+            bs_wx_user_link t
+        WHERE
+            t.union_id = #{unionId}
+          AND t.is_active = 'Y'
+            LIMIT 1
+    </select>
+
+    <select id="getBandUserByWx" resultType="java.util.Map"
+            parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        SELECT
+            t2.user_name AS username
+        FROM
+            bs_wx_user_link t
+                LEFT JOIN bs_wx_user t1 ON t1.union_id = t.union_id
+                LEFT JOIN sys_user t2 ON t2.user_id = t.user_id
+        WHERE
+            t.union_id = #{unionId}
+        <if test="null != userName and '' != userName">
+            AND t2.user_name = #{userName}
+        </if>
+          AND t.delete_flag = '0'
+          and t2.DEL_FLAG = '0' and t2.STATUS = '0'
+            LIMIT 1
+    </select>
+
+    <update id="releaseBindUser" parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        update bs_wx_user_link t
+        set t.is_active = 'N',
+            t.update_time = now()
+        WHERE
+            t.union_id = #{unionId}
+          AND t.is_active = 'Y'
+    </update>
+
+    <insert id="bindUser" parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        INSERT INTO bs_wx_user_link ( union_id, user_id, is_active, industry_code, delete_flag, create_by, create_time )
+        SELECT
+            #{unionId} as union_id,
+            t.user_id,
+            'Y',
+            #{tradeId},
+            '0',
+            t.user_name,
+            now()
+        FROM
+            sys_user AS t
+        WHERE
+            t.user_name = #{userName}
+            and t.DEL_FLAG = '0' and t.STATUS = '0'
+    </insert>
+
+    <update id="updateBindUser" parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        update bs_wx_user_link t
+        set t.is_active = 'Y',
+            t.industry_code = #{tradeId},
+            t.update_time = now()
+        WHERE
+            t.union_id = #{unionId}
+          AND t.user_id in (select t2.user_id from sys_user t2 where t2.user_name = #{userName} and t2.DEL_FLAG = '0' and t2.STATUS = '0')
+    </update>
+
+    <select id="getWxUserCount" resultType="java.lang.Integer" parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        SELECT count(1)
+        FROM bs_wx_user
+        WHERE union_id = #{unionId}
+    </select>
+    <select id="findUserByUserId" resultType="java.util.Map"  parameterType="java.lang.String">
+        select bwu.OPEN_ID openId
+        from bs_wx_user bwu
+                 inner join bs_wx_user_link bwul
+                            on (bwu.UNION_ID = bwul.UNION_ID and bwul.IS_ACTIVE = 'Y')
+        where bwul.USER_ID = #{userId}
+          and bwu.OPEN_ID is not null and bwu.DELETE_FLAG = '0'
+    </select>
+    <select id="selectColonyUser" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM bs_wx_colony
+        WHERE union_id = #{unionId} AND delete_flag = '0'
+    </select>
+    <select id="selectColonyCodeByUnionId" resultType="java.lang.String">
+        SELECT colony_code FROM bs_wx_colony WHERE union_id = #{unionId} AND delete_flag = '0'
+    </select>
+    <select id="findCascadeByCode" resultType="com.chinatower.platform.model.dto.CascadeConfigSyncVO">
+        select
+            `platform_code` AS colonyCode,
+            platform_name AS colonyName,
+            general_url AS generalUrl,
+            program_url AS programUrl,
+            colony_version AS colonyVersion,
+            node_alias AS nodeAlias
+        from vm_platform_data_config
+        where delete_flag = 0
+        AND platform_code = #{platformCode}
+    </select>
+    <select id="getOpenIdByUnionId" resultType="java.lang.String">
+        SELECT OPEN_ID FROM bs_wx_user WHERE UNION_ID = #{unionId}
+    </select>
+
+    <insert id="insertWxUser" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        INSERT INTO bs_wx_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="null != unionId and '' != unionId">
+                union_id,
+            </if>
+            <if test="null != openId and '' != openId">
+                open_id,
+            </if>
+            <if test="null != miniOpenId and '' != miniOpenId">
+                mini_open_id,
+            </if>
+            <if test="null != nickName and '' != nickName">
+                nick_name,
+            </if>
+                delete_flag,
+                create_by,
+                create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="null != unionId and '' != unionId">
+                #{unionId},
+            </if>
+            <if test="null != openId and '' != openId">
+                #{openId},
+            </if>
+            <if test="null != miniOpenId and '' != miniOpenId">
+                #{miniOpenId},
+            </if>
+            <if test="null != nickName and '' != nickName">
+                #{nickName},
+            </if>
+                '0',
+                #{userName},
+                now()
+        </trim>
+    </insert>
+    <insert id="colonyBind">
+        INSERT INTO bs_wx_colony (union_id,open_id,mini_open_id,delete_flag,create_time,colony_code)
+        VALUES (#{unionId}, #{openId},#{miniOpenId},'0', now(), #{colonyCode})
+    </insert>
+    <update id="updateWxUser" parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        UPDATE bs_wx_user
+        <set>
+            <if test="null != openId and '' != openId">open_id = #{openId},</if>
+            <if test="null != miniOpenId and '' != miniOpenId">mini_open_id = #{miniOpenId},</if>
+            <if test="null != nickName and '' != nickName">nick_name = #{nickName},</if>
+            delete_flag = '0',
+            update_time = now()
+        </set>
+        WHERE union_id = #{unionId}
+    </update>
+    <update id="updateUnSubscribe" parameterType="java.lang.String">
+        UPDATE bs_wx_user
+        set delete_flag = #{status},
+            update_time = now()
+        WHERE open_id = #{openId}
+    </update>
+    <update id="updateIndustryCode" parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        update bs_wx_user_link t
+        set t.industry_code = #{tradeId}
+        WHERE t.union_id = #{unionId}
+          AND t.is_active = 'Y'
+    </update>
+    <update id="invalidUser" parameterType="java.lang.String">
+        update bs_wx_user_link
+        set IS_ACTIVE = 'N'
+        where USER_ID = #{userId}
+    </update>
+    <update id="wxUpdateMsgControl" parameterType="com.chinatower.platform.auth.model.WxLoginVo">
+        update bs_wx_user_link t
+        set RECEIVE_MSG = #{receiveMsg}
+        WHERE t.union_id = #{unionId}
+          AND t.is_active = 'Y'
+    </update>
+    <update id="update">
+        update bs_wx_colony
+        SET
+        open_id = #{openId},
+        mini_open_id = #{miniOpenId},
+        update_time = now(),
+        colony_code = #{colonyCode}
+        WHERE union_id = #{unionId} AND delete_flag = '0'
+    </update>
+</mapper>

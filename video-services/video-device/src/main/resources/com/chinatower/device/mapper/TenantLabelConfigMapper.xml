@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.TenantLabelConfigMapper">
+
+    <select id="queryLabelList" resultType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelVO">
+        SELECT
+        t.label_id as labelId, t.industry_code, t.app_ver_code,
+        t.label_name as labelName,
+        rel.id as labelRelId,
+        (
+        case when length(IFNULL(rel.id, '')) = 0
+        then 0 else 1 end
+        ) as labelStatus
+        FROM vm_tenant_label_config as t
+        left join vm_device_labels_rel as rel
+        on t.label_id = rel.label_id and t.tenant_id = rel.tenant_id and rel.device_code = #{deviceCode}
+        where t.tenant_id = #{tenantId}
+        <if test='industryCode != null and industryCode != "" and industryCode != "0"'>
+            and t.industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="queryTenantLabelList" resultType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelVO">
+        SELECT t.label_id as labelId, t.label_name as labelName FROM vm_tenant_label_config as t
+        where t.tenant_id = #{tenantId}
+        <if test='industryCode != null and industryCode != "" and industryCode != "0"'>
+            and t.industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="countLabel" resultType="java.lang.Integer"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelVO">
+        select count(label_id) from vm_tenant_label_config where tenant_id = #{tenantId}
+        <if test='industryCode != null and industryCode != "" and industryCode != "0"'>
+            and industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="countLabelName" resultType="java.lang.Integer"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelVO">
+        select count(label_id) from vm_tenant_label_config where tenant_id = #{tenantId} and label_name = #{labelName}
+        <if test='industryCode != null and industryCode != "" and industryCode != "0"'>
+            and industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <insert id="addTenantLabelConfig" parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantLabelConfigVO"
+            keyProperty="labelId" useGeneratedKeys="true" keyColumn="label_id">
+        insert into vm_tenant_label_config(label_type_id, tenant_id,label_name,industry_code,app_ver_code,creator,create_time,
+                                           modifier,update_time,delete_flag)
+        values (#{labelTypeId}, #{tenantId},#{labelName},#{industryCode},#{appVerCode},#{creator},NOW(),#{modifier},NOW(),'0')
+    </insert>
+
+    <update id="updateTenantLabelConfig" parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantLabelConfigVO">
+        update vm_tenant_label_config set label_name = #{labelName}, update_time=NOW() where label_id = #{labelId}
+    </update>
+
+    <delete id="deleteTenantLabelConfig" parameterType="java.lang.Long">
+        delete from vm_tenant_label_config where label_id = #{labelId}
+    </delete>
+
+    <insert id="addDeviceLabel" parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelInfoVO"
+            keyProperty="labelId" useGeneratedKeys="true" keyColumn="label_id">
+        insert into vm_tenant_label_config(label_type_id, tenant_id, label_name, industry_code, app_ver_code, creator,
+        create_time, delete_flag)
+        values (#{labelTypeId}, #{tenantId}, #{labelName}, #{industryCode}, #{appVerCode}, #{creator}, NOW(),'0')
+    </insert>
+
+    <update id="updateDeviceLabel" parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelInfoVO">
+        update vm_tenant_label_config
+        set label_name = #{labelName},
+        modifier = #{modifier},
+        update_time=NOW()
+        where label_id = #{labelId}
+    </update>
+
+    <delete id="deleteDeviceLabel" parameterType="java.lang.Long">
+        delete from vm_tenant_label_config where label_id = #{labelId}
+    </delete>
+
+    <select id="countByTenantInfo" resultType="java.lang.Integer">
+        select count(*) from vm_tenant_label_config
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and label_type_id = #{labelTypeId}
+    </select>
+
+    <delete id="deleteLabelRelByLabelId" parameterType="java.lang.Long">
+        delete from vm_device_labels_rel where label_id = #{labelId}
+    </delete>
+
+    <select id="countByLabelName" resultType="java.lang.Integer">
+        select count(*) from vm_tenant_label_config
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and label_name = #{labelName}
+        <if test="labelId != null">
+            and label_id != #{labelId}
+        </if>
+    </select>
+
+    <select id="selectLabelInfoByTenantId" resultType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelDetailVO">
+        select l.label_id labelId, l.label_name labelName, t.id labelTypeId, t.label_type_name labelTypeName
+        from vm_tenant_label_config l
+        inner join vm_tenant_label_type_config t on l.label_type_id = t.id
+        where l.tenant_id = #{tenantId} and l.industry_code = #{industryCode} and l.delete_flag = 0 and t.delete_flag = 0
+        and t.tenant_id = #{tenantId} and t.industry_code = #{industryCode}
+        order by convert(t.label_type_name using GBK), t.id, convert(l.label_name using GBK), l.label_id
+    </select>
+
+    <resultMap id="deviceLabelMap" type="com.chinatower.platform.entity.devicemgmt.vo.DeviceLabelInfoVO">
+        <result column="device_code" property="deviceCode" jdbcType="VARCHAR" />
+        <collection property="labelInfoList" ofType="com.chinatower.platform.entity.devicemgmt.vo.DeviceLabelSubVO">
+            <result column="label_id" property="labelId" jdbcType="VARCHAR"/>
+            <result column="label_name" property="labelName" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectDeviceLabelInfoByCondition" resultMap="deviceLabelMap">
+        select l.label_id, l.label_name, r.device_code
+        from vm_device_labels_rel r
+        inner join vm_tenant_label_config l on r.label_id = l.label_id
+        where l.tenant_id = #{param.tenantId} and l.industry_code = #{param.industryCode}
+        and r.device_code in
+        <foreach item="item" index="index" collection="param.deviceCodeList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        order by r.device_code, r.label_id
+    </select>
+
+    <select id="selectLabelInfoByTenantIdWithEmptyLabelType" resultType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelDetailVO">
+        select l.label_id labelId, l.label_name labelName, t.id labelTypeId, t.label_type_name labelTypeName
+        from vm_tenant_label_type_config t
+        left join vm_tenant_label_config l on l.label_type_id = t.id and l.delete_flag = 0 and l.tenant_id = #{tenantId} and l.industry_code = #{industryCode}
+        where t.delete_flag = 0 and t.tenant_id = #{tenantId} and t.industry_code = #{industryCode}
+        order by t.create_time, t.id, l.create_time, l.label_id;
+    </select>
+
+    <select id="getLabelInfoById" resultType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelInfoVO">
+        select label_id, tenant_id, industry_code
+        from vm_tenant_label_config
+        where label_id = #{labelId}
+    </select>
+
+    <select id="queryDeviceLabelPage" resultType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelDetailVO">
+        select l.label_id labelId, l.label_name labelName, t.id labelTypeId, t.label_type_name labelTypeName,
+        l.create_time, l.update_time, l.creator, l.modifier
+        from vm_tenant_label_config l
+        inner join vm_tenant_label_type_config t on l.label_type_id = t.id
+        where l.tenant_id = #{param.tenantId} and l.industry_code = #{param.industryCode} and l.delete_flag = 0
+        and t.tenant_id = #{param.tenantId} and t.industry_code = #{param.industryCode} and t.delete_flag = 0
+        <if test="param.labelTypeId != null">
+            and l.label_type_id = #{param.labelTypeId}
+        </if>
+        <if test="param.labelName != null and param.labelName != ''">
+            and l.label_name like CONCAT('%', #{param.labelName}, '%')
+        </if>
+        <if test="param.creator != null and param.creator != ''">
+            and l.creator like CONCAT('%', #{param.creator}, '%')
+        </if>
+        <if test="param.modifier != null and param.modifier != ''">
+            and l.modifier like CONCAT('%', #{param.modifier}, '%')
+        </if>
+        <if test="param.createTimeStart != null">
+            and l.create_time &gt;= #{param.createTimeStart}
+        </if>
+        <if test="param.createTimeEnd != null">
+            and l.create_time &lt;= #{param.createTimeEnd}
+        </if>
+        <if test="param.updateTimeStart != null">
+            and l.update_time &gt;= #{param.updateTimeStart}
+        </if>
+        <if test="param.updateTimeEnd != null">
+            and l.update_time &lt;= #{param.updateTimeEnd}
+        </if>
+        <choose>
+            <when test="param.sortName == 'labelTypeName'">
+                order by convert(t.label_type_name using GBK)
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+                , l.create_time desc, l.label_id
+            </when>
+            <when test="param.sortName == 'createTime'">
+                order by l.create_time
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+                , l.label_id
+            </when>
+            <when test="param.sortName == 'updateTime'">
+                order by l.update_time
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+                , l.label_id
+            </when>
+            <otherwise>
+                order by l.create_time desc, l.label_id
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="getLabelCountByLabelTypeId" resultType="java.lang.Integer">
+        select count(*)
+        from vm_tenant_label_config
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and label_type_id = #{labelTypeId} and delete_flag = 0
+    </select>
+</mapper>

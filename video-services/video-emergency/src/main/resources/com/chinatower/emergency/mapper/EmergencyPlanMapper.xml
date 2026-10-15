@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.emergency.mapper.EmergencyPlanMapper">
+    <delete id="deleteStageInfo">
+        DELETE FROM vm_emergency_stage_t
+        WHERE
+            event_code in
+            <foreach collection="eventCodes" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+    </delete>
+    <delete id="deleteTaskInfo">
+        DELETE FROM vm_emergency_task_t
+        WHERE
+            event_code in
+            <foreach collection="eventCodes" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+    </delete>
+    <update id="updateTaskStatus">
+        update vm_emergency_task_t set task_status = 2
+        WHERE
+        event_code in
+        <foreach collection="eventCodes" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+    <delete id="deleteFeedbackInfoVO">
+        DELETE FROM vm_emergency_feedback_t
+        WHERE task_id in
+        <foreach collection="taskIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteTargetInfo">
+        DELETE FROM vm_emergency_target_t
+        WHERE
+        event_code in
+        <foreach collection="eventCodes" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteTaskList">
+        DELETE FROM vm_emergency_task_t
+        WHERE
+        event_code in
+        <foreach collection="eventCodes" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and  task_status = '0'
+    </delete>
+
+    <select id="selectUserByUserName" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select u.user_id, u.user_name, u.password,u.nick_name, u.email, u.avatar
+             , u.phonenumber, u.status,u.pwd_update_time,u.tenant_id,u.user_type
+        from sys_user u
+        where u.del_flag = '0' and u.STATUS = '0'
+        <if test="userIdList != null and userIdList.size() > 0 ">
+            AND u.user_id IN
+            <foreach collection="userIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='userName!= null and userName!=""'>
+            AND u.user_name = #{userName}
+        </if>
+        <if test="userNameList != null and userNameList.size() > 0 ">
+            AND u.user_name IN
+            <foreach collection="userNameList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <insert id="insertTargetInfo" parameterType="com.chinatower.emergency.dto.TargetInfoVO">
+        INSERT INTO vm_emergency_target_t(`event_code`,`target_start_date`, `target_stop_date`, `target_detail`, `stage_num`, `tenant_id`, `industry_code`, `app_ver_code`, `creator`, `create_time`, `delete_flag`)
+        VALUES ( #{eventCode}, #{globalStartDate}, #{globalStopDate}, #{globalDetail}, #{stageNum}, #{tenantId}, #{industryCode}, #{appVerCode}, #{creator}, NOW(), 0);
+    </insert>
+
+    <insert id="insertStageInfo" parameterType="com.chinatower.emergency.dto.StageInfoVO" useGeneratedKeys="true" keyProperty="stageId">
+        INSERT INTO vm_emergency_stage_t(`event_code`, `stage_name`, `stage_status`, `tenant_id`, `industry_code`, `app_ver_code`, `creator`, `create_time`, `delete_flag`,stage_start_date,stage_stop_date,stage_detail)
+        VALUES
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            ( #{item.eventCode}, #{item.stageName}, #{item.stageStatus}, #{item.tenantId}, #{item.industryCode}, #{item.appVerCode}, #{item.creator}, NOW(), 0,#{item.stageStartDate},#{item.stageStopDate},#{item.stageDetail})
+        </foreach>
+    </insert>
+
+    <insert id="addTaskInfo" parameterType="com.chinatower.emergency.dto.TaskInfoVO" useGeneratedKeys="true" keyProperty="taskId">
+        INSERT INTO vm_emergency_task_t(`stage_id`, `event_code`, `task_name`, `task_progress`, `task_start_date`, `task_stop_date`, `task_detail`, `task_status`, `user_ids`, `tenant_id`, `industry_code`, `app_ver_code`, `creator`, `create_time`, `delete_flag`)
+        VALUES (#{stageId}, #{eventCode}, #{taskName}, 0, #{taskStartDate}, #{taskStopDate}, #{taskDetail}, 0, #{userIds}, #{tenantId}, #{industryCode}, #{appVerCode}, #{creator}, NOW(), 0);
+    </insert>
+
+    <insert id="insertTaskInfo" useGeneratedKeys="true" keyProperty="taskId">
+        INSERT INTO vm_emergency_task_t(`stage_id`, `event_code`, `task_name`, `task_progress`, `task_start_date`,
+        `task_stop_date`, `task_detail`, `task_status`, `user_ids`, `tenant_id`, `industry_code`, `app_ver_code`,
+        `creator`, `create_time`, `delete_flag`)
+        VALUES
+        <foreach collection="taskInfoVOList" item="item" index="index" open="" close="" separator=",">
+            (#{item.stageId}, #{item.eventCode}, #{item.taskName}, #{item.taskProgress}, null, null, #{item.taskDetail}, #{item.taskStatus},
+            #{item.userIds}, #{item.tenantId}, #{item.industryCode}, #{item.appVerCode}, #{item.creator}, NOW(), 0)
+        </foreach>
+    </insert>
+
+    <insert id="doFeedback" parameterType="com.chinatower.emergency.dto.FeedbackInfoVO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO vm_emergency_feedback_t(`task_id`,  `task_progress`, `feedback_detail`, `deal_client`, `tenant_id`, `industry_code`, `app_ver_code`, `creator`, `create_time`, `delete_flag`)
+        VALUES (#{taskId}, #{taskProgress}, #{feedbackDetail},  #{dealClient}, #{tenantId}, #{industryCode}, #{appVerCode}, #{creator}, NOW(), 0);
+    </insert>
+
+
+    <update id="updateTargetInfo" parameterType="com.chinatower.emergency.dto.TargetInfoVO">
+        update vm_emergency_target_t
+        set
+            target_start_date = #{globalStartDate},
+            target_stop_date = #{globalStopDate},
+            target_detail = #{globalDetail},
+            modifier = #{modifier},
+            update_time = NOW()
+        where event_code = #{eventCode}
+    </update>
+
+    <select id="getTargetInfo" resultType="com.chinatower.emergency.dto.TargetInfoVO"
+            parameterType="com.chinatower.emergency.dto.TargetInfoVO">
+        SELECT
+            id,
+            event_code,
+            target_start_date as globalStartDate,
+            target_stop_date as globalStopDate,
+            stage_num,
+            target_detail as globalDetail
+        FROM
+            vm_emergency_target_t
+        WHERE
+            delete_flag = 0
+          AND event_code = #{eventCode}
+    </select>
+
+    <select id="getStageInfo" resultType="com.chinatower.emergency.dto.StageInfoVO">
+        SELECT
+            stage_id,
+            event_code,
+            stage_name,
+            stage_start_date,
+            stage_stop_date,
+            stage_detail,
+            stage_status
+        FROM
+            vm_emergency_stage_t
+        WHERE
+            delete_flag = 0
+          AND stage_id = #{stageId}
+    </select>
+
+    <select id="getStageIdList" resultType="java.lang.Integer">
+        SELECT
+            stage_id
+        FROM
+            vm_emergency_stage_t
+        WHERE
+            delete_flag = 0
+          AND event_code = #{eventCode}
+    </select>
+
+    <select id="getTaskInfo" resultType="com.chinatower.emergency.dto.TaskInfoVO"
+            parameterType="com.chinatower.emergency.dto.TaskInfoVO">
+        SELECT
+            task_id,
+            stage_id,
+            event_code,
+            task_name,
+            task_progress,
+            task_start_date,
+            task_stop_date,
+            task_detail,
+            task_status,
+            user_ids
+        FROM
+            vm_emergency_task_t
+        WHERE
+            delete_flag = 0
+          AND task_id = #{taskId}
+    </select>
+
+    <select id="getTaskList" resultType="com.chinatower.emergency.dto.TaskInfoVO"
+            parameterType="com.chinatower.emergency.dto.TaskInfoReq">
+        SELECT
+        task_id,
+        stage_id,
+        event_code,
+        task_name,
+        task_progress,
+        task_start_date,
+        task_stop_date,
+        task_detail,
+        task_status,
+        user_ids,
+        CASE WHEN SUBSTRING(task_name, 1, 1) REGEXP '[一-龥]'
+        THEN firstPinyin(task_name) ELSE SUBSTRING(task_name, 1, 1)
+        END AS task_name_ord
+        FROM
+        vm_emergency_task_t
+        WHERE
+        delete_flag = 0
+        ${dataScope}
+        <if test='stageId!= null'>
+            AND stage_id = #{stageId}
+        </if>
+        <if test='userId!= null and userId!=""'>
+            AND FIND_IN_SET(#{userId},user_ids)
+        </if>
+        <if test='taskName!= null and taskName!=""'>
+            AND task_name like concat('%',#{taskName},'%')
+        </if>
+        <if test='taskStartDateBegin != null and taskStartDateBegin != "" and taskStartDateEnd != null and taskStartDateEnd != ""'>
+            AND task_start_date >= #{taskStartDateBegin}
+            AND task_start_date <![CDATA[<=]]> #{taskStartDateEnd}
+        </if>
+        <if test='taskStopDateBegin != null and taskStopDateBegin != "" and taskStopDateEnd != null and taskStopDateEnd != ""'>
+            AND task_stop_date >= #{taskStopDateBegin}
+            AND task_stop_date <![CDATA[<=]]> #{taskStopDateEnd}
+        </if>
+        <if test="eventCode != null and eventCode != ''">
+            AND event_code = #{eventCode}
+        </if>
+        <if test="eventCodes != null and eventCodes.size() > 0 ">
+            AND event_code IN
+            <foreach collection="eventCodes" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <choose>
+            <when test='taskStatus != null and taskStatus != -1'>
+                AND task_status = #{taskStatus}
+            </when>
+            <when test='taskStatus != null and taskStatus == -1'>
+
+            </when>
+            <otherwise>
+                AND task_status != 0
+            </otherwise>
+        </choose>
+        order by task_start_date desc, IF(task_name_ord RLIKE '^[a-z]', 1, 2), task_name_ord
+    </select>
+    <update id="updateTaskInfo" parameterType="com.chinatower.emergency.dto.TaskInfoVO">
+        update vm_emergency_task_t
+        set
+        <if test='taskProgress!= null'>
+            task_progress = #{taskProgress},
+        </if>
+        <if test='taskStatus!= null'>
+            task_status = #{taskStatus},
+        </if>
+        modifier = #{modifier},
+        update_time = NOW()
+        where delete_flag = 0
+        <if test='taskId!= null'>
+            and task_id = #{taskId}
+        </if>
+        <if test='stageId!= null'>
+            and stage_id = #{stageId} and task_status != 0
+        </if>
+        <if test='eventCode!= null'>
+            and event_code = #{eventCode}
+            and task_status != 0
+        </if>
+    </update>
+
+    <update id="updateTask">
+        update vm_emergency_task_t
+        set modifier = #{modifier},
+        <if test='taskStartDate!= null'>
+            task_start_date = #{taskStartDate},
+        </if>
+        <if test='taskStopDate!= null'>
+            task_stop_date = #{taskStopDate},
+        </if>
+        <if test='taskName!= null'>
+            task_name = #{taskName},
+        </if>
+        <if test='taskDetail!= null'>
+            task_detail = #{taskDetail},
+        </if>
+        <if test='userIds!= null'>
+            user_ids = #{userIds},
+        </if>
+        update_time = NOW()
+        where task_id = #{taskId}
+    </update>
+
+
+    <update id="updateStageInfo" parameterType="com.chinatower.emergency.dto.StageInfoVO">
+        update vm_emergency_stage_t
+        set
+        <if test='stageStatus!= null'>
+            stage_status = #{stageStatus},
+        </if>
+        <if test='stageStartDate!= null and stageStartDate!=""'>
+            stage_start_date = #{stageStartDate},
+        </if>
+        <if test='stageStopDate!= null and stageStopDate!=""'>
+            stage_stop_date = #{stageStopDate},
+        </if>
+        <if test='stageDetail!= null and stageDetail!=""'>
+            stage_detail = #{stageDetail},
+        </if>
+        modifier = #{modifier},
+        update_time = NOW()
+        where
+        1 = 1
+        <if test='stageId!= null'>
+            AND stage_id = #{stageId}
+        </if>
+        <if test='eventCode!= null'>
+            AND event_code = #{eventCode}
+            AND stage_status != 0
+            AND stage_status != -1
+        </if>
+    </update>
+
+    <select id="getFeedbackList" resultType="com.chinatower.emergency.dto.FeedbackInfoVO"
+            parameterType="com.chinatower.emergency.dto.FeedbackInfoVO">
+        SELECT
+        id,
+        task_id,
+        task_progress,
+        feedback_detail,
+        creator,
+        create_time as feedbackTime
+        FROM
+        vm_emergency_feedback_t
+        WHERE
+        delete_flag = 0
+        <if test='id!= null'>
+            AND id = #{id}
+        </if>
+        <if test='taskId!= null'>
+            AND task_id = #{taskId}
+        </if>
+        <if test="taskIdList != null and taskIdList.size() > 0 ">
+            AND task_id IN
+            <foreach collection="taskIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        order by create_time desc
+    </select>
+
+    <select id="getEventStatus" resultType="java.lang.Integer">
+        SELECT
+            t1.`status`
+        FROM
+            vm_emergency_event_info t1,
+            vm_emergency_stage_t t2
+        WHERE
+            t1.event_code = t2.event_code
+          AND t2.stage_id = #{stageId}
+    </select>
+
+    <update id="updateEventStatus">
+        UPDATE
+            vm_emergency_event_info t1,
+            vm_emergency_stage_t t2
+        SET
+            t1.`status` = 2,
+            t1.modifier = #{modifier},
+            t1.update_time = NOW()
+        WHERE
+            t1.event_code = t2.event_code
+          AND t2.stage_id = #{stageId}
+    </update>
+
+
+    <select id="getStageInfoList" resultType="com.chinatower.emergency.dto.StageInfoVO">
+        SELECT
+            stage_id,
+            event_code,
+            stage_name,
+            stage_start_date,
+            stage_stop_date,
+            stage_detail,
+            stage_status
+        FROM
+            vm_emergency_stage_t
+        WHERE
+            delete_flag = 0
+            <if test='stageId!= null'>
+                AND stage_id = #{stageId}
+            </if>
+            <if test='eventCode!= null and eventCode!=""' >
+                AND event_code = #{eventCode}
+            </if>
+    </select>
+    <select id="checkImportTarget" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM vm_emergency_target_t
+        WHERE event_code = #{eventCode}
+          AND delete_flag = 0;
+    </select>
+</mapper>

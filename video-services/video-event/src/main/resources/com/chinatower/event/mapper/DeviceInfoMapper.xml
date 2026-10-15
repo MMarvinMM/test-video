@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.DeviceInfoMapper">
+    <select id="getDeptIds" resultType="java.lang.String" parameterType="java.lang.String">
+        select a.DEPT_ID
+        from sys_dept a
+                 right join (select DEPT_ID, DEPT_LEVEL from sys_dept where DEPT_ID = #{deptId}) b
+                            on a.DEPT_LEVEL >= b.DEPT_LEVEL
+        where (ANCESTORS like concat('%', b.DEPT_ID, '%') or a.DEPT_ID = #{deptId})
+    </select>
+
+    <select id="queryDeviceInfoList" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        SELECT DISTINCT deviceCode,
+        devName,
+        height,
+        streetCode,
+        streetName,
+        status,
+        deviceStatusName,
+        orderStatusName,
+        orderStatus,
+        longitude,
+        latitude,
+        location,
+        tenantId,
+        industry_code,
+        provinceName,
+        provinceCode,
+        cityName,
+        cityCode,
+        countryName,
+        countryCode,
+        modelId,
+        categoryCode,
+        modelName,
+        collectType,
+        collectMethod,
+        siteCode,
+        deviceModelCode,
+        visualRadius
+        FROM (
+        SELECT DISTINCT od.device_code as deviceCode,
+        ( case when length(IFNULL(ten.device_name, '')) = 0 then m.device_name else ten.device_name end ) devName,
+        <if test="param.queryAddType != 1">
+            ( case when length(IFNULL(ten.channel_name, '')) = 0 then ci.channel_name else ten.channel_name end ) chanName,
+        </if>
+        m.town_code as streetCode,
+        town.area_name as streetName,
+        m.device_status as status,
+        (CASE WHEN m.device_status = '0' THEN '在线'
+        WHEN m.device_status = '1' THEN '离线'
+        WHEN m.device_status = '2' THEN '从未连接'
+        END) deviceStatusName,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName,
+        od.ord_status as orderStatus,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.collect_type collectType,
+        m.collect_method collectMethod,
+        m.device_model_code deviceModelCode,
+        m.site_code siteCode,
+        od.tenant_id as tenantId,
+        od.industry_code,
+        pro.area_name as provinceName,
+        pro.area_code as provinceCode,
+        city.area_name as cityName,
+        city.area_code as cityCode,
+        county.area_name as countryName,
+        county.area_code as countryCode,
+        m.model_code as modelId,
+        m.category_code as categoryCode,
+        m.visual_radius as visualRadius,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = '103' AND DICT_VALUE = m.model_code limit 1) modelName
+        FROM vm_order_devices od
+        LEFT JOIN vm_device_info_t m on m.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id =<if test="param.queryAddType == 1">#{param.tenantId}</if><if test="param.queryAddType != 1">od.tenant_id</if>
+        and ten.delete_flag='0'
+        and ten.industry_code = <if test="param.queryAddType == 1">#{param.industryCode}</if><if test="param.queryAddType !=1">od.industry_code</if>
+        LEFT JOIN sys_area pro on pro.area_code = m.province_id
+        LEFT JOIN sys_area city on city.area_code = m.city_id
+        LEFT JOIN sys_area county on county.area_code = m.county_id
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        <if test="param.queryAddType !=1">
+            <if test='param.deptIds !=null  and param.deptIds.size() > 0'>
+                LEFT JOIN vm_organ_device_rel_t vod
+                on vod.device_code = m.device_code and vod.delete_flag = '0' and vod.tenant_id = od.tenant_id
+                and vod.device_type = 4
+            </if>
+            LEFT JOIN vm_channel_info_t ci ON ci.device_code = od.device_code
+            where od.delete_flag = '0' AND m.delete_flag = '0' AND ci.delete_flag = '0'
+            <if test='param.deptIds !=null  and param.deptIds.size() > 0'>
+                and vod.dept_id in
+                <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                    #{id}
+                </foreach>
+            </if>
+            <if test='param.deviceCodeList != null and param.deviceCodeList.size() > 0'>
+                and m.device_code in
+                <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="id">
+                    #{id}
+                </foreach>
+            </if>
+            <choose>
+                <when test='param.provinceCode != null and param.provinceCode != ""'>
+                    AND m.province_id = #{param.provinceCode}
+                </when>
+                <when test='param.cityCode != null and param.cityCode != ""'>
+                    AND m.city_id = #{param.cityCode}
+                </when>
+                <when test='param.countryCode != null and param.countryCode != ""'>
+                    AND m.county_id = #{param.countryCode}
+                </when>
+                <when test='param.townCode != null and param.townCode != ""'>
+                    AND m.town_code = #{param.townCode}
+                </when>
+            </choose>
+            <choose>
+                <when test='param.operType == "0"'>
+                    <if test='param.deviceCode != null and param.deviceCode != ""'>
+                        and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+                    </if>
+                </when>
+                <otherwise>
+                    <if test='param.deviceCode != null and param.deviceCode != ""'>
+                        and m.device_code = #{param.deviceCode}
+                    </if>
+                </otherwise>
+            </choose>
+            <if test='param.status != null and param.status != ""'>
+                and m.device_status = #{param.status}
+            </if>
+            <if test='param.modelId != null and param.modelId != ""'>
+                and m.model_code = #{param.modelId}
+            </if>
+            <choose>
+                <when test='param.orderStatus == "1"'>
+                    and od.ord_status in (0, 1, 2)
+                </when>
+                <otherwise>
+                    <if test='param.orderStatus != null and param.orderStatus != ""'>
+                        and od.ord_status = #{param.orderStatus}
+                    </if>
+                </otherwise>
+            </choose>
+            <if test='param.channelCode != null and param.channelCode != ""'>
+                and ci.channel_code like CONCAT('%', #{param.channelCode}, '%')
+            </if>
+            ${param.dataScope}
+            ORDER BY field(od.ord_status,1,0,2,4,3)	ASC
+        </if>
+        <if test="param.queryAddType ==1">
+            <where>
+                <if test='param.deviceCode != null and param.deviceCode != ""'>
+                    and  m.device_code = #{param.deviceCode}
+                </if>
+            </where>
+        </if>
+        ) dt
+        <where>
+            <if test='param.devName != null and param.devName != ""'>
+                and dt.devName like CONCAT('%', #{param.devName}, '%')
+            </if>
+            <if test='param.channelName != null and param.channelName != ""'>
+                and dt.chanName like CONCAT('%', #{param.channelName}, '%')
+            </if>
+        </where>
+        <if test="param.queryAddType !=1">
+            GROUP BY tenantId,industry_code,deviceCode
+            ORDER BY provinceCode,cityCode,countryCode,streetCode,deviceCode
+        </if>
+    </select>
+
+    <select id="getDeviceTypeList" resultType="com.chinatower.event.vo.entity.DeviceTypeInfoVO">
+        SELECT
+        t1.category_code,
+        (SELECT DICT_LABEL FROM sys_dict_data WHERE dict_type = 'full_view_device_type' AND DICT_VALUE = t1.category_code) AS deviceTypeName,
+        COUNT(*) AS deviceTypeNum
+        FROM
+        vm_device_info_t t1
+        WHERE
+        t1.category_code IS NOT NULL and t1.delete_flag = '0'
+        <if test='param.deviceCodeList != null and param.deviceCodeList.size() > 0'>
+            and t1.device_code in
+            <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        GROUP BY
+        t1.category_code;
+    </select>
+
+    <select id="selectLabelInfoByDeviceCode" resultType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceLabelVO">
+        select r.device_code, l.label_id, l.label_name
+        from vm_device_labels_rel r
+        inner join vm_tenant_label_config l on r.label_id = l.label_id
+        where l.tenant_id = #{tenantId} and l.industry_code = #{industryCode}
+        <if test="deviceCodeList != null and deviceCodeList.size() > 0">
+            and r.device_code in
+            <foreach item="item" index="index" collection="deviceCodeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.video.dao.VideoDAO">
+
+    <select id="getList" resultType="com.chinatower.platform.modules.video.entity.ChannelVideoPlansVO">
+        select
+            t.record_plan_id as 'recordPlanId',
+            t.device_code as 'deviceCode',
+            t.channel_code as 'channelCode',
+            t.tenant_id as 'tenantId',
+            s.day_of_week as 'dayOfWeek',
+            s.start_time as 'startTime',
+            s.end_time as 'endTime'
+        from vm_channel_video_plan_t t
+        left join vm_plan_time_section_t s
+        on t.record_plan_id = s.record_plan_id
+        where t.delete_flag = '0'
+        and s.delete_flag = '0'
+        and start_date &lt;= date_add(CURDATE(),interval -1 day)
+        and end_date &gt;= date_add(CURDATE(),interval -1 day)
+        and s.day_of_week = WEEKDAY(date_add(CURDATE(),interval -1 day))+1
+    </select>
+
+    <insert id="insert" >
+        INSERT INTO vm_channel_video_plan_his_t
+        (record_plan_id,data_time, device_code, channel_code,tenant_id, day_of_week, start_time, end_time,create_time,industry_code,app_ver_code)
+         select
+            t.record_plan_id as 'recordPlanId',
+             date_add(CURDATE(),interval -1 day),
+            t.device_code as 'deviceCode',
+            t.channel_code as 'channelCode',
+            t.tenant_id as 'tenantId',
+            s.day_of_week as 'dayOfWeek',
+            s.start_time as 'startTime',
+            s.end_time as 'endTime',
+            now(),t.industry_code,t.app_ver_code
+        from vm_channel_video_plan_t t
+        left join vm_plan_time_section_t s
+        on t.record_plan_id = s.record_plan_id
+        where t.delete_flag = 0
+        and s.delete_flag = 0
+        and start_date &lt;= date_add(CURDATE(),interval -1 day)
+        and end_date &gt;= date_add(CURDATE(),interval -1 day)
+        and s.day_of_week = WEEKDAY(date_add(CURDATE(),interval -1 day))+1
+    </insert>
+
+</mapper>

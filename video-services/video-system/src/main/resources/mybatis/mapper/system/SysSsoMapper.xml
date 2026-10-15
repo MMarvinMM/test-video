@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysSsoMapper">
+
+    <resultMap type="com.chinatower.platform.project.system.domain.SysSso" id="SysSsoResult">
+    	<id     property="ssoId"      column="sso_id"      />
+        <result property="tenantId"    column="tenant_id"    />
+        <result property="tenantName"     column="tenant_name"     />
+        <result property="address"   column="address"   />
+        <result property="appkey"    column="appkey"    />
+        <result property="secretkey"    column="secretkey"    />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <association property="sysSsoUser" column="sso_id" select="selectSsoUserBySsoId"></association>
+    </resultMap>
+
+    <sql id="selectSsoVo">
+        select
+        sso_id,tenant_id,tenant_name,address,appkey,secretkey,create_by,create_time,update_by,update_time
+		from vm_sso_info
+    </sql>
+
+
+    <resultMap type="com.chinatower.platform.project.system.domain.SysSsoUser" id="SysSsoUserResult">
+        <id     property="userId"      column="user_id"      />
+        <result property="ssoId"    column="sso_id"    />
+        <result property="userName"     column="user_name"     />
+        <result property="nickName"   column="nick_name"   />
+    </resultMap>
+
+    <sql id="selectSsoUserVo">
+        select
+        user_id,sso_id,user_name,nick_name
+        from vm_sso_user
+    </sql>
+
+
+    <select id="selectConfig" parameterType="com.chinatower.platform.project.system.domain.SysSso" resultMap="SysSsoResult">
+        <include refid="selectSsoVo"/>
+        <where>
+            <if test="ssoId !=null">
+                and sso_id = #{ssoId}
+            </if>
+
+        </where>
+    </select>
+
+
+    <select id="selectSsoList" parameterType="com.chinatower.platform.project.system.domain.SysSso" resultMap="SysSsoResult">
+        <include refid="selectSsoVo"/>
+        where 1 = 1
+			<if test="tenantId != null and tenantId != ''">
+				AND tenant_Id  = #{tenantId}
+			</if>
+			<if test="tenantName != null and tenantName != ''">
+				AND tenant_Name like CONCAT(CONCAT('%', #{tenantName}),'%')
+			</if>
+            <if test="createBy != null and createBy != ''">
+                AND create_by like CONCAT(CONCAT('%', #{createBy}),'%')
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                AND update_by like CONCAT(CONCAT('%', #{updateBy}),'%')
+            </if>
+
+			<if test="createBeginTime != null and createBeginTime != ''"><!-- 开始时间检索 -->
+                AND create_time &gt;= STR_TO_DATE(CONCAT(#{createBeginTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+			<if test="createEndTime != null and createEndTime != ''"><!-- 结束时间检索 -->
+                AND create_time &lt;= STR_TO_DATE(CONCAT(#{createEndTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+
+            <if test="updateBeginTime != null and updateBeginTime != ''"><!-- 开始时间检索 -->
+                AND update_time &gt;= STR_TO_DATE(CONCAT(#{updateBeginTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+            <if test="updateEndTime != null and updateEndTime != ''"><!-- 结束时间检索 -->
+                AND update_time &lt;= STR_TO_DATE(CONCAT(#{updateEndTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+            <choose>
+                <when test="prop != null and prop != '' and order != null and order != '' ">
+                    <if test='prop == "createTime"'>
+                        order by  create_time
+                        <if test='order == "desc"'>
+                            desc
+                        </if>
+                    </if>
+                    <if test='prop == "updateTime"'>
+                         order by update_time
+                        <if test='order == "desc"'>
+                            desc
+                        </if>
+                    </if>
+                </when>
+                <otherwise>
+                     order by create_time desc
+                </otherwise>
+            </choose>
+    </select>
+
+    <select id="selectSsoUserList"  resultMap="SysSsoUserResult">
+        <include refid="selectSsoUserVo"/>
+        where sso_id = #{ssoId}
+        ORDER BY user_id asc
+    </select>
+
+
+
+    <insert id="insertSso" parameterType="com.chinatower.platform.project.system.domain.SysSso">
+        insert into vm_sso_info (
+			<if test="ssoId != null and ssoId != '' ">sso_id,</if>
+			<if test="tenantId != null and tenantId != '' ">tenant_id,</if>
+			<if test="tenantName != null and tenantName != '' ">tenant_name,</if>
+			<if test="address != null and address != '' ">address,</if>
+            <if test="appkey != null and appkey != '' ">appkey,</if>
+            <if test="secretkey != null and secretkey != '' ">secretkey,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            app_code,
+            create_time
+        )values(
+			<if test="ssoId != null and ssoId != ''">#{ssoId},</if>
+			<if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+			<if test="tenantName != null and tenantName != ''">#{tenantName},</if>
+			<if test="address != null and address != ''">#{address},</if>
+			<if test="appkey != null and appkey != ''">#{appkey},</if>
+			<if test="secretkey != null and secretkey != ''">#{secretkey},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            uuid_short(),
+ 			#{createTime}
+		)
+    </insert>
+
+    <insert id="insertSsoUser" parameterType="com.chinatower.platform.project.system.domain.SysSsoUser">
+        insert into vm_sso_user (
+        <if test="ssoId != null and ssoId != '' ">sso_id,</if>
+        <if test="userName != null and userName != '' ">user_name,</if>
+        <if test="nickName != null and nickName != '' ">nick_name,</if>
+        create_time
+        )values(
+        <if test="ssoId != null and ssoId != ''">#{ssoId},</if>
+        <if test="userName != null and userName != ''">#{userName},</if>
+        <if test="nickName != null and nickName != ''">#{nickName},</if>
+        #{createTime}
+        )
+    </insert>
+
+
+
+    <update id="updateConfig" parameterType="com.chinatower.platform.project.system.domain.SysSso">
+        update vm_sso_info
+        <set>
+            <if test="tenantId != null and tenantId != ''">tenant_id = #{tenantId},</if>
+            <if test="tenantName != null and tenantName != ''">tenant_name = #{tenantName},</if>
+            <if test="address != null and address != ''">address = #{address},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = #{updateTime}
+        </set>
+        where sso_id = #{ssoId}
+    </update>
+
+    <delete id="deleteSsoById" parameterType="com.chinatower.platform.project.system.domain.SysSso">
+        delete from vm_sso_info where sso_id = #{ssoId}
+    </delete>
+
+    <delete id="deleteSsoUserById" >
+        delete from vm_sso_user where sso_id = #{ssoId}
+    </delete>
+
+
+    <select id="selectSsoUserBySsoId" parameterType="java.lang.String" resultType="com.chinatower.platform.project.system.domain.SysSsoUser">
+        SELECT
+            user_id,
+            sso_id,
+            user_name,
+            nick_name,
+            create_time
+        FROM
+            vm_sso_user
+        WHERE
+            sso_id=#{id}
+    </select>
+
+    <select id="getSecretKeyNew" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            SECRETKEY as secretKey
+        FROM
+            vm_sso_info
+        WHERE APP_CODE = #{appCode}
+            AND APPKEY = #{appKey}
+    </select>
+
+    <select id="selectSsoUserInfo" parameterType="com.chinatower.platform.project.system.domain.SysSsoUser" resultType="com.chinatower.platform.project.system.domain.SysSsoUser">
+        SELECT
+        t3.user_id ,
+        t1.sso_id,
+        t1.user_name,
+        t1.nick_name,
+        t1.create_time,
+        t3.PASSWORD,
+        t3.tenant_id
+        FROM
+        vm_sso_user t1
+        left join vm_sso_info t2 on t1.SSO_ID = t2.SSO_ID
+        left join sys_user t3 on t1.USER_NAME = t3.USER_NAME
+        where t3.DEL_FLAG = '0'
+        <if test='tenantId!= null and tenantId != "" '>
+            and t2.TENANT_ID = #{tenantId}
+        </if>
+        <if test='userId!= null and userId != "" '>
+            and t3.USER_ID = #{userId}
+        </if>
+        <if test='userName!= null and userName != "" '>
+            and t3.user_name = #{userName}
+        </if>
+        <if test='phoneNumber!= null and phoneNumber != "" '>
+            and t3.PHONENUMBER = #{phoneNumber}
+        </if>
+    </select>
+
+    <insert id="insertTokenConfig">
+        insert into sys_auth_token_t(uuid,tenant_id,user_id,create_time)
+        values (#{uuid},#{tenantId},#{userId},NOW())
+    </insert>
+    <insert id="insertSsoUserBatch">
+        insert into vm_sso_user (
+        sso_id,
+        user_name,
+        nick_name,
+        create_time
+        )values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            <if test="item.ssoId != null and item.ssoId != ''">#{item.ssoId},</if>
+            <if test="item.userName != null and item.userName != ''">#{item.userName},</if>
+            <if test="item.nickName != null and item.nickName != ''">#{item.nickName},</if>
+            #{item.createTime}
+            )
+        </foreach>
+    </insert>
+
+
+</mapper>

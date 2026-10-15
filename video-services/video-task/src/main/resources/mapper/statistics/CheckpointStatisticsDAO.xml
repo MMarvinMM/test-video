@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.statistics.dao.CheckpointStatisticsDAO">
+
+    <insert id="insertCheckpointEventByHour" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        INSERT INTO vm_statistics_checkpoint_event_hour
+            (province_code, city_code, county_code, device_code, device_name, warning_hour, warning_num, year, month, day,
+        create_date, tenant_id, warning_source, industry_code, app_ver_code) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+        (#{item.provinceCode},#{item.cityCode},#{item.countyCode},#{item.deviceCode},#{item.deviceName},
+            #{item.warningHour},#{item.warningNum},#{item.year},#{item.month},#{item.day},#{item.alarmTime},#{item.tenantId}
+            ,#{item.warningSource},#{item.industryCode},#{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <delete id="deleteCheckpointEventByHour" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        DELETE
+        FROM
+            vm_statistics_checkpoint_event_hour
+        WHERE
+            `year` = #{year}
+            AND `month` = #{month}
+        <if test="day != null and day != ''">
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <select id="getCheckpointEventByHourList" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO"
+            resultType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        SELECT m.province_code, m.city_code, m.county_code, m.device_code, m.device_name, HOUR (m.alarm_time) as warning_hour, COUNT(1) as warning_num, YEAR (m.alarm_time) as year, MONTH (m.alarm_time) as month,
+            DAY (m.alarm_time) as day, m.tenant_id, m.industry_code, m.app_ver_code,m.warning_source,m.alarm_time
+        FROM (
+            SELECT a.province_code, a.city_code, a.county_code, a.device_code, a.device_name, a.alarm_time, a.tenant_id,
+        a.industry_code, a.app_ver_code, a.warning_source
+            FROM vm_checkpoint_warning_order_t a
+            WHERE DATE_FORMAT(a.alarm_time, '%Y-%m-%d') = #{handleDate}) m
+        GROUP BY m.province_code, m.city_code, m.county_code, m.device_code, m.tenant_id, HOUR ( m.alarm_time )
+        ,m.warning_source, m.industry_code, m.app_ver_code
+    </select>
+
+    <select id="getCheckpointEventByHourLists" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO"
+            resultType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        SELECT m.province_code, m.city_code, m.county_code, m.device_code, m.device_name, HOUR (m.alarm_time) as warning_hour, COUNT(1) as warning_num, YEAR (m.alarm_time) as year, MONTH (m.alarm_time) as month,
+            DAY (m.alarm_time) as day, m.tenant_id, m.industry_code, m.app_ver_code,m.warning_source,m.alarm_time
+        FROM (
+            SELECT a.province_code, a.city_code, a.county_code, a.device_code, a.device_name, a.alarm_time, a.tenant_id,
+            a.industry_code, a.app_ver_code, a.warning_source
+            FROM vm_checkpoint_warning_order_t a
+            WHERE DATE_FORMAT(a.alarm_time, '%Y-%m') = #{handleDate}) m
+        GROUP BY m.province_code, m.city_code, m.county_code, m.device_code, m.tenant_id, YEAR (m.alarm_time),MONTH (m.alarm_time),DAY (m.alarm_time),HOUR ( m.alarm_time )
+                ,m.warning_source, m.industry_code, m.app_ver_code
+    </select>
+
+    <insert id="insertCheckpointEventByDay" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        INSERT INTO vm_statistics_checkpoint_event_day
+        (province_code, city_code, county_code, device_code, device_name, warning_num, year, month, day, create_date, tenant_id
+        , warning_source, industry_code, app_ver_code
+        ) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.provinceCode},#{item.cityCode},#{item.countyCode},#{item.deviceCode},#{item.deviceName},
+            #{item.warningNum},#{item.year},#{item.month},#{item.day},#{item.alarmTime},#{item.tenantId}
+            ,#{item.warningSource},#{item.industryCode},#{item.appVerCode} )
+        </foreach>
+    </insert>
+
+    <delete id="deleteCheckpointEventByDay" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        DELETE
+        FROM
+            vm_statistics_checkpoint_event_day
+        WHERE
+            `year` = #{year}
+          AND `month` = #{month}
+        <if test="day != null and day != ''">
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <select id="getCheckpointEventByDayList" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO"
+            resultType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        SELECT m.province_code, m.city_code, m.county_code, m.device_code, m.device_name, COUNT(1) as warning_num, YEAR (m.alarm_time) as year, MONTH (m.alarm_time) as month,
+            DAY (m.alarm_time) as day, m.tenant_id, m.industry_code, m.app_ver_code,m.warning_source,m.alarm_time
+        FROM (
+            SELECT a.province_code, a.city_code, a.county_code, a.device_code, a.device_name, a.alarm_time, a.tenant_id
+        ,a.industry_code, a.app_ver_code, a.warning_source
+            FROM vm_checkpoint_warning_order_t a
+            WHERE DATE_FORMAT(a.alarm_time, '%Y-%m-%d') = DATE_FORMAT(#{handleDate}, '%Y-%m-%d')) m
+        GROUP BY m.province_code, m.city_code, m.county_code, m.device_code, m.tenant_id, DAY ( m.alarm_time )
+        ,m.warning_source, m.industry_code, m.app_ver_code
+    </select>
+
+    <select id="getCheckpointEventByDayLists" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO"
+            resultType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        SELECT m.province_code, m.city_code, m.county_code, m.device_code, m.device_name, COUNT(1) as warning_num, YEAR (m.alarm_time) as year, MONTH (m.alarm_time) as month,
+            DAY (m.alarm_time) as day, m.tenant_id, m.industry_code, m.app_ver_code,m.warning_source,m.alarm_time
+        FROM (
+            SELECT a.province_code, a.city_code, a.county_code, a.device_code, a.device_name, a.alarm_time, a.tenant_id
+                ,a.industry_code, a.app_ver_code, a.warning_source
+            FROM vm_checkpoint_warning_order_t a
+            WHERE DATE_FORMAT(a.alarm_time, '%Y-%m') = #{handleDate}) m
+        GROUP BY m.province_code, m.city_code, m.county_code, m.device_code, m.tenant_id,YEAR (m.alarm_time),MONTH (m.alarm_time),DAY ( m.alarm_time )
+                ,m.warning_source, m.industry_code, m.app_ver_code
+    </select>
+
+    <insert id="insertCheckpointEventByMonth" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        INSERT INTO vm_statistics_checkpoint_event_month
+        (province_code, city_code, county_code, device_code, device_name, warning_num, year, month, create_date, tenant_id
+        , warning_source, industry_code, app_ver_code
+        ) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.provinceCode},#{item.cityCode},#{item.countyCode},#{item.deviceCode},#{item.deviceName},
+            #{item.warningNum},#{item.year},#{item.month},now(),#{item.tenantId}
+            ,#{item.warningSource},#{item.industryCode},#{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <delete id="deleteCheckpointEventByMonth" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        DELETE
+        FROM
+            vm_statistics_checkpoint_event_month
+        WHERE
+            `year` = #{year}
+          AND `month` = #{month}
+    </delete>
+
+    <select id="getCheckpointEventByMonthList" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO"
+            resultType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        SELECT m.province_code, m.city_code, m.county_code, m.device_code, m.device_name, COUNT(1) as warning_num,
+        YEAR (#{handleDate}) as year, MONTH (#{handleDate}) as month, m.tenant_id,m.industry_code, m.app_ver_code,m.warning_source
+        FROM (
+            SELECT a.province_code, a.city_code, a.county_code, a.device_code, a.device_name, a.alarm_time, a.tenant_id
+        ,a.industry_code, a.app_ver_code, a.warning_source
+            FROM vm_checkpoint_warning_order_t a
+            WHERE DATE_FORMAT(a.alarm_time, '%Y-%m') = DATE_FORMAT(#{handleDate}, '%Y-%m')) m
+        GROUP BY m.province_code, m.city_code, m.county_code, m.device_code, m.tenant_id, MONTH ( m.alarm_time )
+        ,m.warning_source, m.industry_code, m.app_ver_code
+    </select>
+
+    <select id="getCheckpointEventByMonthLists" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO"
+            resultType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        SELECT m.province_code, m.city_code, m.county_code, m.device_code, m.device_name, COUNT(1) as warning_num,
+            YEAR (m.alarm_time) as year, MONTH (m.alarm_time) as month, m.tenant_id,m.industry_code, m.app_ver_code,m.warning_source
+        FROM (
+            SELECT a.province_code, a.city_code, a.county_code, a.device_code, a.device_name, a.alarm_time, a.tenant_id
+                ,a.industry_code, a.app_ver_code, a.warning_source
+            FROM vm_checkpoint_warning_order_t a
+            WHERE DATE_FORMAT(a.alarm_time, '%Y-%m') = #{handleDate} )m
+        GROUP BY m.province_code, m.city_code, m.county_code, m.device_code, m.tenant_id,YEAR (m.alarm_time), MONTH ( m.alarm_time )
+                ,m.warning_source, m.industry_code, m.app_ver_code
+    </select>
+
+    <insert id="insertCheckpointEventByYear" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        INSERT INTO vm_statistics_checkpoint_event_year
+        (province_code, city_code, county_code, device_code, device_name, warning_num, year, create_date, tenant_id
+        , warning_source, industry_code, app_ver_code
+        ) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.provinceCode},#{item.cityCode},#{item.countyCode},#{item.deviceCode},#{item.deviceName},
+            #{item.warningNum},#{item.year},now(),#{item.tenantId}
+            ,#{item.warningSource},#{item.industryCode},#{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <delete id="deleteCheckpointEventByYear" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        DELETE
+        FROM
+            vm_statistics_checkpoint_event_year
+        WHERE
+            `year` = #{year}
+
+    </delete>
+    <select id="getCheckpointEventByYearList" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO"
+            resultType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        SELECT m.province_code, m.city_code, m.county_code, m.device_code, m.device_name, COUNT(1) as warning_num,
+        YEAR (#{handleDate}) as year, m.tenant_id,m.industry_code, m.app_ver_code,m.warning_source
+        FROM (
+            SELECT a.province_code, a.city_code, a.county_code, a.device_code, a.device_name, a.alarm_time, a.tenant_id
+        ,a.industry_code, a.app_ver_code, a.warning_source
+            FROM vm_checkpoint_warning_order_t a
+            WHERE DATE_FORMAT(a.alarm_time, '%Y') = DATE_FORMAT(#{handleDate}, '%Y')) m
+        GROUP BY m.province_code, m.city_code, m.county_code, m.device_code, m.tenant_id, YEAR ( m.alarm_time )
+        ,m.warning_source, m.industry_code, m.app_ver_code
+    </select>
+
+    <select id="getCheckpointEventByYearLists" parameterType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO"
+            resultType="com.chinatower.platform.modules.statistics.entity.CheckpointDateVO">
+        SELECT m.province_code, m.city_code, m.county_code, m.device_code, m.device_name, COUNT(1) as warning_num,
+            YEAR ( m.alarm_time ) as year, m.tenant_id,m.industry_code, m.app_ver_code,m.warning_source
+        FROM (
+            SELECT a.province_code, a.city_code, a.county_code, a.device_code, a.device_name, a.alarm_time, a.tenant_id
+                ,a.industry_code, a.app_ver_code, a.warning_source
+            FROM vm_checkpoint_warning_order_t a
+            WHERE DATE_FORMAT(a.alarm_time, '%Y') = #{handleDate}) m
+        GROUP BY m.province_code, m.city_code, m.county_code, m.device_code, m.tenant_id, YEAR ( m.alarm_time )
+                ,m.warning_source, m.industry_code, m.app_ver_code
+    </select>
+
+</mapper>

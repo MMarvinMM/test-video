@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.RadarAlarmTemplateMapper">
+
+    <select id="queryAlarmTemplateList" resultType="com.chinatower.device.entity.vo.RadarAlarmTemplateVO">
+        select
+        t.id as templateId,
+        t.template_name,
+        t.alarm_type_value,
+        t.template_status,
+        t.creator,
+        t.create_time,
+        t.modifier,
+        t.update_time,
+        count(distinct (r.id)) as unionRegionCount,
+        s.type_name as alarmTypeName,
+        t.valid_start_date,
+        t.valid_end_date,
+        t.valid_start_time,
+        t.valid_end_time,
+        t.template_json,
+        t.sync_status,
+        t.task_id
+        from vm_radar_alarm_template t
+        left join sys_alarm_type s on t.alarm_type_value = s.type_value
+        left join vm_radar_alarm_template_region_rel r on r.template_id = t.id
+        and r.tenant_id = t.tenant_id and r.industry_code = t.industry_code
+        where t.delete_flag = '0' and s.delete_flag = '0'
+        <if test='dto.templateName != null and dto.templateName != ""'>
+            and t.template_name like CONCAT('%', #{dto.templateName}, '%')
+        </if>
+        <if test='dto.templateStatus != null and dto.templateStatus != ""'>
+            and t.template_status = #{dto.templateStatus}
+        </if>
+        <if test="dto.alarmTypeValueList != null and dto.alarmTypeValueList.size()>0">
+            and t.alarm_type_value in
+            <foreach collection="dto.alarmTypeValueList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="dto.taskIdList != null and dto.taskIdList.size()>0">
+            and t.task_id in
+            <foreach collection="dto.taskIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='dto.creator != null and dto.creator != ""'>
+            and t.creator like CONCAT('%', #{dto.creator}, '%')
+        </if>
+        ${dto.dataScope}
+        <if test='dto.modifier != null and dto.modifier != ""'>
+            and t.modifier like CONCAT('%', #{dto.modifier}, '%')
+        </if>
+        <if test='dto.createTimeBegin !=null and dto.createTimeBegin !=""'>
+            and t.create_time <![CDATA[ >= ]]> #{dto.createTimeBegin}
+        </if>
+        <if test='dto.createTimeEnd !=null and dto.createTimeEnd !=""'>
+            and t.create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+        </if>
+        <if test='dto.updateTimeBegin !=null and dto.updateTimeBegin !=""'>
+            and t.update_time <![CDATA[ >= ]]> #{dto.updateTimeBegin}
+        </if>
+        <if test='dto.updateTimeEnd !=null and dto.updateTimeEnd !=""'>
+            and t.update_time <![CDATA[ <= ]]> #{dto.updateTimeEnd}
+        </if>
+        group by t.id
+        <if test='dto.isUnionRegion == "1"'>
+            having unionRegionCount > 0
+        </if>
+        <if test='dto.isUnionRegion == "0"'>
+            having unionRegionCount = 0
+        </if>
+        <choose>
+            <when test="dto.sortName == 'createTime'">
+                order by t.create_time
+                <if test="dto.sort =='asc'">
+                    asc
+                </if>
+                <if test="dto.sort =='desc'">
+                    desc
+                </if>
+            </when>
+            <when test="dto.sortName == 'updateTime'">
+                order by t.update_time
+                <if test="dto.sort =='asc'">
+                    asc
+                </if>
+                <if test="dto.sort =='desc'">
+                    desc
+                </if>
+            </when>
+            <otherwise>
+                order by t.create_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <update id="updateTemplateStatusById" parameterType="com.chinatower.device.entity.dto.RadarAlarmTemplateDTO">
+        update
+        vm_radar_alarm_template t
+        <set>
+            <if test="param.modifier != null and param.modifier != ''">
+                t.modifier = #{param.modifier},
+            </if>
+            <if test="param.updateTime != null">
+                t.update_time = #{param.updateTime},
+            </if>
+            <if test="param.syncStatus != null">
+                t.sync_status = #{param.syncStatus},
+            </if>
+            <if test="param.templateStatus != null">
+                t.template_status = #{param.templateStatus},
+            </if>
+            <if test="param.taskId != null">
+                t.task_id = #{param.taskId}
+            </if>
+        </set>
+        where
+        t.delete_flag = '0'
+        and t.id = #{param.templateId}
+    </update>
+
+    <select id="getTemplateInfoById" resultType="com.chinatower.device.entity.vo.RadarAlarmTemplateVO">
+        select DISTINCT
+        t.id as templateId,
+        t.template_name,
+        t.alarm_type_value,
+        t.template_status,
+        t.creator,
+        t.create_time,
+        t.modifier,
+        t.update_time,
+        t.valid_start_date,
+        t.valid_end_date,
+        t.valid_start_time,
+        t.valid_end_time,
+        t.template_json,
+        (select count(distinct (r.id)) from vm_radar_alarm_template_region_rel r where r.template_id = t.id) as unionRegionCount,
+        s.type_name as alarmTypeName,
+        t.task_id
+        from vm_radar_alarm_template t
+        left join sys_alarm_type s on t.alarm_type_value = s.type_value
+        where t.delete_flag = '0' and s.delete_flag = '0'
+        and t.id = #{param.templateId}
+    </select>
+
+    <select id="getRegionInfoByTemplateId" resultType="com.chinatower.device.entity.vo.RadarAlarmRegionVo">
+        select
+        a.id as regionId,
+        a.region_name,
+        a.region_type,
+        a.region_json
+        from vm_radar_alarm_template_region_rel r
+        left join vm_radar_alarm_region a on r.region_id = a.id
+        and r.tenant_id = a.tenant_id and r.industry_code = a.industry_code
+        where
+        r.template_id = #{templateId}
+    </select>
+
+    <insert id="addRelInfo" parameterType="java.util.List">
+        insert
+        into vm_radar_alarm_template_region_rel(template_id,region_id,tenant_id,industry_code)
+        values
+        <foreach collection="list" item="item" separator="," open="" close="" index="index">
+            (#{item.templateId},
+            #{item.regionId},
+            #{item.tenantId},
+            #{item.industryCode})
+        </foreach>
+    </insert>
+
+    <insert id="addWhiteInfo" parameterType="java.util.List">
+        insert
+        into vm_radar_alarm_black_white_list (template_id,ship_name,mmsi,list_type,tenant_id,industry_code,creator,create_time)
+        values
+        <foreach collection="list" item="item"  open="" close="" separator="," index="index">
+            (#{item.templateId},
+            #{item.shipName},
+            #{item.mmsi},
+            #{item.listType},
+            #{item.tenantId},
+            #{item.industryCode},
+            #{item.creator},
+            #{item.createTime})
+        </foreach>
+    </insert>
+
+    <select id="getTemplateNameList" resultType="java.lang.String">
+        select
+        t.template_name
+        from vm_radar_alarm_template t
+        where t.tenant_id = #{tenantId}
+        and t.industry_code = #{industryCode}
+        and t.delete_flag = '0'
+        <if test='templateId != null and templateId != ""'>
+            and t.id != #{templateId}
+        </if>
+    </select>
+
+    <update id="deleteTemplateById" parameterType="com.chinatower.device.entity.dto.RadarAlarmTemplateDTO">
+        update
+        vm_radar_alarm_template t
+        set t.delete_flag = '1'
+        where t.id = #{param.templateId}
+        and t.tenant_id = #{param.tenantId}
+        and t.industry_code = #{param.industryCode}
+        and t.template_status = '0'
+    </update>
+
+    <delete id="deleteTemplateRegionRelInfo" parameterType="com.chinatower.device.dto.RegionTemplateRelDTO">
+        delete
+        from vm_radar_alarm_template_region_rel t
+        where
+        t.template_id = #{param.templateId}
+        and t.tenant_id = #{param.tenantId}
+        and t.industry_code = #{param.industryCode}
+        <if test="param.regionId != null and param.regionId !=''">
+            and t.region_id = #{param.regionId}
+        </if>
+    </delete>
+
+    <select id="getAutoConfigName" resultType="java.lang.String">
+        SELECT
+        IF(MAX(CAST(a.template_name AS SIGNED)) is not null, concat('告警模板', MAX(CAST(a.template_name AS SIGNED)) + 1), '告警模板1')
+        FROM
+        (
+        SELECT
+        SUBSTRING(template_name, 5) AS template_name
+        FROM
+        vm_radar_alarm_template
+        WHERE
+        template_name LIKE '告警模板%'
+        AND delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        ) a
+    </select>
+
+    <select id="getRegionListByTemplateId" resultType="com.chinatower.device.entity.vo.RadarAlarmRegionVo">
+        select
+        r.template_id,
+        a.id as region_id,
+        a.region_name,
+        a.region_type
+        from vm_radar_alarm_template_region_rel r
+        left join vm_radar_alarm_region a on r.region_id = a.id
+        and r.tenant_id = a.tenant_id and r.industry_code = a.industry_code and a.delete_flag = '0'
+        where
+        r.template_id
+        in
+        <foreach collection="list" index="index" open="(" close=")" separator="," item="item">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

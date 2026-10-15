@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysTenantTradeMapper">
+
+    <!--<resultMap type="com.chinatower.platform.entity.admin.SysTenantTrade" id="SysTenantTradeResult">
+        <result property="tenantId"     column="tenant_id"      />
+        <result property="industryCode"     column="industry_code"      />
+        <result property="appVerCode"     column="app_ver_code"      />
+    </resultMap>
+
+    <select id="selectTenantTradeByTenantId" resultMap="SysTenantTradeResult">
+        select tenant_id,industry_code,app_ver_code
+        from sys_tenant_trade where tenant_id = #{tenantId}
+    </select>
+
+    <select id="countTenantTrade" resultType="int">
+        select count(*)
+        from sys_tenant_trade where tenant_id = #{tenantId}
+        and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+    </select>
+
+
+    <insert id="insertTenantTrade" useGeneratedKeys="false"  parameterType="com.chinatower.platform.entity.admin.SysTenantTrade">
+        insert into sys_tenant_trade(tenant_id,industry_code,app_ver_code)
+        values (#{tenantId}, #{industryCode}, #{appVerCode})
+    </insert>
+
+    <insert id="batchInsertTenantTrade">
+        insert into sys_tenant_trade(tenant_id,industry_code,app_ver_code)
+        values
+        <foreach collection="tenantTrades" item="item" separator=",">
+            (#{tenantId}, #{item.industryCode}, #{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <delete id="delTenantTrade" parameterType="string">
+		delete from sys_tenant_trade where tenant_id = #{tenantId}
+	</delete>
+
+    <select id="selectAppVerCodeByTenId"  parameterType="java.util.Map" resultType="com.chinatower.system.api.resp.SysIndustryViewRelResponse">
+        select a.industry_code,a.app_ver_code,a.app_ver_name,a.img_url
+        from sys_industry_ver_conf a left join
+        sys_tenant_trade b on a.app_ver_code=b.app_ver_code
+        where  b.tenant_id  = #{tenantId}
+        and b.industry_code
+        <foreach collection="tradeId" item="item" index="index" open=" in (" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>-->
+
+</mapper>

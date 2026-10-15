@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd"
+         updateCheck="false">
+
+    <!-- diskStore：ehcache其实是支持内存+磁盘+堆外内存，几个层级的缓存 -->
+    <!-- 在这里设置一下，但是一般不用的 ，这里是基于磁盘的缓存-->
+    <diskStore path="java.io.tmpdir/Tmp_EhCache" />
+
+    <defaultCache
+            eternal="false"
+            maxElementsInMemory="1000"
+            overflowToDisk="false"
+            diskPersistent="false"
+            timeToIdleSeconds="300"
+            timeToLiveSeconds="0"
+            memoryStoreEvictionPolicy="LRU" />
+
+    <!-- 手动指定的缓存策略 -->
+    <cache
+            name="iotAlarm"
+            eternal="false"
+            maxElementsInMemory="1000"
+            overflowToDisk="false"
+            diskPersistent="false"
+            timeToIdleSeconds="300"
+            timeToLiveSeconds="300"
+    >
+    </cache>
+
+
+</ehcache>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.AppUpgradeInfoMapper">
+
+    <sql id="selectAppUpgradeInfoVo">
+        <!--R-ZBZB-202110250799360-APP版本管理新增本地上传apk-->
+        SELECT T.ID,  T.APP_CODE,  T.APP_NAME,  T.APP_VERSION,  T.UPGRADE_URL,  T.IS_FORCE_UPGRADE,  T.UPGRADE_DESCRIBE,  T.CREATE_TIME,  T.UPDATE_TIME,  T.DEL_FLAG,  T.CREATE_BY,  T.UPDATE_BY,  T.DEPT_ID , T.UPLOAD_FLAG , T.FILE_ID, T.FILE_NAME, T.FILE_URL
+        FROM BS_APP_UPGRADE_INFO T
+        WHERE T.DEL_FLAG = '0'
+    </sql>
+
+    <select id="selectAppUpgradeInfoList" parameterType="com.chinatower.platform.project.system.domain.AppUpgradeInfo" resultType="com.chinatower.platform.project.system.domain.AppUpgradeInfo">
+        <include refid="selectAppUpgradeInfoVo"/>
+        <if test="appCode != null  and appCode != ''"> AND T.APP_CODE = #{appCode}</if>
+        <if test="appName != null  and appName != ''"> AND T.APP_NAME like concat('%',#{appName},'%')</if>
+        <if test="appVersion != null  and appVersion != ''"> AND T.APP_VERSION = #{appVersion}</if>
+        <if test="upgradeUrl != null  and upgradeUrl != ''"> AND T.UPGRADE_URL = #{upgradeUrl}</if>
+        <if test="isForceUpgrade != null  and isForceUpgrade != ''"> AND T.IS_FORCE_UPGRADE = #{isForceUpgrade}</if>
+        <if test="upgradeDescribe != null  and upgradeDescribe != ''"> AND T.UPGRADE_DESCRIBE like concat('%',#{upgradeDescribe},'%') </if>
+        <if test="createTime != null ">
+            AND T.CREATE_TIME BETWEEN  DATE_FORMAT(#{createTime},'%y-%m-%d 00:00:00') AND DATE_FORMAT(#{createTime},'%y-%m-%d 23:59:59')
+        </if>
+        <if test="updateTime != null ">
+            AND T.UPDATE_TIME BETWEEN  DATE_FORMAT(#{updateTime},'%y-%m-%d 00:00:00') AND DATE_FORMAT(#{updateTime},'%y-%m-%d 23:59:59')
+         </if>
+        <if test="beginCreateTime != null ">
+            AND T.CREATE_TIME >=  DATE_FORMAT(#{beginCreateTime},'%y-%m-%d 00:00:00')
+        </if>
+        <if test="endCreateTime != null ">
+            AND T.CREATE_TIME <![CDATA[<=]]>DATE_FORMAT(#{endCreateTime},'%y-%m-%d 23:59:59')
+        </if>
+        <if test="beginUpdateTime != null ">
+            AND T.UPDATE_TIME >=  DATE_FORMAT(#{beginCreateTime},'%y-%m-%d 00:00:00')
+        </if>
+        <if test="endUpdateTime != null ">
+            AND T.UPDATE_TIME <![CDATA[<=]]>DATE_FORMAT(#{endCreateTime},'%y-%m-%d 23:59:59')
+        </if>
+        <if test="delFlag != null  and delFlag != ''"> AND T.DEL_FLAG = #{delFlag}</if>
+        <if test="createBy != null  and createBy != ''"> AND T.CREATE_BY = #{createBy}</if>
+        <if test="updateBy != null  and updateBy != ''"> AND T.UPDATE_BY = #{updateBy}</if>
+        <if test="deptId != null  and deptId != ''"> AND T.DEPT_ID = #{deptId}</if>
+        ${dataScope}
+        ORDER BY T.ID DESC
+    </select>
+
+    <!--根据app应用标识去查询升级信息-->
+    <select id="selectByAppCode" parameterType="java.lang.String" resultType="com.chinatower.platform.project.system.domain.AppUpgradeInfo">
+        <include refid="selectAppUpgradeInfoVo"/>
+        and app_code = #{appCode,jdbcType=VARCHAR} order by create_time desc limit 1
+    </select>
+
+    <select id="selectAppUpgradeInfoById" parameterType="Long" resultType="com.chinatower.platform.project.system.domain.AppUpgradeInfo">
+        <include refid="selectAppUpgradeInfoVo"/>
+        AND T.ID = #{id}
+    </select>
+
+    <insert id="insertAppUpgradeInfo" parameterType="com.chinatower.platform.project.system.domain.AppUpgradeInfo">
+        INSERT INTO BS_APP_UPGRADE_INFO
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="appCode != null  and appCode != ''">APP_CODE,</if>
+            <if test="appName != null  and appName != ''">APP_NAME,</if>
+            <if test="appVersion != null  and appVersion != ''">APP_VERSION,</if>
+            <if test="upgradeUrl != null  and upgradeUrl != ''">UPGRADE_URL,</if>
+            <if test="isForceUpgrade != null  and isForceUpgrade != ''">IS_FORCE_UPGRADE,</if>
+            <if test="upgradeDescribe != null  and upgradeDescribe != ''">UPGRADE_DESCRIBE,</if>
+            <if test="createTime != null ">CREATE_TIME,</if>
+            <if test="updateTime != null ">UPDATE_TIME,</if>
+            <if test="delFlag != null  and delFlag != ''">DEL_FLAG,</if>
+            <if test="createBy != null  and createBy != ''">CREATE_BY,</if>
+            <if test="updateBy != null  and updateBy != ''">UPDATE_BY,</if>
+            <if test="deptId != null  and deptId != ''">DEPT_ID,</if>
+            <!--R-ZBZB-202110250799360-APP版本管理新增本地上传apk-->
+            <if test="uploadFlag != null  and uploadFlag != ''">UPLOAD_FLAG,</if>
+            <if test="fileId != null  and fileId != ''">FILE_ID,</if>
+            <if test="fileName != null  and fileName != ''">FILE_NAME,</if>
+            <if test="fileUrl != null  and fileUrl != ''">FILE_URL,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="appCode != null  and appCode != ''">#{appCode},</if>
+            <if test="appName != null  and appName != ''">#{appName},</if>
+            <if test="appVersion != null  and appVersion != ''">#{appVersion},</if>
+            <if test="upgradeUrl != null  and upgradeUrl != ''">#{upgradeUrl},</if>
+            <if test="isForceUpgrade != null  and isForceUpgrade != ''">#{isForceUpgrade},</if>
+            <if test="upgradeDescribe != null  and upgradeDescribe != ''">#{upgradeDescribe},</if>
+            <if test="createTime != null ">#{createTime},</if>
+            <if test="updateTime != null ">#{updateTime},</if>
+            <if test="delFlag != null  and delFlag != ''">#{delFlag},</if>
+            <if test="createBy != null  and createBy != ''">#{createBy},</if>
+            <if test="updateBy != null  and updateBy != ''">#{updateBy},</if>
+            <if test="deptId != null  and deptId != ''">#{deptId},</if>
+            <!--R-ZBZB-202110250799360-APP版本管理新增本地上传apk-->
+            <if test="uploadFlag != null  and uploadFlag != ''">#{uploadFlag},</if>
+            <if test="fileId != null  and fileId != ''">#{fileId},</if>
+            <if test="fileName != null  and fileName != ''">#{fileName},</if>
+            <if test="fileUrl != null  and fileUrl != ''">#{fileUrl},</if>
+        </trim>
+    </insert>
+
+    <update id="updateAppUpgradeInfo" parameterType="com.chinatower.platform.project.system.domain.AppUpgradeInfo">
+        UPDATE BS_APP_UPGRADE_INFO
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="appCode != null  and appCode != ''">APP_CODE = #{appCode},</if>
+            <if test="appName != null  and appName != ''">APP_NAME = #{appName},</if>
+            <if test="appVersion != null  and appVersion != ''">APP_VERSION = #{appVersion},</if>
+            <if test="upgradeUrl != null  and upgradeUrl != ''">UPGRADE_URL = #{upgradeUrl},</if>
+            <if test="isForceUpgrade != null  and isForceUpgrade != ''">IS_FORCE_UPGRADE = #{isForceUpgrade},</if>
+            UPGRADE_DESCRIBE = #{upgradeDescribe},
+            <if test="createTime != null ">CREATE_TIME = #{createTime},</if>
+            <if test="updateTime != null ">UPDATE_TIME = #{updateTime},</if>
+            <if test="delFlag != null  and delFlag != ''">DEL_FLAG = #{delFlag},</if>
+            <if test="createBy != null  and createBy != ''">CREATE_BY = #{createBy},</if>
+            <if test="updateBy != null  and updateBy != ''">UPDATE_BY = #{updateBy},</if>
+            <if test="deptId != null  and deptId != ''">DEPT_ID = #{deptId},</if>
+            <!--R-ZBZB-202110250799360-APP版本管理新增本地上传apk-->
+            <if test="uploadFlag != null  and uploadFlag != ''">UPLOAD_FLAG = #{uploadFlag},</if>
+            FILE_ID = #{fileId},
+            FILE_NAME = #{fileName},
+            FILE_URL = #{fileUrl}
+        </trim>
+        WHERE ID = #{id}
+    </update>
+
+    <update id="deleteAppUpgradeInfoById" parameterType="Long">
+        UPDATE BS_APP_UPGRADE_INFO SET DEL_FLAG = '2' WHERE ID = #{id}
+    </update>
+
+    <update id="deleteAppUpgradeInfoByIds" parameterType="String">
+        UPDATE BS_APP_UPGRADE_INFO SET DEL_FLAG = '2' WHERE ID IN
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>

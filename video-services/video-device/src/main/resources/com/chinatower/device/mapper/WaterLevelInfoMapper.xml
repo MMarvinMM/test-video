@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.WaterLevelInfoMapper">
+    <insert id="insertWaterLevelInfo">
+        INSERT INTO vm_water_level_info_t
+        (device_code, creator, create_time, industry_code, app_ver_code, accept_node, delete_flag, tenant_id)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.deviceCode}, #{item.creator}, now(), #{item.industryCode}, #{item.appVerCode}, #{item.acceptNode}, 0, #{item.tenantId})
+        </foreach>
+    </insert>
+    <update id="logicDeleteByIds">
+        update vm_water_level_info_t
+        set
+        delete_flag = 1,
+        modifier = #{userName},
+        update_time = now()
+        WHERE
+        id in
+        <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+    <select id="queryWaterLevelDeviceInfoList" resultType="com.chinatower.device.dto.WaterLevelInfo">
+        SELECT
+        resultdata.*,
+        a1.AREA_NAME AS provinceName,
+        a2.AREA_NAME AS cityName,
+        a3.AREA_NAME AS countryName
+        FROM
+        (
+        SELECT
+        m.id,
+        m.device_code,
+        d.device_name,
+        m.creator,
+        m.create_time,
+        d.province_id,
+        d.city_id,
+        d.county_id,
+        d.device_status,
+        d.location
+        FROM
+        vm_water_level_info_t m,
+        vm_device_info_t d,
+        vm_order_devices t
+        WHERE
+        t.device_code = d.device_code
+        AND m.device_code = d.device_code
+        AND m.tenant_id = t.tenant_id
+        AND m.industry_code = t.industry_code
+        AND m.delete_flag = 0
+        AND d.delete_flag = '0'
+        AND t.delete_flag = 0
+        AND t.ord_status IN ( 0, 1, 2 )
+        ${dataScope}
+        <if test='creator != null and creator != ""'>
+            AND m.creator like CONCAT('%', #{creator}, '%')
+        </if>
+        <if test='createTimeStart != null and createTimeStart != "" and createTimeEnd != null and createTimeEnd != "" '>
+            AND m.create_time <![CDATA[>=]]> #{createTimeStart} AND m.create_time <![CDATA[<=]]> #{createTimeEnd}
+        </if>
+        <if test='deviceCode != null and deviceCode != ""'>
+            AND m.device_code like CONCAT('%', #{deviceCode}, '%')
+        </if>
+        <if test='deviceStatus != null and deviceStatus != ""'>
+            AND d.device_status = #{deviceStatus}
+        </if>
+        <if test='deviceName != null and deviceName != ""'>
+            AND d.device_name like CONCAT('%', #{deviceName}, '%')
+        </if>
+        <if test='provinceId != null and provinceId != ""'>
+            AND d.province_id = #{provinceId}
+        </if>
+        <if test='cityId != null and cityId != ""'>
+            AND d.city_id = #{cityId}
+        </if>
+        <if test='countryId != null and countryId != ""'>
+            AND d.county_id = #{countryId}
+        </if>
+        ) resultdata
+        LEFT JOIN sys_area a1 ON a1.AREA_CODE = resultdata.province_id
+        LEFT JOIN sys_area a2 ON a2.AREA_CODE = resultdata.city_id
+        LEFT JOIN sys_area a3 ON a3.AREA_CODE = resultdata.county_id
+        <if test='sortName == "deviceName" and sort == "desc"'>
+            order by CONVERT(resultdata.device_name USING GBK) DESC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "deviceCode" and sort == "desc"'>
+            order by resultdata.device_code DESC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "deviceStatus" and sort == "desc"'>
+            order by  resultdata.device_status DESC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "provinceName" and sort == "desc"'>
+            order by CONVERT(a1.AREA_NAME USING GBK) DESC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "cityName" and sort == "desc"'>
+            order by CONVERT(a2.AREA_NAME USING GBK) DESC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "countryName" and sort == "desc"'>
+            order by CONVERT(a3.AREA_NAME USING GBK) DESC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "createTime" and sort == "desc"'>
+            order by resultdata.create_time DESC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "creator" and sort == "desc"'>
+            order by resultdata.creator DESC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "deviceName" and sort == "asc"'>
+            order by CONVERT(resultdata.device_name USING GBK) ASC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "deviceCode" and sort == "asc"'>
+            order by resultdata.device_code ASC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "deviceStatus" and sort == "asc"'>
+            order by  resultdata.device_status ASC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "provinceName" and sort == "asc"'>
+            order by CONVERT(a1.AREA_NAME USING GBK) ASC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "cityName" and sort == "asc"'>
+            order by CONVERT(a2.AREA_NAME USING GBK) ASC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "countryName" and sort == "asc"'>
+            order by CONVERT(a3.AREA_NAME USING GBK) ASC, resultdata.province_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "createTime" and sort == "asc"'>
+            order by resultdata.create_time ASC, resultdata.county_id, resultdata.city_id, resultdata.county_id
+        </if>
+        <if test='sortName == "creator" and sort == "asc"'>
+            order by resultdata.creator ASC, resultdata.county_id, resultdata.city_id, resultdata.county_id
+        </if>
+    </select>
+    <select id="queryWaterDeviceList" resultType="com.chinatower.device.dto.WaterLevelInfo">
+        select  DISTINCT
+        t.device_code,
+        t.device_name,
+        t.province_id,
+        a.AREA_NAME province_name,
+        t.city_id,
+        b.AREA_NAME city_name,
+        t.county_id,
+        d.AREA_NAME country_name
+        from vm_device_info_t t
+        left join sys_area a on a.AREA_CODE = t.province_id
+        left join sys_area b on b.AREA_CODE = t.city_id
+        left join sys_area d on d.AREA_CODE = t.county_id
+        where
+        t.delete_flag = 0
+        AND t.device_code in
+        <if test="deviceCodes != null and deviceCodes.size() > 0">
+            <foreach item="item" index="index" collection="deviceCodes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="getDeviceList" resultType="com.chinatower.device.dto.SysAreaBusinessWaterLevel">
+        SELECT DISTINCT
+            d.device_code as area_code,
+            d.device_name as area_name,
+            '10' as area_level,
+            d.county_id as area_parent_code,
+            d.province_id,
+            d.city_id,
+            d.county_id AS country_id
+        FROM vm_device_info_t d left join vm_order_devices a on d.device_code = a.device_code
+                                left join vm_water_level_info_t i on
+            d.device_code = i.device_code
+                and a.industry_code = i.industry_code
+                and a.tenant_id = i.tenant_id
+                and i.delete_flag = '0'
+        WHERE d.delete_flag = '0'
+            ${dataScope}
+          and a.delete_flag = 0
+          AND a.ord_status in(0, 1, 2)
+          AND i.device_code is null
+
+    </select>
+    <select id="selectSysArea" resultType="com.chinatower.device.dto.SysAreaBusinessWaterLevel">
+        SELECT
+        a.area_code,
+        a.area_name,
+        a.area_level,
+        a.area_parent_code,
+        '' as province_id,
+        '' as city_id,
+        '' as country_id
+        FROM
+        sys_area a
+        where a.DEL_FLAG='0'
+        and a.status='0'
+        <if test="areaCodes != null and areaCodes.size() > 0">
+            and area_code in
+            <foreach item="item" index="index" collection="areaCodes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+</mapper>

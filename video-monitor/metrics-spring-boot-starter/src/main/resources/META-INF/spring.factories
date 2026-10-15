@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.framework.cloud.autoconfigure.MeterAutoconfigure

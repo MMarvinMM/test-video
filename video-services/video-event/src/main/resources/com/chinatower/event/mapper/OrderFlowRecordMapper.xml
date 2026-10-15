@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.OrderFlowRecordMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.OrderFlowRecordDO">
+        <id column="order_flow_id" property="orderFlowId" />
+        <result column="order_id" property="orderId" />
+        <result column="link_id" property="linkId" />
+        <result column="link_name" property="linkName" />
+        <result column="flow_record_name" property="flowRecordName" />
+        <result column="flow_node_time" property="flowNodeTime" />
+        <result column="flow_end_time" property="flowEndTime" />
+        <result column="if_current_link" property="ifCurrentLink" />
+        <result column="process_id" property="processId" />
+        <result column="process_name" property="processName" />
+        <result column="group_id" property="groupId" />
+        <result column="if_timeout" property="ifTimeout" />
+        <result column="creator" property="creator" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="process_order_id" property="processOrderId" />
+        <result column="approve_order_id" property="approveOrderId" />
+        <result column="remark" property="remark" />
+        <result column="time_limit" property="timeLimit" />
+        <result column="voice" property="voice" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        order_flow_id, order_id, link_id, link_name, flow_record_name, flow_node_time, flow_end_time, if_current_link, process_id, process_name, group_id, if_timeout, creator, delete_flag, process_order_id, approve_order_id, remark, time_limit, voice
+    </sql>
+
+    <insert id="insertAlarmOrderRecordList"
+            parameterType="com.chinatower.event.dto.AlarmOrderRecordDTO">
+        insert into ${tableName} (
+        order_flow_id,
+        order_id,
+        link_id,
+        link_name,
+        flow_record_name,
+        flow_node_time,
+        flow_end_time,
+        if_current_link,
+        process_id,
+        process_name,
+        if_timeout,
+        group_id,
+        process_order_id,
+        approve_order_id,
+        remark,
+        time_limit,
+        delete_flag,
+        flow_link_type,
+        real_link_type,
+        enable_acceptance_mode,
+        accept_process_id
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.orderFlowId,jdbcType=VARCHAR},
+            #{item.orderId,jdbcType=VARCHAR},
+            #{item.linkId,jdbcType=VARCHAR},
+            #{item.linkName,jdbcType=VARCHAR},
+            #{item.flowRecordName,jdbcType=VARCHAR},
+            #{item.flowNodeTime},
+            #{item.flowEndTime},
+            #{item.ifCurrentLink,jdbcType=VARCHAR},
+            #{item.processId,jdbcType=VARCHAR},
+            #{item.processName,jdbcType=VARCHAR},
+            #{item.ifTimeout,jdbcType=VARCHAR},
+            #{item.groupId,jdbcType=VARCHAR},
+            #{item.processOrderId,jdbcType=VARCHAR},
+            #{item.approveOrderId,jdbcType=VARCHAR},
+            #{item.remark,jdbcType=VARCHAR},
+            #{item.timeLimit},
+            '0',
+            #{item.flowLinkType},
+            #{item.realLinkType},
+            #{item.enableAcceptanceMode},
+            #{item.acceptProcessId}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="insertAlarmOrderRecordListByList"
+            parameterType="com.chinatower.event.dto.AlarmOrderRecordDTO">
+        <foreach collection="list" item="dto" index="index" separator=";">
+            insert into ${dto.tableName} (
+            order_flow_id,
+            order_id,
+            link_id,
+            link_name,
+            flow_record_name,
+            flow_node_time,
+            flow_end_time,
+            if_current_link,
+            process_id,
+            process_name,
+            if_timeout,
+            group_id,
+            process_order_id,
+            approve_order_id,
+            remark,
+            close_remark,
+            time_limit,
+            delete_flag,
+            flow_link_type,
+            real_link_type,
+            enable_acceptance_mode,
+            accept_process_id
+            ) values
+            <foreach collection="dto.list" item="item" index="index" separator=",">
+                (
+                #{item.orderFlowId,jdbcType=VARCHAR},
+                #{item.orderId,jdbcType=VARCHAR},
+                #{item.linkId,jdbcType=VARCHAR},
+                #{item.linkName,jdbcType=VARCHAR},
+                #{item.flowRecordName,jdbcType=VARCHAR},
+                #{item.flowNodeTime,jdbcType=VARCHAR},
+                #{item.flowEndTime,jdbcType=TIMESTAMP},
+                #{item.ifCurrentLink,jdbcType=VARCHAR},
+                #{item.processId,jdbcType=VARCHAR},
+                #{item.processName,jdbcType=VARCHAR},
+                #{item.ifTimeout,jdbcType=VARCHAR},
+                #{item.groupId,jdbcType=VARCHAR},
+                #{item.processOrderId,jdbcType=VARCHAR},
+                #{item.approveOrderId,jdbcType=VARCHAR},
+                #{item.remark,jdbcType=VARCHAR},
+                #{item.closeRemark,jdbcType=VARCHAR},
+                #{item.timeLimit},
+                '0',
+                #{item.flowLinkType},
+                #{item.realLinkType},
+                #{item.enableAcceptanceMode},
+                #{item.acceptProcessId}
+                )
+            </foreach>
+        </foreach>
+    </insert>
+
+    <update id="createNewTable" parameterType="java.lang.String">
+        CREATE TABLE IF NOT EXISTS ${tableNewName} LIKE ${tableOldName}
+    </update>
+
+    <select id="getIdByOrderId" resultType="java.lang.String"
+            parameterType="java.util.Map">
+        SELECT order_flow_id FROM ${tableName}
+        WHERE if_current_link = '1'
+        <if test='orderId!= null and orderId != ""'>
+            and order_id = #{orderId}
+        </if>
+    </select>
+
+    <select id="getAlarmOrderRecordCount" resultType="java.lang.Integer"
+            parameterType="com.chinatower.event.vo.AlarmOrderRecordVO">
+        select count(*)
+        from  ${tableName} t
+        where 1 = 1
+        <if test='orderFlowId!= null and orderFlowId != "" and orderFlowId != "0"'>
+            and t.order_flow_id = #{orderFlowId}
+        </if>
+        <if test='orderId!= null and orderId != ""'>
+            and t.order_id = #{orderId}
+        </if>
+        <if test='linkId != null and linkId != "" '>
+            and t.link_id = #{linkId}
+        </if>
+        <if test='linkName != null and linkName != ""'>
+            AND t.link_name = #{linkName}
+        </if>
+        <if test='flowRecordName != null and flowRecordName != ""'>
+            AND t.flow_record_name = #{flowRecordName}
+        </if>
+        <if test='flowNodeTime != null and flowNodeTime != "" '>
+            AND t.flow_node_time = #{flowNodeTime}
+        </if>
+        <if test='processId != null and processId != "" '>
+            AND t.process_id = #{processId}
+        </if>
+        <if test='processName!= null and processName != "" '>
+            AND t.process_name = #{processName}
+        </if>
+        <if test='ifTimeout!= null and ifTimeout != "" '>
+            AND t.if_timeout = #{ifTimeout}
+        </if>
+        <if test='ifCurrentLink!= null and ifCurrentLink != "" '>
+            AND t.if_current_link = #{ifCurrentLink}
+        </if>
+        <if test='deleteFlag!= null and deleteFlag != ""'>
+            AND t.delete_flag = #{deleteFlag}
+        </if>
+        <if test='realLinkType!= null and realLinkType != ""'>
+            AND t.real_link_type = #{realLinkType}
+        </if>
+
+    </select>
+    <update id="updateAlarmOrderRecord"
+            parameterType="com.chinatower.event.vo.AlarmOrderRecordVO">
+        update ${tableName}
+        <set>
+            <if test='approveOrderId!= null and approveOrderId != "" '>
+                approve_order_id = #{approveOrderId,jdbcType=VARCHAR},
+            </if>
+            <if test='processId!= null and processId != "" '>
+                process_id = #{processId,jdbcType=VARCHAR},
+            </if>
+            <if test='acceptProcessId!= null and acceptProcessId != "" '>
+                accept_process_id = #{acceptProcessId,jdbcType=VARCHAR},
+            </if>
+            <if test='processName!= null and processName != "" '>
+                process_name = #{processName,jdbcType=VARCHAR},
+            </if>
+            <if test='ifCurrentLink!= null and ifCurrentLink != "" '>
+                if_current_link = #{ifCurrentLink,jdbcType=VARCHAR},
+            </if>
+            <if test='ifTimeout!= null and ifTimeout != "" '>
+                if_timeout = #{ifTimeout,jdbcType=VARCHAR},
+            </if>
+            <if test='deleteFlag!= null and deleteFlag != "" '>
+                delete_flag = #{deleteFlag,jdbcType=VARCHAR},
+            </if>
+            <if test='flowEndTime != null '>
+                flow_end_time = #{flowEndTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test='remark!= null and remark != "" '>
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test='voice!= null and voice != "" '>
+                voice = #{voice,jdbcType=VARCHAR},
+            </if>
+            <if test='processOrderId!= null and processOrderId != "" '>
+                process_order_id = #{processOrderId,jdbcType=VARCHAR},
+            </if>
+            <if test='processNameList!= null and processNameList != "" '>
+                process_name_list = #{processNameList,jdbcType=VARCHAR},
+            </if>
+            <if test='flowLinkType!= null and flowLinkType != "" '>
+                flow_link_type = #{flowLinkType,jdbcType=VARCHAR},
+            </if>
+            <if test='realLinkType!= null and realLinkType != "" '>
+                real_link_type = #{realLinkType,jdbcType=VARCHAR},
+            </if>
+            <if test='nextLinkId!= null and nextLinkId != "" '>
+                next_link_id = #{nextLinkId,jdbcType=VARCHAR},
+            </if>
+            <if test='nextLinkName!= null and nextLinkName != "" '>
+                next_link_name = #{nextLinkName,jdbcType=VARCHAR},
+            </if>
+            <if test='enableAcceptanceMode!= null and enableAcceptanceMode != "" '>
+                enable_acceptance_mode = #{enableAcceptanceMode,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where
+        order_id = #{orderId}
+        <if test='orderFlowId!= null and orderFlowId != "" '>
+            and order_flow_id = #{orderFlowId}
+        </if>
+        <if test='linkId!= null and linkId != "" '>
+            and link_id = #{linkId}
+        </if>
+        and if_current_link = '1';
+    </update>
+
+    <update id="updateAlarmOrderRecordByList"
+            parameterType="com.chinatower.event.vo.AlarmOrderRecordVO">
+        <foreach collection="list" item="item" index="index" separator=";">
+        update ${item.tableName}
+        <set>
+            <if test='item.approveOrderId!= null and item.approveOrderId != "" '>
+                approve_order_id = #{item.approveOrderId,jdbcType=VARCHAR},
+            </if>
+            <if test='item.processId!= null and item.processId != "" '>
+                process_id = #{item.processId,jdbcType=VARCHAR},
+            </if>
+            <if test='item.acceptProcessId!= null and item.acceptProcessId != "" '>
+                accept_process_id = #{item.acceptProcessId,jdbcType=VARCHAR},
+            </if>
+            <if test='item.processName!= null and item.processName != "" '>
+                process_name = #{item.processName,jdbcType=VARCHAR},
+            </if>
+            <if test='item.ifCurrentLink!= null and item.ifCurrentLink != "" '>
+                if_current_link = #{item.ifCurrentLink,jdbcType=VARCHAR},
+            </if>
+            <if test='item.ifTimeout!= null and item.ifTimeout != "" '>
+                if_timeout = #{item.ifTimeout,jdbcType=VARCHAR},
+            </if>
+            <if test='item.deleteFlag!= null and item.deleteFlag != "" '>
+                delete_flag = #{item.deleteFlag,jdbcType=VARCHAR},
+            </if>
+            <if test='item.flowEndTime != null '>
+                flow_end_time = #{item.flowEndTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test='item.remark!= null and item.remark != "" '>
+                remark = #{item.remark,jdbcType=VARCHAR},
+            </if>
+            <if test='item.closeRemark!= null and item.closeRemark != "" '>
+                close_remark = #{item.closeRemark,jdbcType=VARCHAR},
+            </if>
+            <if test='item.voice!= null and item.voice != "" '>
+                voice = #{item.voice,jdbcType=VARCHAR},
+            </if>
+            <if test='item.processOrderId!= null and item.processOrderId != "" '>
+                process_order_id = #{item.processOrderId,jdbcType=VARCHAR},
+            </if>
+            <if test='item.processNameList!= null and item.processNameList != "" '>
+                process_name_list = #{item.processNameList,jdbcType=VARCHAR},
+            </if>
+            <if test='item.flowLinkType!= null and item.flowLinkType != "" '>
+                flow_link_type = #{item.flowLinkType,jdbcType=VARCHAR},
+            </if>
+            <if test='item.realLinkType!= null and item.realLinkType != "" '>
+                real_link_type = #{item.realLinkType,jdbcType=VARCHAR},
+            </if>
+            <if test='item.nextLinkId!= null and item.nextLinkId != "" '>
+                next_link_id = #{item.nextLinkId,jdbcType=VARCHAR},
+            </if>
+            <if test='item.nextLinkName!= null and item.nextLinkName != "" '>
+                next_link_name = #{item.nextLinkName,jdbcType=VARCHAR},
+            </if>
+            <if test='item.enableAcceptanceMode!= null and item.enableAcceptanceMode != "" '>
+                enable_acceptance_mode = #{item.enableAcceptanceMode,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where
+        order_id = #{item.orderId}
+        <if test='item.orderFlowId!= null and item.orderFlowId != "" '>
+            and order_flow_id = #{item.orderFlowId}
+        </if>
+        <if test='item.linkId!= null and item.linkId != "" '>
+            and link_id = #{item.linkId}
+        </if>
+        and if_current_link = '1'
+        </foreach>
+    </update>
+
+    <insert id="insertAlarmOrderRecord"
+            parameterType="com.chinatower.event.vo.AlarmOrderRecordVO">
+        insert into ${tableName} (
+        order_flow_id,
+        order_id,
+        link_id,
+        link_name,
+        flow_record_name,
+        flow_node_time,
+        if_current_link,
+        process_id,
+        process_name,
+        if_timeout,
+        group_id,
+        process_order_id,
+        approve_order_id,
+        remark,
+        <if test='timeLimit!= null and timeLimit != "" '>
+            time_limit,
+        </if>
+        delete_flag
+
+        ) values (
+        #{orderFlowId,jdbcType=VARCHAR},
+        #{orderId,jdbcType=VARCHAR},
+        #{linkId,jdbcType=VARCHAR},
+        #{linkName,jdbcType=VARCHAR},
+        #{flowRecordName,jdbcType=VARCHAR},
+        #{flowNodeTime,jdbcType=VARCHAR},
+        #{ifCurrentLink,jdbcType=VARCHAR},
+        #{processId,jdbcType=VARCHAR},
+        #{processName,jdbcType=VARCHAR},
+        #{ifTimeout,jdbcType=VARCHAR},
+        #{groupId,jdbcType=VARCHAR},
+        #{processOrderId,jdbcType=VARCHAR},
+        #{approveOrderId,jdbcType=VARCHAR},
+        #{remark,jdbcType=VARCHAR},
+        <if test='timeLimit!= null and timeLimit != "" '>
+            #{timeLimit},
+        </if>
+        '0'
+        )
+    </insert>
+
+    <!-- 结果映射 -->
+    <resultMap id="alarmOrderRecordMap"
+               type="com.chinatower.event.vo.AlarmOrderRecordVO">
+
+        <result column="order_flow_id" property="orderFlowId" jdbcType="VARCHAR"/>
+        <result column="order_id" property="orderId" jdbcType="VARCHAR"/>
+        <result column="link_id" property="linkId" jdbcType="VARCHAR"/>
+        <result column="link_name" property="linkName" jdbcType="VARCHAR"/>
+        <result column="flow_record_name" property="flowRecordName" jdbcType="VARCHAR"/>
+        <result column="flow_node_time" property="flowNodeTime" jdbcType="VARCHAR"/>
+
+        <result column="flow_end_time" property="flowEndTime" jdbcType="VARCHAR"/>
+        <result column="process_id" property="processId" jdbcType="VARCHAR"/>
+        <result column="process_name" property="processName" jdbcType="VARCHAR"/>
+        <result column="if_timeout" property="ifTimeout" jdbcType="VARCHAR"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR"/>
+
+        <result column="if_current_link" property="ifCurrentLink" jdbcType="VARCHAR"/>
+        <result column="group_id" property="groupId" jdbcType="VARCHAR"/>
+        <result column="process_order_id" property="processOrderId" jdbcType="VARCHAR"/>
+        <result column="approve_order_id" property="approveOrderId" jdbcType="VARCHAR"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="judged" property="judged" jdbcType="VARCHAR"/>
+        <result column="judgedType" property="judgedType" jdbcType="VARCHAR"/>
+        <result column="time_limit" property="timeLimit" jdbcType="VARCHAR"/>
+        <result column="mobile_phone" property="mobilePhone" jdbcType="VARCHAR"/>
+        <result column="real_link_type" property="realLinkType" jdbcType="VARCHAR"/>
+    </resultMap>
+    <!-- 查询信息表数据-->
+    <select id="getAlarmOrderRecordInfoNew" resultMap="alarmOrderRecordMap"
+            parameterType="com.chinatower.event.vo.AlarmOrderRecordVO">
+        SELECT * FROM ${tableName} t
+        where 1 = 1
+        <if test='orderId!= null and orderId != ""'>
+            and t.order_id = #{orderId}
+        </if>
+        <if test='ifCurrentLink!= null and ifCurrentLink != "" '>
+            AND t.if_current_link = #{ifCurrentLink}
+        </if>
+        <if test='deleteFlag!= null and deleteFlag != ""'>
+            AND t.delete_flag = #{deleteFlag}
+        </if>
+        <if test='linkId != null and linkId != "" '>
+            and t.link_id = #{linkId}
+        </if>
+    </select>
+
+    <select id="queryRollbackLink" resultType="java.lang.String" parameterType="com.chinatower.event.api.model.ApiAlarmOrderRecordModel">
+        SELECT DISTINCT
+            link_id
+        FROM
+            ${tableName} t
+        WHERE
+            t.order_id = #{orderId}
+          AND t.if_current_link = '0'
+          AND t.delete_flag = '0'
+        ORDER BY
+            flow_end_time DESC
+    </select>
+
+    <select id="getPendingCheckById" resultType="com.chinatower.event.vo.OrderFlowRecordVO" parameterType="com.chinatower.event.dto.OrderFlowRecordDTO">
+        SELECT
+        a.voice,
+        a.process_id AS processId,
+        a.approve_order_id AS approveOrderId,
+        IFNULL(a.process_name,'') AS processName,
+        a.process_name_list as dispatchProcessName,
+        a.next_link_id nextLinkId,
+        a.next_link_name nextLinkName,
+        a.flow_link_type flowLinkType,
+        a.real_link_type realLinkType,
+        IF(a.flow_node_time IS NULL,'',DATE_FORMAT(a.flow_node_time,'%Y-%m-%d %H:%i:%s')) AS flowNodeTime,
+        IF(a.flow_end_time IS NULL,'',DATE_FORMAT(a.flow_end_time,'%Y-%m-%d %H:%i:%s')) AS flowEndTime,
+        IFNULL(a.remark,'') AS remark,
+        IFNULL(a.close_remark,'') AS closeRemark,
+        a.accept_process_id as acceptProcessId,
+        a.enable_acceptance_mode as enableAcceptanceMode
+        FROM ${tableName} a
+        WHERE a.order_id = #{orderId,jdbcType=VARCHAR}
+        AND a.order_flow_id = #{orderFlowId,jdbcType=VARCHAR}
+        AND a.real_link_type = '5'
+    </select>
+
+    <select id="queryLastProcess" resultType="com.chinatower.common.core.dto.ProcessDTO">
+        SELECT
+            a.process_id AS processId,
+            IFNULL(a.process_name,'') AS processName
+        FROM ${tableName} a
+        WHERE a.order_id = #{orderId,jdbcType=VARCHAR} and a.if_current_link ='0' and link_id =#{linkId}
+        order by a.flow_end_time desc limit 1
+    </select>
+
+    <select id="getRecord" resultType="com.chinatower.event.vo.OrderFlowRecordVO" parameterType="com.chinatower.event.dto.OrderFlowRecordDTO">
+        SELECT d.process_name processName,
+        IF(d.flow_node_time IS NULL,'',DATE_FORMAT(d.flow_node_time,'%Y-%m-%d %H:%i:%s')) AS flowNodeTime,
+        IF(d.flow_end_time IS NULL,'',DATE_FORMAT(d.flow_end_time,'%Y-%m-%d %H:%i:%s')) AS flowEndTime,
+        d.remark,
+        d.close_remark AS closeRemark
+        FROM ${tableName} d
+        WHERE d.order_id = #{orderId}
+        AND d.link_id = #{linkId}
+        AND d.flow_node_time <![CDATA[<]]> #{nodeTime}
+        ORDER BY d.flow_node_time DESC LIMIT 1
+    </select>
+
+    <select id="getNextRecordByCurentLink" resultMap="BaseResultMap" parameterType="com.chinatower.event.dto.OrderFlowRecordDTO">
+    select <include refid="Base_Column_List"/>
+        from ${tableName} where order_id=#{orderId,jdbcType=VARCHAR}
+     and flow_node_time > (select flow_node_time from ${tableName}
+     where order_flow_id = #{orderFlowId,jdbcType=VARCHAR}) order by flow_node_time asc LIMIT 1
+    </select>
+
+    <select id="getCurrentByOrderIdAndLinkId" resultType="java.lang.String" parameterType="com.chinatower.event.dto.current.CheckCurrentReq">
+        select if_current_link ifCurrentLink
+        from ${tableName} where order_id=#{orderId}
+        and link_id =#{linkId}
+        <if test='realLinkType!= null and realLinkType != ""'>
+            and real_link_type =#{realLinkType}
+        </if>
+        <if test='enableAcceptanceMode!= null and enableAcceptanceMode != ""'>
+            and enable_acceptance_mode =#{enableAcceptanceMode}
+        </if>
+         order by flow_node_time desc LIMIT 1
+    </select>
+
+    <select id="checkRollbackLink" resultType="java.lang.String">
+
+        SELECT
+            attr.link_id
+        FROM
+            ${processTableName} t
+            LEFT JOIN ${warnTableName} wo on wo.warning_order_id = t.order_id
+			LEFT JOIN vm_flow_link_attr attr on  wo.flow_id = attr.alarm_flow_id
+        WHERE
+            t.order_id = #{orderId}
+          AND t.if_current_link = '1'
+          AND t.delete_flag = '0'
+          and attr.rollback_flag = '1'
+          and attr.link_id = t.link_id
+    </select>
+
+    <select id="checkRollbackLinkByIndustry" resultType="java.lang.String">
+
+        SELECT
+            ft.cur_link
+        FROM
+            ${processTableName} t
+            LEFT JOIN ${warnTableName} wo on wo.warning_order_id = t.order_id
+            left JOIN vm_flow_template_link ft ON ft.cur_link = t.link_id and ft.template_id = wo.flow_template
+            LEFT JOIN vm_flow_link_industry_config flic on flic.link_id = ft.cur_link AND flic.industry_code = convert(wo.industry_code using utf8mb4)
+        WHERE
+            t.order_id = #{orderId}
+          AND t.if_current_link = '1'
+          AND t.delete_flag = '0'
+          AND flic.rollback_flag = '1'
+          and  flic.status = '1'
+    </select>
+    <select id="getAlarmOrderRecordInfo" resultType="com.chinatower.event.vo.AlarmOrderRecordVO"
+            parameterType="com.chinatower.event.vo.AlarmOrderRecordVO">
+        select t.link_id linkId,t.link_name linkName,t.process_order_id processOrderId,t.approve_order_id approveOrderId,
+               t.real_link_type realLinkType
+        from  ${tableName} t
+        where 1 = 1 AND t.if_current_link = '1'
+        <if test='orderFlowId!= null and orderFlowId != "" and orderFlowId != "0"'>
+            and t.order_flow_id = #{orderFlowId}
+        </if>
+        <if test='orderId!= null and orderId != ""'>
+            and t.order_id = #{orderId}
+        </if>
+        <if test='linkId != null and linkId != "" '>
+            and t.link_id = #{linkId}
+        </if>
+        <if test='linkName != null and linkName != ""'>
+            AND t.link_name = #{linkName}
+        </if>
+        <if test='flowRecordName != null and flowRecordName != ""'>
+            AND t.flow_record_name = #{flowRecordName}
+        </if>
+        <if test='flowNodeTime != null and flowNodeTime != "" '>
+            AND t.flow_node_time = #{flowNodeTime}
+        </if>
+        <if test='processId != null and processId != "" '>
+            AND t.process_id = #{processId}
+        </if>
+        <if test='processName!= null and processName != "" '>
+            AND t.process_name = #{processName}
+        </if>
+        <if test='ifTimeout!= null and ifTimeout != "" '>
+            AND t.if_timeout = #{ifTimeout}
+        </if>
+        <if test='deleteFlag!= null and deleteFlag != ""'>
+            AND t.delete_flag = #{deleteFlag}
+        </if>
+        <if test='realLinkType!= null and realLinkType != ""'>
+            AND t.real_link_type = #{realLinkType}
+        </if>
+        <if test='enableAcceptanceMode!= null and enableAcceptanceMode != ""'>
+            AND t.enable_acceptance_mode = #{enableAcceptanceMode}
+        </if>
+        order by t.flow_node_time desc
+
+    </select>
+
+    <update id="updateDeleteFlagByOrderId" parameterType="com.chinatower.event.dto.OrderFlowRecordDTO">
+        update ${param.tableName} set delete_flag = #{param.deleteFlag} where order_id = #{param.orderId}
+    </update>
+
+</mapper>

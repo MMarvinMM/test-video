@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.AiJudgeSceneRelMapper">
+
+    <!-- 按行业+算法查询场景模板，同时作为是否允许AI分级外呼的配置依据 -->
+    <select id="selectSceneTemplate" resultType="java.lang.String">
+        SELECT scene_template
+        FROM vm_ai_judge_scene_rel
+        WHERE industry_code = #{industryCode}
+          AND algorithm_code = #{algorithmCode}
+          AND delete_flag = 0
+        LIMIT 1
+    </select>
+
+</mapper>

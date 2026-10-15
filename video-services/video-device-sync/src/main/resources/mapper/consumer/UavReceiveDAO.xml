@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.UavReceiveMapper">
+    <update id="receiveAirLineTaskStatus" parameterType="com.chinatower.sync.consumer.entity.UavStatusRequest">
+        update vm_air_task_t
+        set
+            <if test='execStatus != null and execStatus != "5" '>
+                task_status   = #{execStatus},
+            </if>
+            medium_status = #{mediaSyncStatus},
+            reality_time  = STR_TO_DATE(#{startTime}, '%Y-%m-%d %H:%i:%s'),
+            fly_Time = #{flyTime},
+            error_Reason = #{errorReason},
+            Break_Point_Json = #{breakPointReqJson},
+            uav_code = #{uavDeviceCode}
+        where plan_task_id = #{taskRecordId}
+    </update>
+
+    <update id="editAirTaskStatus" parameterType="com.chinatower.sync.consumer.entity.UavAlgorithmRequest">
+        update vm_air_algorithm_t
+        set task_status    = #{taskStatus},
+            task_record_id = #{taskRecordId}
+        where task_id = #{taskId}
+    </update>
+
+    <select id="selectTempAlgorithm" resultType="com.chinatower.sync.consumer.entity.TempAlgorithmResp">
+        SELECT
+               a.task_id taskId,a.flight_route_id flightRouteId,a.warning_type_id warningTypeId,a.tenant_id tenantId,
+               a.industry_code industryCode,a.access_node accessNode,a.accept_node acceptNode,
+            p.device_code deviceCode
+        FROM
+            vm_air_task_t t
+                LEFT JOIN vm_air_plan_t p ON t.plan_id = p.plan_id
+                LEFT JOIN vm_air_algorithm_t a ON p.flight_route_id = a.flight_route_id
+        WHERE
+            t.flight_route_id = #{floutId} and a.algorithm_type = '2' and a.status = '0' and a.delete_flag = '0'
+    </select>
+
+    <select id="selectOneAlgorithm" resultType="com.chinatower.sync.consumer.entity.TempAlgorithmResp">
+        SELECT
+            a.task_id taskId,a.flight_route_id flightRouteId,a.warning_type_id warningTypeId,a.tenant_id tenantId,
+            a.industry_code industryCode,a.access_node accessNode,a.accept_node acceptNode,
+            p.device_code deviceCode
+        FROM
+            vm_air_task_t t
+                LEFT JOIN vm_air_plan_t p ON t.plan_id = p.plan_id
+                LEFT JOIN vm_air_algorithm_t a ON p.flight_route_id = a.flight_route_id
+        WHERE
+            t.flight_route_id = #{floutId} and a.algorithm_type = '1' and a.status = '1' and a.delete_flag = '0' and recovery_flag = '1'
+    </select>
+
+    <update id="delAirAlgorithm" parameterType="String">
+        update vm_air_algorithm_t
+        set delete_flag = '1',update_time =now(),update_user = 'admin'
+        where flight_route_id = #{floutId} and algorithm_type = '2'
+    </update>
+
+
+    <insert id="insertAirAlgorithm" parameterType="com.chinatower.sync.consumer.dao.SyncAlgorithmsDto">
+        INSERT INTO `vm_air_algorithm_t` (`task_id`,
+        `flight_route_id`,
+        `warning_type_id`,
+        `create_time`,
+        `create_user`,
+        `delete_flag`,
+        `tenant_id`,
+        `industry_code`,
+        `access_node`,
+        `accept_node`,status
+        <if test='algorithmType != null and algorithmType != "" '>
+            ,algorithm_type
+        </if>
+        <if test='recoveryFlag != null and recoveryFlag != "" '>
+            ,recovery_flag
+        </if>
+        )
+
+        VALUES (#{taskId},
+        #{flightRouteId},
+        #{algorithmCode},
+        NOW(),
+        #{createUser},
+        '0',
+        #{teanantId},
+        #{industryCode},
+        #{accessNode},
+        #{acceptNode},
+        #{status}
+        <if test='algorithmType != null and algorithmType != "" '>
+            ,#{algorithmType}
+        </if>
+        <if test='recoveryFlag != null and recoveryFlag != "" '>
+            ,#{recoveryFlag}
+        </if>
+        );
+    </insert>
+
+    <select id="queryAirLineByTaskId" resultType="String" parameterType="String">
+        select flight_route_id from vm_air_task_t
+        where plan_task_id = #{taskRecordId} and delete_flag = 0
+    </select>
+
+    <update id="updateAirAlgorithmNormal" parameterType="String">
+        update vm_air_algorithm_t
+        set update_time =now(),update_user = 'admin',recovery_flag = '0',status = '0'
+        where
+        algorithm_type = '1' and  flight_route_id = #{floutId} and delete_flag = 0
+    </update>
+
+    <select id="queryUavByDeviceCode" resultType="com.chinatower.sync.consumer.entity.AirUavStatus" parameterType="String">
+        select device_code as deviceCode ,device_name as deviceName from vm_uav_device_info_t
+        where uav_nest_code = #{deviceCode} and delete_flag = 0
+    </select>
+
+    <select id="selectUavAlarmStrategyInfo" resultType="com.chinatower.sync.consumer.entity.UavAlarmStrategyVO">
+        select a.device_code, a.alarm_user_id, a.alarm_delay_hour, a.alarm_delay_minute, a.industry_code, a.tenant_id,a.delay_open as delayOpen
+        from `vm_uav_unconnected_alarm` a
+        left join vm_order_uav_devices b on a.device_code = b.device_code and a.tenant_id = b.tenant_id and a.industry_code = b.industry_code
+        where a.delete_flag = 0 and a.unconnected_open = 1  and ord_status in ('0','1','2')
+        and a.device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        order by a.tenant_id, a.industry_code, a.id
+    </select>
+
+    <select id="queryUserInfo" resultType="com.chinatower.platform.entity.admin.UserInfoDto">
+        select USER_ID as userId,phonenumber  from sys_user
+        where USER_ID in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+          and DEL_FLAG = 0
+    </select>
+
+    <insert id="insertUavAlarmInfo" parameterType="com.chinatower.sync.consumer.entity.UavAlarmInfo">
+        INSERT INTO `vm_air_contact_alarm_t` (
+            `device_Code`,
+            `uav_Code`,
+            `uav_Name`,
+            `type`,
+            `status`,
+            `un_connect_time`,
+            `send_time`,
+            `send_user_id`,
+            `latitude`,
+            `longitude`,
+            `address`,
+            `tenant_id`,
+            `industry_code`,
+            `create_time`,
+            `create_user`,
+            `delete_flag`
+        ) VALUES
+        <foreach collection="uavAlarmInfo" item="item" separator=",">
+            (
+            #{item.deviceCode},
+            #{item.uavCode},
+            #{item.uavName},
+            #{item.type},
+            #{item.status},
+            #{item.unConnectTime},
+            #{item.sendTime},
+            #{item.sendUserId},
+            #{item.latitude},
+            #{item.longitude},
+            #{item.address},
+            #{item.tenantId},
+            #{item.industryCode},
+            now(),
+            #{item.createUser},
+            #{item.delFlag}
+            )
+        </foreach>
+    </insert>
+
+    <update id="deleteUavAlarmInfo">
+        update vm_air_contact_alarm_t set delete_flag = 1 where device_code = #{deviceCode}
+    </update>
+
+    <select id="queryUavAlarmInfo" resultType="com.chinatower.sync.consumer.entity.UavAlarmInfo">
+        select id,device_code from vm_air_contact_alarm_t where delete_flag = 0 and device_code = #{deviceCode}
+    </select>
+
+    <select id="queryUavByUavCode" resultType="com.chinatower.sync.consumer.entity.AirUavStatus" parameterType="String">
+        select device_code as deviceCode ,device_name as deviceName from vm_uav_device_info_t
+        where device_code = #{deviceCode} and delete_flag = 0
+    </select>
+
+    <select id="queryTaskById" resultType="com.chinatower.sync.consumer.entity.AirUavStatus" parameterType="String">
+        select original_Task_Record_Id as originalTaskRecordId from vm_air_refly_task_ref
+        where task_record_id = #{taskRecordId}
+    </select>
+
+    <update id="editTaskType" parameterType="String">
+        UPDATE vm_air_task_t
+        SET
+            `task_type` = 1
+        WHERE `plan_task_id` = #{originalTaskRecordIds}
+    </update>
+
+    <select id="queryPhotoTaskInfo" resultType="com.chinatower.sync.consumer.entity.PointsCompareTask">
+        select ct.longitude as lng,
+               ct.latitude as lat,
+               ct.algorithm_code as algorithmCode,
+               ct.compareStrategy,
+               ct.execution_start_Date as executionStartDate,
+               ct.execution_end_Date as executionEndDate,
+               ct.compareDate,
+               ct.flight_route_id as flightRouteId,
+               ct.id as id
+        from vm_air_task_t t
+                 left join vm_air_line_compare_photo_t ct on t.flight_route_id = ct.flight_route_id
+        where t.delete_flag = 0
+          and t.plan_task_id = #{taskRecordId}
+          and ct.delete_flag = 0
+          and not exists (
+            select compare_id
+            from vm_air_line_compare_task_t
+            where compare_task_record_id = #{taskRecordId}
+              and delete_flag = 0
+              and compare_id = ct.id
+            )
+    </select>
+
+    <insert id="insertAirLinePhotoTask" parameterType="java.util.List">
+            INSERT INTO vm_air_line_compare_task_t
+            (compare_id, compare_date, compare_status,task_record_id,compare_task_record_id,create_time, delete_flag)
+            VALUES
+            <foreach collection="list" item="task" separator=",">
+                (#{task.compareId},
+                #{task.compareDate},
+                #{task.compareStatus},
+                #{task.taskRecordId},
+                #{task.compareTaskRecordId},
+                now(),
+                '0')
+            </foreach>
+    </insert>
+
+    <select id="queryTask" resultType="com.chinatower.sync.consumer.entity.AirUavStatus">
+        select a.plan_task_id as taskRecordId
+        from vm_air_task_t a
+                 inner join vm_air_task_t b on b.plan_task_id = #{taskRecordId}
+        where a.delete_flag = 0
+          and a.reality_time like concat('%', #{lastCycleDate}, '%')
+          and a.task_status = 1
+          and a.flight_route_id = #{flightRouteId}
+          and a.tenant_id = b.tenant_id
+          and a.industry_code = b.industry_code
+          and a.snapshot_id = b.snapshot_id
+        order by a.reality_time desc
+            limit 1
+    </select>
+
+    <select id="queryTaskByAirLineId" resultType="java.lang.String">
+        select task_record_id from vm_air_line_compare_task_t  ct
+        left join  vm_air_task_t t on ct.compare_task_record_id = t.plan_task_id collate utf8mb4_general_ci
+        where t.flight_route_id  = #{flightRouteId}
+          and t.reality_time like concat('%', #{todayStr}, '%')
+    </select>
+    <select id="queryPointInfo" resultType="com.chinatower.device.entity.dto.AirLinePointTaskReq">
+        SELECT lp.longitude,lp.latitude,lp.algorithm_code as algorithmCodes,t.access_node as accessNode,t.plan_task_id as taskRecordId,t.flight_route_id as flightRouteId,
+            lt.device_code as deviceCode
+        FROM vm_air_task_t t
+        left join vm_air_line_t lt on t.flight_route_id = lt. flight_route_id
+        left join vm_air_line_point_info lp on lt.flight_route_id = lp.flight_route_id
+        where t.plan_task_id = #{taskRecordId} and lp.algorithm_code is not null
+    </select>
+</mapper>

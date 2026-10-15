@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.CheckpointDeviceAlarmMapper">
+
+    <insert id="insertCheckpointDeviceAlarmInfo" parameterType="com.chinatower.receive.vo.entity.ReceiveCheckpointAlarmVO">
+        insert into vm_checkpoint_warning_order_t
+           (warning_order_id,
+            alarm_type,
+            alarm_time,
+            province_name,
+            province_code,
+            city_name,
+            city_code,
+            county_code,
+            county_name,
+            longitude,
+            latitude,
+            alarm_body,
+            channel_code,
+            channel_name,
+            device_code,
+            device_name,
+            pan,
+            tilt,
+            zoom,
+            alarm_code,
+            algorithm_code,
+            alarm_video_url,
+            original_picture_url,
+            alarm_picture_url,
+            create_time,
+            delete_flag,
+            importance_level,
+            task_id,
+            vehicle_number,
+            vehicle_type,
+            vehicle_num_color,
+            vehicle_color,
+            tenant_id,
+            tenant_name,
+            industry_code,
+            app_ver_code) values
+        <foreach collection="list" item="item" index="index" separator=",">
+           (#{item.warningOrderId},
+            #{item.alarmType},
+            #{item.alarmTime},
+            #{item.provinceName},
+            #{item.provinceCode},
+            #{item.cityName},
+            #{item.cityCode},
+            #{item.countyCode},
+            #{item.countyName},
+            #{item.longitude},
+            #{item.latitude},
+            #{item.alarmBody},
+            #{item.channelCode},
+            #{item.channelName},
+            #{item.deviceCode},
+            #{item.deviceName},
+            #{item.pan},
+            #{item.tilt},
+            #{item.zoom},
+            #{item.alarmCode},
+            #{item.algorithmCode},
+            #{item.alarmVideoUrl},
+            #{item.originalPictureUrl},
+            #{item.alarmPictureUrl},
+            now(),
+            #{item.deleteFlag},
+            #{item.importanceLevel},
+            #{item.taskId},
+            #{item.vehicleNumber},
+            #{item.vehicleType},
+            #{item.vehicleNumColor},
+            #{item.vehicleColor},
+            #{item.tenantId},
+            #{item.tenantName},
+            #{item.industryCode},
+            #{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <insert id="insertOriginalAreas" parameterType="com.chinatower.receive.vo.entity.CheckpointAlarmOriginalAreaVO">
+        insert into vm_checkpoint_warning_original_area_t
+            (alarm_area_id,
+            confidence_level,
+            warning_order_id) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.alarmAreaId},
+            #{item.confidenceLevel},
+            #{item.warningOrderId})
+        </foreach>
+    </insert>
+
+    <insert id="insertOriginalPoints" parameterType="com.chinatower.receive.vo.entity.CheckpointAlarmOriginalPointVO">
+        insert into vm_checkpoint_warning_original_point_t
+            (warning_order_id,
+             alarm_point_id,
+            alarm_area_id,
+            percent_x,
+            percent_y) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.warningOrderId},
+             #{item.alarmPointId},
+            #{item.alarmAreaId},
+            #{item.percentX},
+            #{item.percentY})
+        </foreach>
+    </insert>
+</mapper>

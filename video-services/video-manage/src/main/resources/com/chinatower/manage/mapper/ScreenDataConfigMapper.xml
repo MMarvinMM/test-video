@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.manage.mapper.ScreenDataConfigMapper">
+
+    <select id="selectAllScreenData" parameterType="com.chinatower.manage.dto.ScreenDataConfigCountVO" resultType="com.chinatower.manage.dto.ScreenDataConfigCountVO">
+        SELECT * from (SELECT DISTINCT
+            rel.industry_view_id AS screenId,
+            rel.industry_view_type AS screenType,
+            rel.view_name AS screenName,
+            sdcc.id AS id,
+            IFNULL(sdcc.is_customize,'0') AS isCustomize,
+            sdcc.camera_num AS cameraNum,
+            sdcc.iot_num AS iotNum,
+            sdcc.radar_num AS radarNum,
+            sdcc.speaker_num AS speakerNum,
+            sdcc.uav_num AS uavNum,
+            sdcc.recorder_num AS recorderNum,
+            sdcc.grid_num AS gridNum,
+            sdcc.grid_keeper_num AS gridKeeperNum,
+            sdcc.resources_num AS resourcesNum,
+            sdcc.alarm_type_num AS alarmTypeNum,
+            IFNULL(sdcc.update_by,'') AS updateBy,
+            sdcc.update_time AS updateTime
+        FROM
+            sys_industry_view_rel rel
+            LEFT JOIN vm_screen_data_config_count sdcc ON rel.industry_view_id = sdcc.screen_id and rel.industry_view_type = sdcc.screen_type
+            and sdcc.tenant_id = #{tenantId} and sdcc.industry_code = #{industryCode}  AND sdcc.app_ver_code = #{appVerCode}
+        WHERE
+            rel.industry_code = #{industryCode}
+            AND rel.app_ver_code = #{appVerCode}
+        <if test="screenName != null and screenName != ''">
+            AND rel.view_name LIKE CONCAT('%', #{screenName}, '%')
+        </if>
+        <if test="updateBy != null and updateBy != ''">
+            AND sdcc.update_by LIKE CONCAT('%', #{updateBy}, '%')
+        </if>
+        <if test="updateTimeStart != null and updateTimeStart != ''">
+            AND DATE_FORMAT(sdcc.update_time,'%Y-%m-%d') <![CDATA[>=]]> DATE_FORMAT(#{updateTimeStart}, '%Y-%m-%d')
+        </if>
+        <if test="updateTimeEnd != null and updateTimeEnd != ''">
+            AND DATE_FORMAT(sdcc.update_time,'%Y-%m-%d') <![CDATA[<=]]> DATE_FORMAT(#{updateTimeEnd}, '%Y-%m-%d')
+        </if>
+        <choose>
+            <when test="sortName == 'cameraNum'">
+                order by sdcc.camera_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'iotNum'">
+                order by sdcc.iot_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'radarNum'">
+                order by sdcc.radar_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'speakerNum'">
+                order by sdcc.speaker_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'uavNum'">
+                order by sdcc.uav_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'recorderNum'">
+                order by sdcc.recorder_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'gridNum'">
+                order by sdcc.grid_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'gridKeeperNum'">
+                order by sdcc.grid_keeper_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'resourcesNum'">
+                order by sdcc.resources_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'alarmTypeNum'">
+                order by sdcc.alarm_type_num
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'updateTime'">
+                order by sdcc.update_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by convert(rel.view_name using GBK) asc
+            </otherwise>
+        </choose>
+        )t
+        <where>
+            <if test="isCustomize != null and isCustomize != ''">
+                AND t.isCustomize = #{isCustomize}
+            </if>
+        </where>
+    </select>
+
+    <update id="deleteByScreenDataConfigId">
+        update vm_screen_data_config set delete_flag = 1 where delete_flag = 0 and screen_data_config_id = #{screenDataConfigId}
+    </update>
+
+    <insert id="insertScreenDataConfigCount" parameterType="com.chinatower.manage.dto.ScreenDataConfigCountVO" useGeneratedKeys="true" keyProperty="id">
+        insert into vm_screen_data_config_count ( screen_id, screen_type, is_customize, create_by, create_time, update_by, update_time,  delete_flag,
+                                                  tenant_id, industry_code, app_ver_code)
+        values
+        (#{screenId}, #{screenType}, #{isCustomize}, #{createBy}, now(), #{updateBy}, now(), 0,
+         #{tenantId}, #{industryCode}, #{appVerCode})
+    </insert>
+
+    <update id="updateScreenDataConfigCount" parameterType="com.chinatower.manage.dto.ScreenDataConfigCountVO" >
+        update vm_screen_data_config_count
+        set camera_num = #{cameraNum}, iot_num = #{iotNum}, radar_num = #{radarNum}, speaker_num = #{speakerNum}, uav_num = #{uavNum},
+            recorder_num = #{recorderNum}, grid_num = #{gridNum}, grid_keeper_num = #{gridKeeperNum}, resources_num = #{resourcesNum}, alarm_type_num = #{alarmTypeNum},
+            update_time = now(), is_customize = #{isCustomize}, screen_type = #{screenType}, update_by = #{updateBy}
+            where id = #{id}
+    </update>
+
+    <update id="batchUpdateScreenDataConfigCount" parameterType="com.chinatower.manage.dto.ScreenDataConfigCountVO" >
+        <foreach collection="openIsCustomizeScreenDataConfigList" item="item" separator=";">
+            update vm_screen_data_config_count
+            set camera_num = #{item.cameraNum}, iot_num = #{item.iotNum}, radar_num = #{item.radarNum}, speaker_num = #{item.speakerNum}, uav_num = #{item.uavNum},
+            recorder_num = #{item.recorderNum}, grid_num = #{item.gridNum}, grid_keeper_num = #{item.gridKeeperNum}, resources_num = #{item.resourcesNum},
+            alarm_type_num = (select count(1) from vm_screen_data_config where screen_data_config_id = #{item.id} and delete_flag = '0' and data_type = '9'),
+            update_time = now(), is_customize = #{item.isCustomize}
+            where id = #{item.id}
+        </foreach>
+    </update>
+
+    <update id="batchUpdateScreenDataConfigAlarmCount" parameterType="com.chinatower.manage.dto.ScreenDataConfigCountVO" >
+        <foreach collection="openIsCustomizeScreenDataConfigList" item="item" separator=";">
+            update vm_screen_data_config_count
+            set alarm_type_num = (select count(1) from vm_screen_data_config where screen_data_config_id = #{item.id} and delete_flag = '0' and data_type = '9'),
+            update_time = now()  where id = #{item.id}
+        </foreach>
+    </update>
+
+    <insert id="batchInsertScreenDataConfig">
+        insert into vm_screen_data_config ( screen_data_config_id, data_type, data_source, data_code, create_by, create_time, update_by, update_time, delete_flag )
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.screenDataConfigId},  #{item.dataType},  #{item.dataSource}, #{item.dataCode}, #{item.createBy}, now(),  #{item.updateBy}, now(), '0' )
+        </foreach>
+    </insert>
+
+    <insert id="batchDeleteScreenDataConfig">
+        update vm_screen_data_config set delete_flag = '1' where (screen_data_config_id, data_type, data_source, data_code) in (
+        <foreach collection="list" item="item" separator=",">
+            (#{item.screenDataConfigId}, #{item.dataType}, #{item.dataSource}, #{item.dataCode})
+        </foreach>
+        )
+    </insert>
+
+    <select id="selectScreenDataConfigByConfigId" resultType="com.chinatower.manage.dto.ScreenDataConfigParticipationVO">
+        SELECT DISTINCT
+            data_code AS code,
+            data_type AS dataType,
+            data_source AS source
+        FROM
+            vm_screen_data_config
+        WHERE
+            delete_flag = '0'
+            AND screen_data_config_id = #{screenDataConfigId}
+    </select>
+
+    <select id="selectAreaIdByType" resultType="com.chinatower.manage.dto.ScreenDataConfigParticipationVO">
+        select device_code as code,
+               province_id as provinceId,
+               city_id as cityId,
+               county_id as countyId,
+               town_code as townCode
+               from
+        <if test="flag == 0">
+            vm_device_info_t where device_code in
+            <foreach collection="codeList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="flag == 1">
+            vm_iot_device_t where category_code = '2' and device_code in
+            <foreach collection="codeList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="flag == 2">
+            vm_iot_device_t where category_code = '1' and device_code in
+            <foreach collection="codeList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectAreaCodeByType" resultType="com.chinatower.manage.dto.ScreenDataConfigParticipationVO">
+        select device_code as code,
+            province_code as provinceId,
+            city_code as cityId,
+            county_code as countyId,
+            town_code as townCode
+        from
+        <if test="flag == 3">
+            vm_horn_device_info_t where device_code in
+            <foreach collection="codeList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="flag == 4">
+            vm_uav_device_info_t where device_code in
+            <foreach collection="codeList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="flag == 5">
+            vm_recorder_device_info_t where device_code in
+            <foreach collection="codeList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectOpenIsCustomizeScreenDataConfig" resultType="com.chinatower.manage.dto.ScreenDataConfigCountVO">
+        select id, screen_id, screen_type, is_customize, camera_num, iot_num, radar_num, speaker_num, uav_num,
+        recorder_num, grid_num, grid_keeper_num,
+        resources_num, alarm_type_num, delete_flag, tenant_id, industry_code from
+        vm_screen_data_config_count
+        where (tenant_id, industry_code) in (
+        <foreach collection="screenDataConfigList" item="config" separator=",">
+            ( #{config.tenantId},#{config.industryCode} )
+        </foreach>
+        )
+        and delete_flag = '0' and is_customize = '1'
+    </select>
+
+    <select id="selectOpenIsCustomizeScreenDataConfigTieta" resultType="com.chinatower.manage.dto.ScreenDataConfigCountVO">
+        select id, screen_id, screen_type, is_customize, camera_num, iot_num, radar_num, speaker_num, uav_num,
+        recorder_num, grid_num, grid_keeper_num,
+        resources_num, alarm_type_num, delete_flag, tenant_id, industry_code from
+        vm_screen_data_config_count
+        where delete_flag = '0' and is_customize = '1'
+    </select>
+
+    <select id="selectScreenDataConfigCountById" resultType="com.chinatower.manage.dto.ScreenDataConfigVO">
+        select id, screen_id, screen_type, is_customize, tenant_id, industry_code from
+               vm_screen_data_config_count where id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigCountByIdAndType" resultType="com.chinatower.manage.dto.ScreenDataConfigVO">
+        select id, screen_id, screen_type, is_customize, tenant_id, industry_code from
+               vm_screen_data_config_count where screen_id = #{screenId} and screen_type = #{screenType} and tenant_id = #{tenantId}
+               and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+    </select>
+</mapper>

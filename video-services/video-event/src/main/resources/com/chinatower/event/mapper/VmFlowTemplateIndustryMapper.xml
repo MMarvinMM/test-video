@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.VmFlowTemplateIndustryMapper">
+
+	<resultMap type="com.chinatower.event.dto.VmFlowTemplateIndustryModel" id="FlowTemplateIndustryResult">
+		<id property="id" column="id"/>
+		<result property="templateId" column="template_id"/>
+		<result property="warningSource" column="warning_source"/>
+		<result property="appVerCode" column="app_ver_code"/>
+		<result property="industryCode" column="industry_code"/>
+		<result property="createTime" column="create_time"/>
+		<result property="updateTime" column="update_time"/>
+		<result property="deleteFlag" column="delete_flag"/>
+		<result property="status" column="status"/>
+		<result property="creator" column="creator"/>
+		<result property="modifier" column="modifier"/>
+	</resultMap>
+
+	<select id="selectFlowTemplateIndustry" resultType="com.chinatower.event.dto.VmFlowTemplateIndustryModel" parameterType="com.chinatower.event.dto.VmFlowTemplateIndustryModel">
+		SELECT template_id,warning_source,app_ver_code,industry_code
+		FROM vm_flow_template_industry
+		WHERE delete_flag = 0
+		<if test="status != null and status != ''">
+			AND `status` = #{status}
+		</if>
+		<if test="templateId != null and templateId != ''">
+			AND template_id = #{templateId}
+		</if>
+		<if test="warningSource != null and warningSource != ''">
+			AND warning_source LIKE concat('%',#{warningSource},'%')
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			AND app_ver_code = #{appVerCode}
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			AND industry_code = #{industryCode}
+		</if>
+	</select>
+
+</mapper>

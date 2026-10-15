@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.product.api.modules.commonservice.dao.CommonDao">
+
+
+
+    <!-- 查询设备的订购编码 -->
+    <select id="getOrderCode"  resultType="java.lang.String"  parameterType="java.lang.String">
+        select DISTINCT order_code from vm_order_devices  where  1 = 1
+        <if test='customerCode != null and customerCode != "" and customerCode != "0"'>
+            and   tenant_id = #{customerCode}
+        </if>
+        <if test='deviceCode != null and deviceCode != "" and deviceCode != "0"'>
+            and   device_code = #{deviceCode}
+        </if>
+        AND delete_Flag = '0' and ord_status in ('0','1','2')
+        ORDER BY id DESC
+    </select>
+
+
+</mapper>

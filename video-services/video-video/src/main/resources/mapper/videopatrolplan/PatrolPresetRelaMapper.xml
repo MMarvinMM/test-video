@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.videopatrolplan.mapper.PatrolPresetRelaMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.video.modules.videopatrolplan.dataobject.PatrolPresetRelaDO">
+        <id column="id" property="id" />
+        <result column="patrol_id" property="patrolId" />
+        <result column="preset_id" property="presetId" />
+        <result column="stay_seconds" property="staySeconds" />
+        <result column="speed" property="speed" />
+        <result column="sort" property="sort" />
+        <result column="creator" property="creator" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier" property="modifier" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, patrol_id, preset_id, stay_seconds, speed, sort, creator, create_time, modifier, update_time, delete_flag
+    </sql>
+
+</mapper>

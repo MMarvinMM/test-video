@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.WarningOriginalAreaMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.WarningOriginalAreaDO">
+        <result column="alarm_area_id" property="alarmAreaId" />
+        <result column="original_id" property="originalId" />
+        <result column="confidence_level" property="confidenceLevel" />
+        <result column="warning_order_id" property="warningOrderId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        alarm_area_id, original_id, confidence_level, warning_order_id
+    </sql>
+
+    <insert id="insertOriginalAreas" parameterType="list">
+        insert into vm_warning_original_area_t
+        (alarm_area_id,original_id,confidence_level,warning_order_id,alarm_picture_url) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.alarmAreaId}, #{item.originalId},  #{item.confidenceLevel},#{item.warningOrderId},#{item.alarmPictureUrl})
+        </foreach>
+    </insert>
+</mapper>

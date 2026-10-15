@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysSmsRecordMapper">
+
+    <select id="list" resultType="com.chinatower.platform.entity.msg.BsSmsRecord">
+        SELECT CONCAT(SUBSTRING(PHONE,1,3),'****',SUBSTRING(PHONE,8)) AS PHONE,SEND_TIME,substring(SMS_TXT,10,6) AS  SMS_TXT,SEND_RESULT
+        FROM bs_sms_record
+        WHERE DEL_FLAG = '0'
+        AND SMS_TXT like '{"code":%'
+        <if test='phone != null and phone !=""'>
+            AND PHONE LIKE concat('%',#{phone},'%')
+        </if>
+        <if test='sendResult != null and sendResult !=""'>
+        AND SEND_RESULT = #{sendResult}
+        </if>
+        <if test='startTime != null and startTime !=""'>
+        AND SEND_TIME >= #{startTime}
+        </if>
+        <if test='endTime != null and endTime !=""'>
+        AND SEND_TIME <![CDATA[<= #{endTime}]]>
+        </if>
+        order by
+        <choose>
+            <when test='orderByColumn != null and orderByColumn != "" and orderByColumn == "phone".toString'>
+                PHONE
+            </when>
+            <when test='orderByColumn != null and orderByColumn != "" and orderByColumn == "sendTime".toString'>
+                SEND_TIME
+            </when>
+            <when test='orderByColumn != null and orderByColumn != "" and orderByColumn == "smsTxt".toString'>
+                SMS_TXT
+            </when>
+            <when test='orderByColumn != null and orderByColumn != "" and orderByColumn == "sendResult".toString'>
+                SEND_RESULT
+            </when>
+            <otherwise>
+                SEND_TIME
+            </otherwise>
+        </choose>
+        <choose>
+            <when test='isAsc != null and isAsc != "" and isAsc == "asc".toString'>
+                asc
+            </when>
+            <otherwise>
+                desc
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

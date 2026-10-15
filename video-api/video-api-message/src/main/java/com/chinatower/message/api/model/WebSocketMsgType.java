@@ -1,0 +1,11 @@
+package com.chinatower.message.api.model;
+
+public enum WebSocketMsgType {
+    RADAR, WARNING_ORDER,UAV_VIDEO_TASK,UFCP_UAV_FLY,OPEN_DIGITAL_HUMANS,
+    ONE_JUDGE_RESULT_NOTICE,  //单次研判通知
+    AUTOMATIC_JUDGE_RESULT_NOTICE,  //自动研判通知
+    TIMEOUT_JUDGE_RESULT_NOTICE, //超期研判通知
+    ENTER_JUDGE_RESULT_NOTICE,  //进入系统研判通知
+    LOW_ALT_FLY_TRACE,
+    LOW_ALT_COMMON_MESSAGE
+}

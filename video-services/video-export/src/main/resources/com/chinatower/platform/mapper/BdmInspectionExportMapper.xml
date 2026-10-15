@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.BdmInspectionExportMapper">
+
+    <select id="getTaskList" resultType="com.chinatower.bdm.api.entity.InspectionTaskListVO" parameterType="com.chinatower.bdm.api.entity.InspectionTaskParam">
+        SELECT
+        a.task_id,
+        a.conf_id,
+        a.cnof_name as task_name,
+        a.grid_id,
+        cc.grid_name,
+        a.keeper_name,
+        a.start_time,
+        a.end_time,
+        a.inspection_time,
+        a.create_time,
+        a.task_status,
+        a.conf_desc as task_desc,
+        a.retroaction,
+        DATE_FORMAT(a.create_time,'%Y-%m-%d') create_date,
+        a.inspection_start_time,
+        a.inspection_end_time,
+        CONCAT(a.inspection_start_time,'至',a.inspection_end_time) AS inspection_period,
+        a.feedback_keeper_id,
+        a.feedback_end,
+        b.keeper_name feedbackKeeperName
+        FROM
+        bm_inspection_task a
+        left join bm_gridkeeper b on a.feedback_keeper_id = b.keeper_id
+        LEFT JOIN bm_grid cc ON a.grid_id = cc.grid_id
+        WHERE a.send_flag = 1
+        <choose>
+            <when test=' flag == "3" '>
+                AND ((a.task_status = '1'  and  a.feedback_keeper_id = #{feedbackKeeperId,jdbcType=VARCHAR}) or  a.task_status = '2')
+            </when>
+
+            <otherwise>
+                <if test='taskStatus!= null and taskStatus != "" '>
+                    AND a.task_status = #{taskStatus,jdbcType=VARCHAR}
+                </if>
+                <if test='feedbackKeeperId!= null and feedbackKeeperId != "" '>
+                    AND a.feedback_keeper_id = #{feedbackKeeperId,jdbcType=VARCHAR}
+                </if>
+            </otherwise>
+        </choose>
+
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test="deleteFlag != null">
+            AND a.delete_flag = #{deleteFlag}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            and DATE_FORMAT(a.inspection_time,'%Y-%m-%d') >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            and DATE_FORMAT(a.inspection_time,'%Y-%m-%d') <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="createStartTime != null and createStartTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') >= #{createStartTime}
+        </if>
+        <if test="createEndTime != null and createEndTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') <![CDATA[<=]]> #{createEndTime}
+        </if>
+        <if test='gridId!= null and gridId != "" '>
+            AND a.grid_id LIKE concat('%',#{gridId},'%')
+        </if>
+        <if test='taskName!= null and taskName != "" '>
+            AND a.cnof_name LIKE concat('%',#{taskName},'%')
+        </if>
+        <if test='keeperId!= null and keeperId != "" '>
+            AND FIND_IN_SET(#{keeperId,jdbcType=VARCHAR},a.keeper_id)
+        </if>
+        <if test='confId!= null and confId != "" '>
+            AND a.conf_id = #{confId,jdbcType=VARCHAR}
+        </if>
+        <if test='keeperName!= null and keeperName != "" '>
+            AND a.keeper_name LIKE concat('%',#{keeperName},'%')
+        </if>
+
+        <if test='feedbackEnd!= null and feedbackEnd != "" '>
+            AND a.feedback_end = #{feedbackEnd,jdbcType=VARCHAR}
+        </if>
+
+        <if test="taskDistributionStartTime != null and taskDistributionStartTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') >= #{taskDistributionStartTime}
+        </if>
+        <if test="taskDistributionEndTime != null and taskDistributionEndTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') <![CDATA[<=]]> #{taskDistributionEndTime}
+        </if>
+
+        <if test='feedbackKeeperName!= null and feedbackKeeperName != "" '>
+            AND b.keeper_name LIKE concat('%',#{feedbackKeeperName},'%')
+        </if>
+
+        <choose>
+            <when test="sortName == 'createDate'">
+                order by DATE_FORMAT(a.create_time,'%Y-%m-%d')
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'inspectionPeriod'">
+                order by a.inspection_start_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+                ,a.inspection_end_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+
+            <when test="sortName == 'createTime'">
+                order by a.create_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+
+            <when test="sortName == 'inspectionTime'">
+                order by a.inspection_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+
+            <otherwise>
+                ORDER BY
+                create_date DESC,a.inspection_start_time DESC,a.inspection_end_time DESC,DATE_FORMAT(a.create_time,'%H:%i:%s') DESC
+            </otherwise>
+        </choose>
+    </select>
+
+
+    <select id="getConfList" resultType="com.chinatower.platform.entity.InspectionConfVO"
+            parameterType="com.chinatower.bdm.api.entity.InspectionConfParam">
+        SELECT a.conf_id, a.cnof_name, a.grid_id, b.grid_name, a.keeper_name, a.creator, a.create_time, a.modifier,
+            a.update_time, a.creator, a.delete_flag, a.conf_status, a.data_time, a.is_assign
+        FROM bm_inspection_conf a LEFT JOIN bm_grid b ON a.grid_id = b.grid_id
+        WHERE a.delete_flag = 0
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test='gridId!= null and gridId != "" '>
+            AND a.grid_id = #{gridId,jdbcType=VARCHAR}
+        </if>
+        <if test='cnofName!= null and cnofName != "" '>
+            AND a.cnof_name LIKE CONCAT('%', #{cnofName}, '%')
+        </if>
+        <if test='keeperName!= null and keeperName != "" '>
+            AND a.keeper_name LIKE CONCAT('%', #{keeperName}, '%')
+        </if>
+        <if test='confStatus!= null and confStatus != "" '>
+            AND a.conf_status = #{confStatus}
+        </if>
+        <if test='creator!= null and creator != "" '>
+            AND a.creator LIKE CONCAT('%', #{creator}, '%')
+        </if>
+        <if test='modifier!= null and modifier != "" '>
+            AND a.modifier LIKE CONCAT('%', #{modifier}, '%')
+        </if>
+        <if test="createStartDate != null and createStartDate != ''">
+            <![CDATA[and DATE_FORMAT(a.create_time,'%Y-%m-%d') >= #{createStartDate}]]>
+        </if>
+        <if test="createEndDate != null and createEndDate != ''">
+            <![CDATA[and DATE_FORMAT(a.create_time,'%Y-%m-%d') <= #{createEndDate}]]>
+        </if>
+        <if test="modifyStartDate != null and modifyStartDate != ''">
+            <![CDATA[and DATE_FORMAT(a.update_time,'%Y-%m-%d') >= #{modifyStartDate}]]>
+        </if>
+        <if test="modifyEndDate != null and modifyEndDate != ''">
+            <![CDATA[and DATE_FORMAT(a.update_time,'%Y-%m-%d') <= #{modifyEndDate}]]>
+        </if>
+        <if test='sort == "desc" and "1" == sortFlag '>
+            order by a.create_time DESC
+        </if>
+        <if test='sort == "desc" and "2" == sortFlag '>
+            order by a.update_time DESC
+        </if>
+        <if test='sort == "asc" and "1" == sortFlag '>
+            order by a.create_time ASC
+        </if>
+        <if test='sort == "asc" and "2" == sortFlag '>
+            order by a.update_time ASC
+        </if>
+    </select>
+
+
+</mapper>

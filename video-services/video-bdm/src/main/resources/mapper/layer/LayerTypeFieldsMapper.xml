@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.LayerTypeFieldsMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.bdm.modules.layer.domain.LayerTypeFields" >
+        <result column="id" property="id" />
+        <result column="abbreviation" property="abbreviation" />
+        <result column="code" property="code" />
+        <result column="name" property="name" />
+        <result column="remark" property="remark" />
+        <result column="type" property="type" />
+        <result column="chart_length" property="chartLength" />
+        <result column="not_null_flag" property="notNullFlag" />
+        <result column="filter_type" property="filterType" />
+        <result column="filter_index" property="filterIndex" />
+        <result column="identify_index" property="identifyIndex" />
+        <result column="result_index" property="resultIndex" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="match_dict_flag" property="matchDictFlag" />
+        <result column="need_alert_flag" property="needAlertFlag" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+                id,
+                abbreviation,
+                code,
+                name,
+                remark,
+                type,
+                chart_length,
+                not_null_flag,
+                filter_type,
+                filter_index,
+                identify_index,
+                result_index,
+                delete_flag,
+                match_dict_flag,
+                need_alert_flag
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.chinatower.bdm.modules.layer.domain.LayerTypeFields">
+        INSERT INTO sys_layer_type_fields
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="null != id and '' != id">
+                id,
+            </if>
+            <if test="null != abbreviation and '' != abbreviation">
+                abbreviation,
+            </if>
+            <if test="null != code and '' != code">
+                code,
+            </if>
+            <if test="null != name and '' != name">
+                name,
+            </if>
+            <if test="null != remark and '' != remark">
+                remark,
+            </if>
+            <if test="null != type ">
+                type,
+            </if>
+            <if test="null != chartLength ">
+                chart_length,
+            </if>
+            <if test="null != notNullFlag ">
+                not_null_flag,
+            </if>
+            <if test="null != filterType ">
+                filter_type,
+            </if>
+            <if test="null != filterIndex ">
+                filter_index,
+            </if>
+            <if test="null != identifyIndex ">
+                identify_index,
+            </if>
+            <if test="null != resultIndex ">
+                result_index,
+            </if>
+            <if test="null != deleteFlag ">
+                delete_flag
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="null != id and '' != id">
+                #{id},
+            </if>
+            <if test="null != abbreviation and '' != abbreviation">
+                #{abbreviation},
+            </if>
+            <if test="null != code and '' != code">
+                #{code},
+            </if>
+            <if test="null != name and '' != name">
+                #{name},
+            </if>
+            <if test="null != remark and '' != remark">
+                #{remark},
+            </if>
+            <if test="null != type ">
+                #{type},
+            </if>
+            <if test="null != chartLength ">
+                #{chartLength},
+            </if>
+            <if test="null != notNullFlag ">
+                #{notNullFlag},
+            </if>
+            <if test="null != filterType ">
+                #{filterType},
+            </if>
+            <if test="null != filterIndex ">
+                #{filterIndex},
+            </if>
+            <if test="null != identifyIndex ">
+                #{identifyIndex},
+            </if>
+            <if test="null != resultIndex ">
+                #{resultIndex},
+            </if>
+            <if test="null != deleteFlag ">
+                #{deleteFlag}
+            </if>
+        </trim>
+    </insert>
+
+    <insert id="saveBatch">
+        INSERT INTO sys_layer_type_fields
+        (id,
+         abbreviation,
+         code,
+         `name`,
+         remark,
+         `type`,
+         chart_length,
+         not_null_flag,
+         filter_type,
+         filter_index,
+         identify_index,
+         result_index,
+         match_dict_flag,
+         need_alert_flag,
+         creator,
+         create_time,
+         modifier,
+         update_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id},
+             #{item.abbreviation},
+             #{item.code},
+             #{item.name},
+             #{item.remark},
+             #{item.type},
+             #{item.chartLength},
+             #{item.notNullFlag},
+             #{item.filterType},
+             #{item.filterIndex},
+             #{item.identifyIndex},
+             #{item.resultIndex},
+             #{item.matchDictFlag},
+             #{item.needAlertFlag},
+             #{item.creator},
+             #{item.createTime},
+             #{item.modifier},
+             #{item.updateTime}
+             )
+        </foreach>
+    </insert>
+
+    <delete id="delete" >
+        update sys_layer_type_fields
+        set delete_flag = 1
+        WHERE id = #{id}
+    </delete>
+    <delete id="deleteByAbbreviation" >
+        update  sys_layer_type_fields set delete_flag = 1
+        WHERE abbreviation in
+        <foreach collection="list" separator="," item="abbreviation" open="(" close=")">
+            #{abbreviation}
+        </foreach>
+    </delete>
+
+    <delete id="deleteByID">
+        update sys_layer_type_fields
+        set delete_flag = 1
+        WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds" >
+        DELETE FROM sys_layer_type_fields
+        WHERE id in
+        <foreach collection="ids" separator="," item="id" open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <insert id="deletes" >
+        update sys_layer_type_fields
+        set delete_flag = 1
+        WHERE id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.chinatower.bdm.modules.layer.domain.LayerTypeFields">
+        UPDATE sys_layer_type_fields
+        <set>
+            <if test="null != abbreviation and '' != abbreviation">abbreviation = #{abbreviation},</if>
+            <if test="null != code and '' != code">code = #{code},</if>
+            <if test="null != name and '' != name">name = #{name},</if>
+            <if test="null != remark and '' != remark">remark = #{remark},</if>
+            <if test="null != type ">type = #{type},</if>
+            <if test="null != chartLength ">chart_length = #{chartLength},</if>
+            <if test="null != notNullFlag ">not_null_flag = #{notNullFlag},</if>
+            <if test="null != filterType ">filter_type = #{filterType},</if>
+            <if test="null != filterIndex ">filter_index = #{filterIndex},</if>
+            <if test="null != identifyIndex ">identify_index = #{identifyIndex},</if>
+            <if test="null != resultIndex ">result_index = #{resultIndex},</if>
+            <if test="null != deleteFlag ">delete_flag = #{deleteFlag}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+
+    <select id="info" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_layer_type_fields
+        WHERE id = #{id}
+        and delete_flag = 0
+    </select>
+
+    <select id="infos" resultType="com.chinatower.bdm.modules.layer.domain.LayerTypeFields">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_layer_type_fields
+        WHERE abbreviation = #{abbreviation}
+        and delete_flag = 0
+        and code != 'properties'
+        order by result_index asc
+    </select>
+
+
+    <select id="selectByFieldCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_layer_type_fields
+        WHERE code = #{code}
+        and abbreviation = #{abbreviation}
+        and delete_flag = 0
+    </select>
+    <select id="selectByFieldCodes" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_layer_type_fields
+        WHERE abbreviation = #{abbreviation}
+        and delete_flag = 0
+        and code in
+        <foreach collection="codes" item="code" open="(" close=")" separator=",">
+            #{code}
+        </foreach>
+    </select>
+
+    <select id="selectByAbbreviation" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_layer_type_fields
+        WHERE abbreviation = #{abbreviation}
+        and delete_flag = 0
+        and code != 'properties'
+        order by result_index asc
+    </select>
+
+
+    <select id="selectByAbbreviations" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_layer_type_fields
+        WHERE
+        delete_flag = 0
+        and code != 'properties'
+        and  abbreviation in
+        <foreach collection="abbreviations" item="abbreviation" separator="," open="(" close=")">
+            #{abbreviation}
+        </foreach>
+        group by code
+        order by result_index asc
+    </select>
+
+    <update id="updateLayerTypeFieldsAbbreviation">
+        update sys_layer_type_fields set abbreviation = #{targetAbbreviation}
+        where id in
+        (select id from  sys_layer_type_fields where abbreviation = #{sourceAbbreviation})
+    </update>
+
+    <resultMap id="LayerFieldsFiltersMap" type="com.chinatower.common.core.dto.bdm.LayerFieldsFilterDTO">
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="remark" property="remark"/>
+        <result column="filter_type" property="filterType"/>
+        <result column="type" property="type"/>
+        <result column="match_dict_flag" property="matchDictFlag"/>
+        <result column="need_alert_flag" property="needAlertFlag"/>
+        <result column="filter_index" property="filterIndex" />
+        <result column="identify_index" property="identifyIndex" />
+        <result column="result_index" property="resultIndex" />
+
+        <collection property="dictList" ofType="com.chinatower.common.core.dto.bdm.LayerFieldsFilterChildListDTO"
+                     select="com.chinatower.bdm.modules.layer.mapper.LayerTypeAttrFilterMapper.selectByAbbreviationAndCode" column="{abbreviation=abbreviation,code=code}"/>
+    </resultMap>
+    <select id="layerFieldsFilters" resultMap="LayerFieldsFiltersMap">
+        select
+        f.code,
+        f.name,
+        f.remark,
+        f.filter_type,
+        f.type,
+        f.match_dict_flag,
+        f.need_alert_flag,
+        f.filter_index,
+        f.identify_index,
+        f.result_index,
+        f.abbreviation
+        from  sys_layer_type_fields f
+        where
+            f.abbreviation = #{abbreviation}
+        and f.delete_flag = 0
+        and f.filter_index is not null
+        and f.filter_index != 0
+        order by f.filter_index asc
+    </select>
+</mapper>

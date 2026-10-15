@@ -1,0 +1,18 @@
+server:
+  port: 18082
+  servlet:
+    context-path: /
+# Spring配置
+spring:
+  profiles:
+    active: local
+  main:
+    banner-mode: "off"
+    allow-bean-definition-overriding: true
+  application:
+    #log应用名称固定为tower-log
+    name: tower-log
+
+jasypt:
+  encryptor:
+    bootstrap: false

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.product.api.modules.preset.dao.PresetDao">
+
+    <select id="queryErrorCode" resultType="java.lang.String">
+    select error_code from sys_api_error where error_value like CONCAT('%', #{errorValue}, '%')
+    </select>
+
+    <select id="selectById" resultType="com.chinatower.video.api.entity.VideoPresetDO">
+        select
+        preset_id presetId,
+        preset_name presetName,
+        device_code deviceCode,
+        channel_code channelCode,
+        pan,
+        tilt,
+        zoom
+        from vm_video_preset where preset_id = #{presetId} and device_code = #{deviceCode}
+    </select>
+</mapper>

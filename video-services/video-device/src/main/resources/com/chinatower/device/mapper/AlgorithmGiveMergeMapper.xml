@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.AlgorithmGiveMergeMapper">
+    <select id="queryAlgorithmGiveMerge" parameterType="com.chinatower.device.dto.AlgorithmGiveMergeDO"
+            resultType="com.chinatower.device.dto.AlgorithmGiveMergeDO">
+        SELECT
+        id,
+        device_code,
+        channel_code,
+        alarm_type_noalg,
+        alarm_type,
+        algorithm_code,
+        merge_id,
+        trigger_rule
+        FROM
+        vm_algorithm_give_merge_config
+        WHERE delete_flag = 0
+        <if test='deviceChannelList != null and deviceChannelList.size() > 0 '>
+            AND
+            <foreach collection="deviceChannelList" item="item" index="index" open="(" separator="or" close=") ">
+                device_code = #{item.deviceCode} AND channel_code = #{item.channelCode}
+            </foreach>
+        </if>
+    </select>
+
+    <update id="editBatchById" parameterType="com.chinatower.device.dto.AlgorithmGiveMergeDO">
+        <foreach collection="updateList" item="item" index="index" open="" separator=";" close="">
+            UPDATE vm_algorithm_give_merge_config
+            SET
+                alarm_type_noalg = #{item.alarmTypeNoalg},
+                alarm_type = #{item.alarmType},
+                algorithm_code = #{item.algorithmCode},
+                picture_info = #{item.pictureInfo},
+                video_set_info = #{item.videoSetInfo},
+                update_time = #{item.updateTime},
+                trigger_rule = #{item.triggerRule}
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+    <update id="editBatchSyncById" parameterType="com.chinatower.device.dto.AlgorithmGiveMergeDO">
+        <foreach collection="updateList" item="item" index="index" open="" separator=";" close="">
+            UPDATE vm_algorithm_give_merge_config
+            SET
+            <if test="item.mergeId != null and item.mergeId != ''">
+                merge_id = #{item.mergeId},
+            </if>
+            sync_status = #{item.syncStatus},
+            fail_reason = #{item.failReason},
+            update_time = #{item.updateTime}
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+    <update id="deleteBatchById" parameterType="com.chinatower.device.dto.AlgorithmGiveMergeDO">
+        <foreach collection="deleteList" item="item" index="index" open="" separator=";" close="">
+            UPDATE vm_algorithm_give_merge_config
+            SET
+            delete_flag = 1,
+            update_time = #{item.updateTime}
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+    <select id="queryAlgorithmGiveMergeXXLJob" resultType="com.chinatower.device.dto.AlgorithmGiveMergeDO">
+        SELECT
+            id,
+            device_code,
+            channel_code,
+            alarm_type_noalg,
+            alarm_type,
+            algorithm_code,
+            merge_id,
+            video_set_info,
+            picture_info,
+            sync_status,
+            fail_reason,
+            delete_flag,
+            create_time,
+            update_time
+        FROM
+            vm_algorithm_give_merge_config
+        WHERE sync_status = '1'
+    </select>
+</mapper>

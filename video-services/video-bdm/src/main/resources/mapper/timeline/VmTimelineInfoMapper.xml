@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.timeline.mapper.VmTimelineInfoMapper">
+
+    <resultMap type="com.chinatower.bdm.modules.timeline.entity.VmTimelineInfo" id="VmTimelineInfoMap">
+        <result property="timelineId" column="timeline_id" jdbcType="INTEGER"/>
+        <result property="timelineName" column="timeline_name" jdbcType="VARCHAR"/>
+        <result property="industryCode" column="industry_code" jdbcType="VARCHAR"/>
+        <result property="appVerCode" column="app_ver_code" jdbcType="VARCHAR"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="tenantName" column="tenant_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="modifier" column="modifier" jdbcType="VARCHAR"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <resultMap type="com.chinatower.bdm.modules.timeline.vo.VmTimelineInfoVo" id="VmTimelineInfoVoMap">
+        <result property="timelineId" column="timeline_id" jdbcType="INTEGER"/>
+        <result property="timelineName" column="timeline_name" jdbcType="VARCHAR"/>
+        <result property="industryCode" column="industry_code" jdbcType="VARCHAR"/>
+        <result property="appVerCode" column="app_ver_code" jdbcType="VARCHAR"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="tenantName" column="tenant_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="modifier" column="modifier" jdbcType="VARCHAR"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+        <result property="defaultFlag" column="default_flag" jdbcType="INTEGER"/>
+        <result property="sortNum" column="sort_num" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <resultMap type="com.chinatower.bdm.modules.timeline.vo.VmTimelineDetailVo" id="VmTimelineInfoWithDetailMap">
+        <result property="timelineDetailId" column="timeline_detail_id" jdbcType="INTEGER"/>
+        <result property="timelineId" column="timeline_id" jdbcType="INTEGER"/>
+        <result property="timelineName" column="timeline_name" jdbcType="VARCHAR"/>
+        <result property="layer" column="layer" jdbcType="VARCHAR"/>
+        <result property="layerName" column="layer_name" jdbcType="VARCHAR"/>
+        <result property="year" column="year" jdbcType="VARCHAR"/>
+        <result property="month" column="month" jdbcType="VARCHAR"/>
+        <result property="day" column="day" jdbcType="VARCHAR"/>
+        <result property="sortNum" column="sort_num" jdbcType="VARCHAR"/>
+        <result property="geoType" column="geo_type" jdbcType="VARCHAR"/>
+        <result property="rootGeoserverUrl" column="root_geoserver_url" jdbcType="VARCHAR"/>
+        <result property="customName" column="custom_name" jdbcType="VARCHAR"/>
+        <result property="maxx" column="maxx" jdbcType="VARCHAR"/>
+        <result property="maxy" column="maxy" jdbcType="VARCHAR"/>
+        <result property="minx" column="minx" jdbcType="VARCHAR"/>
+        <result property="miny" column="miny" jdbcType="VARCHAR"/>
+        <result property="stayTime" column="stay_time" jdbcType="VARCHAR"/>
+        <result property="industryCode" column="industry_code" jdbcType="VARCHAR"/>
+        <result property="appVerCode" column="app_ver_code" jdbcType="VARCHAR"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="tenantName" column="tenant_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="modifier" column="modifier" jdbcType="VARCHAR"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+        <result property="category" column="category" jdbcType="VARCHAR"/>
+        <result property="fileUrl" column="fileUrl" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 伪列 -->
+    <sql id="Base_Column_List">
+        timeline_id
+        , timeline_name, industry_code, app_ver_code, tenant_id, tenant_name, create_time, update_time, creator, modifier, delete_flag,default_flag,sort_num
+    </sql>
+
+    <!--查询单个类型 resultType="com.chinatower.bdm.modules.entity.timeline.VmTimelineInfo">-->
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="VmTimelineInfoMap">
+        select
+        <include refid="Base_Column_List"/>
+
+        from vm_timeline_info
+        where timeline_id = #{timelineId}
+        and delete_flag = 0
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" parameterType="com.chinatower.bdm.modules.timeline.dto.VmTimelineInfoQueryDto" resultMap="VmTimelineInfoVoMap">
+        select
+        <include refid="Base_Column_List"/>
+        from vm_timeline_info t
+        <where>
+            and t.delete_flag = 0
+            ${dataScope}
+            <if test="timelineName != null and timelineName != ''">
+                and t.timeline_name like concat('%',#{timelineName, jdbcType=VARCHAR},'%')
+            </if>
+            <!-- 创建时间范围查询 -->
+            <if test="createTimeStart != null">
+                and t.create_time &gt;= #{createTimeStart, jdbcType=TIMESTAMP}
+            </if>
+            <if test="createTimeEnd != null">
+                and t.create_time &lt;= #{createTimeEnd, jdbcType=TIMESTAMP}
+            </if>
+            <!-- 修改时间范围查询 -->
+            <if test="updateTimeStart != null">
+                and t.update_time &gt;= #{updateTimeStart, jdbcType=TIMESTAMP}
+            </if>
+            <if test="updateTimeEnd != null">
+                and t.update_time &lt;= #{updateTimeEnd, jdbcType=TIMESTAMP}
+            </if>
+            <!-- 创建人查询 -->
+            <if test="creator != null and creator != ''">
+                and t.creator like concat('%',#{creator, jdbcType=VARCHAR},'%')
+            </if>
+            <!-- 修改人查询 -->
+            <if test="modifier != null and modifier != ''">
+                and t.modifier like concat('%',#{modifier, jdbcType=VARCHAR},'%')
+            </if>
+        </where>
+        order by CASE WHEN t.sort_num IS NULL THEN 1 ELSE 0 END ASC,t.sort_num asc,t.update_time desc,t.create_time desc
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllDetail" parameterType="com.chinatower.bdm.modules.timeline.dto.VmTimelineInfoQueryDto" resultMap="VmTimelineInfoWithDetailMap">
+        select
+            t.timeline_name,
+            d.timeline_detail_id,
+            d.timeline_id,
+            d.layer,
+            d.layer_name,
+            d.layer_namespace,
+            d.`year`,
+            d.`month`,
+            d.`day`,
+            d.sort_num,
+            d.geo_type,
+            d.root_geoserver_url,
+            d.custom_name,
+            d.maxx,
+            d.maxy,
+            d.minx,
+            d.miny,
+            d.stay_time,
+            d.industry_code,
+            d.app_ver_code,
+            d.tenant_id,
+            d.tenant_name,
+            d.create_time,
+            d.update_time,
+            d.creator,
+            d.modifier,
+            d.delete_flag,
+            d.category,
+            d.fileUrl
+        from
+            vm_timeline_detail d
+                left join
+            vm_timeline_info t on d.timeline_id = t.timeline_id
+        <where>
+            and t.delete_flag = 0
+            and d.delete_flag = 0
+            ${dataScope}
+            <if test="timelineId != null and timelineId != ''">
+                and t.timeline_id = #{timelineId}
+            </if>
+            <if test="timelineName != null and timelineName != ''">
+                and t.timeline_name like concat('%',#{timelineName},'%')
+            </if>
+        </where>
+        order by t.create_time desc, d.sort_num asc
+    </select>
+    <select id="queryDefaultTimeLine" resultType="com.chinatower.bdm.modules.timeline.entity.VmTimelineInfo">
+        select
+        <include refid="Base_Column_List"/>
+        from vm_timeline_info
+        where default_flag = 1
+        and delete_flag = 0
+        ${dataScope}
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="timelineId" useGeneratedKeys="true">
+        insert into vm_timeline_info(timeline_name, industry_code, app_ver_code, tenant_id, tenant_name, create_time,
+                                     update_time, creator, modifier, delete_flag, default_flag, sort_num)
+        values (#{timelineName}, #{industryCode}, #{appVerCode}, #{tenantId}, #{tenantName}, #{createTime},
+                #{updateTime}, #{creator}, #{modifier}, #{deleteFlag}, #{defaultFlag}, #{sortNum})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="timelineId" useGeneratedKeys="true">
+        insert into vm_timeline_info(timeline_name, industry_code, app_ver_code, tenant_id, tenant_name, create_time,
+        update_time, creator, modifier, delete_flag)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.timelineName}, #{entity.industryCode}, #{entity.appVerCode}, #{entity.tenantId},
+            #{entity.tenantName}, #{entity.createTime}, #{entity.updateTime}, #{entity.creator}, #{entity.modifier},
+            #{entity.deleteFlag})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="timelineId" useGeneratedKeys="true">
+        insert into vm_timeline_info(timeline_name, industry_code, app_ver_code, tenant_id, tenant_name, create_time,
+        update_time, creator, modifier, delete_flag)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.timelineName}, #{entity.industryCode}, #{entity.appVerCode}, #{entity.tenantId},
+            #{entity.tenantName}, #{entity.createTime}, #{entity.updateTime}, #{entity.creator}, #{entity.modifier},
+            #{entity.deleteFlag})
+        </foreach>
+        on duplicate key update
+        timeline_name = values(timeline_name),
+        industry_code = values(industry_code),
+        app_ver_code = values(app_ver_code),
+        tenant_id = values(tenant_id),
+        tenant_name = values(tenant_name),
+        create_time = values(create_time),
+        update_time = values(update_time),
+        creator = values(creator),
+        modifier = values(modifier),
+        delete_flag = values(delete_flag)
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update vm_timeline_info
+        <set>
+            <if test="defaultFlag != null">
+                default_flag = #{defaultFlag},
+            </if>
+            <if test="sortNum != null and sortNum != ''">
+                sort_num = #{sortNum},
+            </if>
+            <if test="timelineName != null and timelineName != ''">
+                timeline_name = #{timelineName},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier},
+            </if>
+        </set>
+        where timeline_id = #{timelineId}
+        and delete_flag = 0
+    </update>
+
+    <!--通过主键删除-->
+    <update id="deleteById">
+        update vm_timeline_info
+        set delete_flag = 1, update_time = now()
+        where timeline_id = #{timelineId}
+    </update>
+
+    <!--取消所有时间轴的默认状态-->
+    <update id="updateAllDefaultFlagToZero">
+        update vm_timeline_info
+        set default_flag = 0
+        where delete_flag = 0
+          and default_flag = 1
+            ${dataScope}
+    </update>
+
+    <!--查询所有时间轴（用于初始化老数据的排序号）-->
+    <select id="queryAllForSortInit" resultMap="VmTimelineInfoMap">
+        select
+        <include refid="Base_Column_List"/>
+        from vm_timeline_info
+        where delete_flag = 0
+        ${dataScope}
+        order by CASE WHEN sort_num IS NULL THEN 1 ELSE 0 END ASC, sort_num asc, create_time asc
+    </select>
+
+    <!--查询sortNum为NULL的时间轴记录（用于初始化老数据，优化性能）-->
+    <select id="queryNullSortNumList" resultMap="VmTimelineInfoMap">
+        select
+        <include refid="Base_Column_List"/>
+        from vm_timeline_info
+        where delete_flag = 0
+        and sort_num IS NULL
+        ${dataScope}
+        order by create_time asc
+    </select>
+
+    <select id="queryMinSortNum" resultType="java.lang.Integer">
+        select min(sort_num)
+        from vm_timeline_info
+        where delete_flag = 0
+        ${dataScope}
+    </select>
+
+    <select id="countNullSortNum" resultType="int">
+        select count(1)
+        from vm_timeline_info
+        where delete_flag = 0
+        and sort_num is null
+        ${dataScope}
+    </select>
+
+    <select id="countAllTimelines" resultType="int">
+        select count(1)
+        from vm_timeline_info
+        where delete_flag = 0
+        ${dataScope}
+    </select>
+
+    <update id="incrementSortNumRange">
+        update vm_timeline_info
+        set sort_num = sort_num + 1
+        where delete_flag = 0
+        <if test="start != null">
+            and sort_num &gt;= #{start}
+        </if>
+        <if test="end != null">
+            and sort_num &lt;= #{end}
+        </if>
+        <if test="excludeId != null">
+            and timeline_id != #{excludeId}
+        </if>
+        ${data.dataScope}
+    </update>
+
+    <update id="decrementSortNumRange">
+        update vm_timeline_info
+        set sort_num = sort_num - 1
+        where delete_flag = 0
+        <if test="start != null">
+            and sort_num &gt;= #{start}
+        </if>
+        <if test="end != null">
+            and sort_num &lt;= #{end}
+        </if>
+        <if test="excludeId != null">
+            and timeline_id != #{excludeId}
+        </if>
+        ${data.dataScope}
+    </update>
+    <update id="updateSortNum">
+        update vm_timeline_info
+        <set>
+            <if test="updateInfo.sortNum != null and updateInfo.sortNum != ''">
+                sort_num = #{updateInfo.sortNum},
+            </if>
+        </set>
+        where timeline_id = #{updateInfo.timelineId}
+        and delete_flag = 0
+        ${data.dataScope}
+    </update>
+
+</mapper>

@@ -1,0 +1,49 @@
+-- mysql版本菜单执行sql
+-- 菜单 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('${functionName}', '0', '1', '/${businessName}', 'modules/${moduleName}/${businessName}/index', 1, 'C', '0', '${permissionPrefix}:list', '#', 'admin', '2018-03-01', 'admin', '2018-03-01', '${functionName}菜单');
+
+-- 按钮父菜单ID
+SELECT @parentId := LAST_INSERT_ID();
+
+-- 按钮 SQL
+insert into sys_menu  (menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('${functionName}查询', @parentId, '1',  '#', '', 1,  'F', '0', '${permissionPrefix}:query',         '#', 'admin', '2018-03-01', 'admin', '2018-03-01', '');
+
+insert into sys_menu  (menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('${functionName}新增', @parentId, '2',  '#', '', 1,  'F', '0', '${permissionPrefix}:add',          '#', 'admin', '2018-03-01', 'admin', '2018-03-01', '');
+
+insert into sys_menu  (menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('${functionName}修改', @parentId, '3',  '#', '', 1,  'F', '0', '${permissionPrefix}:edit',         '#', 'admin', '2018-03-01', 'admin', '2018-03-01', '');
+
+insert into sys_menu  (menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('${functionName}删除', @parentId, '4',  '#', '', 1,  'F', '0', '${permissionPrefix}:remove',       '#', 'admin', '2018-03-01', 'admin', '2018-03-01', '');
+
+insert into sys_menu  (menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('${functionName}导出', @parentId, '5',  '#', '', 1,  'F', '0', '${permissionPrefix}:export',       '#', 'admin', '2018-03-01', 'admin', '2018-03-01', '');
+
+
+-- oracle版本菜单执行sql
+-- 菜单 SQL
+insert into sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time)
+values(GETSEQ('SYS_MENU_ID_SEQ'), '${functionName}', '0', '1', '/${businessName}', 'modules/${moduleName}/${businessName}/index', 1, 'C', '0', '${permissionPrefix}:list', '#', 'admin', sysdate);
+
+
+-- 按钮 SQL
+insert into sys_menu  (menu_id, menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time)
+values(GETSEQ('SYS_MENU_ID_SEQ'), '${functionName}查询', -1, '1',  '#', '', 1,  'F', '0', '${permissionPrefix}:query',         '#', 'admin', sysdate);
+
+insert into sys_menu  (menu_id, menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time)
+values(GETSEQ('SYS_MENU_ID_SEQ'), '${functionName}新增', -1, '2',  '#', '', 1,  'F', '0', '${permissionPrefix}:add',          '#', 'admin', sysdate);
+
+insert into sys_menu  (menu_id, menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time)
+values(GETSEQ('SYS_MENU_ID_SEQ'), '${functionName}修改', -1, '3',  '#', '', 1,  'F', '0', '${permissionPrefix}:edit',         '#', 'admin', sysdate);
+
+insert into sys_menu  (menu_id, menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time)
+values(GETSEQ('SYS_MENU_ID_SEQ'), '${functionName}删除', -1, '4',  '#', '', 1,  'F', '0', '${permissionPrefix}:remove',       '#', 'admin', sysdate);
+
+insert into sys_menu  (menu_id, menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, perms, icon, create_by, create_time)
+values(GETSEQ('SYS_MENU_ID_SEQ'), '${functionName}导出', -1, '5',  '#', '', 1,  'F', '0', '${permissionPrefix}:export',       '#', 'admin', sysdate);
+
+-- 更新按钮父级id为菜单id
+update sys_menu set parent_id =(select menu_id from SYS_MENU where MENU_NAME='${functionName}') where parent_id =-1;

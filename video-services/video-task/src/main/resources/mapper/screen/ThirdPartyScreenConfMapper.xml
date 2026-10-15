@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.screen.dao.ThirdPartyScreenConfMapper">
+
+    <select id="selectSdshbtScreenConfigs" resultType="com.chinatower.platform.modules.screen.entity.ThirdPartyScreenConf">
+        SELECT id, screen_url AS screenUrl
+        FROM sys_third_party_screen_conf
+        WHERE delete_flag = 0
+          AND screen_url LIKE '%redirectType=sdshbt%'
+    </select>
+
+    <update id="updateScreenUrl">
+        UPDATE sys_third_party_screen_conf
+        SET screen_url = #{screenUrl},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

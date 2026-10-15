@@ -1,0 +1,666 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.resource.mapper.ResourceTypeMapper">
+  <resultMap id="BaseResultMap" type="com.chinatower.bdm.api.entity.ResourceType">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="resource_type_id" jdbcType="VARCHAR" property="resourceTypeId" />
+    <result column="resource_type_name" jdbcType="VARCHAR" property="resourceTypeName" />
+    <result column="parent_id" jdbcType="VARCHAR" property="parentId" />
+    <result column="parent_name" jdbcType="VARCHAR" property="parentName" />
+    <result column="order_num" jdbcType="DECIMAL" property="orderNum" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="delete_flag" jdbcType="INTEGER" property="deleteFlag" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+    <result column="tenant_name" jdbcType="VARCHAR" property="tenantName" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="icon" jdbcType="VARCHAR" property="icon" />
+    <result column="approve" jdbcType="VARCHAR" property="approve" />
+    <result column="province_name" jdbcType="VARCHAR" property="provinceName" />
+    <result column="city_name" jdbcType="VARCHAR" property="cityName" />
+    <result column="type_level_url" jdbcType="VARCHAR" property="typeLevelUrl" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    id, resource_type_id, resource_type_name, parent_id, parent_name, order_num, `status`,
+    delete_flag, creator, create_time, modifier, update_time, tenant_id,
+    remark, icon, approve,type_level_url,industry_code,app_ver_code
+  </sql>
+  
+  <!--根据id获取资源类型详情-->
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select
+        <include refid="Base_Column_List" />
+    from
+        resource_type
+    where
+        id = #{id,jdbcType=BIGINT}
+  </select>
+
+  <!--根据id获取资源类型详情-->
+  <select id="selectByTypeId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+        <include refid="Base_Column_List" />
+    from
+        resource_type
+    where
+        resource_type_id = #{resourceTypeId}
+    LIMIT 1
+  </select>
+
+  <!--查询资源类型-->
+  <select id="selectResourceTypeList" parameterType="com.chinatower.bdm.api.entity.ResourceType"
+          resultType="com.chinatower.bdm.api.entity.ResourceType">
+    SELECT
+      d.id,
+      d.resource_type_id,
+      d.resource_type_name,
+      d.parent_id,
+      d.parent_name,
+      d.order_num,
+      d.`status`,
+      d.delete_flag,
+      d.creator,
+      d.create_time,
+      d.modifier,
+      d.update_time,
+      d.tenant_id,
+      s.tenant_name,
+      d.remark,
+      d.icon,
+      d.approve,
+      d.industry_code,
+      d.app_ver_code,
+      d.resource_property,
+      a.AREA_NAME as province_name,
+      b.AREA_NAME as city_name
+    FROM
+      resource_type d
+      LEFT JOIN sys_tenant_info s ON d.tenant_id = s.tenant_id
+      LEFT JOIN sys_area a on a.AREA_CODE=s.province_id
+      LEFT JOIN sys_area b on b.AREA_CODE=s.city_id
+    WHERE
+      d.delete_flag = 0
+      <if test="parentId != null and parentId != ''">
+        AND d.parent_id = #{parentId}
+      </if>
+      <if test="resourceTypeName != null and resourceTypeName != ''">
+        AND d.resource_type_name like CONCAT('%',#{resourceTypeName},'%')
+      </if>
+      <if test="status != null and status != ''">
+        AND d.status = #{status}
+      </if>
+      <if test="approve != null and approve != ''">
+        AND d.approve = #{approve}
+      </if>
+      <if test="tenantId != null and tenantId != ''">
+        AND d.tenant_id = #{tenantId}
+      </if>
+      <if test="industryCode != null and industryCode != ''">
+        AND d.industry_code = #{industryCode}
+      </if>
+      <if test="appVerCode != null and appVerCode != ''">
+        AND d.app_ver_code = #{appVerCode}
+      </if>
+      <if test="tenantName != null and tenantName != ''">
+        AND s.tenant_name like CONCAT(CONCAT('%',#{tenantName}),'%')
+      </if>
+      <if test="resourceProperty != null and resourceProperty != ''">
+        AND d.resource_property = #{resourceProperty}
+      </if>
+    order by
+        d.update_time desc
+  </select>
+  
+  <!--更新资源类型-->
+  <update id="updateByResourceTypeId" parameterType="com.chinatower.bdm.api.entity.ResourceType">
+    update resource_type
+    <set>
+      <if test="status != null and status != ''">
+        `status` = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="deleteFlag != null and deleteFlag != ''">
+        delete_flag = #{deleteFlag,jdbcType=INTEGER},
+      </if>
+      <if test="modifier != null and modifier != ''">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="updateTime != null ">
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where
+        id = #{id,jdbcType=BIGINT}
+  </update>
+
+  <!--增加资源类型-->
+  <insert id="insertSelective" keyColumn="id" keyProperty="id" parameterType="com.chinatower.bdm.api.entity.ResourceType" useGeneratedKeys="true">
+    insert into resource_type
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="resourceTypeId != null and resourceTypeId != ''">
+        resource_type_id,
+      </if>
+      <if test="resourceTypeName != null and resourceTypeName != ''">
+        resource_type_name,
+      </if>
+      <if test="parentId != null and parentId != ''">
+        parent_id,
+      </if>
+      <if test="parentName != null and parentName != ''">
+        parent_name,
+      </if>
+      <if test="orderNum != null and orderNum != ''">
+        order_num,
+      </if>
+      <if test="status != null and status != ''">
+        `status`,
+      </if>
+      <if test="deleteFlag != null and deleteFlag != ''">
+        delete_flag,
+      </if>
+      <if test="creator != null and creator != ''">
+        creator,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="modifier != null and modifier != ''">
+        modifier,
+      </if>
+      <if test="updateTime != null">
+        update_time,
+      </if>
+      <if test="tenantId != null and tenantId != ''">
+        tenant_id,
+      </if>
+
+      <if test="remark != null and remark != ''">
+        remark,
+      </if>
+      <if test="icon != null and icon != ''">
+        icon,
+      </if>
+      <if test="approve != null and approve != ''">
+        approve,
+      </if>
+      <if test="typeLevelUrl != null and typeLevelUrl != ''">
+        type_level_url,
+      </if>
+      <if test="industryCode != null and industryCode != ''">
+        industry_code,
+      </if>
+      <if test="appVerCode != null and appVerCode != ''">
+        app_ver_code,
+      </if>
+      <if test="resourceProperty != null and resourceProperty != ''">
+        resource_property
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="resourceTypeId != null and resourceTypeId != ''">
+        #{resourceTypeId,jdbcType=VARCHAR},
+      </if>
+      <if test="resourceTypeName != null and resourceTypeName != ''">
+        #{resourceTypeName,jdbcType=VARCHAR},
+      </if>
+      <if test="parentId != null and parentId != ''">
+        #{parentId,jdbcType=VARCHAR},
+      </if>
+      <if test="parentName != null and parentName != ''">
+        #{parentName,jdbcType=VARCHAR},
+      </if>
+      <if test="orderNum != null and orderNum != ''">
+        #{orderNum,jdbcType=DECIMAL},
+      </if>
+      <if test="status != null and status != ''">
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="deleteFlag != null and deleteFlag != ''">
+        #{deleteFlag,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null and creator != ''">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null ">
+        now(),
+      </if>
+      <if test="modifier != null and modifier != ''">
+        #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="updateTime != null ">
+        now(),
+      </if>
+      <if test="tenantId != null and tenantId != ''">
+        #{tenantId,jdbcType=VARCHAR},
+      </if>
+
+      <if test="remark != null and remark != ''">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="icon != null and icon != ''">
+        #{icon,jdbcType=VARCHAR},
+      </if>
+      <if test="approve != null and approve != ''">
+        #{approve,jdbcType=VARCHAR},
+      </if>
+      <if test="typeLevelUrl != null and typeLevelUrl != ''">
+        #{typeLevelUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="industryCode != null and industryCode != ''">
+        #{industryCode,jdbcType=VARCHAR},
+      </if>
+      <if test="appVerCode != null and appVerCode != ''">
+        #{appVerCode,jdbcType=VARCHAR},
+      </if>
+      <if test="resourceProperty != null and resourceProperty != ''">
+        #{resourceProperty,jdbcType=VARCHAR}
+      </if>
+    </trim>
+  </insert>
+  
+  <!--更新资源类型-->
+  <update id="updateByPrimaryKeySelective" parameterType="com.chinatower.bdm.api.entity.ResourceType">
+    update resource_type
+    <set>
+      <if test="resourceTypeId != null and resourceTypeId != ''">
+        resource_type_id = #{resourceTypeId,jdbcType=VARCHAR},
+      </if>
+      <if test="resourceTypeName != null and resourceTypeName != ''">
+        resource_type_name = #{resourceTypeName,jdbcType=VARCHAR},
+      </if>
+      <if test="parentId != null and parentId != ''">
+        parent_id = #{parentId,jdbcType=VARCHAR},
+      </if>
+      <if test="parentName != null and parentName != ''">
+        parent_name = #{parentName,jdbcType=VARCHAR},
+      </if>
+      <if test="orderNum != null and orderNum != ''">
+        order_num = #{orderNum,jdbcType=DECIMAL},
+      </if>
+      <if test="status != null and status != ''">
+        `status` = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="deleteFlag != null and deleteFlag != ''">
+        delete_flag = #{deleteFlag,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null and creator != ''">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null ">
+        create_time = now(),
+      </if>
+      <if test="modifier != null and modifier != ''">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="updateTime != null ">
+        update_time = now(),
+      </if>
+      <if test="tenantId != null and tenantId != ''">
+        tenant_id = #{tenantId,jdbcType=VARCHAR},
+      </if>
+
+      <if test="remark != null and remark != ''">
+        remark = #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="icon != null and icon != ''">
+        icon = #{icon,jdbcType=VARCHAR},
+      </if>
+      <if test="approve != null and approve != ''">
+        approve = #{approve,jdbcType=VARCHAR},
+      </if>
+      <if test="industryCode != null and industryCode != ''">
+        industry_code = #{industryCode,jdbcType=VARCHAR},
+      </if>
+      <if test="appVerCode != null and appVerCode != ''">
+        app_ver_code = #{appVerCode,jdbcType=VARCHAR},
+      </if>
+      <if test="resourceProperty != null and resourceProperty != ''">
+        resource_property = #{resourceProperty,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where
+        id = #{id,jdbcType=BIGINT}
+  </update>
+
+  <!--是否存在资源类型子节点-->
+  <select id="hasChildByResourceTypeId" resultType="Integer" parameterType="com.chinatower.bdm.api.entity.ResourceType">
+    select
+        count(1)
+    from
+        resource_type
+    where
+        parent_id = #{resourceTypeId}
+        and delete_flag = 0
+        <if test="tenantId != null and tenantId != ''">
+          and tenant_id = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+          and industry_code = #{industryCode,jdbcType=VARCHAR}
+        </if>
+  </select>
+
+  <!--是否存在资源类型名称相同-->
+  <select id="checkResourceTypeNameUnique" resultType="Integer" parameterType="com.chinatower.bdm.api.entity.ResourceType">
+    select
+        count(1)
+    from
+        resource_type
+    where
+        resource_type_name = #{resourceTypeName}
+        and delete_flag = 0
+        <if test="tenantId != null and tenantId != ''">
+          and tenant_id = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="resourceTypeId != null and resourceTypeId != ''">
+          and resource_type_id != #{resourceTypeId,jdbcType=VARCHAR}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+          and industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+          and app_ver_code = #{appVerCode}
+        </if>
+  </select>
+
+  <!--是否存在资源-->
+  <select id="checkResourceUnique" resultType="Integer" parameterType="com.chinatower.bdm.api.entity.ResourceType">
+    select
+        count(1)
+    from
+        resource_conf
+    where
+        delete_flag = 0
+        <if test="tenantId != null and tenantId != ''">
+          and tenant_id = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="resourceTypeId != null and resourceTypeId != ''">
+          and resource_type_id = #{resourceTypeId,jdbcType=VARCHAR}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+          and industry_code = #{industryCode}
+        </if>
+  </select>
+
+  <!--获取初始化数据-->
+  <select id="getResourceTypeInt" parameterType="com.chinatower.bdm.api.entity.ResourceTypeInt"
+          resultType="com.chinatower.bdm.api.entity.ResourceTypeInt">
+    SELECT
+      d.resource_type_name,
+      d.order_num,
+      d.remark,
+      d.icon,
+      d.approve,
+      d.app_ver_code
+      d.industry_code,
+      d.creator,
+      d.create_time,
+      d.modifier,
+      d.update_time,
+      d.delete_flag
+    FROM
+        resource_type_int d
+    <where>
+      AND d.app_ver_code IN
+      <foreach collection="appVerCodes" item="labelIdItem" index="index" open="(" close=")" separator=",">
+        #{labelIdItem}
+      </foreach>
+    </where>
+  </select>
+
+  <!--增加资源类型-->
+  <insert id="insertResourceTypeInitData" parameterType="java.util.List" keyColumn="id" keyProperty="id"  useGeneratedKeys="true">
+    insert into resource_type (
+      resource_type_id,
+      resource_type_name,
+      parent_id,
+      order_num,
+      `status`,
+      delete_flag,
+      creator,
+      create_time,
+      modifier,
+      update_time,
+      tenant_id,
+      remark,
+      icon,
+      approve,
+      type_level_url,
+      industry_code,
+      app_ver_code
+    )
+    values
+    <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+      (
+        #{item.resourceTypeId,jdbcType=VARCHAR},
+        #{item.resourceTypeName,jdbcType=VARCHAR},
+        #{item.parentId,jdbcType=VARCHAR},
+        #{item.orderNum,jdbcType=DECIMAL},
+        '0',
+        '0',
+        #{item.creator,jdbcType=VARCHAR},
+        now(),
+        #{item.modifier,jdbcType=VARCHAR},
+        now(),
+        #{item.tenantId,jdbcType=VARCHAR},
+        #{item.remark,jdbcType=VARCHAR},
+        #{item.icon,jdbcType=VARCHAR},
+        #{item.approve,jdbcType=VARCHAR},
+        #{item.typeLevelUrl,jdbcType=VARCHAR},
+        #{item.industryCode,jdbcType=VARCHAR},
+        #{item.appVerCode,jdbcType=VARCHAR}
+      )
+    </foreach>
+  </insert>
+
+  <!--查询资源类型-->
+  <select id="queryResourceTypeList" parameterType="com.chinatower.bdm.api.entity.ResourceType"
+          resultType="com.chinatower.bdm.api.entity.ResourceType">
+    SELECT
+      d.id,
+      d.resource_type_id,
+      d.resource_type_name,
+      d.parent_id,
+      d.parent_name,
+      d.order_num,
+      d.`status`,
+      d.delete_flag,
+      d.creator,
+      d.create_time,
+      d.modifier,
+      d.update_time,
+      d.tenant_id,
+      s.tenant_name,
+      d.remark,
+      d.icon,
+      d.approve,
+      d.industry_code,
+      d.app_ver_code,
+      d.resource_property,
+      a.AREA_NAME as province_name,
+      b.AREA_NAME as city_name
+    FROM
+      resource_type d
+      LEFT JOIN sys_tenant_info s ON d.tenant_id = s.tenant_id
+      LEFT JOIN sys_area a on a.AREA_CODE=s.province_id
+      LEFT JOIN sys_area b on b.AREA_CODE=s.city_id
+    WHERE d.delete_flag = 0 AND d.status = '0'
+        <choose>
+          <when test="parentIdList != null and parentIdList.size() >0">
+            AND d.parent_id IN
+            <foreach collection="parentIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+              #{labelIdItem}
+            </foreach>
+          </when>
+          <otherwise>
+            <if test="parentId == null or parentId == ''">
+              AND d.parent_id = '0'
+            </if>
+          </otherwise>
+        </choose>
+
+        <if test="resourceTypeIdList != null and resourceTypeIdList.size() >0">
+          AND d.resource_type_id IN
+          <foreach collection="resourceTypeIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+            #{labelIdItem}
+          </foreach>
+        </if>
+
+        <if test="tenantId != null and tenantId != ''">
+          AND d.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+          AND d.industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+          AND d.app_ver_code = #{appVerCode}
+        </if>
+        <if test="resourceProperty != null and resourceProperty != ''">
+          AND d.resource_property = #{resourceProperty}
+        </if>
+
+        <choose>
+          <when test="prop != null and prop != '' and order != null and order != '' ">
+            <if test='prop == "createTime"'>
+              order by d.create_time
+              <if test='order == "desc"'>
+                desc
+              </if>
+            </if>
+            <if test='prop == "updateTime"'>
+              order by d.update_time
+              <if test='order == "desc"'>
+                desc
+              </if>
+            </if>
+          </when>
+          <otherwise>
+            order by d.create_time  desc
+          </otherwise>
+        </choose>
+  </select>
+
+  <select id="selectResourceTypeId" parameterType="com.chinatower.bdm.api.entity.ResourceType"
+          resultType="com.chinatower.bdm.api.entity.ResourceType">
+      SELECT
+        resource_type_id,
+        parent_id
+      FROM resource_type WHERE delete_flag = 0 AND status = '0'
+      <if test="resourceTypeName != null and resourceTypeName != ''">
+        AND resource_type_name like CONCAT('%',#{resourceTypeName},'%')
+      </if>
+      <if test="approve != null and approve != ''">
+        AND approve = #{approve}
+      </if>
+      <if test="tenantId != null and tenantId != ''">
+        AND tenant_id = #{tenantId}
+      </if>
+      <if test="industryCode != null and industryCode != ''">
+        AND industry_code = #{industryCode}
+      </if>
+      <if test="resourceProperty != null and resourceProperty != ''">
+        AND resource_property = #{resourceProperty}
+      </if>
+      <if test="appVerCode != null and appVerCode != ''">
+        AND app_ver_code = #{appVerCode}
+      </if>
+  </select>
+
+
+  <!--查询资源类型-->
+  <select id="selectResourceTypeListNew" parameterType="com.chinatower.bdm.api.entity.ResourceType"
+          resultType="com.chinatower.bdm.api.entity.ResourceType">
+    SELECT
+    d.id,
+    d.resource_type_id,
+    d.resource_type_name,
+    d.parent_id,
+    d.parent_name,
+    d.order_num,
+    d.`status`,
+    d.delete_flag,
+    d.creator,
+    d.create_time,
+    d.modifier,
+    d.update_time,
+    d.tenant_id,
+    s.tenant_name,
+    d.remark,
+    d.icon,
+    d.approve,
+    d.industry_code,
+    d.app_ver_code,
+    a.AREA_NAME as province_name,
+    b.AREA_NAME as city_name
+    FROM
+    resource_type d
+    LEFT JOIN sys_tenant_info s ON d.tenant_id = s.tenant_id
+    LEFT JOIN sys_area a on a.AREA_CODE=s.province_id
+    LEFT JOIN sys_area b on b.AREA_CODE=s.city_id
+    WHERE
+    d.delete_flag = 0
+
+    <if test="resourceTypeId != null and resourceTypeId != ''">
+      AND d.resource_type_id = #{resourceTypeId}
+    </if>
+    <if test="tenantId != null and tenantId != ''">
+      AND d.tenant_id = #{tenantId}
+    </if>
+
+  </select>
+
+
+  <select id="selectResourceTypeList1New" parameterType="com.chinatower.bdm.api.entity.ResourceType"
+          resultType="com.chinatower.bdm.api.entity.ResourceType">
+    SELECT
+    d.id,
+    d.resource_type_id,
+    d.resource_type_name,
+    d.parent_id,
+    d.parent_name,
+    d.order_num,
+    d.`status`,
+    d.delete_flag,
+    d.creator,
+    d.create_time,
+    d.modifier,
+    d.update_time,
+    d.tenant_id,
+    s.tenant_name,
+    d.remark,
+    d.icon,
+    d.approve,
+    d.industry_code,
+    d.app_ver_code,
+    d.resource_property,
+    a.AREA_NAME as province_name,
+    b.AREA_NAME as city_name
+    FROM
+    resource_type d
+    LEFT JOIN sys_tenant_info s ON d.tenant_id = s.tenant_id
+    LEFT JOIN sys_area a on a.AREA_CODE=s.province_id
+    LEFT JOIN sys_area b on b.AREA_CODE=s.city_id
+    WHERE
+    d.delete_flag = 0
+    AND d.parent_id in
+    <foreach collection="list" item="labelIdItem" index="index" open="(" close=")" separator=",">
+      #{labelIdItem.resourceTypeId}
+    </foreach>
+    <if test="tenantId != null and tenantId != ''">
+      AND d.tenant_id = #{tenantId}
+    </if>
+    <if test="industryCode != null and industryCode != ''">
+      AND d.industry_code = #{industryCode}
+    </if>
+    <if test="appVerCode != null and appVerCode != ''">
+      AND d.app_ver_code = #{appVerCode}
+    </if>
+    <if test="resourceProperty != null and resourceProperty != ''">
+      AND d.resource_property = #{resourceProperty}
+    </if>
+    order by d.create_time  desc
+  </select>
+
+</mapper>

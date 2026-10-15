@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.VmDeviceMapper">
+
+    <select id="getGridUserByGridId" resultType="java.lang.String">
+        SELECT GROUP_CONCAT(b.user_id)
+        FROM
+            bm_gridkeeper a
+                LEFT JOIN sys_user b ON a.staff_id = b.user_id
+                LEFT JOIN bm_grid_keeper_ref d ON a.keeper_id = d.keeper_id and d.delete_flag = '0'
+        WHERE d.grid_id = #{gridId} and a.delete_flag = '0'
+    </select>
+
+    <select id="getUserInfoByLongRoleIdsAndIndustryCode" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select DISTINCT su.user_id, su.dept_id, su.user_name, su.user_type, su.nick_name, su.email, su.avatar, su.phonenumber,
+        su.sex, su.status, su.del_flag, su.login_ip, su.login_date, su.remark, su.login_fail_num,
+        su.enterprise_id, su.tenant_id, su.is_tenant_admin from sys_user su
+        inner join sys_user_role sur on sur.user_id = su.USER_ID LEFT JOIN sys_dept de on FIND_IN_SET(de.DEPT_ID,su.DEPT_ID)
+        <where>
+            su.DEL_FLAG = '0' and su.STATUS = '0' and de.INDUSTRY_CODE = #{industryCode}
+            <if test='tenantId != null and tenantId != ""'>
+                AND su.tenant_id = #{tenantId}
+            </if>
+            <if test="roleIdList != null and roleIdList.size() > 0 ">
+                AND sur.role_id in
+                <foreach collection="roleIdList" item="item" index="index" open="(" separator="," close=") ">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="queryDeviceList"  resultType="com.chinatower.platform.entity.VmDeviceSiteVO"
+            parameterType="java.util.List">
+        SELECT
+        a.latitude,
+        a.longitude,
+        a.location,
+        a.province_id,
+        a.city_id,
+        a.county_id,
+        a.height,
+        a.model_code AS modelId,
+        p.area_name AS provinceName,
+        ci.area_name AS cityName,
+        co.area_name AS countyName,
+        a.device_code as deviceCode,
+        a.device_name AS deviceName,
+        a.alarm_location,
+        a.image_url AS deviceImageUrl
+        FROM vm_device_info_t a
+        LEFT JOIN sys_area p ON a.province_id = p.area_code
+        LEFT JOIN sys_area ci ON a.city_id = ci.area_code
+        LEFT JOIN sys_area co ON a.county_id = co.area_code
+        WHERE a.delete_flag = '0'
+        and a.device_code in
+        <foreach collection="deviceCodeList" index="index" open="(" close=")" separator="," item="code">
+            #{code}
+        </foreach>
+    </select>
+
+
+    <select id="getWarningTypeName" resultType="java.lang.String">
+        SELECT type_name from sys_alarm_type where type_value = #{warningTypeId} limit 1
+    </select>
+
+    <select id="getUserInfoByUserIds" resultType="com.chinatower.event.entity.vo.SysUserVO">
+        select DISTINCT su.user_id, su.dept_id, su.user_name, su.user_type, su.nick_name, su.email, su.avatar, su.phonenumber,su.telephone as telPhone,
+        su.sex, su.status, su.del_flag, su.login_ip, su.login_date, su.create_by, su.remark, su.login_fail_num,
+        su.enterprise_id, su.tenant_id, su.is_tenant_admin, sd.dept_name from sys_user su left join sys_dept sd on su.dept_id = sd.dept_id
+        WHERE su.del_flag = '0' and su.STATUS = '0'
+        <if test='userIdList != null and userIdList != ""'>
+            AND su.user_id in
+            <foreach collection="userIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+</mapper>

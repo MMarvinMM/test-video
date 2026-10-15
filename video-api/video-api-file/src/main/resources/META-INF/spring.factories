@@ -1,0 +1,6 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.file.feign.fallback.FileObsFallbackFactory,\
+  com.chinatower.file.feign.fallback.FileFallbackFactory,\
+  com.chinatower.file.deal.FileUrlEncryptUtil\
+
+

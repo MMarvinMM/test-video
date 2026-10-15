@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.pushsys.mapper.ManagementAreaMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="managementAreaMap" type="com.chinatower.system.api.model.ManagementAreaVO">
+        <result column="area_code" property="areaCode" jdbcType="VARCHAR" />
+        <result column="area_name" property="areaName" jdbcType="VARCHAR" />
+        <result column="area_level" property="areaLevel" jdbcType="VARCHAR" />
+        <result column="parent_area_code" property="parentAreaCode" jdbcType="VARCHAR" />
+        <result column="parent_area_name" property="parentAreaName" jdbcType="VARCHAR" />
+        <result column="area_status" property="areaStatus" jdbcType="VARCHAR" />
+        <result column="area_path" property="areaPath" jdbcType="VARCHAR" />
+        <result column="creator" property="creator" jdbcType="VARCHAR" />
+        <result column="creator_date" property="creatorDate" jdbcType="DATE" />
+        <result column="modifier" property="modifier" jdbcType="VARCHAR" />
+        <result column="modifier_date" property="modifierDate" jdbcType="DATE" />
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR" />
+
+    </resultMap>
+
+
+
+
+    <!-- 查询管理区域信息 -->
+    <select id="getManagementArea"  resultMap="managementAreaMap"  parameterType="com.chinatower.system.api.model.ManagementAreaVO">
+        select  area_code,area_name,area_level,parent_area_code,area_status,area_path  from sys_management_area_t  where  1 = 1
+        <if test='areaCode != null and areaCode != "" '>
+            and   area_code = #{areaCode}
+        </if>
+        <if test='areaName != null and areaName != ""'>
+            and   area_name = #{areaName}
+        </if>
+        <if test='areaLevel !=null and areaLevel != "" '>
+            and   area_level = #{areaLevel}
+        </if>
+        <if test='parentAreaCode !=null and parentAreaCode != "" and parentAreaCode != "0"'>
+            AND   parent_area_code = #{parentAreaCode}
+        </if>
+        <if test='parentAreaName !=null and parentAreaName != ""'>
+            AND   parent_area_name = #{parentAreaName}
+        </if>
+
+        <if test='managementAreaCodeSet != null and managementAreaCodeSet.size() > 0'>
+            AND area_code IN
+            <foreach collection="managementAreaCodeSet" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+
+        AND delete_Flag = '0'
+    </select>
+
+
+    <update id="uptManagementAreaInfoBatch" parameterType="java.util.List">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update sys_management_area_t set area_code = #{item.areaCode},area_name= #{item.areaName},
+            area_level= #{item.areaLevel},parent_area_code= #{item.parentAreaCode}
+            <if test='item.parentAreaName !=null and item.parentAreaName != ""'>
+            ,parent_area_name= #{item.parentAreaName}
+            </if>
+            ,area_status= #{item.areaStatus},
+            area_path= #{item.areaPath},modifier_date = now()
+            where area_code = #{item.areaCode}
+        </foreach>
+    </update>
+
+
+    <insert id="addManagementAreaInfoBatch" parameterType="java.util.List">
+        insert into sys_management_area_t(area_code,area_name,area_level,parent_area_code,parent_area_name,area_status,area_path,creator,creator_date,
+        modifier,modifier_date,delete_flag)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.areaCode},#{item.areaName},#{item.areaLevel},#{item.parentAreaCode},#{item.parentAreaName},#{item.areaStatus},#{item.areaPath},
+            '',NOW(),'',NOW(),'0')
+        </foreach>
+    </insert>
+
+
+
+
+
+</mapper>

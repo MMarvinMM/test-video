@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderAlgorithmConfigMapper">
+
+    <insert id="batchInsert">
+        INSERT INTO vm_order_algorithm_config (order_code, industry_code, device_code, algorithm_code, algorithm_type,
+                                               creator, delete_flag, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.orderCode}, #{item.industryCode}, #{item.deviceCode}, #{item.algorithmCode}, #{item.algorithmType},
+             #{item.creator}, 0, now())
+        </foreach>
+    </insert>
+
+    <select id="selectByOrderCode" resultType="com.chinatower.common.core.domain.OrderAlgorithmConfigDO">
+        SELECT id, order_code, industry_code, device_code, algorithm_code, algorithm_type,
+               creator, modifier, delete_flag, create_time, update_time
+        FROM vm_order_algorithm_config
+        WHERE order_code = #{orderCode}
+    </select>
+
+    <select id="selectByDeviceCodeListAndTypeAndOrderCode"
+            resultType="com.chinatower.platform.entity.order.OrderAlgorithmConfigVO">
+        SELECT
+            cfg.device_code AS deviceCode,
+            cfg.algorithm_code AS algorithmCode,
+            inf.algorithm_name AS algorithmName
+        FROM vm_order_algorithm_config cfg
+        LEFT JOIN vm_order_algorithms inf ON cfg.order_code = inf.order_code and cfg.algorithm_code = inf.algorithm_code AND inf.delete_flag = '0'
+        WHERE cfg.delete_flag = 0
+        AND cfg.order_code = #{orderCode}
+<!--        AND cfg.algorithm_type = #{type}-->
+        <if test="deviceCodeList != null and deviceCodeList.size() > 0">
+            AND cfg.device_code IN
+            <foreach collection="deviceCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        group by cfg.device_code,cfg.algorithm_code
+    </select>
+
+    <!-- 兜底查询：vm_order_algorithm_config 无数据时，按订单号从 vm_order_algorithms 查询算法，
+         并通过 vm_algorithm_info_t.app_scenarios 区分摄像机(1)/无人机(2) -->
+    <select id="selectAlgorithmInfoByOrderCodeAndAppScenario"
+            resultType="com.chinatower.platform.entity.order.OrderAlgorithmConfigVO">
+        SELECT
+            oral.algorithm_code AS algorithmCode,
+            alg.algorithm_name AS algorithmName
+        FROM vm_order_algorithms oral
+        INNER JOIN vm_algorithm_info_t alg
+            ON alg.algorithm_code = oral.algorithm_code
+            AND alg.delete_flag = '0'
+            AND alg.app_scenarios = #{appScenario}
+        WHERE oral.delete_flag = '0'
+        AND oral.order_code = #{orderCode}
+        GROUP BY oral.algorithm_code
+    </select>
+
+</mapper>

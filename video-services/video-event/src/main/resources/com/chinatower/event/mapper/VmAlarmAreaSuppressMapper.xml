@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.VmAlarmAreaSuppressMapper">
+
+	<resultMap id="BaseResultMap" type="com.chinatower.event.vo.entity.VmAlarmAreaSuppressVO">
+		<id column="area_id" jdbcType="INTEGER" property="areaId" />
+		<result column="alarm_suppress_id" jdbcType="INTEGER" property="alarmSuppressId" />
+		<result column="device_code" jdbcType="VARCHAR" property="deviceCode" />
+		<result column="dev_name" jdbcType="VARCHAR" property="devName" />
+		<result column="channel_code" jdbcType="VARCHAR" property="channelCode" />
+		<result column="area_name" jdbcType="VARCHAR" property="areaName" />
+		<result column="overlap_rate" jdbcType="VARCHAR" property="overlapRate" />
+		<result column="area_type" jdbcType="VARCHAR" property="areaType" />
+		<result column="points" jdbcType="LONGVARCHAR" property="points" />
+		<result column="points_pt" jdbcType="VARCHAR" property="pointsPt" />
+		<result column="points_p" jdbcType="VARCHAR" property="pointsP" />
+		<result column="points_t" jdbcType="VARCHAR" property="pointsT" />
+		<result column="points_z" jdbcType="VARCHAR" property="pointsZ" />
+		<result column="p_min" jdbcType="VARCHAR" property="pMin" />
+		<result column="p_max" jdbcType="VARCHAR" property="pMax" />
+		<result column="t_min" jdbcType="VARCHAR" property="tMin" />
+		<result column="t_max" jdbcType="VARCHAR" property="tMax" />
+		<result column="screenshot" jdbcType="VARCHAR" property="screenshot" />
+		<result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+		<result column="creater_by" jdbcType="VARCHAR" property="createrBy" />
+		<result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+		<result column="update_by" jdbcType="VARCHAR" property="updateBy" />
+		<result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+		<result column="delete_flag" jdbcType="VARCHAR" property="deleteFlag" />
+		<result column="industry_code" jdbcType="VARCHAR" property="industryCode" />
+		<result column="tenant_name" jdbcType="VARCHAR" property="tenantName" />
+		<result column="position_information" jdbcType="VARCHAR" property="positionInformation" />
+		<result column="fill_color" jdbcType="VARCHAR" property="fillColor" />
+		<result column="fill_color_transparency" jdbcType="VARCHAR" property="fillColorTransparency" />
+		<result column="border_color" jdbcType="VARCHAR" property="borderColor" />
+		<result column="border_color_transparency" jdbcType="VARCHAR" property="borderColorTransparency" />
+		<result column="border_thickness" jdbcType="VARCHAR" property="borderThickness" />
+	</resultMap>
+
+	<insert id="insert" keyColumn="area_id" keyProperty="areaId" useGeneratedKeys="true" >
+		insert into vm_alarm_area_suppress ( alarm_suppress_id, device_code, channel_code, area_name, overlap_rate, area_type, points, points_p, points_t, points_z, p_min, p_max, t_min, t_max, screenshot, tenant_id, creater_by, create_time, update_by, update_time, delete_flag )
+		values ( #{alarmSuppressId,jdbcType=INTEGER}, #{deviceCode,jdbcType=VARCHAR}, #{channelCode,jdbcType=VARCHAR}, #{areaName,jdbcType=VARCHAR}, #{overlapRate,jdbcType=VARCHAR}, #{areaType,jdbcType=VARCHAR}, #{points,jdbcType=LONGVARCHAR}, #{pointsP,jdbcType=VARCHAR}, #{pointsT,jdbcType=VARCHAR}, #{pointsZ,jdbcType=VARCHAR}, #{pMin,jdbcType=VARCHAR}, #{pMax,jdbcType=VARCHAR}, #{tMin,jdbcType=VARCHAR}, #{tMax,jdbcType=VARCHAR}, #{screenshot,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR}, #{createrBy,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{updateBy,jdbcType=VARCHAR}, #{updateTime,jdbcType=TIMESTAMP}, #{deleteFlag,jdbcType=VARCHAR} )
+	</insert>
+    <insert id="batchInsert" parameterType="java.util.List">
+		insert into vm_alarm_area_suppress ( alarm_suppress_id, device_code, dev_name, channel_code, area_name, overlap_rate, area_type, points, points_pt, points_p, points_t, points_z, p_min, p_max, t_min, t_max, screenshot, tenant_id,
+		fill_color, fill_color_transparency, border_color, border_color_transparency, border_thickness, creater_by, create_time, update_by, update_time ) values
+		<foreach collection="list" item="item" separator="," >
+			(
+			#{item.alarmSuppressId,jdbcType=INTEGER},
+			#{item.deviceCode,jdbcType=VARCHAR},
+			#{item.devName,jdbcType=VARCHAR},
+			#{item.channelCode,jdbcType=VARCHAR},
+			#{item.areaName,jdbcType=VARCHAR},
+			#{item.overlapRate,jdbcType=VARCHAR},
+			#{item.areaType,jdbcType=VARCHAR},
+			#{item.points,jdbcType=LONGVARCHAR},
+			#{item.pointsPt,jdbcType=VARCHAR},
+			#{item.pointsP,jdbcType=VARCHAR},
+			#{item.pointsT,jdbcType=VARCHAR},
+			#{item.pointsZ,jdbcType=VARCHAR},
+			#{item.pMin,jdbcType=VARCHAR},
+			#{item.pMax,jdbcType=VARCHAR},
+			#{item.tMin,jdbcType=VARCHAR},
+			#{item.tMax,jdbcType=VARCHAR},
+			#{item.screenshot,jdbcType=VARCHAR},
+			#{item.tenantId,jdbcType=VARCHAR},
+			#{item.fillColor,jdbcType=VARCHAR},
+			#{item.fillColorTransparency,jdbcType=VARCHAR},
+			#{item.borderColor,jdbcType=VARCHAR},
+			#{item.borderColorTransparency,jdbcType=VARCHAR},
+			#{item.borderThickness,jdbcType=VARCHAR},
+			#{item.createrBy,jdbcType=VARCHAR},
+			now(),
+			#{item.updateBy,jdbcType=VARCHAR},
+			#{item.updateTime,jdbcType=TIMESTAMP}
+			)
+		</foreach>
+	</insert>
+
+	<insert id="batchUavInsert" parameterType="java.util.List">
+		INSERT INTO `vm_alarm_uav_area_suppress` (`alarm_suppress_id`, `uav_device_code`, `uav_device_name`, `flight_route_id`,
+		                                          `area_name`, `layer_id`, `point`, `point_json`, `flight_route_name`,
+		                                          `tenant_id`, `industry_code`, `delete_flag`, `create_time`, `update_time`, `create_user`, `update_user`) values
+		<foreach collection="list" item="item" separator="," >
+			(
+			#{item.alarmSuppressId},
+			#{item.uavDeviceCode},
+			#{item.uavDeviceName},
+			#{item.flightRouteId},
+			#{item.areaName},
+			#{item.layerId},
+			#{item.point},
+			#{item.pointJson},
+			#{item.flightRouteName},
+			#{item.tenantId},
+			#{item.industryCode},
+			'0',
+			now(),
+			now(),
+			#{item.createUser},
+			#{item.updateUser}
+			)
+		</foreach>
+	</insert>
+
+    <delete id="deleteByPrimaryKey" >
+		<!--delete from  vm_alarm_area_suppress where area_id = #{areaId}-->
+	</delete>
+	<delete id="deleteByStrategyId">
+		UPDATE vm_alarm_area_suppress SET delete_flag = 1,update_time =now() ,update_by=#{updateBy} WHERE alarm_suppress_id = #{id}
+	</delete>
+	<delete id="deleteUavByStrategyId">
+		UPDATE vm_alarm_uav_area_suppress SET delete_flag = '1',update_time =now() ,update_user=#{updateBy} WHERE alarm_suppress_id = #{id}
+	</delete>
+
+	<update id="update" >
+		update vm_alarm_area_suppress
+		<set>
+			<if test="alarmSuppressId!=null">alarm_suppress_id = #{alarmSuppressId,jdbcType=INTEGER}, </if>
+			<if test="deviceCode!=null and deviceCode!=''">device_code = #{deviceCode,jdbcType=VARCHAR}, </if>
+			<if test="channelCode!=null and channelCode!=''">channel_code = #{channelCode,jdbcType=VARCHAR}, </if>
+			<if test="areaName!=null and areaName!=''">area_name = #{areaName,jdbcType=VARCHAR}, </if>
+			<if test="overlapRate!=null and overlapRate!=''">overlap_rate = #{overlapRate,jdbcType=VARCHAR}, </if>
+			<if test="areaType!=null and areaType!=''">area_type = #{areaType,jdbcType=VARCHAR}, </if>
+			<if test="points!=null and points!=''">points = #{points,jdbcType=LONGVARCHAR}, </if>
+			<if test="pointsP!=null and pointsP!=''">points_p = #{pointsP,jdbcType=VARCHAR}, </if>
+			<if test="pointsT!=null and pointsT!=''">points_t = #{pointsT,jdbcType=VARCHAR}, </if>
+			<if test="pMin!=null and pMin!=''">p_min = #{pMin,jdbcType=VARCHAR}, </if>
+			<if test="pMax!=null and pMax!=''">p_max = #{pMax,jdbcType=VARCHAR}, </if>
+			<if test="tMin!=null and tMin!=''">t_min = #{tMin,jdbcType=VARCHAR}, </if>
+			<if test="tMax!=null and tMax!=''">t_max = #{tMax,jdbcType=VARCHAR}, </if>
+			<if test="tenantId!=null and tenantId!=''">tenant_id = #{tenantId,jdbcType=VARCHAR}, </if>
+			<if test="createrBy!=null and createrBy!=''">creater_by = #{createrBy,jdbcType=VARCHAR}, </if>
+			<if test="createTime!=null">create_time = #{createTime,jdbcType=TIMESTAMP}, </if>
+			<if test="updateBy!=null and updateBy!=''">update_by = #{updateBy,jdbcType=VARCHAR}, </if>
+			<if test="updateTime!=null">update_time = #{updateTime,jdbcType=TIMESTAMP}, </if>
+			<if test="deleteFlag!=null and deleteFlag!=''">delete_flag = #{deleteFlag,jdbcType=VARCHAR}, </if>
+			<if test="positionInformation!=null and positionInformation!=''">position_information = #{positionInformation}, </if>
+		</set>
+		where area_id=#{areaId}
+
+	</update>
+
+	<update id="batchUpdate" >
+
+		<foreach collection="list" item="item" index="index" separator=";">
+			update vm_alarm_area_suppress
+			<set>
+				<if test="item.positionInformation!=null and item.positionInformation!=''">position_information = #{item.positionInformation}, </if>
+			</set>
+			where
+			area_id=#{item.areaId}
+
+		</foreach>
+
+	</update>
+
+
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" >
+		SELECT area_id,
+		 alarm_suppress_id,
+		 device_code,
+		 dev_name,
+		 channel_code,
+		 area_name,
+		 overlap_rate,
+		 area_type,
+		 points,
+		 points_pt,
+		 points_p,
+		 points_t,
+		 p_min,
+		 p_max,
+		 t_min,
+		 t_max,
+		 screenshot,
+		 tenant_id,
+		 creater_by,
+		 create_time,
+		 update_by,
+		 update_time,
+		 delete_flag
+		FROM vm_alarm_area_suppress
+		WHERE area_id = #{areaId,jdbcType=INTEGER}
+	</select>
+
+	<select id="selectAll" resultMap="BaseResultMap" >
+		SELECT area_id,
+		alarm_suppress_id,
+		device_code,
+		dev_name,
+		channel_code,
+		area_name,
+		overlap_rate,
+		area_type,
+		points,
+		points_pt,
+		points_p,
+		points_t,
+		p_min,
+		p_max,
+		t_min,
+		t_max,
+		screenshot,
+		tenant_id,
+		creater_by,
+		create_time,
+		update_by,
+		update_time,
+		position_information,
+		delete_flag
+		FROM vm_alarm_area_suppress
+		WHERE delete_flag = 0
+		<if test="areaId!=null "> and vm_alarm_area_suppress.area_id = #{areaId,jdbcType=INTEGER}</if>
+		<if test="alarmSuppressId!=null "> and vm_alarm_area_suppress.alarm_suppress_id = #{alarmSuppressId,jdbcType=INTEGER}</if>
+		<if test="deviceCode!=null and deviceCode!=''"> and vm_alarm_area_suppress.device_code = #{deviceCode,jdbcType=VARCHAR}</if>
+		<if test="channelCode!=null and channelCode!=''"> and vm_alarm_area_suppress.channel_code = #{channelCode,jdbcType=VARCHAR}</if>
+		<if test="areaName!=null and areaName!=''"> and vm_alarm_area_suppress.area_name = #{areaName,jdbcType=VARCHAR}</if>
+		<if test="overlapRate!=null and overlapRate!=''"> and vm_alarm_area_suppress.overlap_rate = #{overlapRate,jdbcType=VARCHAR}</if>
+		<if test="areaType!=null and areaType!=''"> and vm_alarm_area_suppress.area_type = #{areaType,jdbcType=VARCHAR}</if>
+		<if test="points!=null and points!=''"> and vm_alarm_area_suppress.points = #{points,jdbcType=LONGVARCHAR}</if>
+		<if test="pointsP!=null and pointsP!=''"> and vm_alarm_area_suppress.points_p = #{pointsP,jdbcType=VARCHAR}</if>
+		<if test="pointsT!=null and pointsT!=''"> and vm_alarm_area_suppress.points_t = #{pointsT,jdbcType=VARCHAR}</if>
+		<if test="pMin!=null and pMin!=''"> and vm_alarm_area_suppress.p_min = #{pMin,jdbcType=VARCHAR}</if>
+		<if test="pMax!=null and pMax!=''"> and vm_alarm_area_suppress.p_max = #{pMax,jdbcType=VARCHAR}</if>
+		<if test="tMin!=null and tMin!=''"> and vm_alarm_area_suppress.t_min = #{tMin,jdbcType=VARCHAR}</if>
+		<if test="tMax!=null and tMax!=''"> and vm_alarm_area_suppress.t_max = #{tMax,jdbcType=VARCHAR}</if>
+		<if test="tenantId!=null and tenantId!=''"> and vm_alarm_area_suppress.tenant_id = #{tenantId,jdbcType=VARCHAR}</if>
+		<if test="createrBy!=null and createrBy!=''"> and vm_alarm_area_suppress.creater_by = #{createrBy,jdbcType=VARCHAR}</if>
+		<if test="createTime!=null "> and vm_alarm_area_suppress.create_time = #{createTime,jdbcType=TIMESTAMP}</if>
+		<if test=" startDate!=null and startDate!='' and endDate!=null and endDate!='' "> and vm_alarm_area_suppress.create_time BETWEEN #{startDate} and #{endDate}</if>
+		<if test="updateBy!=null and updateBy!=''"> and vm_alarm_area_suppress.update_by = #{updateBy,jdbcType=VARCHAR}</if>
+		<if test="updateTime!=null "> and vm_alarm_area_suppress.update_time = #{updateTime,jdbcType=TIMESTAMP}</if>
+		<if test="deleteFlag!=null and deleteFlag!=''"> and vm_alarm_area_suppress.delete_flag = #{deleteFlag,jdbcType=VARCHAR}</if>
+		<if test="strategyIdList!=null and strategyIdList.size()>0"> and alarm_suppress_id in
+			<foreach collection="strategyIdList" item="strategyId" index="index" open="(" close=")" separator=",">
+				#{strategyId}
+			</foreach>
+		</if>
+		<choose>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				order by create_time asc
+			</when>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				order by create_time desc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				order by update_time asc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				order by update_time desc
+			</when>
+            <otherwise>
+                order by area_id desc
+            </otherwise>
+      </choose>
+	</select>
+
+	<select id="selectList" resultMap="BaseResultMap" >
+		SELECT area_id,
+		alarm_suppress_id,
+		device_code,
+		dev_name,
+		channel_code,
+		area_name,
+		overlap_rate,
+		area_type,
+		points,
+		points_pt,
+		points_p,
+		points_t,
+		points_z,
+		p_min,
+		p_max,
+		t_min,
+		t_max,
+		screenshot,
+		tenant_id,
+		fill_color,
+		fill_color_transparency,
+		border_color,
+		border_color_transparency,
+		border_thickness,
+		creater_by,
+		create_time,
+		update_by,
+		update_time,
+		delete_flag
+		FROM vm_alarm_area_suppress
+		WHERE delete_flag = 0
+		<if test="id!=null">
+			and alarm_suppress_id = #{id}
+		</if>
+		<if test="strategyIdList!=null ">
+			and alarm_suppress_id in
+			<foreach collection="strategyIdList" item="strategyId" index="index" open="(" close=")" separator=",">
+				#{strategyIdList}
+			</foreach>
+		</if>
+		<choose>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				order by create_time asc
+			</when>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				order by create_time desc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				order by update_time asc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				order by update_time desc
+			</when>
+			<otherwise>
+				order by area_id desc
+			</otherwise>
+      </choose>
+	</select>
+
+	<select id="selectAreaSuppress" resultMap="BaseResultMap" parameterType="com.chinatower.event.vo.entity.VmAlarmAreaSuppressVO" >
+		SELECT area_id,
+		alarm_suppress_id,
+		device_code,
+		dev_name,
+		channel_code,
+		area_name,
+		overlap_rate,
+		area_type,
+		points,
+		points_pt,
+		points_p,
+		points_t,
+		points_z,
+		p_min,
+		p_max,
+		t_min,
+		t_max,
+		screenshot,
+		tenant_id,
+		creater_by,
+		create_time,
+		update_by,
+		update_time,
+		position_information,
+		delete_flag
+		FROM vm_alarm_area_suppress
+		WHERE delete_flag='0'
+		<if test="areaId!=null "> and area_id = #{areaId,jdbcType=INTEGER}</if>
+		<if test="alarmSuppressId!=null "> and alarm_suppress_id = #{alarmSuppressId,jdbcType=INTEGER}</if>
+		<if test="deviceCode!=null and deviceCode!=''"> and device_code = #{deviceCode,jdbcType=VARCHAR}</if>
+		<if test="devName!=null and devName!=''"> and dev_name = #{devName,jdbcType=VARCHAR}</if>
+		<if test="channelCode!=null and channelCode!=''"> and channel_code = #{channelCode,jdbcType=VARCHAR}</if>
+		<if test="areaName!=null and areaName!=''"> and area_name = #{areaName,jdbcType=VARCHAR}</if>
+		<if test="overlapRate!=null and overlapRate!=''"> and overlap_rate = #{overlapRate,jdbcType=VARCHAR}</if>
+		<if test="areaType!=null and areaType!=''"> and area_type = #{areaType,jdbcType=VARCHAR}</if>
+		<if test="points!=null and points!=''"> and points = #{points,jdbcType=LONGVARCHAR}</if>
+		<if test="pointsP!=null and pointsP!=''"> and points_p = #{pointsP,jdbcType=VARCHAR}</if>
+		<if test="pointsT!=null and pointsT!=''"> and points_t = #{pointsT,jdbcType=VARCHAR}</if>
+		<if test="pointsZ!=null and pointsZ!=''"> and points_z = #{pointsZ,jdbcType=VARCHAR}</if>
+		<if test="pMin!=null and pMin!=''"> and p_min = #{pMin,jdbcType=VARCHAR}</if>
+		<if test="pMax!=null and pMax!=''"> and p_max = #{pMax,jdbcType=VARCHAR}</if>
+		<if test="tMin!=null and tMin!=''"> and t_min = #{tMin,jdbcType=VARCHAR}</if>
+		<if test="tMax!=null and tMax!=''"> and t_max = #{tMax,jdbcType=VARCHAR}</if>
+		<if test="tenantId!=null and tenantId!=''"> and tenant_id = #{tenantId,jdbcType=VARCHAR}</if>
+		<if test="createrBy!=null and createrBy!=''"> and creater_by = #{createrBy,jdbcType=VARCHAR}</if>
+		<if test="createTime!=null "> and create_time = #{createTime,jdbcType=TIMESTAMP}</if>
+		<if test="updateBy!=null and updateBy!=''"> and update_by = #{updateBy,jdbcType=VARCHAR}</if>
+		<if test="updateTime!=null "> and update_time = #{updateTime,jdbcType=TIMESTAMP}</if>
+		<if test="screenshot!=null and screenshot!=''"> and screenshot = #{screenshot,jdbcType=VARCHAR}</if>
+	</select>
+
+	<select id="selectDeviceInfo" parameterType="string" resultType="com.chinatower.platform.model.vo.DeviceModelVO">
+		select t.device_code as deviceCode,m.pic_sensor_length as picSensorLength,m.pic_sensor_width as picSensorWidth,m.min_focus as minFocus
+		from vm_device_info_t t
+		LEFT JOIN vm_device_model_t m on t.model_code=m.mfgr_code and t.device_model_code=m.device_model_code
+		where t.delete_flag=0 and t.device_code = #{deviceCode}
+	</select>
+	<select id="selectDeviceModel" parameterType="string" resultType="com.chinatower.platform.model.vo.DeviceModelVO">
+		select t.device_code as deviceCode,m.pic_sensor_length as picSensorLength,m.pic_sensor_width as picSensorWidth,m.min_focus as minFocus
+		from vm_device_info_t t
+		LEFT JOIN vm_device_model_t m on t.model_code=m.mfgr_code and t.device_model_code=m.device_model_code
+		where t.delete_flag=0 and m.device_model_code is not null
+		and t.device_code = #{deviceCode}
+	</select>
+
+	<select id="selectAreaSuppressList" resultMap="BaseResultMap" parameterType="com.chinatower.event.vo.entity.VmAlarmAreaSuppressVO" >
+		SELECT b.area_id,
+		b.area_name,
+		a.tenant_id,
+		       b.points_p,
+		       b.points_t,
+		       b.points_z,
+		       b.points,
+		       b.position_information,
+		c.tenant_name
+		FROM vm_alarm_suppress_strategy a
+		LEFT JOIN  vm_alarm_area_suppress b on a.id = b.alarm_suppress_id
+		LEFT JOIN sys_tenant_info c on a.tenant_id = c.tenant_id
+		WHERE a.delete_flag='0' and b.delete_flag='0'
+		<if test="industryCode !=null and industryCode !='' "> and a.industry_code = #{industryCode,jdbcType=INTEGER}</if>
+		<if test="tenantId !=null and tenantId !='' "> and a.tenant_id = #{tenantId,jdbcType=INTEGER}</if>
+		<if test="channelCode !=null and channelCode !=''"> and b.channel_code = #{channelCode,jdbcType=VARCHAR}</if>
+	</select>
+
+	<select id="areaSuppressCheck" resultMap="BaseResultMap" parameterType="com.chinatower.event.vo.entity.VmAlarmAreaSuppressVO" >
+		SELECT area_id,
+		alarm_suppress_id,
+		device_code,
+		dev_name,
+		channel_code,
+		area_name,
+		overlap_rate,
+		area_type,
+		points,
+		points_pt,
+		points_p,
+		points_t,
+		p_min,
+		p_max,
+		t_min,
+		t_max,
+		screenshot,
+		tenant_id,
+		creater_by,
+		create_time,
+		update_by,
+		update_time,
+		delete_flag
+		FROM vm_alarm_area_suppress
+		WHERE delete_flag='0'
+		<if test="remark=='update'"> and area_id != #{areaId,jdbcType=INTEGER}</if>
+		<if test="areaName!=null and areaName!=''"> and area_name = #{areaName,jdbcType=VARCHAR}</if>
+		<if test="tenantId!=null and tenantId!=''"> and tenant_id = #{tenantId,jdbcType=VARCHAR}</if>
+		</select>
+	<select id="selectUavList" resultType="com.chinatower.event.vo.entity.VmAlarmUavAreaSuppressVO"
+			parameterType="com.chinatower.event.vo.entity.VmAlarmSuppressStrategyVO">
+		SELECT
+			`uav_area_id`,
+			`alarm_suppress_id`,
+			`uav_device_code`,
+			`uav_device_name`,
+			`flight_route_id`,
+			`area_name`,
+			`layer_id`,
+			`point`,
+			`point_json`,
+			`flight_route_name`,
+			`tenant_id`,
+			`industry_code`,
+			`delete_flag`,
+			`create_time`,
+			`update_time`,
+			`create_user`,
+			`update_user`
+		FROM
+			vm_alarm_uav_area_suppress where delete_flag = '0'
+		<if test="id!=null">
+			and alarm_suppress_id = #{id}
+		</if>
+			order by uav_area_id desc
+	</select>
+</mapper>

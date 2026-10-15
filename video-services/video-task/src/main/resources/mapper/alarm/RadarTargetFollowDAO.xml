@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.RadarTargetFollowDAO">
+
+    <select id="getSysConfig" resultType="com.chinatower.platform.entity.admin.SysConfig">
+        select config_id, config_name, config_key, config_value, config_type, creator, create_time, modifier, update_time, remark
+        from sys_config
+        where config_key = #{configKey}
+    </select>
+
+    <delete id="deleteByExpireCreateTime">
+        delete from vm_radar_target_follow where create_time <![CDATA[ <= ]]> #{expireCreateTime}
+    </delete>
+</mapper>

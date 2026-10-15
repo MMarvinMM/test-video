@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.cascade.modules.config.mapper.CascadeConfigMapper">
+    <insert id="insertBatch" parameterType="com.chinatower.platform.model.dto.CascadeConfigSyncVO">
+        INSERT INTO vm_platform_data_config
+            (`platform_code`, `platform_name`, `platform_level`, `platform_parent_code`, `gateway_url`, `general_url`, `ofs_url`, `app_key`, `secret_key`,
+             `adm_code`, `area_code`, `code_path`, `creator`, `create_time`,  `delete_flag`, `program_url`,
+        `colony_version`,`node_alias`)
+        values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.colonyCode}, #{item.colonyName}, #{item.level}, #{item.parentCode}, #{item.gwAddr}, #{item.generalUrl}, #{item.ofsAddr}, #{item.appKey}, #{item.secretKey},
+            #{item.admCode}, #{item.areaCode}, #{item.codePath}, #{item.creator}, now(), 0, #{item.programUrl},
+            #{item.colonyVersion}, #{item.nodeAlias})
+        </foreach>
+    </insert>
+    <insert id="addBatchWgtVersion">
+        INSERT INTO bs_wgt_upgrade_info
+        (`colony_version`, `type`,`delete_flag`, `create_time`)
+        values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item}, 1, 0, now()),(#{item}, 2, 0, now()),(#{item}, 3, 0, now())
+        </foreach>
+    </insert>
+
+    <update id="updateBatch" parameterType="com.chinatower.platform.model.dto.CascadeConfigSyncVO">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_platform_data_config
+            set 
+                platform_name = #{item.colonyName, jdbcType=VARCHAR},
+                platform_level = #{item.level, jdbcType=VARCHAR},
+                platform_parent_code = #{item.parentCode, jdbcType=VARCHAR},
+                gateway_url = #{item.gwAddr, jdbcType=VARCHAR},
+                general_url = #{item.generalUrl, jdbcType=VARCHAR},
+                ofs_url = #{item.ofsAddr, jdbcType=VARCHAR},
+                app_key = #{item.appKey, jdbcType=VARCHAR},
+                secret_key = #{item.secretKey, jdbcType=VARCHAR},
+                adm_code = #{item.admCode, jdbcType=VARCHAR},
+                area_code = #{item.areaCode, jdbcType=VARCHAR},
+                code_path = #{item.codePath, jdbcType=VARCHAR},
+                update_time = NOW()
+            where platform_code = #{item.colonyCode}
+        </foreach>
+    </update>
+
+    <update id="deleteBatch" parameterType="com.chinatower.platform.model.dto.CascadeConfigSyncVO">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_platform_data_config
+            set
+                delete_flag = 1,
+                update_time = NOW()
+            where platform_code = #{item.colonyCode}
+        </foreach>
+    </update>
+    <select id="existAlias" resultType="java.lang.Integer">
+        SELECT count(1) FROM vm_platform_data_config WHERE node_alias =  #{platformCode} AND delete_flag = 0
+    </select>
+
+    <delete id="deleteAll" >
+        delete from vm_platform_data_config
+    </delete>
+    <delete id="deleteByUpgradeIsNull">
+        DELETE FROM bs_wgt_upgrade_info WHERE colony_version IN
+        <foreach collection="list"  item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+
+    </delete>
+
+    <select id="getAllConfigInfo" resultType="com.chinatower.platform.model.dto.CascadeConfigSyncVO">
+        select
+            `platform_code` AS colonyCode,
+            platform_name AS colonyName,
+            general_url AS generalUrl,
+            program_url AS programUrl,
+            colony_version AS colonyVersion,
+            node_alias AS nodeAlias
+        from vm_platform_data_config
+        where delete_flag = 0
+    </select>
+
+    <select id="getInfo" resultType="com.chinatower.cascade.api.entity.PlatformDataConfigVO">
+        select `platform_code`, `platform_name`, `platform_level`, `platform_parent_code`, `gateway_url`, `general_url`, `ofs_url`, `app_key`, `secret_key`,
+               `adm_code`, `area_code`, `code_path`, `creator`, `create_time`,  `update_time`, `modifier`
+        from vm_platform_data_config
+        where delete_flag = 0
+        <if test="list != null and list.size() > 0">
+            and platform_code IN
+            <foreach collection="list"  item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="queryListByKey" resultType="com.chinatower.cascade.api.entity.PlatformDataVO">
+        select `platform_code`, `platform_name`
+        from vm_platform_data_config
+        where delete_flag = 0 and
+            (platform_code like concat('%',#{key},'%') or platform_name like concat('%',#{key},'%'))
+    </select>
+    <select id="findWgtByColonyCodeList" resultType="java.lang.String">
+        select colony_version
+        from bs_wgt_upgrade_info
+        where delete_flag = 0
+        <if test="list != null and list.size() > 0">
+            and colony_version IN
+            <foreach collection="list"  item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="findNoneWgtVersion" resultType="java.lang.String">
+        SELECT
+            colony_version
+        FROM
+            bs_wgt_upgrade_info
+        GROUP BY
+            colony_version
+        HAVING
+            COUNT(*) > 1
+           AND MAX( upgrade_url ) IS NULL
+    </select>
+
+    <select id="findNoneMiniProgramVersion" resultType="java.lang.String">
+        SELECT
+            colony_version
+        FROM
+            bs_mini_program_upgrade_info
+        WHERE (mini_program_version IS NULL or mini_program_version = '') AND (code_version IS NULL or code_version = '')
+    </select>
+
+    <delete id="deleteByMiniProgramUpgradeIsNull">
+        DELETE FROM bs_mini_program_upgrade_info WHERE colony_version IN
+        <foreach collection="list"  item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="findMiniProgramByColonyCodeList" resultType="java.lang.String">
+        select colony_version
+        from bs_mini_program_upgrade_info
+        where delete_flag = 0
+        <if test="list != null and list.size() > 0">
+            and colony_version IN
+            <foreach collection="list"  item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+
+    <insert id="addBatchMiniProgramVersion">
+        INSERT INTO bs_mini_program_upgrade_info
+        (`colony_version`,`create_time`, `delete_flag`)
+        values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item},now(), 0)
+        </foreach>
+    </insert>
+
+</mapper>

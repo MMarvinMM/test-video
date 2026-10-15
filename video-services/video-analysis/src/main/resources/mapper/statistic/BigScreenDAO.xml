@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.analysis.modules.statistic.dao.BigScreenDAO">
+
+    <select id="getDevicesStatistics" parameterType="com.chinatower.analysis.api.entity.QueryParamVO" resultType="com.chinatower.analysis.api.entity.DevicesDataVO">
+        SELECT SUM(a.device_num) AS device_num,SUM(a.dev_online_num) AS dev_online_num,
+        <include refid="searchField"/>
+        FROM vm_statistics_devices a
+        <where>
+            YEAR = EXTRACT(YEAR FROM now())
+            AND MONTH = EXTRACT(MONTH FROM now())
+            AND DAY = EXTRACT(DAY FROM now())
+            ${dataScope}
+            <choose>
+                <when test='provinceId != null and provinceId !=""'>
+                    AND a.province_id = #{provinceId}
+                    GROUP BY a.city_id
+                </when>
+                <when test='cityId != null and cityId !=""'>
+                    AND a.city_id = #{cityId}
+                    GROUP BY a.county_id
+                </when>
+                <otherwise>
+                    AND a.province_id IS NOT NULL
+                    GROUP BY a.province_id
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+
+    <select id="getEventStatistics" parameterType="com.chinatower.analysis.api.entity.QueryParamVO" resultType="com.chinatower.analysis.api.entity.EventDataVO">
+        SELECT SUM(a.today_all) AS todayAll,sum(a.today_complete) AS todayComplete,SUM(a.judge_num) AS judge_num,SUM(a.dispatch_num) AS dispatch_num,
+        SUM(a.grab_num) AS grab_num,SUM(a.handle_num) AS handle_num,
+        SUM(a.approve_num) AS approve_num,SUM(a.order_complete_num) AS order_complete_num,
+        SUM(a.false_complete_num) AS false_complete_num,
+        SUM(a.repeat_complete_num) AS repeat_complete_num,
+        SUM(a.acceptance_num) AS acceptance_num,
+        <include refid="searchField"/>
+        FROM vm_statistics_event_num_day a
+        <where>
+        <include refid="queryParam"/>
+        </where>
+    </select>
+
+    <sql id="searchField">
+        <choose>
+            <when test='provinceId != null and provinceId !=""'>
+                a.city_id AS area_code
+            </when>
+            <when test='cityId != null and cityId !=""'>
+                a.county_id AS area_code
+            </when>
+            <otherwise>
+                a.province_id AS area_code
+            </otherwise>
+        </choose>
+    </sql>
+
+    <sql id="queryParam">
+        <choose>
+            <when test='startDate != null and startDate !="" and endDate != null and endDate != ""'>
+                AND DATE_FORMAT(a.create_date,'%Y-%m-%d') >= #{startDate}
+                AND DATE_FORMAT(a.create_date,'%Y-%m-%d') <![CDATA[<=]]> #{endDate}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT(a.create_date,'%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d')
+            </otherwise>
+        </choose>
+        ${dataScope}
+        <choose>
+            <when test='provinceId != null and provinceId !=""'>
+                AND a.province_id = #{provinceId}
+                GROUP BY a.city_id
+            </when>
+            <when test='cityId != null and cityId !=""'>
+                AND a.city_id = #{cityId}
+                GROUP BY a.county_id
+            </when>
+            <otherwise>
+                AND a.province_id IS NOT NULL
+                GROUP BY a.province_id
+            </otherwise>
+        </choose>
+    </sql>
+
+    <select id="getAreaList" resultType="com.chinatower.analysis.api.entity.AreaDataVO">
+        SELECT a.AREA_CODE,a.AREA_NAME,a.LONGITUDE,a.LATITUDE FROM
+        sys_area a
+        WHERE a.AREA_CODE IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getEventBoardStatistics" parameterType="com.chinatower.analysis.api.entity.EventBoardParamVO" resultType="com.chinatower.analysis.api.entity.EventBoardDataVO">
+        SELECT a.year,a.month,a.day,SUM(a.today_all) AS today_all,SUM(a.real_num) AS real_num
+        FROM vm_statistics_event_num_day a
+        <where>
+<!--        <choose>-->
+<!--            <when test='date != null and data != ""'>-->
+<!--                AND DATE_FORMAT(a.create_date,'%Y%m') = #{date}-->
+<!--            </when>-->
+<!--            <otherwise>-->
+<!--                AND a.year = DATE_FORMAT(NOW(),'%Y')-->
+<!--                AND a.month = DATE_FORMAT(NOW(), '%c')-->
+<!--            </otherwise>-->
+<!--        </choose>-->
+        <if test='date != null and date !=""'>
+            AND DATE_FORMAT(a.create_date,'%Y%m') = #{date}
+        </if>
+        <if test='areaCode != null and areaCode !=""'>
+            AND (a.province_id = #{areaCode} OR a.city_id = #{areaCode} OR a.county_id = #{areaCode})
+        </if>
+            ${dataScope}
+        </where>
+        GROUP BY a.year,a.month,a.day
+    </select>
+
+    <select id="getDeviceTopTen" parameterType="com.chinatower.analysis.api.entity.DeviceTopTenParamVO" resultType="com.chinatower.analysis.api.entity.DeviceTopTenDataVO">
+        SELECT s.*,@rownum := @rownum + 1 AS 'ranking' FROM (
+        SELECT a.device_code,SUM(a.today_all) AS 'total', warning_source,SUM(a.real_num) AS 'realNum' FROM
+        vm_statistics_event_num_day a
+        <where>
+        AND DATE_FORMAT(a.create_date,'%Y-%m-%d') >= #{startDate}
+        AND DATE_FORMAT(a.create_date,'%Y-%m-%d') <![CDATA[<=]]> #{endDate}
+        <choose>
+            <when test='areaType == "2"'>
+                AND a.province_id = #{areaCode}
+            </when>
+            <when test='areaType == "3"'>
+                AND a.city_id = #{areaCode}
+            </when>
+            <when test='areaType == "4"'>
+                AND a.county_id = #{areaCode}
+            </when>
+        </choose>
+        AND a.device_code != '' AND a.device_code IS NOT NULL
+        AND a.today_all != 0 AND a.today_all IS NOT NULL
+            ${dataScope}
+        </where>
+        GROUP BY a.device_code
+        ORDER BY
+        <if test="sort != null and sort != '' and sortOrder != null and sortOrder != ''">
+            <choose>
+                <when test="sort == 'total'">
+                    SUM(a.today_all)
+                </when>
+                <when test="sort == 'realNum'">
+                    SUM(a.real_num)
+                </when>
+            </choose>
+            <choose>
+                <when test="sortOrder == 'desc'">
+                    desc,
+                </when>
+                <when test="sortOrder == 'asc'">
+                    asc,
+                </when>
+                <otherwise>
+                    desc,
+                </otherwise>
+            </choose>
+        </if>
+        SUM(a.today_all) DESC
+        LIMIT 10
+        ) s,(SELECT @rownum := 0) t
+    </select>
+
+    <select id="getDeviceList" resultType="com.chinatower.analysis.api.entity.DeviceTopTenDataVO">
+        SELECT a.device_code,a.device_name FROM vm_device_info_t a
+        WHERE a.device_code IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getIotDeviceList" resultType="com.chinatower.analysis.api.entity.DeviceTopTenDataVO">
+        SELECT a.device_code,a.device_name FROM vm_iot_device_t a
+        WHERE a.device_code IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getAllEventType" resultType="java.lang.String">
+        SELECT DISTINCT
+        <choose>
+            <when test='statDimension != null and (statDimension == "SUB_TASK" or statDimension == "sub_task")'>
+                dataTable.sub_scene_code
+            </when>
+            <otherwise>
+                dataTable.warning_type_id
+            </otherwise>
+        </choose>
+        FROM
+        <choose>
+            <when test='statDimension != null and (statDimension == "SUB_TASK" or statDimension == "sub_task")'>
+                vm_statistics_event_sub_scene dataTable
+            </when>
+            <otherwise>
+                vm_statistics_event_type dataTable
+            </otherwise>
+        </choose>
+        <where>
+        AND dataTable.create_date >= #{startTime}
+        AND dataTable.create_date <![CDATA[<=]]> #{endTime}
+        <if test='areaCode != null and areaCode != ""'>
+            AND (dataTable.county_id = #{areaCode} or dataTable.province_id = #{areaCode} or dataTable.city_id = #{areaCode})
+        </if>
+            ${dataScope}
+        </where>
+    </select>
+
+    <select id="getEventTypeStatistics" resultType="com.chinatower.analysis.api.entity.EventStatisticDataVO">
+        SELECT
+        <choose>
+            <when test='statDimension != null and (statDimension == "SUB_TASK" or statDimension == "sub_task")'>
+                dataTable.sub_scene_code as 'typeId',
+            </when>
+            <otherwise>
+                dataTable.warning_type_id as 'typeId',
+            </otherwise>
+        </choose>
+        date_format(dataTable.create_date,'%Y-%m-%d') as eventDate,SUM(dataTable.warning_num) as num
+        FROM
+        <choose>
+            <when test='statDimension != null and (statDimension == "SUB_TASK" or statDimension == "sub_task")'>
+                vm_statistics_event_sub_scene dataTable
+            </when>
+            <otherwise>
+                vm_statistics_event_type dataTable
+            </otherwise>
+        </choose>
+        <where>
+        AND dataTable.create_date >= #{startTime}
+        AND dataTable.create_date <![CDATA[<=]]> #{endTime}
+        <if test='areaCode != null and areaCode != ""'>
+            AND (dataTable.county_id = #{areaCode} or dataTable.province_id = #{areaCode} or dataTable.city_id = #{areaCode})
+        </if>
+            ${dataScope}
+        </where>
+        GROUP BY
+        <choose>
+            <when test='statDimension != null and (statDimension == "SUB_TASK" or statDimension == "sub_task")'>
+                dataTable.sub_scene_code
+            </when>
+            <otherwise>
+                dataTable.warning_type_id
+            </otherwise>
+        </choose>
+        ,date_format(dataTable.create_date,'%Y-%m-%d')
+    </select>
+
+    <select id="getAlarmType" resultType="com.chinatower.analysis.api.entity.EventStatisticDataVO">
+        SELECT bb.typeId,bb.typeName,cc.assigned_date as 'eventDate' FROM
+        (SELECT DISTINCT ala.type_value 'typeId',ala.type_name 'typeName' FROM sys_alarm_type ala
+        <where>
+        <if test="list != null and list.size() > 0 ">
+            AND ala.type_value IN
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        </where>
+        ) bb,
+        (SELECT date_format(assigned_date,'%Y-%m-%d') assigned_date
+        FROM
+        (SELECT adddate('2022-01-01',t3.i*1000 + t2.i*100 + t1.i*10 + t0.i) assigned_date
+        FROM
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3
+        ) c
+        WHERE assigned_date between SUBSTR(#{vo.startTime},1,10) and #{vo.endTime}) cc
+        <if test="list != null and list.size() > 0 ">
+            ORDER BY cc.assigned_date,FIELD(bb.typeId,
+            <foreach collection="list" item="item" index="index" separator=",">
+                #{item}
+            </foreach>) ASC
+        </if>
+    </select>
+
+    <select id="getEventPlotAreaStatistics" parameterType="com.chinatower.analysis.api.entity.EventBoardParamVO" resultType="java.util.Map">
+        SELECT
+            a.tenant_id AS 'tenantId',
+            a.industry_code AS 'industryCode',
+            SUM( a.plot_area_sum ) AS 'plotAreaSum'
+        FROM
+            vm_statistics_event_plot_area a
+        <where>
+            <if test='tenantId != null and tenantId != ""'>
+                AND a.tenant_id = #{tenantId}
+            </if>
+            <if test='industryCode != null and industryCode != ""'>
+                AND a.industry_code = #{industryCode}
+            </if>
+            <if test='areaCode != null and areaCode !=""'>
+                AND (a.province_id = #{areaCode} OR a.city_id = #{areaCode} OR a.county_id = #{areaCode})
+            </if>
+            <if test='date != null and date !=""'>
+                AND DATE_FORMAT(create_date, '%Y-%m-%d') = #{date}
+            </if>
+            ${dataScope}
+        </where>
+    </select>
+</mapper>

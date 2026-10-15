@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.LayerInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.gis.modules.gis.entity.LayerInfo" >
+        <result column="layer_id" property="layerId" />
+        <result column="layer_name" property="layerName" />
+        <result column="layer_type" property="layerType" />
+        <result column="layer_type_name" property="layerTypeName" />
+        <result column="layer_type_simple" property="layerTypeSimple" />
+        <result column="creator" property="creator" />
+        <result column="create_time" property="createTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="app_ver_code" property="appVerCode" />
+        <result column="geo_type" property="geoType" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+                layer_id,
+                layer_name,
+                layer_type,
+                layer_type_name,
+                layer_type_simple,
+                creator,
+                create_time,
+                delete_flag,
+                tenant_id,
+                industry_code,
+                geo_type,
+                app_ver_code
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from layer_info where layer_id = #{layerId} and delete_flag = false
+    </select>
+
+    <select id="selectByIds" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from layer_info
+        where
+        layer_id in
+        <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+          and delete_flag = false
+    </select>
+
+
+    <insert id="insert" useGeneratedKeys="true" keyColumn="layer_id" keyProperty="layerId" parameterType="com.chinatower.gis.modules.gis.entity.LayerInfo">
+        INSERT INTO layer_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="null != layerId and '' != layerId">
+                layer_id
+            </if>
+            <if test="null != layerName and '' != layerName">
+                ,layer_name
+            </if>
+            <if test="null != layerType">
+                ,layer_type
+            </if>
+            <if test="null != layerTypeName and '' != layerTypeName">
+                ,layer_type_name
+            </if>
+            <if test="null != layerTypeSimple and '' != layerTypeSimple">
+                ,layer_type_simple
+            </if>
+            <if test="null != creator and '' != creator">
+                ,creator
+            </if>
+            <if test="null != createTime">
+                ,create_time
+            </if>
+            <if test="null != deleteFlag">
+                ,delete_flag
+            </if>
+            <if test="null != tenantId and '' != tenantId">
+                ,tenant_id
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                ,industry_code
+            </if>
+            <if test="null != appVerCode and '' != appVerCode">
+                ,app_ver_code
+            </if>
+            <if test="null != geoType and '' != geoType">
+                ,geo_type
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="null != layerId and '' != layerId">
+                #{layerId}
+            </if>
+            <if test="null != layerName and '' != layerName">
+                ,#{layerName}
+            </if>
+            <if test="null != layerType">
+                ,#{layerType}
+            </if>
+            <if test="null != layerTypeName and '' != layerTypeName">
+                ,#{layerTypeName}
+            </if>
+            <if test="null != layerTypeSimple and '' != layerTypeSimple">
+                ,#{layerTypeSimple}
+            </if>
+            <if test="null != creator and '' != creator">
+                ,#{creator}
+            </if>
+            <if test="null != createTime">
+                ,#{createTime}
+            </if>
+            <if test="null != deleteFlag">
+                ,#{deleteFlag}
+            </if>
+            <if test="null != tenantId and '' != tenantId">
+                ,#{tenantId}
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                ,#{industryCode}
+            </if>
+            <if test="null != appVerCode and '' != appVerCode">
+                ,#{appVerCode}
+            </if>
+            <if test="null != geoType and '' != geoType">
+                ,#{geoType}
+            </if>
+        </trim>
+    </insert>
+    <delete id="deleteBatchIds">
+        delete from  layer_info
+        where layer_id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteTable">
+        DROP TABLE ${tableName};
+        DROP SEQUENCE ${tableName}_gid_seq;
+    </delete>
+    <delete id="deleteTablesView">
+        <foreach collection="tableNames" separator=";" item="tableName">
+            DROP view view_${tableName}
+        </foreach>
+    </delete>
+    <delete id="deleteTables">
+        <foreach collection="tableNames" separator=";" item="tableName">
+            DROP TABLE ${tableName}
+        </foreach>
+    </delete>
+    <delete id="deleteTablesSeq">
+        <foreach collection="tableNames" separator=";" item="tableName">
+            DROP SEQUENCE ${tableName}_gid_seq
+        </foreach>
+    </delete>
+
+    <select id="selectByTenant" resultType="java.lang.String">
+        SELECT
+            layer_name
+        FROM layer_info
+        WHERE
+            tenant_id = #{tenantId}
+            AND industry_code = #{industryCode}
+            AND layer_type_simple = #{layerType}
+            AND delete_flag = FALSE
+    </select>
+
+    <select id="getCount" resultType="java.lang.Integer">
+        select
+            count(1)
+        from ${tableName}
+    </select>
+    <select id="layerTables" resultType="com.chinatower.gis.modules.gis.entity.LayerInfo">
+        select
+        layer_id layerId,
+        layer_name layerName,
+        geo_type geoType
+        from layer_info
+        where layer_id in
+        <foreach item="item"  collection="layerIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getGeometrys" resultType="java.lang.String">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        <foreach item="layerInfo" collection="tables" separator="UNION ALL">
+            SELECT #{layerInfo.layerId} layerId,#{layerInfo.layerName} tableName,#{layerInfo.geoType} geoType, st_asgeojson(geom)::json as geometry FROM ${layerInfo.layerName} WHERE gid=1
+        </foreach>
+        ) fc
+    </select>
+</mapper>

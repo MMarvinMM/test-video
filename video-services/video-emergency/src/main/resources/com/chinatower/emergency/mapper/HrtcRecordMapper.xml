@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.emergency.mapper.HrtcRecordMapper">
+
+
+    <insert id="addBatch">
+        INSERT INTO vm_hrtc_record (`hrtc_id`, `type`, `captaincy`,mute_id, `start_time`, `player`,`invited`,`call_id`,`file_id`)
+        VALUES
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.hrtcId}, #{item.type}, #{item.captaincy}, #{item.muteId}, NOW(), #{item.player}, #{item.invited},#{item.callId}, #{item.fileId})
+        </foreach>
+    </insert>
+    <update id="update">
+        UPDATE vm_hrtc_record
+        <set>
+            <if test="muteId != null">
+                mute_id = #{muteId},
+            </if>
+            <if test="invited != null">
+                invited = #{invited},
+            </if>
+            <if test="callId != null">
+                call_id = #{callId},
+            </if>
+            <if test="fileId != null">
+                file_id = #{fileId},
+            </if>
+        </set>
+        WHERE hrtc_id = #{hrtcId}
+            AND type = #{type}
+    </update>
+    <delete id="delete">
+        DELETE FROM vm_hrtc_record WHERE hrtc_id = #{hrtcId}
+        AND type = #{type}
+    </delete>
+    <select id="findById" resultType="com.chinatower.emergency.dto.HrtcRecordVo">
+        SELECT `id`, `hrtc_id`, `type`, `captaincy`, `mute_id`, `start_time`, `player`,`invited`,`call_id`, `file_id` FROM vm_hrtc_record WHERE hrtc_id = #{hrtcId}
+        AND type = #{type}
+        LIMIT 1
+    </select>
+</mapper>

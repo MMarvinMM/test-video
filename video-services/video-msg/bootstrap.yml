@@ -1,0 +1,22 @@
+
+server:
+  port: 8031
+  servlet:
+    context-path: /
+# Spring配置
+spring:
+  profiles:
+    active: dev
+  main:
+    banner-mode: "off"
+  application:
+    name: video-msg
+  cloud:
+    nacos:
+      config:
+        server-addr: 117.78.10.90:8848
+        file-extension: yaml
+        namespace: 0864fbaa-aef6-429b-b44b-4a67303f8401
+      discovery:
+        server-addr: 117.78.10.90:8848
+        namespace: 0864fbaa-aef6-429b-b44b-4a67303f8401

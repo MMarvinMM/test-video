@@ -1,0 +1,900 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.statistics.dao.InspectStatisticsDAO">
+    <select id="getGridTotal" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT  COUNT(grid_id) as gridNum,IFNULL(SUM(IF(point_status ='1',1,0)),0) as gridMarkNum,IFNULL(SUM(IF(point_status ='0' OR point_status IS NULL,1,0)),0) as gridNoMarkNum
+        FROM bm_grid dataTable
+        <where>
+            and dataTable.delete_flag = 0
+            ${dataScope}
+            <if test='gridId != null and gridId != "" '>
+                and dataTable.grid_id = #{gridId}
+            </if>
+            <if test='gridIdList != null and gridIdList.size()>0'>
+                and dataTable.grid_id in
+                <foreach collection="gridIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getGridById" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT  grid_level as gridLevel,point_status as pointStatus
+        FROM bm_grid dataTable
+        <where>
+            and dataTable.delete_flag = 0
+            ${dataScope}
+            <if test='gridId != null and gridId != "" '>
+                and dataTable.grid_id = #{gridId}
+            </if>
+        </where>
+    </select>
+
+    <select id="getGridKeeperById" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT  dataTable.login_name as loginName,dataTable.keeper_type as keeperType,IFNULL(dataTable.keeper_gender,'') as keeperGender,IFNULL(TIMESTAMPDIFF(YEAR, STR_TO_DATE(SUBSTRING(dataTable.keeper_id_card_number, 7, 8), '%Y%m%d'), CURDATE()),'') as age,CAST(b.grid_id AS CHAR) as gridId,IFNULL(b.grid_name,'') as gridName
+        FROM bm_gridkeeper dataTable
+        LEFT JOIN bm_grid_keeper_ref r ON  dataTable.keeper_id = r.keeper_id and r.delete_flag = 0
+        LEFT JOIN bm_grid b  ON r.grid_id = b.grid_id and b.delete_flag = 0
+        <where>
+            and dataTable.delete_flag = 0
+            ${dataScope}
+            <if test='keeperId != null and keeperId != "" '>
+                and dataTable.keeper_id = #{keeperId}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="getGridKeeperTotal" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT  COUNT(keeper_id) as gridKeeperNum,IFNULL(SUM(IF(keeper_type =1,1,0)),0) as gridKeeperOneNum,IFNULL(SUM(IF(keeper_type =2,1,0)),0) as gridKeeperTwoNum
+        FROM bm_gridkeeper dataTable
+        <where>
+            and dataTable.delete_flag = 0 and	dataTable.`status` = 0
+            ${dataScope}
+            <if test="gridId != null and gridId != ''">
+                and dataTable.keeper_id in (select r.keeper_id from bm_grid_keeper_ref r where r.delete_flag = '0' and r.grid_id = #{gridId} )
+            </if>
+            <if test='gridIdList != null and gridIdList.size()>0'>
+                and dataTable.keeper_id in (select r.keeper_id from bm_grid_keeper_ref r where r.delete_flag = '0' and r.grid_id in
+                <foreach collection="gridIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="getInspectTaskTotal" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT a.inspectionTaskNum, a.taskCompletedNum, a.taskIncompleteNum,
+        IF(a.inspectionTaskNum = 0 OR a.inspectionTaskNum IS NULL,NULL,IFNULL(ROUND((a.taskCompletedNum /a.inspectionTaskNum) *100),0)) AS taskCompletedRate FROM
+        (SELECT IFNULL( SUM( IF ( dataTable.task_status = '1' OR dataTable.task_status = '2' , 1, 0 )), 0 ) as
+        inspectionTaskNum,
+        IFNULL(SUM(IF(task_status ='1',1,0)),0) as taskCompletedNum,
+        IFNULL(SUM(IF(task_status ='2',1,0)),0) as taskIncompleteNum
+        FROM bm_inspection_task dataTable
+        <where>
+            and dataTable.delete_flag = 0 and dataTable.send_flag = 1
+            ${dataScope}
+            <if test='gridId!= null and gridId != "" '>
+                AND dataTable.grid_id LIKE concat('%',#{gridId},'%')
+            </if>
+            <if test='gridIdList != null and gridIdList.size()>0'>
+                and dataTable.grid_id in
+                <foreach collection="gridIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+                AND dataTable.create_time >= #{queryStartTime} AND dataTable.create_time <![CDATA[<=]]> #{queryEndTime}
+            </if>
+        </where>) a
+    </select>
+
+    <select id="getAttendanceTotal" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT IFNULL(SUM(IF(b.noNormalCount = '0' AND b.normalCount !='0',1,0)),0) as normalCount,IFNULL(SUM(IF(b.noNormalCount != '0'AND b.workDay !='0',1,0)),0) as noNormalCount,IFNULL(SUM(b.workDay),0) as workDay,IFNULL(SUM(b.clockInNum),0) as lockInNum,
+        IF(SUM(b.workDay) = 0 OR SUM(b.workDay) is NULL,NULL,IFNULL(ROUND((SUM(b.clockInNum)/SUM(b.workDay)) *100),0)) AS attendanceRate
+        FROM(
+        SELECT SUM(IF(sign_in_status ='1' AND sign_out_status ='4' ,1,0)) as normalCount, SUM(IF(sign_in_status !='1' OR sign_out_status !='4' OR sign_in_status IS NULL OR sign_out_status IS NULL,1,0)) as noNormalCount,
+        COUNT(s.attendance_id) as workDay,
+        SUM(IF(sign_in_status ='1' OR sign_in_status = '2' OR sign_out_status ='4' OR sign_out_status = '5',1,0)) AS clockInNum
+        FROM bm_gridkeeper dataTable
+        LEFT JOIN
+        bm_grid_keeper_ref b ON
+        dataTable.keeper_id = b.keeper_id and b.delete_flag = 0
+        LEFT JOIN bm_attendance_line s ON s.grid_id = b.grid_id and s.keeper_id = b.keeper_id and s.delete_flag = 0
+        <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+            AND s.attendance_date >= DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d') AND s.attendance_date <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+        </if>
+        <where>
+            and dataTable.delete_flag=0 AND dataTable.status=0
+            ${dataScope}
+            <if test="gridId != null and gridId != ''">
+                AND s.grid_id = #{gridId}
+            </if>
+            <if test='gridIdList != null and gridIdList.size()>0'>
+                and s.grid_id in
+                <foreach collection="gridIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY  s.keeper_id
+        )b
+    </select>
+
+    <select id="getGridLevel" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT  COUNT(grid_id) as gridNum,grid_level as gridLevel
+        FROM bm_grid dataTable
+        <where>
+            and dataTable.delete_flag = 0
+            ${dataScope}
+            <if test='gridId != null and gridId != "" '>
+                and dataTable.grid_id = #{gridId}
+            </if>
+        </where>
+        GROUP BY grid_level
+        ORDER BY CAST(grid_level AS UNSIGNED),COUNT(grid_id) DESC
+    </select>
+
+    <select id="getGridKeeperGender" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT  IFNULL(ROUND((b.gridKeeperManNum/b.gridKeeperNum) *100),0) AS manRate,IFNULL(ROUND((b.gridKeeperWomanNum/b.gridKeeperNum) *100),0) AS womanRate,IFNULL(ROUND((b.unknownNum/b.gridKeeperNum) *100),0) AS unknownRate,
+        IFNULL(gridKeeperNum,0) as gridKeeperNum ,IFNULL(gridKeeperManNum,0) as gridKeeperManNum,IFNULL(gridKeeperWomanNum,0) as gridKeeperWomanNum,IFNULL(unknownNum,0) as unknownNum FROM(
+        SELECT  COUNT(keeper_id) as gridKeeperNum,SUM(IF(keeper_gender = '0',1,0)) as gridKeeperManNum,SUM(IF(keeper_gender = '1',1,0)) as gridKeeperWomanNum,
+        SUM(IF(keeper_gender IS NULL OR keeper_gender ='',1,0)) as unknownNum
+        FROM bm_gridkeeper dataTable
+        <where>
+            and dataTable.delete_flag = 0 and	dataTable.`status` = 0
+            ${dataScope}
+            <if test="gridId != null and gridId != ''">
+                and dataTable.keeper_id in (select r.keeper_id from bm_grid_keeper_ref r where r.delete_flag = '0' and r.grid_id = #{gridId} )
+            </if>
+        </where>
+         ) b
+    </select>
+
+    <select id="getGridKeeperAge" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT IFNULL(SUM(IF(age IS NULL,1,0)),0)  as unknownNum,IFNULL(ROUND((SUM(IF(age IS NULL,1,0))/COUNT(1)) *100),0) as unknownRate,IFNULL(SUM(IF(age<![CDATA[<]]>20,1,0)),0) as lessTwenty,IFNULL(SUM(IF(age>=20 and age<![CDATA[<=]]>30,1,0)),0) as twentyToThirty,
+        IFNULL(SUM(IF(age>=31 and age<![CDATA[<=]]>40,1,0)),0) as thirtyToForty,IFNULL(SUM(IF(age>=41 and age<![CDATA[<=]]>50,1,0)),0) as fortyToFifty,
+        IFNULL(SUM(IF(age>50,1,0)),0) as moreFifty,IFNULL(ROUND((SUM(IF(age<![CDATA[<]]>20,1,0))/COUNT(1)) *100),0) as lessTwentyRate,
+               IFNULL(ROUND((SUM(IF(age>=20 and age<![CDATA[<=]]>30,1,0))/COUNT(1)) *100),0) as twentyToThirtyRate,
+               IFNULL(ROUND((SUM(IF(age>=31 and age<![CDATA[<=]]>40,1,0))/COUNT(1)) *100),0) as thirtyToFortyRate,
+               IFNULL(ROUND((SUM(IF(age>=41 and age<![CDATA[<=]]>50,1,0))/COUNT(1)) *100),0) as fortyToFiftyRate,
+               IFNULL(ROUND((SUM(IF(age>50,1,0))/COUNT(1)) *100),0) as moreFiftyRate
+        FROM(
+        SELECT  TIMESTAMPDIFF(YEAR, STR_TO_DATE(SUBSTRING(keeper_id_card_number, 7, 8), '%Y%m%d'), CURDATE()) AS age
+        FROM bm_gridkeeper dataTable
+        <where>
+            and dataTable.delete_flag = 0 and	dataTable.`status` = 0
+            ${dataScope}
+            <if test="gridId != null and gridId != ''">
+                and dataTable.keeper_id in (select r.keeper_id from bm_grid_keeper_ref r where r.delete_flag = '0' and r.grid_id = #{gridId} )
+            </if>
+        </where>
+        GROUP BY keeper_id
+        ) b
+    </select>
+
+
+    <select id="getGridStatistics" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT  CAST(dataTable.grid_id AS CHAR) as gridId,dataTable.grid_level as gridLevel,dataTable.grid_name as gridName,IFNULL(dataTable.point_status,0) AS pointStatus,
+        COUNT(g.keeper_id) as gridKeeperNum,'-' as keeperName
+        FROM bm_grid dataTable
+        LEFT JOIN bm_grid_keeper_ref r ON dataTable.grid_id = r.grid_id AND r.delete_flag = 0
+        LEFT JOIN bm_gridkeeper g ON r.keeper_id = g.keeper_id AND g.delete_flag = 0 AND g.`status` = 0
+        <where>
+            and dataTable.delete_flag = 0
+            ${dataScope}
+            <if test='gridId != null and gridId != "" '>
+                and dataTable.grid_id = #{gridId}
+            </if>
+        </where>
+        GROUP BY dataTable.grid_id
+        ORDER BY
+        <if test="sort != null and sort != '' and sortOrder != null and sortOrder != ''">
+            <choose>
+                <when test="sort == 'gridKeeperNum'">
+                    gridKeeperNum
+                </when>
+          </choose>
+            <choose>
+                <when test="sortOrder == 'desc'">
+                    desc,
+                </when>
+                <when test="sortOrder == 'asc'">
+                    asc,
+                </when>
+                <otherwise>
+                    desc,
+                </otherwise>
+            </choose>
+        </if>
+        CAST(dataTable.grid_level AS UNSIGNED),gridKeeperNum DESC,gridId
+    </select>
+
+
+    <select id="getKeeperNameByGridId" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT  CAST(g.grid_id AS CHAR) as gridId,dataTable.keeper_name as keeperName
+        FROM bm_grid_keeper_ref g
+        LEFT JOIN bm_gridkeeper dataTable ON g.keeper_id = dataTable.keeper_id AND dataTable.delete_flag = 0 AND dataTable.`status` = 0 AND dataTable.keeper_type = 1
+        <where>
+            and g.delete_flag = 0
+            <if test='gridList != null and gridList.size()>0'>
+                and g.grid_id in
+                <foreach collection="gridList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getGridAttendance" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT CAST(b.gridId AS CHAR) as gridId,b.gridName,b.gridLevel,SUM(b.clockInNum) as clockInNum,SUM(b.workDay) as workDay ,IF(SUM(b.workDay) = 0 OR SUM(b.workDay) IS NULL,NULL,IFNULL(ROUND((SUM(b.clockInNum)/SUM(b.workDay)) *100),0)) AS attendanceRate,
+        IFNULL((SUM(b.clockInNum)/SUM(b.workDay) *100),0) AS attendanceRates FROM(
+        SELECT
+        dataTable.grid_id AS gridId,
+        g.keeper_id as keeperId,
+        dataTable.grid_name AS gridName,
+        dataTable.grid_level AS gridLevel,
+        COUNT(g.attendance_id) as workDay,
+        SUM(IF(g.sign_in_status ='1' OR g.sign_in_status = '2' OR g.sign_out_status ='4' OR g.sign_out_status = '5',1,0)) AS clockInNum
+        FROM
+        bm_grid dataTable
+        LEFT JOIN bm_grid_keeper_ref r ON dataTable.grid_id = r.grid_id  and r.delete_flag = 0
+        LEFT JOIN bm_gridkeeper s ON s.keeper_id = r.keeper_id and s.delete_flag=0 AND s.status=0
+        LEFT JOIN bm_attendance_line g ON s.keeper_id = g.keeper_id and g.grid_id = r.grid_id  and g.delete_flag = 0  and g.keeper_id is not null
+        <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+            AND g.attendance_date >= DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d') AND g.attendance_date <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+        </if>
+        <where>
+            and dataTable.delete_flag = 0
+            <if test="gridId != null and gridId != ''">
+            AND dataTable.grid_id = #{gridId}
+        </if>
+            ${dataScope}
+        </where>
+        GROUP BY dataTable.grid_id,g.keeper_id
+        )b
+        GROUP BY b.gridId
+        ORDER BY ISNULL(attendanceRate),attendanceRates DESC,CAST(b.gridLevel AS UNSIGNED),CONVERT(b.gridName USING GBK)
+    </select>
+
+    <select id="getGridKeeperAttendance" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+            SELECT CAST(b.keeper_id AS CHAR) as keeperId,b.keeperName,IFNULL(b.workDay,0) as workDay,IFNULL(b.clockInNum,0) as clockInNum,
+            IF(b.workDay = 0 OR b.workDay IS NULL ,NULL,IFNULL(ROUND((b.clockInNum/b.workDay) *100),0)) AS attendanceRate,
+            IFNULL((b.clockInNum/b.workDay *100),0) AS attendanceRates
+            FROM(
+            SELECT COUNT(g.attendance_id) as workDay,dataTable.keeper_id,dataTable.keeper_name as keeperName,
+            SUM(IF(sign_in_status ='1' OR sign_in_status = '2' OR sign_out_status ='4' OR sign_out_status = '5',1,0)) AS clockInNum
+            FROM bm_gridkeeper dataTable
+            LEFT JOIN
+            bm_grid_keeper_ref b ON
+            dataTable.keeper_id = b.keeper_id and b.delete_flag = 0
+            LEFT JOIN bm_attendance_line g ON b.grid_id = g.grid_id and b.keeper_id = g.keeper_id  and g.delete_flag = 0
+            <if test='queryStartTime != null and queryStartTime != ""
+                    and queryEndTime != null and queryEndTime != ""'>
+                AND g.attendance_date >= DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d') AND g.attendance_date <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+            </if>
+            <where>
+                AND dataTable.delete_flag = 0 AND dataTable.`status` = 0
+                <if test="keeperType != null and keeperType != ''">
+                    and dataTable.keeper_type = #{keeperType}
+                </if>
+                ${dataScope}
+                <if test="gridId != null and gridId != ''">
+                    AND g.grid_id = #{gridId}
+                </if>
+            </where>
+            GROUP BY  dataTable.keeper_id
+            )b
+            ORDER BY ISNULL(attendanceRate),attendanceRates DESC,CONVERT(b.keeperName USING GBK)
+    </select>
+
+    <select id="getGridKeeperAttendanceByTwo" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT CAST(b.keeper_id AS CHAR) as keeperId,b.keeperName,IFNULL(b.workDay,0) as workDay,IFNULL(b.clockInNum,0) as clockInNum,
+        IF(b.workDay = 0 OR b.workDay IS NULL ,NULL,IFNULL(ROUND((b.clockInNum/b.workDay) *100),0)) AS attendanceRate,
+        IFNULL((b.clockInNum/b.workDay *100),0) AS attendanceRates
+        FROM(
+        SELECT COUNT(g.attendance_id) as workDay,dataTable.keeper_id,dataTable.keeper_name as keeperName,
+        SUM(IF(sign_in_status ='1' OR sign_in_status = '2' OR sign_out_status ='4' OR sign_out_status = '5',1,0)) AS clockInNum
+        FROM bm_gridkeeper dataTable
+        LEFT JOIN
+        bm_grid_keeper_ref b ON
+        dataTable.keeper_id = b.keeper_id and b.delete_flag = 0
+        LEFT JOIN bm_attendance_line g ON b.grid_id = g.grid_id and b.keeper_id = g.keeper_id and g.delete_flag = 0
+        <if test='queryStartTime != null and queryStartTime != ""
+                    and queryEndTime != null and queryEndTime != ""'>
+            AND g.attendance_date >= DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d') AND g.attendance_date <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+        </if>
+        <where>
+            AND dataTable.delete_flag = 0 AND dataTable.`status` = 0
+            and dataTable.keeper_type = '2'
+            ${dataScope}
+            <if test="gridId != null and gridId != ''">
+                AND g.grid_id = #{gridId}
+            </if>
+        </where>
+        GROUP BY  dataTable.keeper_id
+        )b
+        ORDER BY ISNULL(attendanceRate),attendanceRates DESC,CONVERT(b.keeperName USING GBK)
+    </select>
+
+
+    <select id="getGridClockState" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT CAST(b.gridId AS CHAR) as gridId,b.gridName,b.gridLevel,SUM(b.clockInNum) as clockInNum,SUM(b.workDay) as workDay ,IF(SUM(b.workDay) = 0 OR SUM(b.workDay) IS NULL,NULL,IFNULL(ROUND((SUM(b.clockInNum)/SUM(b.workDay)) *100),0)) AS attendanceRate,
+        IFNULL((SUM(b.clockInNum)/SUM(b.workDay) *100),0) AS attendanceRates,
+        SUM(b.inNum) as inNum,SUM(b.lateNum) as lateNum,SUM(b.noInNum) as noInNum,
+        SUM(b.outNum) as outNum,SUM(b.earlyNum) as earlyNum,SUM(b.noOutNum) as noOutNum
+        FROM(
+        SELECT
+        dataTable.grid_id AS gridId,
+        g.keeper_id as keeperId,
+        dataTable.grid_name AS gridName,
+        dataTable.grid_level AS gridLevel,
+        COUNT(g.attendance_id) as workDay,
+        SUM(IF(g.sign_in_status ='1' OR g.sign_in_status = '2' OR g.sign_out_status ='4' OR g.sign_out_status = '5',1,0)) AS clockInNum,
+        SUM(IF(g.sign_in_status ='1',1,0)) as inNum,SUM(IF(g.sign_in_status ='2',1,0)) as lateNum,SUM(IF(g.sign_in_status ='3'OR ((g.sign_in_status is  null or g.sign_in_status = '7') and DATE_FORMAT( g.attendance_date, '%Y-%m-%d' ) = DATE_FORMAT( NOW(), '%Y-%m-%d' )AND DATE_FORMAT( NOW(), '%H:%i:%s' )> DATE_FORMAT( s.sign_over, '%H:%i:%s' )),1,0)) as noInNum,
+        SUM(IF(g.sign_out_status ='4',1,0)) as outNum,SUM(IF(g.sign_out_status ='5',1,0)) as earlyNum,SUM(IF(g.sign_out_status ='6'OR ((g.sign_out_status is  null) and DATE_FORMAT( g.attendance_date, '%Y-%m-%d' ) = DATE_FORMAT( NOW(), '%Y-%m-%d' )	AND DATE_FORMAT( NOW(), '%H:%i:%s' )> DATE_FORMAT( s.sign_close, '%H:%i:%s' )),1,0)) as noOutNum
+        FROM
+        bm_grid dataTable
+        LEFT JOIN bm_attendance_set s ON s.tenant_id = dataTable.tenant_id and s.industry_code = dataTable.industry_code and s.delete_flag = 0
+        LEFT JOIN bm_grid_keeper_ref r ON dataTable.grid_id = r.grid_id  and r.delete_flag = 0
+        LEFT JOIN bm_gridkeeper k ON k.keeper_id = r.keeper_id  and k.delete_flag=0 AND k.status=0
+            LEFT JOIN bm_attendance_line g ON k.keeper_id = g.keeper_id and r.grid_id = g.grid_id  and g.delete_flag = 0 and g.keeper_id is not null
+        <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+            AND g.attendance_date >= DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d') AND g.attendance_date <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+        </if>
+        <where>
+                and dataTable.delete_flag = 0
+            ${dataScope}
+            <if test="gridId != null and gridId != ''">
+                AND dataTable.grid_id = #{gridId}
+            </if>
+        </where>
+        GROUP BY dataTable.grid_id,g.keeper_id
+        )b
+        GROUP BY b.gridId
+        ORDER BY
+        <if test="sort != null and sort != '' and sortOrder != null and sortOrder != ''">
+            <choose>
+                <when test="sort == 'attendanceRate'">
+                    ISNULL(attendanceRate),attendanceRates
+                </when>
+                <when test="sort == 'attendanceRates'">
+                    ISNULL(attendanceRate),attendanceRates
+                </when>
+                <when test="sort == 'inNum'">
+                    inNum
+                </when>
+                <when test="sort == 'lateNum'">
+                    lateNum
+                </when>
+                <when test="sort == 'noInNum'">
+                    noInNum
+                </when>
+                <when test="sort == 'outNum'">
+                    outNum
+                </when>
+                <when test="sort == 'earlyNum'">
+                    earlyNum
+                </when>
+                <when test="sort == 'noOutNum'">
+                    noOutNum
+                </when>
+            </choose>
+            <choose>
+                <when test="sortOrder == 'desc'">
+                    desc,
+                </when>
+                <when test="sortOrder == 'asc'">
+                    asc,
+                </when>
+                <otherwise>
+                    desc,
+                </otherwise>
+            </choose>
+        </if>
+        CAST(b.gridLevel AS UNSIGNED),ISNULL(attendanceRate),attendanceRates DESC,gridId
+    </select>
+
+    <select id="getGridKeeperClockState" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT b.keeperName,CAST(b.keeper_id AS CHAR) as keeperId,IFNULL(b.workDay,0) as workDay,IFNULL(b.clockInNum,0) as clockInNum,
+        IF(b.workDay = 0 OR b.workDay IS NULL,NULL,IFNULL(ROUND((IFNULL(b.clockInNum,0)/b.workDay) *100),0)) AS attendanceRate,
+        IFNULL((IFNULL(b.clockInNum,0)/b.workDay *100),0) AS attendanceRates,
+        b.loginName,SUM(b.inNum) as inNum,SUM(b.lateNum) as lateNum,SUM(b.noInNum) as noInNum,SUM(b.outNum) as outNum,SUM(b.earlyNum) as earlyNum,SUM(b.noOutNum) as noOutNum
+        FROM(
+        SELECT COUNT(g.attendance_id) as workDay,
+        dataTable.keeper_id,dataTable.keeper_name as keeperName,dataTable.login_name as loginName,
+        SUM(IF(sign_in_status ='1' OR sign_in_status = '2' OR sign_out_status ='4' OR sign_out_status = '5',1,0)) AS clockInNum,
+        SUM(IF(g.sign_in_status ='1' ,1,0)) as inNum,SUM(IF(g.sign_in_status ='2',1,0)) as lateNum,SUM(IF(g.sign_in_status ='3'OR ((g.sign_in_status is  null or g.sign_in_status = '7') and DATE_FORMAT( g.attendance_date, '%Y-%m-%d' ) = DATE_FORMAT( NOW(), '%Y-%m-%d' )AND DATE_FORMAT( NOW(), '%H:%i:%s' )> DATE_FORMAT( s.sign_over, '%H:%i:%s' )),1,0)) as noInNum,
+        SUM(IF(g.sign_out_status ='4',1,0)) as outNum,SUM(IF(g.sign_out_status ='5',1,0)) as earlyNum,SUM(IF(g.sign_out_status ='6'OR ((g.sign_out_status is  null) and DATE_FORMAT( g.attendance_date, '%Y-%m-%d' ) = DATE_FORMAT( NOW(), '%Y-%m-%d' )	AND DATE_FORMAT( NOW(), '%H:%i:%s' )> DATE_FORMAT( s.sign_close, '%H:%i:%s' )),1,0)) as noOutNum
+        FROM bm_gridkeeper dataTable
+        LEFT JOIN bm_attendance_set s ON s.tenant_id = dataTable.tenant_id and s.industry_code = dataTable.industry_code and s.delete_flag = 0
+        LEFT JOIN
+        bm_grid_keeper_ref b ON
+        dataTable.keeper_id = b.keeper_id and b.delete_flag = 0
+        LEFT JOIN bm_attendance_line g ON b.keeper_id = g.keeper_id and b.grid_id = g.grid_id  AND g.delete_flag = 0
+        <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+            AND g.attendance_date >= DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d') AND g.attendance_date <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+        </if>
+        <where>
+            AND dataTable.delete_flag = 0 AND dataTable.`status` = 0
+            ${dataScope}
+            <if test="gridId != null and gridId != ''">
+                AND g.grid_id = #{gridId}
+            </if>
+        </where>
+        GROUP BY  dataTable.keeper_id
+        )b
+        <where>
+            <if test="keeperId != null and keeperId != ''">
+                AND b.keeper_id = #{keeperId}
+            </if>
+        </where>
+
+        GROUP BY b.keeper_id
+        ORDER BY
+        <if test="sort != null and sort != '' and sortOrder != null and sortOrder != ''">
+            <choose>
+                <when test="sort == 'attendanceRate'">
+                    ISNULL(attendanceRate),attendanceRates
+                </when>
+                <when test="sort == 'attendanceRates'">
+                    ISNULL(attendanceRate),attendanceRates
+                </when>
+                <when test="sort == 'inNum'">
+                    inNum
+                </when>
+                <when test="sort == 'lateNum'">
+                    lateNum
+                </when>
+                <when test="sort == 'noInNum'">
+                    noInNum
+                </when>
+                <when test="sort == 'outNum'">
+                    outNum
+                </when>
+                <when test="sort == 'earlyNum'">
+                    earlyNum
+                </when>
+                <when test="sort == 'noOutNum'">
+                    noOutNum
+                </when>
+            </choose>
+            <choose>
+                <when test="sortOrder == 'desc'">
+                    desc,
+                </when>
+                <when test="sortOrder == 'asc'">
+                    asc,
+                </when>
+                <otherwise>
+                    desc,
+                </otherwise>
+            </choose>
+        </if>
+        ISNULL(attendanceRate),attendanceRates DESC,CONVERT(b.keeperName USING GBK)
+    </select>
+
+    <select id="getGridNameLevelByKeeper" resultType="com.chinatower.bdm.api.entity.GridKeeperRefVO">
+        SELECT CAST(a.keeper_id AS CHAR) as keeper_id,GROUP_CONCAT(b.grid_name) AS grid_name,GROUP_CONCAT(b.grid_level) AS grid_level FROM bm_grid_keeper_ref a
+        LEFT JOIN bm_grid b
+        ON a.grid_id = b.grid_id
+        WHERE a.delete_flag = 0 and a.keeper_id IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        GROUP BY a.keeper_id
+    </select>
+
+
+    <select id="getGridInspectTask" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT  CAST(dataTable.grid_id AS CHAR) as gridId,dataTable.grid_name as gridName,IFNULL( SUM( IF ( g.task_status = '1' OR g.task_status = '2' , 1, 0 )), 0 ) as inspectionTaskNum,
+        IFNULL(SUM(IF(g.task_status ='1',1,0)),0) as taskCompletedNum,
+        IFNULL(SUM(IF(g.task_status ='2',1,0)),0) as taskIncompleteNum
+        FROM bm_grid dataTable
+        LEFT JOIN bm_inspection_task g ON dataTable.grid_id = g.grid_id and g.delete_flag = 0 and  g.send_flag = 1
+        <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+            AND g.create_time >= #{queryStartTime} AND g.create_time <![CDATA[<=]]> #{queryEndTime}
+        </if>
+        <where>
+            and dataTable.delete_flag = 0
+            ${dataScope}
+            <if test='gridId!= null and gridId != "" '>
+                AND g.grid_id LIKE concat('%',#{gridId},'%')
+            </if>
+        </where>
+        GROUP BY dataTable.grid_id
+        ORDER BY inspectionTaskNum DESC,CONVERT(dataTable.grid_name USING GBK)
+    </select>
+
+    <select id="getGridInspectTaskCompletionRate" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT
+            a.gridId,
+            a.gridName,
+            a.gridLevel,
+            a.inspectionTaskNum,
+            a.taskCompletedNum,
+            IF(a.inspectionTaskNum = 0 OR a.inspectionTaskNum IS NULL,NULL,IFNULL(ROUND((a.taskCompletedNum /a.inspectionTaskNum) *100),0)) AS taskCompletedRate,
+            IFNULL((IFNULL(a.taskCompletedNum,0)/a.inspectionTaskNum) *100, 0) AS taskCompletedRates
+        FROM
+            (
+            SELECT
+                CAST( dataTable.grid_id AS CHAR ) AS gridId,
+                dataTable.grid_name AS gridName,
+                dataTable.grid_level AS gridLevel,
+                IFNULL( SUM( IF ( g.task_status = '1' OR g.task_status = '2', 1, 0 )), 0 ) AS inspectionTaskNum,
+                IFNULL( SUM( IF ( g.task_status = '1', 1, 0 )), 0 ) AS taskCompletedNum
+            FROM
+                bm_grid dataTable
+                LEFT JOIN bm_inspection_task g ON dataTable.grid_id = g.grid_id AND g.delete_flag = 0 AND g.send_flag = 1
+                <if test='queryStartTime != null and queryStartTime != ""
+                            and queryEndTime != null and queryEndTime != ""'>
+                    AND g.create_time >= #{queryStartTime} AND g.create_time <![CDATA[<=]]> #{queryEndTime}
+                </if>
+                <where>
+                    and dataTable.delete_flag = 0
+                    ${dataScope}
+                    <if test='gridId!= null and gridId != "" '>
+                        AND g.grid_id LIKE concat('%',#{gridId},'%')
+                    </if>
+                </where>
+            GROUP BY
+                dataTable.grid_id
+            ) a
+        ORDER BY
+            ISNULL( taskCompletedRate ), taskCompletedRates DESC,
+            CAST(a.gridLevel AS UNSIGNED),
+            CONVERT (a.gridName USING GBK)
+    </select>
+
+    <select id="getGridTaskCompletionRateByType" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT
+            CONCAT(a.grid_id, '') AS gridId,
+            a.grid_name AS gridName,
+            CONCAT(a.keeperId, '') AS keeperId,
+            a.keeperNum,
+            IFNULL( CASE WHEN a.keeper_type = '1' THEN '网格长' ELSE '网格员' END, '网格员' ) AS keeperType,
+            IFNULL( a.keeper_type, '2' ) AS keeper_type,
+            a.inspectionTaskNum,
+            a.taskCompletedNum,
+            a.taskIncompleteNum,
+            IFNULL( ROUND(( IFNULL( a.taskCompletedNum, 0 )/ a.inspectionTaskNum ) * 100, 2 ), 0 ) AS taskCompletedRate
+        FROM (
+            SELECT
+                dataTable.grid_id,
+                dataTable.grid_name,
+                r.keeper_type,
+                r.keeper_id AS keeperId,
+                r.keeper_name AS keeperName,
+                COUNT( r.keeper_id ) AS keeperNum,
+                IFNULL( SUM( IF ( (t.task_status = '1' and t.feedback_keeper_id = r.keeper_id) OR t.task_status = '2' , 1, 0 )), 0 ) AS inspectionTaskNum,
+                IFNULL( SUM( IF ( t.task_status = '1' and t.feedback_keeper_id =r.keeper_id , 1, 0 )), 0 ) AS taskCompletedNum,
+                IFNULL( SUM( IF ( t.task_status = '2', 1, 0 )), 0 ) AS taskIncompleteNum
+            FROM
+                bm_grid dataTable
+                LEFT JOIN bm_inspection_task t ON dataTable.grid_id = t.grid_id AND t.send_flag = 1 AND t.delete_flag = 0
+                <if test='queryStartTime != null and queryStartTime != ""
+                                            and queryEndTime != null and queryEndTime != ""'>
+                    AND t.create_time >= #{queryStartTime} AND t.create_time <![CDATA[<=]]> #{queryEndTime}
+                </if>
+                LEFT JOIN bm_gridkeeper r ON FIND_IN_SET( r.keeper_id, t.keeper_id ) AND r.delete_flag = 0
+            <where>
+                AND dataTable.delete_flag = 0
+                ${dataScope}
+            </where>
+            GROUP BY dataTable.grid_id, r.keeper_type
+        ) a
+        ORDER BY a.grid_id DESC
+    </select>
+
+    <select id="getGridInspectTaskBack" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT a.inspectionTaskNum,a.inspectionTaskNumPc,a.inspectionTaskNumApp,
+            IFNULL(ROUND((IFNULL(a.inspectionTaskNumPc,0)/a.inspectionTaskNum) *100),0) AS pcRate,
+        IFNULL(ROUND((IFNULL(a.inspectionTaskNumApp,0)/a.inspectionTaskNum) *100),0) AS appRate
+        FROM(
+        SELECT  IFNULL( SUM( IF ( dataTable.task_status = '1' OR dataTable.task_status = '2' , 1, 0 )), 0 ) as inspectionTaskNum,
+        IFNULL(SUM(IF(dataTable.feedback_end ='1',1,0)),0) as inspectionTaskNumPc,
+        IFNULL(SUM(IF(dataTable.feedback_end ='2',1,0)),0) as inspectionTaskNumApp,
+        IFNULL(ROUND((IFNULL(SUM(IF(dataTable.feedback_end ='1',1,0)),0)/COUNT(dataTable.task_id)) *100),0) AS pcRate,
+        IFNULL(ROUND((IFNULL(SUM(IF(dataTable.feedback_end ='2',1,0)),0)/COUNT(dataTable.task_id)) *100),0) AS appRate
+        FROM bm_inspection_task dataTable
+        <where>
+            and dataTable.delete_flag = 0 and  dataTable.send_flag = 1
+            AND dataTable.task_status = '1'
+            ${dataScope}
+            <if test='gridId!= null and gridId != "" '>
+                AND dataTable.grid_id LIKE concat('%',#{gridId},'%')
+            </if>
+            <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+                AND dataTable.inspection_time >= #{queryStartTime} AND dataTable.inspection_time <![CDATA[<=]]> #{queryEndTime}
+            </if>
+        </where>
+        )a
+            WHERE a.inspectionTaskNum > 0
+    </select>
+
+
+    <select id="getGridInspectTaskBackByHour" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT t1.label,IFNULL(t2.inspectionTaskBackNum,0) AS inspectionTaskBackNum FROM (
+        SELECT 0 AS `hour`,'0:00-1:00' AS label UNION
+        SELECT 1 AS `hour`,'1:00-2:00' AS label UNION
+        SELECT 2 AS `hour`,'2:00-3:00' AS label UNION
+        SELECT 3 AS `hour`,'3:00-4:00' AS label UNION
+        SELECT 4 AS `hour`,'4:00-5:00' AS label UNION
+        SELECT 5 AS `hour`,'5:00-6:00' AS label UNION
+        SELECT 6 AS `hour`,'6:00-7:00' AS label UNION
+        SELECT 7 AS `hour`,'7:00-8:00' AS label UNION
+        SELECT 8 AS `hour`,'8:00-9:00' AS label UNION
+        SELECT 9 AS `hour`,'9:00-10:00' AS label UNION
+        SELECT 10 AS `hour`,'10:00-11:00' AS label UNION
+        SELECT 11 AS `hour`,'11:00-12:00' AS label UNION
+        SELECT 12 AS `hour`,'12:00-13:00' AS label UNION
+        SELECT 13 AS `hour`,'13:00-14:00' AS label UNION
+        SELECT 14 AS `hour`,'14:00-15:00' AS label UNION
+        SELECT 15 AS `hour`,'15:00-16:00' AS label UNION
+        SELECT 16 AS `hour`,'16:00-17:00' AS label UNION
+        SELECT 17 AS `hour`,'17:00-18:00' AS label UNION
+        SELECT 18 AS `hour`,'18:00-19:00' AS label UNION
+        SELECT 19 AS `hour`,'19:00-20:00' AS label UNION
+        SELECT 20 AS `hour`,'20:00-21:00' AS label UNION
+        SELECT 21 AS `hour`,'21:00-22:00' AS label UNION
+        SELECT 22 AS `hour`,'22:00-23:00' AS label UNION
+        SELECT 23 AS `hour`,'23:00-24:00' AS label) t1
+        LEFT JOIN
+        (SELECT HOUR(inspection_time) as hour,IFNULL(SUM(IF(dataTable.feedback_end ='1' OR dataTable.feedback_end ='2',1,0)),0) as inspectionTaskBackNum
+        FROM bm_inspection_task dataTable
+        <where>
+            and dataTable.delete_flag = 0 and dataTable.send_flag = 1
+            AND dataTable.task_status = '1'
+            ${dataScope}
+            <if test='gridId!= null and gridId != "" '>
+                AND dataTable.grid_id LIKE concat('%',#{gridId},'%')
+            </if>
+            <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+                AND dataTable.inspection_time >= #{queryStartTime} AND dataTable.inspection_time <![CDATA[<=]]> #{queryEndTime}
+            </if>
+        </where>
+        GROUP BY HOUR(dataTable.inspection_time)
+            )t2 ON t1.hour = t2.hour
+        ORDER BY t1.`hour`
+    </select>
+
+    <select id="getGridInspectTaskBackByHourById" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT t1.label,IFNULL(t2.inspectionTaskBackNum,0) AS inspectionTaskBackNum FROM (
+        SELECT 0 AS `hour`,'0:00-1:00' AS label UNION
+        SELECT 1 AS `hour`,'1:00-2:00' AS label UNION
+        SELECT 2 AS `hour`,'2:00-3:00' AS label UNION
+        SELECT 3 AS `hour`,'3:00-4:00' AS label UNION
+        SELECT 4 AS `hour`,'4:00-5:00' AS label UNION
+        SELECT 5 AS `hour`,'5:00-6:00' AS label UNION
+        SELECT 6 AS `hour`,'6:00-7:00' AS label UNION
+        SELECT 7 AS `hour`,'7:00-8:00' AS label UNION
+        SELECT 8 AS `hour`,'8:00-9:00' AS label UNION
+        SELECT 9 AS `hour`,'9:00-10:00' AS label UNION
+        SELECT 10 AS `hour`,'10:00-11:00' AS label UNION
+        SELECT 11 AS `hour`,'11:00-12:00' AS label UNION
+        SELECT 12 AS `hour`,'12:00-13:00' AS label UNION
+        SELECT 13 AS `hour`,'13:00-14:00' AS label UNION
+        SELECT 14 AS `hour`,'14:00-15:00' AS label UNION
+        SELECT 15 AS `hour`,'15:00-16:00' AS label UNION
+        SELECT 16 AS `hour`,'16:00-17:00' AS label UNION
+        SELECT 17 AS `hour`,'17:00-18:00' AS label UNION
+        SELECT 18 AS `hour`,'18:00-19:00' AS label UNION
+        SELECT 19 AS `hour`,'19:00-20:00' AS label UNION
+        SELECT 20 AS `hour`,'20:00-21:00' AS label UNION
+        SELECT 21 AS `hour`,'21:00-22:00' AS label UNION
+        SELECT 22 AS `hour`,'22:00-23:00' AS label UNION
+        SELECT 23 AS `hour`,'23:00-24:00' AS label) t1
+        LEFT JOIN
+        (SELECT HOUR(inspection_time) as hour,IFNULL(SUM(IF(dataTable.feedback_end ='1' OR dataTable.feedback_end ='2',1,0)),0) as inspectionTaskBackNum
+        FROM bm_inspection_task dataTable
+        <where>
+            and dataTable.delete_flag = 0 and dataTable.send_flag = 1
+            AND dataTable.task_status = '1'
+            ${dataScope}
+            <if test='gridId!= null and gridId != "" '>
+                AND dataTable.grid_id LIKE concat('%',#{gridId},'%')
+            </if>
+            <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+                AND dataTable.inspection_time >= #{queryStartTime} AND dataTable.inspection_time <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            <if test="keeperId != null and keeperId != ''">
+                AND FIND_IN_SET(#{keeperId},dataTable.keeper_id)
+                AND dataTable.feedback_keeper_id = #{keeperId}
+            </if>
+
+        </where>
+        GROUP BY HOUR(dataTable.inspection_time)
+        )t2 ON t1.hour = t2.hour
+        ORDER BY t1.`hour`
+    </select>
+
+
+    <select id="getGridInspectTaskByDay" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT cc.assigned_date AS assignedDate,IFNULL(SUM(t.inspectionTaskNum),0) AS inspectionTaskNum,
+        IFNULL(SUM(t.taskCompletedNum),0) AS taskCompletedNum,IFNULL(SUM(t.taskIncompleteNum),0) AS taskIncompleteNum
+               FROM(
+        (SELECT date_format(assigned_date,'%Y-%m-%d') assigned_date
+        FROM
+        (SELECT adddate('2019-01-01',t3.i*1000 + t2.i*100 + t1.i*10 + t0.i) assigned_date
+        FROM
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3
+        ) c
+        <where>
+        <if test=' queryStartTime != null and queryStartTime != "" '>
+            and assigned_date between  SUBSTR(#{queryStartTime},1,10) and SUBSTR(#{queryEndTime},1,10)
+        </if>
+        </where>
+        ) cc
+        LEFT JOIN
+        (SELECT date_format( dataTable.create_time, '%Y-%m-%d' ) as create_time,IFNULL( SUM( IF ( (dataTable.task_status = '1') OR dataTable.task_status = '2' , 1, 0 )), 0 ) as inspectionTaskNum,IFNULL(SUM(IF(dataTable.task_status ='1' ,1,0)),0) as taskCompletedNum,
+        IFNULL(SUM(IF(dataTable.task_status ='2',1,0)),0) as taskIncompleteNum
+        FROM bm_inspection_task dataTable
+        <where>
+            and dataTable.delete_flag = 0 and  dataTable.send_flag = 1
+            ${dataScope}
+            <if test='gridId!= null and gridId != "" '>
+                AND dataTable.grid_id LIKE concat('%',#{gridId},'%')
+            </if>
+            <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+                AND dataTable.create_time >= #{queryStartTime} AND dataTable.create_time <![CDATA[<=]]> #{queryEndTime}
+            </if>
+        </where>
+        GROUP BY date_format( dataTable.create_time, '%Y-%m-%d' ))t
+        ON  date_format(t.create_time,'%Y-%m-%d') = cc.assigned_date)
+        GROUP BY cc.assigned_date
+        ORDER BY date_format(cc.assigned_date,'%Y-%m-%d')
+    </select>
+
+    <select id="getGridInspectTaskByDayById" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT cc.assigned_date AS assignedDate,IFNULL(SUM(t.inspectionTaskNum),0) AS inspectionTaskNum,
+        IFNULL(SUM(t.taskCompletedNum),0) AS taskCompletedNum,IFNULL(SUM(t.taskIncompleteNum),0) AS taskIncompleteNum
+        FROM(
+        (SELECT date_format(assigned_date,'%Y-%m-%d') assigned_date
+        FROM
+        (SELECT adddate('2019-01-01',t3.i*1000 + t2.i*100 + t1.i*10 + t0.i) assigned_date
+        FROM
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3
+        ) c
+        <where>
+            <if test=' queryStartTime != null and queryStartTime != "" '>
+                and assigned_date between  SUBSTR(#{queryStartTime},1,10) and SUBSTR(#{queryEndTime},1,10)
+            </if>
+        </where>
+        ) cc
+        LEFT JOIN
+        (SELECT date_format( dataTable.create_time, '%Y-%m-%d' ) as create_time,IFNULL( SUM( IF ( (dataTable.task_status = '1' and dataTable.feedback_keeper_id = #{keeperId}) OR dataTable.task_status = '2' , 1, 0 )), 0 ) as inspectionTaskNum,IFNULL(SUM(IF(dataTable.task_status ='1' and dataTable.feedback_keeper_id = #{keeperId} ,1,0)),0) as taskCompletedNum,
+        IFNULL(SUM(IF(dataTable.task_status ='2',1,0)),0) as taskIncompleteNum
+        FROM bm_inspection_task dataTable
+        <where>
+            and dataTable.delete_flag = 0 and  dataTable.send_flag = 1
+            ${dataScope}
+            <if test='gridId!= null and gridId != "" '>
+                AND dataTable.grid_id LIKE concat('%',#{gridId},'%')
+            </if>
+            <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+                AND dataTable.create_time >= #{queryStartTime} AND dataTable.create_time <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            <if test="keeperId != null and keeperId != ''">
+                AND FIND_IN_SET(#{keeperId},dataTable.keeper_id)
+            </if>
+        </where>
+        GROUP BY date_format( dataTable.create_time, '%Y-%m-%d' ))t
+        ON  date_format(t.create_time,'%Y-%m-%d') = cc.assigned_date)
+        GROUP BY cc.assigned_date
+        ORDER BY date_format(cc.assigned_date,'%Y-%m-%d')
+    </select>
+
+
+    <select id="getGridInspectTaskByPerson" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT CAST(a.keeperId AS CHAR) as keeperId,a.keeperName,a.inspectionTaskNum,a.taskCompletedNum,a.taskIncompleteNum,
+        IF(a.inspectionTaskNum = 0,NULL,IFNULL(ROUND((IFNULL(a.taskCompletedNum,0)/a.inspectionTaskNum) *100),0)) AS completedRate,
+        IFNULL((IFNULL(a.taskCompletedNum,0)/a.inspectionTaskNum) *100,0) AS completedRates
+        FROM(
+        SELECT
+        r.keeper_id AS keeperId,
+        r.keeper_name AS keeperName,
+        IFNULL( SUM( IF ( (dataTable.task_status = '1' and dataTable.feedback_keeper_id =r.keeper_id) OR dataTable.task_status = '2' , 1, 0 )), 0 ) AS inspectionTaskNum,
+        IFNULL( SUM( IF ( dataTable.task_status = '1' and dataTable.feedback_keeper_id =r.keeper_id , 1, 0 )), 0 ) AS taskCompletedNum,
+        IFNULL( SUM( IF ( dataTable.task_status = '2', 1, 0 )), 0 ) AS taskIncompleteNum
+        FROM
+        bm_inspection_task dataTable
+        LEFT JOIN bm_gridkeeper r ON   FIND_IN_SET(r.keeper_id,dataTable.keeper_id) and r.delete_flag = 0
+
+        LEFT JOIN  bm_grid t ON dataTable.grid_id = t.grid_id and t.delete_flag = 0
+        <where>
+            and  dataTable.send_flag = 1
+            and dataTable.delete_flag = 0
+            <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+                AND dataTable.create_time >= #{queryStartTime} AND dataTable.create_time <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            <if test='gridId!= null and gridId != "" '>
+                AND dataTable.grid_id = #{gridId}
+            </if>
+            ${dataScope}
+        </where>
+        GROUP BY
+        r.keeper_id
+        )a
+        WHERE a.inspectionTaskNum >0
+            <if test="keeperId != null and keeperId != ''">
+                AND a.keeperId = #{keeperId}
+            </if>
+        ORDER BY inspectionTaskNum DESC, ISNULL( completedRate ),completedRates DESC,CONVERT(a.keeperName USING GBK)
+    </select>
+
+    <select id="getGridInspectTaskRateByPerson" resultType="java.util.Map" parameterType="com.chinatower.bdm.api.entity.InspectStatisticsVo">
+        SELECT CAST(a.keeperId AS CHAR) as keeperId,a.keeperName,a.inspectionTaskNum,a.taskCompletedNum,a.taskIncompleteNum,
+        IF(a.inspectionTaskNum = 0,NULL,IFNULL(ROUND((IFNULL(a.taskCompletedNum,0)/a.inspectionTaskNum) *100),0)) AS completedRate,
+        IFNULL((IFNULL(a.taskCompletedNum,0)/a.inspectionTaskNum) *100,0) AS completedRates
+        FROM(
+        SELECT
+        r.keeper_id AS keeperId,
+        r.keeper_name AS keeperName,
+        IFNULL( SUM( IF ( (dataTable.task_status = '1' and dataTable.feedback_keeper_id =r.keeper_id) OR dataTable.task_status = '2' , 1, 0 )), 0 ) AS inspectionTaskNum,
+        IFNULL( SUM( IF ( dataTable.task_status = '1' and dataTable.feedback_keeper_id =r.keeper_id , 1, 0 )), 0 ) AS taskCompletedNum,
+        IFNULL( SUM( IF ( dataTable.task_status = '2', 1, 0 )), 0 ) AS taskIncompleteNum
+        FROM
+        bm_inspection_task dataTable
+        LEFT JOIN bm_gridkeeper r ON   FIND_IN_SET(r.keeper_id,dataTable.keeper_id) and r.delete_flag = 0
+
+        LEFT JOIN  bm_grid t ON dataTable.grid_id = t.grid_id and t.delete_flag = 0
+        <where>
+            and  dataTable.send_flag = 1
+            and dataTable.delete_flag = 0
+            <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+                AND dataTable.create_time >= #{queryStartTime} AND dataTable.create_time <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            <if test='gridId!= null and gridId != "" '>
+                AND dataTable.grid_id = #{gridId}
+            </if>
+            ${dataScope}
+        </where>
+        GROUP BY
+        r.keeper_id
+        )a
+        WHERE a.inspectionTaskNum >0
+        <if test="keeperId != null and keeperId != ''">
+            AND a.keeperId = #{keeperId}
+        </if>
+        ORDER BY
+        ISNULL( completedRate ),
+        completedRates DESC,
+        CONVERT ( a.keeperName USING GBK )
+    </select>
+
+    <select id="getInspectionConf" resultType="com.chinatower.bdm.api.entity.InspectionConfStatisticsVO">
+        SELECT
+            count( conf_id ) AS allNum
+        FROM
+            bm_inspection_conf
+        WHERE delete_flag = 0 ${dataScope}
+        <if test="createStartDate != null and createStartDate != ''">
+            <![CDATA[and DATE_FORMAT(create_time,'%Y-%m-%d') >= #{createStartDate}]]>
+        </if>
+        <if test="createEndDate != null and createEndDate != ''">
+            <![CDATA[and DATE_FORMAT(create_time,'%Y-%m-%d') <= #{createEndDate}]]>
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.AlarmSuppressConfigMapper">
+
+	<resultMap type="com.chinatower.event.entity.dto.AlarmSuppressConfigDTO" id="baseResultMap">
+		<id property="configId" column="config_id"/>
+		<result property="deviceCode" column="device_code"/>
+		<result property="suppressBeginTime" column="suppress_begin_time"/>
+		<result property="suppressEndTime" column="suppress_end_time"/>
+		<result property="suppressContinuousTime" column="suppress_continuous_time"/>
+		<result property="suppressIntervalType" column="suppress_interval_type"/>
+		<result property="createBy" column="create_by"/>
+		<result property="createTime" column="create_time"/>
+		<result property="updateBy" column="update_by"/>
+		<result property="updateTime" column="update_time"/>
+		<result property="deleteFlag" column="delete_flag"/>
+	</resultMap>
+
+	<sql id="searchField">
+		dataTable.config_id as configId,
+		dataTable.device_code as deviceCode,
+		dataTable.suppress_begin_time as suppressBeginTime,
+		dataTable.suppress_end_time as suppressEndTime,
+		dataTable.suppress_continuous_time as suppressContinuousTime,
+		dataTable.suppress_interval_type as suppressIntervalType,
+		dataTable.create_by as createBy,
+		dataTable.create_time as createTime,
+		dataTable.update_by as updateBy,
+		dataTable.update_time as updateTime,
+		dataTable.delete_flag as deleteFlag,
+		dataTable.tenant_id as tenantId
+	</sql>
+
+	<select id="querySuppressConfigByTenantIds" resultType="com.chinatower.event.entity.dto.AlarmSuppressConfigDTO">
+		SELECT <include refid="searchField"/>
+		FROM vm_alarm_suppress_config dataTable
+		WHERE dataTable.tenant_id IN
+		<foreach collection="tenantIdList" item="item" open="(" close=")" separator="," >
+			#{item}
+		</foreach>
+	</select>
+</mapper>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.WarningOrderBatchMapper">
+
+
+    <update id="batchUpdateWarningOrder" parameterType="com.chinatower.event.dto.BatchDelWarningOrderDTO">
+        update ${param.tableName}
+        <set>
+            delete_flag = '1',
+            <if test='param.deleteRemark != null and param.deleteRemark != ""'>
+                delete_remark = #{param.deleteRemark},
+            </if>
+            modifier_date = now(),
+            user_record = CONCAT_WS(',',user_record,NULL,#{param.userId})
+        </set>
+        where tenant_id = #{param.tenantId}
+        <if test="param.tradeId != null and param.tradeId != ''">
+            AND industry_code = #{param.tradeId}
+        </if>
+        <if test="param.appVerCode != null and param.appVerCode != ''">
+            AND app_ver_code = #{param.appVerCode}
+        </if>
+        <if test="param.warningOrderIdList!= null and param.warningOrderIdList.size() > 0 ">
+            AND warning_order_id in
+            <foreach collection="param.warningOrderIdList" item="warningOrderId" index="index" open="(" close=")" separator=",">
+                #{warningOrderId}
+            </foreach>
+        </if>
+    </update>
+
+    <update id="batchUpdateFlowRecord" parameterType="com.chinatower.event.dto.BatchDelWarningOrderDTO">
+        update ${param.tableName}
+        <set>
+            delete_flag = '1'
+        </set>
+        where order_id in
+        <foreach collection="param.warningOrderIdList" item="warningOrderId" index="index" open="(" close=")" separator=",">
+            #{warningOrderId}
+        </foreach>
+    </update>
+    <insert id="batchAddIntercept" parameterType="com.chinatower.event.dto.BatchDelWarningOrderDTO">
+        insert into vm_warning_intercept_t
+        (id, warning_order_id, task_id, warning_type_id, alarm_time, tenant_id, tenant_name, province_code, province_name, city_code,
+        city_name, county_code, county_name, longitude, latitude, alarm_body, channel_code, channel_name, device_code, device_name,
+        ptz_p, ptz_t, ptz_z, address, alarm_code, algorithm_code, emergency_level, customer_code, grid_id, grid_code, grid_name, video_url,
+        file_img_url_src, file_img_url_icon, create_time, modifier_date, importance_level, intercept,
+        industry_code,app_ver_code, alarm_param, alarm_param_value, extra_field, hori_azimuth_angle,
+        confidence_level,confidence_level_min,comp_confidence_level,warning_source ,msg_type,
+        msg_id,notice_resource,front_alarm_pic_url,front_alarm_vedio_url,camera_alarm_type,is_second_judge,second_judge_result,town_code,town_name,delete_flag)
+        select
+        UUID_SHORT() as id, warning_order_id, task_id, warning_type_id, alarm_time, tenant_id, tenant_name, province_code, province_name, city_code,
+        city_name, county_code, county_name, longitude, latitude, alarm_body, channel_code, channel_name, device_code, device_name,
+        ptz_p, ptz_t, ptz_z, address, alarm_code, algorithm_code, emergency_level, tenant_id as customer_code, grid_id, grid_code, grid_name, video_url,
+        file_img_url_src, file_img_url_icon, create_time, modifier_date, importance_level, '5' as intercept
+        ,industry_code,app_ver_code, alarm_param, alarm_param_value, extra_field, hori_azimuth_angle,
+        confidence_level,confidence_level_min,comp_confidence_level,warning_source ,msg_type,
+        msg_id,notice_resource,front_alarm_pic_url,front_alarm_vedio_url,camera_alarm_type,is_second_judge,second_judge_result,town_code,town_name,'0' as delete_flag
+        from ${param.tableName}
+        where tenant_id = #{param.tenantId}
+        <if test="param.tradeId != null and param.tradeId != ''">
+            AND industry_code = #{param.tradeId}
+        </if>
+        <if test="param.appVerCode != null and param.appVerCode != ''">
+            AND app_ver_code = #{param.appVerCode}
+        </if>
+        <if test="param.warningOrderIdList!= null and param.warningOrderIdList.size() > 0 ">
+            AND warning_order_id in
+            <foreach collection="param.warningOrderIdList" item="warningOrderId" index="index" open="(" close=")" separator=",">
+                #{warningOrderId}
+            </foreach>
+        </if>
+    </insert>
+    <delete id="batchDeleteIntercept">
+        delete from vm_warning_intercept_t where warning_order_id in
+            <foreach collection="param.warningOrderIdList" item="warningOrderId" index="index" open="(" close=")" separator=",">
+                #{warningOrderId}
+            </foreach>
+    </delete>
+
+    <update id="batchDeleteLeaderAudit">
+        update vm_order_leader_audit_t set delete_flag = '1' where order_id in
+        <foreach collection="param.warningOrderIdList" item="warningOrderId" index="index" open="(" close=")" separator=",">
+            #{warningOrderId}
+        </foreach>
+    </update>
+
+    <update id="batchUpdateWarningOrderCollection">
+        update vm_warning_order_collection_t t
+        <set>
+            <if test="alarmReason != null">
+                t.alarm_reason = #{alarmReason},
+            </if>
+            t.order_status = '6',
+            t.process_id = '',
+            t.process_name = ''
+        </set>
+        where warning_order_id in
+        <foreach collection="warningOrderIdList" item="warningOrderId" index="index" open="(" close=")" separator=",">
+            #{warningOrderId}
+        </foreach>
+    </update>
+</mapper>

@@ -1,0 +1,730 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.inspectionRoute.mapper.InspectionRouteMapper">
+
+    <resultMap id="layerMap" type="com.chinatower.bdm.modules.inspectionRoute.entity.LayerTreeVO">
+        <result column="type_name" property="layerTypeName" jdbcType="VARCHAR" />
+        <collection property="layerInfoList" ofType="com.chinatower.bdm.modules.inspectionRoute.entity.LayerInfoVO">
+            <result column="id" property="id" jdbcType="VARCHAR" />
+            <result column="geoserver_url" property="geoserverUrl" jdbcType="VARCHAR" />
+            <result column="layer_name" property="layerName" jdbcType="VARCHAR" />
+            <result column="layer_namespace" property="layerNamespace" jdbcType="VARCHAR" />
+            <result column="custom_name" property="customName" jdbcType="VARCHAR" />
+            <result column="game_key" property="gameKey" jdbcType="VARCHAR" />
+            <result column="maxx" property="maxx" jdbcType="DOUBLE" />
+            <result column="maxy" property="maxy" jdbcType="DOUBLE" />
+            <result column="minx" property="minx" jdbcType="DOUBLE" />
+            <result column="miny" property="miny" jdbcType="DOUBLE" />
+            <result column="layer_type_id" property="layerTypeId" jdbcType="VARCHAR" />
+        </collection>
+    </resultMap>
+
+    <sql id="relBaseColumn">
+               t.id,
+               t.inspection_route_id,
+               t.layer_id,
+               t.feature_id,
+               t.polygon_id,
+               t.device_code,
+               t.channel_code,
+               t.preset_id,
+               t.route_status,
+               t.inspection_start_time,
+               t.pause_start_time,
+               t.pause_time,
+               t.duration_time,
+               t.duration_unit,
+               t.sort_seq
+    </sql>
+
+    <select id="queryInspectionList" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionVO">
+        select distinct
+        s.id,
+        s.inspection_route_name,
+        s.`pause_cruise_flag`,
+        s.route_status,
+        s.creator,
+        s.create_time,
+        s.modifier,
+        s.update_time
+        from sys_inspection_route s
+        where s.delete_flag = 0
+        <if test="param.inspectionRouteName != null and param.inspectionRouteName != ''">
+            and s.inspection_route_name like CONCAT('%', #{param.inspectionRouteName}, '%')
+        </if>
+        <if test="param.creator != null and param.creator !=''">
+            and s.creator like CONCAT('%', #{param.creator}, '%')
+        </if>
+        ${param.dataScope}
+        <if test="param.modifier != null and param.modifier != ''">
+            and s.modifier like CONCAT('%',#{param.modifier},'%')
+        </if>
+        <if test="param.createTimeBegin != null and param.createTimeBegin != ''">
+            and s.create_time <![CDATA[ >= ]]> #{param.createTimeBegin}
+        </if>
+        <if test="param.createTimeEnd != null and param.createTimeEnd != ''">
+            and s.create_time <![CDATA[ <= ]]> #{param.createTimeEnd}
+        </if>
+        <if test="param.updateTimeBegin != null and param.updateTimeBegin != ''">
+            and s.update_time <![CDATA[ >= ]]> #{param.updateTimeBegin}
+        </if>
+        <if test="param.updateTimeEnd != null and param.updateTimeEnd != ''">
+            and s.update_time <![CDATA[ <= ]]> #{param.updateTimeEnd}
+        </if>
+        <choose>
+            <when test="param.sortName == 'createTime'">
+                order by s.create_time
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="param.sortName == 'updateTime'">
+                order by s.update_time
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by s.create_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="queryInspectionRelIdList" resultType="java.lang.Long">
+        select s.id
+        from sys_inspection_route_fence_rel s
+        where
+        s.inspection_route_id = #{param.inspectionRouteId}
+        and s.delete_flag = 0
+        and s.tenant_id = #{param.tenantId}
+        and s.industry_code = #{param.industryCode}
+    </select>
+
+    <select id="queryInspectionRelList" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelVO">
+        select
+        s.id,
+        s.sort_seq,
+        s.feature_id,
+        s.duration_time,
+        s.duration_unit,
+        s.layer_id,
+        s.plot_area,
+        s.tbbh,
+        l.custom_name as layer_name,
+        l.geoserver_url,
+        l.file_url,
+        l.maxx,
+        l.maxy,
+        l.minx,
+        l.miny,
+        c.polygon_no,
+        c.preset_name,
+        c.preset_id,
+        c.device_code,
+        (case when length(IFNULL(ten.device_name,'')) = 0 then d.device_name else ten.device_name end) as deviceName,
+        c.channel_code,
+        (case when length(IFNULL(ten.channel_name,'')) = 0 then a.channel_name else ten.channel_name end) as channelName,
+        c.polygon_points,
+        c.polygon_id,
+        c.monitor_area_id
+        from sys_inspection_route_fence_rel s
+        inner join vm_order_devices ord on s.device_code = ord.device_code and s.tenant_id = ord.tenant_id
+        and s.industry_code = ord.industry_code and ord.ord_status in (0, 1, 2) and ord.accept_node = #{param.platformCode}
+        and ord.delete_flag = 0
+        left join sys_layer l on s.layer_id = l.id and s.tenant_id = l.tenant_id and s.industry_code = l.industry_code
+        left join vm_polygon_patch_config c on s.polygon_id = c.polygon_id and s.tenant_id = c.tenant_id
+        and s.industry_code = c.industry_code and c.delete_flag = 0
+        left join vm_device_info_t d on ord.device_code = d.device_code and d.delete_flag = 0
+        left join vm_channel_info_t a on ord.device_code = a.device_code
+        and s.channel_code = a.channel_code and a.delete_flag = 0
+        left join vm_tenant_device_channel_rel_t ten on ten.device_code = ord.device_code and ten.channel_code = s.channel_code
+        and ten.tenant_id = ord.tenant_id and ten.delete_flag='0' and ten.industry_code = ord.industry_code
+        where
+        s.inspection_route_id = #{param.inspectionRouteId}
+        and s.delete_flag = 0
+        and s.tenant_id = #{param.tenantId}
+        and s.industry_code = #{param.industryCode}
+        <if test='param.dataPermissions != null and param.dataPermissions != ""'>
+            ${param.dataPermissions}
+        </if>
+        group by s.id
+        order by s.sort_seq, s.id
+    </select>
+
+    <select id="queryLayerList" resultMap="layerMap">
+        select
+        l.id,
+        l.geoserver_url,
+        l.layer_name,
+        l.layer_namespace,
+        l.custom_name,
+        t.type_name,
+        l.game_key,
+        l.maxx,
+        l.maxy,
+        l.minx,
+        l.miny,
+        l.layer_type_id
+        from sys_layer l
+        left join sys_layer_type t on l.layer_type_id = t.id
+        where l.tenant_id = #{param.tenantId} and l.industry_code = #{param.industryCode}
+        and l.delete_flag = 0
+        <if test="param.customName != null and param.customName != ''">
+            and l.custom_name like CONCAT('%',#{param.customName},'%')
+        </if>
+        <if test="param.layerTypeId != null and param.layerTypeId != ''">
+            and l.layer_type_id = #{param.layerId}
+        </if>
+        <if test='param.dataPermissions != null and param.dataPermissions != ""'>
+            ${param.dataPermissions}
+        </if>
+    </select>
+
+
+    <select id="queryPolygonPathInfo" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.PolygonPatchConfigVO">
+        select
+        p.polygon_id,
+        p.polygon_no,
+        p.polygon_points,
+        p.device_code,
+        (case when length(IFNULL(ten.device_name, '')) = 0 then d.device_name else ten.device_name end) deviceName,
+        p.channel_code,
+        (case when length(IFNULL(ten.channel_name, '')) = 0 then a.channel_name else ten.channel_name end) channelName,
+        p.preset_id,
+        p.preset_name,
+        p.layer_id,
+        p.layer_name,
+        p.feature_id,
+        p.tbbh
+        from vm_polygon_patch_config p
+        left join vm_device_info_t d on p.device_code = d.device_code and d.delete_flag = 0
+        inner join vm_order_devices ord on p.device_code = ord.device_code and p.tenant_id = ord.tenant_id
+        and p.industry_code = ord.industry_code
+        left join vm_channel_info_t a on p.device_code = a.device_code
+        and p.channel_code = a.channel_code and a.delete_flag = 0
+        left join vm_tenant_device_channel_rel_t ten on ten.device_code = p.device_code
+        and ten.tenant_id = p.tenant_id and ten.delete_flag='0' and ten.industry_code = p.industry_code
+        where
+        ord.ord_status in (0, 1, 2)
+        and ord.delete_flag = 0
+        <choose>
+            <when test="param.polygonPatchList != null and param.polygonPatchList.size() > 0">
+                and
+                <foreach collection="param.polygonPatchList" item="item" open="(" separator="or" close=")">
+                    (p.layer_id = #{item.layerId} and p.feature_id = #{item.featureId})
+                </foreach>
+            </when>
+            <otherwise>
+                and p.layer_id = #{param.layerId}
+                and p.feature_id = #{param.featureId}
+            </otherwise>
+        </choose>
+        and p.tenant_id = #{param.tenantId}
+        and p.industry_code = #{param.industryCode}
+        and p.delete_flag = 0
+    </select>
+
+    <select id="selectInspectionByName" resultType="java.lang.Integer">
+        select
+        count(*)
+        from sys_inspection_route s
+        where s.inspection_route_name = #{param.inspectionRouteName}
+        and s.tenant_id = #{param.tenantId}
+        and s.industry_code = #{param.industryCode}
+        and s.delete_flag = 0
+        <if test="param.inspectionRouteId != null">
+            and s.id != #{param.inspectionRouteId}
+        </if>
+    </select>
+
+    <insert id="insertInspectionRoute" keyProperty="id" useGeneratedKeys="true" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionVO">
+        insert into sys_inspection_route
+        (
+        inspection_route_name,
+        pause_cruise_flag,
+        route_status,
+        tenant_id,
+        industry_code,
+        app_ver_code,
+        creator,
+        create_time,
+        delete_flag
+        )
+        values
+        (
+        #{param.inspectionRouteName},
+        #{param.pauseCruiseFlag},
+        #{param.routeStatus},
+        #{param.tenantId},
+        #{param.industryCode},
+        #{param.appVerCode},
+        #{param.creator},
+        now(),
+        '0'
+        )
+    </insert>
+
+    <insert id="insertPolygonPatchBatch" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.PolygonPatchConfigVO">
+        insert into vm_polygon_patch_config
+        (polygon_id,monitor_area_id,polygon_points,polygon_no,device_code,channel_code,preset_id,preset_name,layer_id,layer_name,
+        feature_id,create_by,create_time,delete_flag,industry_code,tenant_id,app_ver_code,tbbh)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.polygonId},#{item.monitorAreaId},#{item.polygonPoints},#{item.polygonNo},#{item.deviceCode},#{item.channelCode},#{item.presetId},
+            #{item.presetName},#{item.layerId},#{item.layerName},#{item.featureId},#{item.creator},now(),'0',#{item.industryCode},
+            #{item.tenantId},#{item.appVerCode},#{item.tbbh})
+        </foreach>
+    </insert>
+
+    <insert id="insertInspectionRelList" parameterType="java.util.List">
+        insert into sys_inspection_route_fence_rel
+        (inspection_route_id,layer_id,feature_id,plot_area,polygon_id,device_code,channel_code,preset_id,route_status,pause_time,duration_time,
+        duration_unit,sort_seq,tenant_id,industry_code,app_ver_code,creator,create_time,delete_flag,tbbh)
+        values
+        <foreach collection="list" item="item" separator="," index="index">
+        (
+            #{item.inspectionRouteId},
+            #{item.layerId},
+            #{item.featureId},
+            #{item.plotArea},
+            #{item.polygonId},
+            #{item.deviceCode},
+            #{item.channelCode},
+            #{item.presetId},
+            '0',
+            '0',
+            #{item.durationTime},
+            #{item.durationUnit},
+            #{item.sortSeq},
+            #{item.tenantId},
+            #{item.industryCode},
+            #{item.appVerCode},
+            #{item.creator},
+            now(),
+            '0',
+            #{item.tbbh}
+        )
+        </foreach>
+    </insert>
+
+    <update id="updateInspectionStatusWithOriginalStatus">
+        update sys_inspection_route
+        set route_status = #{param.routeStatus}, modifier = #{param.modifier}, update_time = #{param.updateTime}
+        where id = #{param.id}
+        <if test="param.originalRouteStatus != null">
+            and route_status = #{param.originalRouteStatus}
+        </if>
+    </update>
+
+    <select id="selectInspectionRelById" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelInfoVO">
+        select * from sys_inspection_route_fence_rel where id = #{id}
+    </select>
+
+    <select id="selectInspectionRelByIdWithPermission" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelInfoVO">
+        select rel.id
+        from sys_inspection_route_fence_rel rel
+        inner join vm_order_devices o on rel.tenant_id = o.tenant_id and rel.industry_code = o.industry_code and rel.device_code = o.device_code
+        where rel.id = #{param.inspectionRouteSubId}
+        ${param.dataScope}
+        limit 1
+    </select>
+
+    <select id="selectInspectionRelBriefInfoById" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelBriefInfoVO">
+        select rel.device_code, rel.channel_code, rel.preset_id, r.`pause_cruise_flag`
+        from sys_inspection_route_fence_rel rel inner join sys_inspection_route r on r.id = rel.inspection_route_id
+        where rel.id = #{id}
+    </select>
+
+    <select id="selectWorkRelBriefInfoByRouteId" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelBriefInfoVO">
+        select rel.device_code, r.`pause_cruise_flag`
+        from sys_inspection_route r inner join sys_inspection_route_fence_rel rel on r.id = rel.inspection_route_id
+        where r.id = #{id} and rel.route_status = 1
+        limit 1
+    </select>
+
+    <select id="selectInspectionRelByRouteIdAndStatus" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelInfoVO">
+        select * from sys_inspection_route_fence_rel where inspection_route_id = #{inspectionRouteId} and route_status = #{routeStatus} limit 1
+    </select>
+
+    <update id="updateInspectionRelTimeAndStatusWithOriginalStatus">
+        update sys_inspection_route_fence_rel
+        set route_status = #{param.routeStatus},
+        <if test="param.inspectionStartTime != null">
+            inspection_start_time = #{param.inspectionStartTime},
+        </if>
+        <if test="param.pauseStartTime != null">
+            pause_start_time = #{param.pauseStartTime},
+        </if>
+        modifier = #{param.modifier}, update_time = #{param.updateTime}
+        where id = #{param.id} and route_status = #{param.originalRouteStatus}
+    </update>
+
+    <update id="finishInspectionInfo">
+        update sys_inspection_route
+        set route_status = 0, modifier = #{param.modifier}, update_time = #{param.updateTime}
+        where id = #{param.inspectionRouteId}
+    </update>
+
+    <update id="finishInspectionRelInfo">
+        update sys_inspection_route_fence_rel
+        set route_status = 0, modifier = #{param.modifier}, update_time = #{param.updateTime},
+        inspection_start_time = null, pause_start_time = null, pause_time = 0
+        where inspection_route_id = #{param.inspectionRouteId}
+    </update>
+
+    <update id="recoverInspectionRelStatus">
+        update sys_inspection_route_fence_rel
+        set route_status = 1, modifier = #{param.modifier}, update_time = #{param.updateTime},
+        pause_time = pause_time + (unix_timestamp(#{param.updateTime}) - unix_timestamp(pause_start_time))
+        where inspection_route_id = #{param.inspectionRouteId} and id = #{param.inspectionRouteSubId} and route_status in (0, 2)
+    </update>
+
+    <update id="resetInspectionRelStatus">
+        update sys_inspection_route_fence_rel
+        set route_status = 1, modifier = #{param.modifier}, update_time = #{param.updateTime},
+        inspection_start_time = #{param.updateTime}, pause_start_time = null, pause_time = 0
+        where inspection_route_id = #{param.inspectionRouteId} and id = #{param.inspectionRouteSubId}
+    </update>
+
+    <update id="updateOtherRouteRelStatus">
+        update sys_inspection_route_fence_rel
+        set route_status = #{routeStatus}, modifier = #{param.modifier}, update_time = #{param.updateTime},
+        inspection_start_time = null, pause_start_time = null
+        where inspection_route_id = #{param.inspectionRouteId} and id != #{param.inspectionRouteSubId}
+    </update>
+
+    <select id="queryFirstTaskInfo" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelInfoVO">
+        select rel.*
+        from sys_inspection_route_fence_rel rel
+        inner join vm_order_devices o on rel.tenant_id = o.tenant_id and rel.industry_code = o.industry_code and rel.device_code = o.device_code
+        where rel.tenant_id = #{param.tenantId} and rel.industry_code = #{param.industryCode} and rel.inspection_route_id = #{param.inspectionRouteId}
+        and o.ord_status in (0,1,2) and o.delete_flag = 0
+        order by rel.sort_seq limit 1
+    </select>
+
+    <select id="queryInspectionRoutePage4Sdk" resultType="com.chinatower.bdm.api.entity.InspectionRoutePage4SdkVO">
+        select r.id inspectionRouteId, r.inspection_route_name inspectionRouteName, r.route_status routeStatus,
+        group_concat(distinct(l.layer_name)) layerNames,
+        group_concat(distinct(l.custom_name)) customNames,
+        count(distinct rel.feature_id) plotNum
+<!--        TRUNCATE(sum(DISTINCT case when rel.feature_id then rel.plot_area else 0 end), 2) plotTotalArea-->
+        from sys_inspection_route r
+        inner join sys_inspection_route_fence_rel rel on r.id = rel.inspection_route_id
+        inner join sys_layer l on rel.layer_id = l.id
+        inner join vm_order_devices o on rel.tenant_id = o.tenant_id and rel.industry_code = o.industry_code and rel.device_code = o.device_code
+        where r.tenant_id = #{param.tenantId} and r.industry_code = #{param.industryCode} and r.delete_flag = 0
+        and o.ord_status in (0,1,2) and o.delete_flag = 0
+        <if test="param.inspectionRouteName != null and param.inspectionRouteName != '' ">
+            and r.inspection_route_name like concat('%', #{param.inspectionRouteName}, '%')
+        </if>
+        <if test='param.dataPermissions != null and param.dataPermissions != ""'>
+            ${param.dataPermissions}
+        </if>
+        group by r.id
+        order by r.create_time desc
+    </select>
+
+    <select id="queryFeaturePlotInfo" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionFeaturePlotVO">
+        select rel.feature_id, rel.plot_area,rel.inspection_route_id
+        from sys_inspection_route r
+        inner join sys_inspection_route_fence_rel rel on r.id = rel.inspection_route_id
+        inner join sys_layer l on rel.layer_id = l.id
+        where r.id in
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <if test='dataPermissions != null and dataPermissions != ""'>
+            ${dataPermissions}
+        </if>
+        group by rel.feature_id,rel.inspection_route_id
+    </select>
+
+    <select id="selectRouteById" parameterType="com.chinatower.bdm.api.entity.InspectionRouteProcessParam" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionVO">
+        select id,
+               inspection_route_name,
+               route_status
+        from sys_inspection_route
+            where id = #{param.inspectionRouteId}
+                and tenant_id = #{param.tenantId}
+                and industry_code = #{param.industryCode}
+                and delete_flag = 0
+    </select>
+
+    <select id="findNext" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelInfoVO" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelInfoVO">
+        select <include refid="relBaseColumn"/>
+            from sys_inspection_route_fence_rel t
+            inner join vm_order_devices o on t.tenant_id = o.tenant_id and t.industry_code = o.industry_code and t.device_code = o.device_code
+        where t.inspection_route_id = #{param.inspectionRouteId}
+            and t.tenant_id = #{param.tenantId}
+            and t.industry_code = #{param.industryCode}
+            and t.delete_flag = 0
+            and t.sort_seq > #{param.sortSeq}
+            and o.ord_status in (0,1,2) and o.delete_flag = 0
+            order by t.sort_seq
+            limit 1
+    </select>
+
+    <select id="queryInspectionLayer" parameterType="com.chinatower.bdm.api.entity.InspectionRouteRelLayerPageSdkParam" resultType="com.chinatower.bdm.api.entity.InspectionRouteRelLayerSdkVO">
+        select rel.layer_id,
+               rel.feature_id,
+               de.device_code,
+               cc.channel_code,
+               rel.preset_id,
+               rel.duration_time,
+               rel.duration_unit,
+               IFNULL(dr.device_name, de.device_name) AS device_name,
+               IFNULL(dr.channel_name, cc.channel_name) AS channel_name,
+               de.longitude,
+               de.latitude,
+               c.polygon_points,
+               c.tbbh,
+               layer.custom_name layerName,
+               rel.id as inspection_route_sub_id,
+               rel.inspection_route_id,
+               rel.sort_seq,
+               rel.route_status as status
+            from sys_inspection_route_fence_rel rel
+                inner join vm_order_devices ord on rel.device_code = ord.device_code
+                and rel.tenant_id = ord.tenant_id
+                and rel.industry_code = ord.industry_code
+                and ord.ord_status in(0, 1, 2)
+                and ord.delete_flag = 0 and ord.accept_node = #{param.platformCode}
+                left join vm_device_info_t de on de.device_code = ord.device_code and de.delete_flag = 0
+                left join vm_polygon_patch_config c on rel.polygon_id = c.polygon_id and rel.tenant_id = c.tenant_id
+                    and rel.industry_code = c.industry_code
+                    and c.delete_flag = 0
+                left join sys_layer layer on layer.id = rel.layer_id
+                    and layer.tenant_id = rel.tenant_id
+                    and layer.industry_code = rel.industry_code
+                    and layer.delete_flag = 0
+                left join vm_tenant_device_channel_rel_t dr on dr.device_code = ord.device_code and dr.delete_flag = '0'
+                    AND dr.tenant_id = ord.tenant_id and dr.channel_code = rel.channel_code and dr.industry_code = ord.industry_code
+                left join vm_channel_info_t cc on cc.device_code = ord.device_code and cc.channel_code = rel.channel_code and cc.delete_flag = 0
+            where rel.tenant_id = #{param.tenantId}
+                and rel.industry_code = #{param.industryCode}
+                and rel.inspection_route_id = #{param.inspectionRouteId}
+                and rel.delete_flag = 0
+                <if test='param.dataPermissions != null and param.dataPermissions != ""'>
+                    ${param.dataPermissions}
+                </if>
+        group by rel.id
+        order by rel.sort_seq, rel.id
+    </select>
+
+    <update id="deleteInspectionRoute" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionDTO">
+        update sys_inspection_route
+        set delete_flag = '1'
+        where id = #{param.inspectionRouteId}
+        and tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+    </update>
+
+    <delete id="deleteInspectionRelInfo" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionDTO">
+        delete from sys_inspection_route_fence_rel
+        where inspection_route_id = #{param.inspectionRouteId} and tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+    </delete>
+
+    <select id="createInspectionName" resultType="java.lang.String">
+        SELECT
+        IF(MAX(CAST(a.inspection_route_name AS SIGNED)) is not null, concat('地块巡检路线', MAX(CAST(a.inspection_route_name AS SIGNED)) + 1), '地块巡检路线1')
+        FROM
+        (
+        SELECT
+        SUBSTRING(inspection_route_name, 7) AS inspection_route_name
+        FROM
+        sys_inspection_route
+        WHERE
+        inspection_route_name LIKE '地块巡检路线%'
+        AND delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        ) a
+    </select>
+
+    <select id="selectInspectionById" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionVO">
+        select * from sys_inspection_route
+        where id = #{id} and tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0
+    </select>
+
+    <update id="updateInspectionInfo" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionVO">
+        update sys_inspection_route
+        set
+        inspection_route_name = #{param.inspectionRouteName},
+        pause_cruise_flag = #{param.pauseCruiseFlag},
+        modifier = #{param.modifier},
+        update_time = now()
+        where
+        id = #{param.id} and tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+    </update>
+
+    <delete id="deleteInspectionRelById" parameterType="java.util.List">
+        delete from sys_inspection_route_fence_rel
+        where
+        id in
+        <foreach collection="list" item="item" open="(" close=")" separator="," index="index">
+            #{item}
+        </foreach>
+    </delete>
+
+    <update id="updateInspectionRelBatch" parameterType="java.util.List">
+        <foreach collection="list" item="item" separator=";">
+            update
+            sys_inspection_route_fence_rel
+            <set>
+                sort_seq = #{item.sortSeq},
+                duration_time = #{item.durationTime},
+                duration_unit = #{item.durationUnit},
+                modifier = #{item.modifier},
+                update_time = now()
+            </set>
+            where id = #{item.id}
+        </foreach>
+    </update>
+
+    <select id="queryInspectionByPolygonId" resultType="java.lang.Integer">
+        select count(*) from sys_inspection_route_fence_rel
+        where
+        polygon_id = #{param.polygonId}
+        and tenant_id = #{param.tenantId}
+        and industry_code = #{param.industryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="selectMaxPolygonNo" resultType="java.lang.Integer">
+        select case when IFNULL(max(polygon_no),0) = 0 then 0 else max(polygon_no) end
+        from vm_polygon_patch_config
+        where
+        device_code = #{param.deviceCode} and channel_code = #{param.channelCode}
+        and preset_id = #{param.presetId} and tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="queryPolygonList" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.PolygonPatchConfigVO">
+        select p.feature_id,s.id as inpectionRelId
+        from vm_polygon_patch_config p
+        left join sys_inspection_route_fence_rel s on p.polygon_id = s.polygon_id
+        and s.delete_flag = 0 and p.tenant_id = s.tenant_id and p.industry_code = s.industry_code
+        where p.delete_flag = 0
+        and p.layer_id = #{param.layerId}
+        and p.tenant_id = #{param.tenantId}
+        and p.industry_code = #{param.industryCode}
+        order by p.create_time desc,p.polygon_id desc
+    </select>
+
+    <select id="getInspectionRouteNum" resultType="java.lang.Integer">
+        select count(*)
+        from sys_inspection_route
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0
+        <if test="createTimeBegin != null and createTimeBegin != ''">
+            and create_time <![CDATA[ >= ]]> #{createTimeBegin}
+        </if>
+        <if test="createTimeEnd != null and createTimeEnd != ''">
+            and create_time <![CDATA[ <= ]]> #{createTimeEnd}
+        </if>
+    </select>
+
+    <select id="getInspectionPolygonNum" resultType="java.lang.Integer">
+        select count(distinct rel.feature_id)
+        from sys_inspection_route r
+        inner join sys_inspection_route_fence_rel rel on r.id = rel.inspection_route_id
+        where r.tenant_id = #{tenantId} and r.industry_code = #{industryCode} and r.delete_flag = 0
+        <if test="createTimeBegin != null and createTimeBegin != ''">
+            and r.create_time <![CDATA[ >= ]]> #{createTimeBegin}
+        </if>
+        <if test="createTimeEnd != null and createTimeEnd != ''">
+            and r.create_time <![CDATA[ <= ]]> #{createTimeEnd}
+        </if>
+    </select>
+
+    <insert id="initRouteRecord" parameterType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRouteRecordDTO">
+        insert into sys_inspection_route_record
+        (
+        route_id,
+        start_time,
+        route_status,
+        tenant_id,
+        industry_code,
+        app_ver_code,
+        creator,
+        create_time,
+        delete_flag
+        )
+        values
+        (
+        #{param.routeId},
+        #{param.startTime},
+        #{param.routeStatus},
+        #{param.tenantId},
+        #{param.industryCode},
+        #{param.appVerCode},
+        #{param.creator},
+        #{param.createTime},
+        '0'
+        )
+    </insert>
+
+    <select id="getLatestRouteInfoByStatus" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRouteRecordDTO">
+        select id, start_time
+        from sys_inspection_route_record
+        where route_id = #{routeId} and route_status = #{routeStatus}
+        order by id desc limit 1
+    </select>
+
+    <update id="updateRouteRecord">
+        update sys_inspection_route_record
+        set end_time = #{param.endTime}, modifier = #{param.modifier},
+        <if test="param.duration != null">
+            duration = duration + #{param.duration},
+        </if>
+        <if test="param.startTime != null">
+            start_time = #{param.startTime},
+        </if>
+        update_time = #{param.updateTime}
+        where id = #{param.id}
+    </update>
+
+    <select id="queryInspectionCountInfo" resultType="com.chinatower.bdm.api.entity.InspectionRouteRecordVO">
+        select count(distinct r.id) inspectionRouteCount, count(distinct rel.feature_id) inspectPlotNum
+        from sys_inspection_route r
+        inner join sys_inspection_route_fence_rel rel on r.id = rel.inspection_route_id
+        where r.tenant_id = #{tenantId} and r.industry_code = #{industryCode} and r.delete_flag = 0
+        <if test="startTime != null">
+            and r.create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            and r.create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <select id="queryInspectionRecordInfo" resultType="com.chinatower.bdm.api.entity.InspectionRouteRecordVO">
+        select IFNULL(sum(duration), 0) inspectionDuration, count(*) inspectionTimes
+        from sys_inspection_route_record
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0 and duration > 0
+        <if test="startTime != null">
+            and create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            and create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <select id="selectValidRouteCount" resultType="java.lang.Integer">
+        select count(*)
+        from sys_inspection_route
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0
+    </select>
+
+    <select id="queryDurationInfoByRouteIdList" resultType="com.chinatower.bdm.modules.inspectionRoute.entity.InspectionRelVO">
+        select inspection_route_id, duration_time, duration_unit
+        from sys_inspection_route_fence_rel
+        where inspection_route_id in
+        <foreach collection="inspectionRouteIdList" item="item" open="(" close=")" separator="," index="index">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

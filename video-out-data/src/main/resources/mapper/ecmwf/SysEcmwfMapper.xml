@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.ecmwf.mapper.SysEcmwfMapper">
+
+
+
+
+    <delete id="delete" parameterType="com.chinatower.platform.ecmwf.domain.SysEcmwf">
+        delete from sys_ecmwf where ECMWF_TYPE=#{ecmwfType} and data_time != #{dataTime}
+    </delete>
+
+    <insert id="insert" parameterType="com.chinatower.platform.ecmwf.domain.SysEcmwf">
+        INSERT INTO `sys_ecmwf`
+        (ecmwf_id, ecmwf_type, ecmwf_path, begin_time, end_time, in_time,data_time, ecmwf_str,begin_lat,begin_lon,grib,longth_num,height_num,end_lat,end_lon,min_data,max_data,grib_unit)
+        VALUES
+        (UUID_SHORT(), #{ecmwfType}, #{ecmwfPath}, #{beginTime}, #{endTime}, NOW(), #{dataTime},#{ecmwfStr},#{beginLat},#{beginLon},#{grib},#{longthNum},#{heightNum},#{endLat},#{endLon},#{minData},#{maxData},#{gribUnit})
+    </insert>
+
+    <select id="getEcmwf" parameterType="com.chinatower.outdata.api.entity.EcmwfVO" resultType="com.chinatower.outdata.api.entity.EcmwfHeader" >
+        SELECT
+        data_time as "gribRefTime",
+        ecmwf_str as "ecmwfStr",
+        begin_lat as lat1,
+        begin_lon as long2,
+        grib as dx,
+        grib as dy,
+        longth_num as nx,
+        height_num as ny,
+        end_lat as lat2,
+        end_lon as long1,
+        min_data as min,
+        max_data as max,
+        grib_unit as "gribUnit"
+        FROM sys_ecmwf
+        WHERE ECMWF_TYPE = #{ecmwfType} and #{queryDate}  between BEGIN_TIME and END_TIME order by data_time desc limit 1
+
+    </select>
+
+    <select id="getEcmwfLastInfo" parameterType="com.chinatower.outdata.api.entity.EcmwfVO" resultType="com.chinatower.outdata.api.entity.EcmwfHeader" >
+        SELECT
+        data_time as "gribRefTime",
+        ecmwf_str as "ecmwfStr",
+        begin_lat as lat1,
+        begin_lon as long2,
+        grib as dx,
+        grib as dy,
+        longth_num as nx,
+        height_num as ny,
+        end_lat as lat2,
+        end_lon as long1,
+        min_data as min,
+        max_data as max,
+        grib_unit as "gribUnit"
+        FROM sys_ecmwf
+        WHERE ECMWF_TYPE = #{ecmwfType}  order by BEGIN_TIME desc limit 1
+
+    </select>
+
+</mapper>

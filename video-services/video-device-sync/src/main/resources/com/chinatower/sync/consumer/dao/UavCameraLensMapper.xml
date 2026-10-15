@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.UavCameraLensMapper">
+
+    <insert id="insertUavCameraLensBatch" parameterType="com.chinatower.sync.consumer.item.UavCameraParamReport">
+        insert into vm_uav_camera_lens_param
+        (camera_model_code, lens_name, spectral_type, sensor_size, pixel_size,
+        focal_length_type, zoom_conversion_coefficient, actual_focal_length_range, equivalent_focal_length_range, optical_zoom_range,
+        digital_zoom_range, color_palette_style, supporting_feature, creator, create_time, modifier, update_time, delete_flag)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceUavCameraDictDataCode}, #{item.lensName}, #{item.spectralType}, #{item.sensorSize},
+            #{item.pixelSize}, #{item.focalLengthType}, #{item.zoomConversionCoefficient},
+            #{item.actualFocalLengthRange}, #{item.equivalentFocalLengthRange}, #{item.opticalZoomRange}, #{item.digitalZoomRange},
+            #{item.colorPaletteStyle}, #{item.supportingFeature}, #{item.createBy}, #{item.createTime}, #{item.updateBy},
+            #{item.updateTime}, 0)
+        </foreach>
+    </insert>
+
+    <delete id="deleteUavCameraLensBatch">
+        delete from vm_uav_camera_lens_param
+        where delete_flag = 0
+    </delete>
+</mapper>

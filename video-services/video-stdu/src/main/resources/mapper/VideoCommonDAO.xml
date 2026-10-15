@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.stdu.common.dao.VideoCommonDAO">
+
+    <select id="queryOrderDeviceByTableName" parameterType="com.chinatower.video.api.entity.VideoBaseReq" resultType="java.util.Map">
+        SELECT
+            order_code
+        FROM
+            ${tableName} t
+        WHERE
+            t.device_code = #{param.deviceCode,jdbcType=VARCHAR}
+          AND t.delete_flag = '0' and t.ord_status in (0, 1, 2)
+            ${param.dataScope}
+        order by t.create_time desc limit 1
+    </select>
+
+    <select id="queryOrderDeviceByTableNameNoAuth" parameterType="com.chinatower.video.api.entity.VideoBaseReq" resultType="java.util.Map">
+        SELECT
+            order_code
+        FROM
+            ${tableName} t
+        WHERE
+            t.device_code = #{param.deviceCode,jdbcType=VARCHAR}
+          AND t.delete_flag = '0' and t.ord_status in (0, 1, 2) AND
+            t.tenant_id = #{param.tenantId,jdbcType=VARCHAR}
+        order by t.create_time desc limit 1
+    </select>
+
+    <select id="getErrorMsg" parameterType="java.lang.String" resultType="java.lang.String">
+		select dict_label from sys_dict_data
+		where dict_type = 92 and dict_value = #{dictValue}
+    </select>
+
+
+</mapper>

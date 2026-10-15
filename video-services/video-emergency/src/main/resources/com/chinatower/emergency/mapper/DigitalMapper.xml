@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.chinatower.emergency.mapper.DigitalMapper">
+
+    <resultMap id="digitalMap" type="com.chinatower.emergency.dto.Digital">
+        <id column="digital_id" property="digitalId" />
+        <result column="event_name" property="eventName" />
+        <result column="event_grade_dict" property="eventGradeDict" />
+        <result column="event_type_large_category" property="eventTypeLargeCategory" />
+        <result column="event_type_middle_category" property="eventTypeMiddleCategory" />
+        <result column="event_type_small_category" property="eventTypeSmallCategory" />
+        <result column="event_describe" property="eventDescribe" />
+        <result column="remark" property="remark" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="app_ver_code" property="appVerCode" />
+        <result column="commander" property="commander" />
+        <result column="commanderName" property="commanderName" />
+        <result column="create_time" property="createTime" />
+        <result column="creator" property="creator" />
+        <result column="update_time" property="updateTime" />
+        <result column="modifier" property="modifier" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="death_count" property="deathCount" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="emergency_count" property="emergencyCount" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="collapses_count" property="collapsesCount" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="difficult_count" property="difficultCount" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="other" property="other" />
+        <result column="accept_node" property="acceptNode" />
+        <collection property="attachList" ofType="com.chinatower.emergency.dto.EmergencyAttachVO">
+            <result column="origin_url" property="originUrl" />
+            <result column="file_id" property="fileId" />
+            <result column="file_suffix" property="fileSuffix" />
+            <result column="file_name" property="fileName" />
+            <result column="file_size" property="fileSize" />
+
+        </collection>
+    </resultMap>
+
+
+    <resultMap id="digitalPlanMap" type="com.chinatower.emergency.dto.DigitalPlan">
+        <id column="plan_id" property="planId" />
+        <result column="digital_id" property="digitalId" />
+        <result column="target_days" property="targetDays" />
+        <result column="stage_count" property="stageCount" />
+        <result column="total_target" property="totalTarget" />
+        <result column="create_time" property="createTime" />
+        <result column="creator" property="creator" />
+        <result column="update_time" property="updateTime" />
+        <result column="modifier" property="modifier" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+    </resultMap>
+
+    <resultMap id="digitalPlanDetailMap" type="com.chinatower.emergency.dto.DigitalPlan">
+        <id column="plan_id" property="planId" />
+        <result column="digital_id" property="digitalId" />
+        <result column="target_days" property="targetDays" />
+        <result column="stage_count" property="stageCount" />
+        <result column="total_target" property="totalTarget" />
+        <result column="create_time" property="createTime" />
+        <result column="creator" property="creator" />
+        <result column="update_time" property="updateTime" />
+        <result column="modifier" property="modifier" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <collection property="digitalStage" ofType="com.chinatower.emergency.dto.DigitalStage">
+            <result column="stage_id" property="stageId"/>
+            <result column="digital_id" property="digitalId"/>
+            <result column="plan_id" property="planId"/>
+            <result column="sort" property="sort"/>
+            <result column="stage_name" property="stageName"/>
+            <result column="stage_days" property="stageDays"/>
+            <result column="stage_target" property="stageTarget"/>
+            <collection property="taskList" ofType="com.chinatower.emergency.dto.DigitalTask">
+                <result column="task_id" property="taskId"/>
+                <result column="task_name" property="taskName"/>
+                <result column="digital_id" property="digitalId"/>
+                <result column="plan_id" property="planId"/>
+                <result column="stage_id" property="stageId"/>
+                <result column="content" property="content"/>
+                <result column="user_ids" property="userIds"/>
+                <collection property="resourceList" ofType="string" javaType="arrayList">
+                    <constructor>
+                        <arg column="resource_id"/>
+                    </constructor>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+
+    <resultMap id="taskMap" type="com.chinatower.emergency.dto.DigitalTask">
+        <id column="task_id" property="taskId"/>
+        <result column="digital_id" property="digitalId"/>
+        <result column="plan_id" property="planId"/>
+        <result column="task_name" property="taskName"/>
+        <result column="stage_id" property="stageId"/>
+        <result column="content" property="content"/>
+        <result column="user_ids" property="userIds"/>
+        <collection property="resourceList" ofType="string" javaType="arrayList">
+            <constructor>
+                <arg column="resource_id"/>
+            </constructor>
+        </collection>
+    </resultMap>
+
+    <insert id="save">
+        INSERT INTO `vm_digital_info`
+            (`digital_id`, `event_name`, `event_grade_dict`,
+             `event_type_large_category`, `event_type_middle_category`, `event_type_small_category`, `event_describe`,
+             `files`, `remark`, `tenant_id`, `industry_code`, `app_ver_code`,commander,
+             `create_time`, `creator`, `delete_flag`,
+             `death_count`, `emergency_count`, `collapses_count`, `difficult_count`, `other`, `accept_node`)
+        VALUES
+            (
+             #{digitalId},#{eventName},#{eventGradeDict},
+             #{eventTypeLargeCategory},#{eventTypeMiddleCategory},#{eventTypeSmallCategory},#{eventDescribe},
+             #{files},#{remark},#{tenantId},#{industryCode},#{appVerCode},#{commander},
+             NOW(),#{creator},0,
+             #{deathCount, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+             #{emergencyCount, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+             #{collapsesCount, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+             #{difficultCount, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},#{other},#{acceptNode}
+            );
+
+    </insert>
+    <insert id="savePlan">
+        INSERT INTO `vm_digital_plan`
+            (`plan_id`, `digital_id`, `target_days`, `stage_count`, `total_target`,
+             `creator`, `create_time`, `delete_flag`,
+             `tenant_id`, `industry_code`)
+        VALUES
+            (#{planId}, #{digitalId}, #{targetDays}, #{stageCount}, #{totalTarget},
+             #{creator}, NOW(), 0,
+             #{tenantId}, #{industryCode});
+
+    </insert>
+    <insert id="saveStageBatch">
+        INSERT INTO `vm_digital_stage`
+            (`stage_id`, `digital_id`, `plan_id`, `sort`, `stage_name`,
+             `stage_days`, `stage_target`, `creator`, `create_time`,`delete_flag`,
+             `tenant_id`, `industry_code`)
+        VALUES
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.stageId}, #{item.digitalId}, #{item.planId}, #{item.sort}, #{item.stageName},
+            #{item.stageDays}, #{item.stageTarget},#{item.creator}, NOW(), 0,
+            #{item.tenantId}, #{item.industryCode})
+        </foreach>
+
+    </insert>
+    <insert id="saveTaskBatch">
+        INSERT INTO `vm_digital_task`
+            (`task_id`, `digital_id`, `plan_id`, `stage_id`, `task_name`, `content`,
+             `user_ids`, `creator`, `create_time`, `delete_flag`,
+             `tenant_id`, `industry_code`)
+        VALUES
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.taskId}, #{item.digitalId}, #{item.planId}, #{item.stageId}, #{item.taskName}, #{item.content},
+            #{item.userIds}, #{item.creator}, NOW(), 0,
+            #{item.tenantId}, #{item.industryCode})
+        </foreach>
+    </insert>
+    <update id="update">
+        UPDATE vm_digital_info
+        SET event_name = #{eventName},
+            event_grade_dict = #{eventGradeDict},
+            event_type_large_category = #{eventTypeLargeCategory},
+            event_type_middle_category = #{eventTypeMiddleCategory},
+            event_type_small_category = #{eventTypeSmallCategory},
+            event_describe = #{eventDescribe},
+            files = #{files},
+            remark = #{remark},
+            death_count = #{deathCount, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+            emergency_count = #{emergencyCount, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+            collapses_count = #{collapsesCount, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+            difficult_count = #{difficultCount, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+            other = #{other},
+            commander = #{commander},
+            modifier = #{modifier},
+            update_time = NOW()
+        WHERE digital_id = #{digitalId}
+
+
+    </update>
+    <update id="updatePlan">
+        UPDATE vm_digital_plan
+        SET target_days = #{targetDays},
+            stage_count = #{stageCount},
+            total_target = #{totalTarget},
+            modifier = #{modifier},
+            update_time = NOW()
+        WHERE plan_id = #{planId}
+    </update>
+    <delete id="deleteStageByDigitalId">
+        DELETE FROM vm_digital_stage WHERE digital_id = #{digitalId}
+    </delete>
+    <delete id="deleteTaskByDigitalId">
+        DELETE FROM vm_digital_task WHERE digital_id = #{digitalId}
+    </delete>
+    <delete id="deleteInfo">
+        UPDATE vm_digital_info SET delete_flag = 1, modifier = #{operator}, update_time = NOW()
+        WHERE delete_flag = 0
+        AND digital_id IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deletePlan">
+        UPDATE vm_digital_plan SET delete_flag = 1, modifier = #{operator}, update_time = NOW()
+        WHERE delete_flag = 0
+        AND digital_id IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteDeptUser">
+        UPDATE vm_emergency_user SET delete_flag = 1, modifier = #{operator}, update_time = NOW()
+        WHERE delete_flag = 0
+        AND emergency_dept_id IN (SELECT id FROM vm_emergency_dept WHERE event_code IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        )
+    </delete>
+    <delete id="deleteDept">
+        UPDATE vm_emergency_dept SET delete_flag = 1, modifier = #{operator}, update_time = NOW()
+        WHERE delete_flag = 0
+        AND event_code IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteStage">
+        UPDATE vm_digital_stage SET delete_flag = 1, modifier = #{operator}, update_time = NOW()
+        WHERE delete_flag = 0
+        AND digital_id IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteTask">
+        UPDATE vm_digital_task SET delete_flag = 1, modifier = #{operator}, update_time = NOW()
+        WHERE delete_flag = 0
+        AND digital_id IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteResource">
+        UPDATE vm_emergency_resource_info SET delete_flag = 1, modifier = #{operator}, update_time = NOW()
+        WHERE delete_flag = 0
+        AND event_code IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <select id="findById" resultMap="digitalMap">
+        SELECT
+            t1.`digital_id`, t1.`event_name`, t1.`event_grade_dict`,
+            t1.`event_type_large_category`, t1.`event_type_middle_category`, t1.`event_type_small_category`, t1.`event_describe`,
+            t1.`remark`, t1.`tenant_id`, t1.`industry_code`, t1.`app_ver_code`,t1.commander,t3.nick_name commanderName,
+            t1.`create_time`, t1.`creator`, t1.`delete_flag`,
+            t1.`death_count`, t1.`emergency_count`, t1.`collapses_count`, t1.`difficult_count`, t1.`other`, t1.`accept_node`,
+            t2.origin_url,t2.file_id,t2.file_suffix,t2.file_name,t2.file_size
+        FROM vm_digital_info t1 LEFT JOIN vm_emergency_attach t2 ON t1.digital_id = t2.business_code
+        LEFT JOIN sys_user t3 ON t1.commander = t3.user_id AND t3.DEL_FLAG = 0
+        WHERE
+            t1.delete_flag = 0
+            AND t1.digital_id = #{digitalId}
+    </select>
+    <select id="findPlanById" resultMap="digitalPlanMap">
+        SELECT
+            t1.`plan_id`, t1.`digital_id`, t1.`target_days`, t1.`stage_count`, t1.`total_target`,
+            t1.`creator`, t1.`create_time`, t1.`delete_flag`,
+            t1.`tenant_id`, t1.`industry_code`
+        FROM vm_digital_plan t1
+        WHERE
+            t1.delete_flag = 0
+            AND t1.digital_id = #{digitalId}
+    </select>
+    <select id="list" resultType="com.chinatower.emergency.dto.Digital">
+        SELECT
+            t1.`digital_id`, t1.`event_name`, t1.`event_grade_dict`,
+        t1.`event_type_large_category`, t1.`event_type_middle_category`, t1.`event_type_small_category`, t1.`event_describe`,
+        t1.`tenant_id`, t1.`industry_code`, t1.`app_ver_code`,
+        t1.`create_time`, t1.`creator`,t1.update_time,t1.modifier,
+        t1.`accept_node`,t1.tenant_id,t2.tenant_name,t5.industry_name
+        FROM vm_digital_info t1 left join sys_tenant_info t2 ON t1.tenant_id = t2.tenant_id
+        LEFT JOIN sys_industry_conf t5 ON t1.industry_code = t5.industry_code AND t5.accept_node = #{acceptNode} AND t5.delete_flag = 0
+        <if test="creator != null and creator != ''">
+            LEFT JOIN sys_user t3 ON t1.creator = t3.user_name AND t3.DEL_FLAG = 0
+        </if>
+        <if test="modifier != null and modifier != ''">
+            LEFT JOIN sys_user t4 ON t1.modifier = t4.user_name AND t4.DEL_FLAG = 0
+        </if>
+        WHERE
+            t1.delete_flag = 0
+        <if test="eventName != null and eventName != ''">
+            AND t1.event_name LIKE concat('%', #{eventName}, '%')
+        </if>
+        <if test="eventGradeDictList != null and eventGradeDictList.size() > 0">
+            AND t1.event_grade_dict IN
+            <foreach collection="eventGradeDictList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="smallCategoryList != null and smallCategoryList.size() > 0">
+            AND t1.event_type_small_category IN
+            <foreach collection="smallCategoryList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="creator != null and creator != ''">
+            AND (t1.creator LIKE concat('%', #{creator}, '%') OR t3.nick_name LIKE concat('%', #{creator}, '%'))
+        </if>
+        <if test="modifier != null and modifier != ''">
+            AND (t1.modifier LIKE concat('%', #{modifier}, '%') OR t4.nick_name LIKE concat('%', #{modifier}, '%'))
+        </if>
+        <if test="createTimeStart != null and createTimeStart != ''">
+            AND t1.create_time <![CDATA[ >= ]]> #{createTimeStart}
+        </if>
+        <if test="createTimeEnd != null and createTimeEnd != ''">
+            AND t1.create_time <![CDATA[ <= ]]> #{createTimeEnd}
+        </if>
+        <if test="updateTimeStart != null and updateTimeStart != ''">
+            AND t1.update_time <![CDATA[ >= ]]> #{updateTimeStart}
+        </if>
+        <if test="updateTimeEnd != null and updateTimeEnd != ''">
+            AND t1.update_time <![CDATA[ <= ]]> #{updateTimeEnd}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND t1.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND t1.industry_code = #{industryCode}
+        </if>
+        <choose>
+            <when test="sortName == 'createTime'">
+                order by t1.create_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'updateTime'">
+                order by t1.update_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="creator == 'creator'">
+                order by t1.creator
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="modifier == 'modifier'">
+                order by t1.modifier
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                ORDER BY
+                t1.create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+    <select id="selectUserByUserIds" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select u.user_id, u.user_name, u.password,u.nick_name, u.email, u.avatar
+        , u.phonenumber, u.status,u.pwd_update_time,u.tenant_id,u.user_type
+        from sys_user u
+        where u.del_flag = '0' and u.STATUS = '0'
+            AND u.user_id IN
+            <foreach collection="userIds" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+    </select>
+    <select id="findStage" resultType="com.chinatower.emergency.dto.DigitalStage">
+        select t2.`stage_id`, t2.`digital_id`, t2.`plan_id`, t2.`sort`, t2.`stage_name`,
+               t2.`stage_days`, t2.`stage_target`
+        FROM vm_digital_stage t2 where t2.delete_flag = 0
+        AND t2.digital_id = #{digitalId} ORDER BY t2.sort ASC
+    </select>
+    <select id="findTasksByStage" resultMap="taskMap">
+        SELECT
+            t3.`task_id`, t3.`digital_id`, t3.`plan_id`, t3.`stage_id`, t3.task_name,
+            CASE WHEN SUBSTRING(t3.task_name, 1, 1) REGEXP '[一-龥]'
+            THEN firstPinyin(t3.task_name) ELSE SUBSTRING(t3.task_name, 1, 1) END AS sortName,
+            t3.`content`,
+            t3.`user_ids`,t4.id, t4.resource_id
+        FROM  vm_digital_task t3
+                 LEFT JOIN vm_emergency_resource_info t4 ON  t3.task_id = t4.task_id AND t4.delete_flag = 0
+        WHERE
+            t3.delete_flag = 0
+          AND t3.stage_id = #{stageId}
+        ORDER BY
+            IF(SUBSTRING(t3.task_name, 1, 1) RLIKE '^[a-z]', 1, 2),
+            CASE
+                WHEN SUBSTRING(t3.task_name, 1, 1) REGEXP '[一-龥]' THEN
+                    firstPinyin(t3.task_name)
+                ELSE
+                    SUBSTRING(t3.task_name, 1, 1)
+        END
+    </select>
+    <select id="getStageByEventCode" resultType="com.chinatower.emergency.dto.StageInfoVO">
+        select stage_id     as digitalStageId,
+               digital_id   as digitalId,
+               stage_name,
+               stage_days   as stageDays,
+               stage_target as stageDetail
+        from vm_digital_stage
+        where digital_id = #{digitalId}
+          and delete_flag = '0'
+        order by  sort
+    </select>
+    <select id="getPlanByDigitalId" resultType="com.chinatower.emergency.dto.TargetInfoVO">
+        select plan_id      as targetId,
+               digital_id   as digitalId,
+               target_days  as targetDays,
+               stage_count  as stageNum,
+               total_target as globalDetail
+        from vm_digital_plan
+        where digital_id = #{digitalId}
+          and delete_flag = '0'
+    </select>
+    <select id="getTaskByEventCode" resultType="com.chinatower.emergency.dto.TaskInfoVO">
+        select task_id    as digitalTaskId,
+               digital_id as digitalId,
+               stage_id   as digitalStageId,
+               content    as taskDetail,
+               user_ids,
+               task_name
+        from vm_digital_task
+        where digital_id = #{digitalId}
+          and delete_flag = '0'
+    </select>
+    <select id="getResourceByEventCode" resultType="com.chinatower.emergency.dto.EmergencyResourceVO">
+        select *
+        from vm_emergency_resource_info
+        where event_code = #{digitalId}
+          and delete_flag = '0'
+    </select>
+    <select id="findAllPlanById" resultMap="digitalPlanDetailMap">
+        SELECT
+            t1.`plan_id`, t1.`digital_id`, t1.`target_days`, t1.`stage_count`, t1.`total_target`,
+            t1.`creator`, t1.`create_time`, t1.`delete_flag`,
+            t1.`tenant_id`, t1.`industry_code`,t2.`stage_id`, t2.`digital_id`, t2.`plan_id`, t2.`sort`, t2.`stage_name`,
+            t2.`stage_days`, t2.`stage_target`, t3.`task_id`, t3.task_name,t3.`digital_id`, t3.`plan_id`, t3.`stage_id`, t3.`content`,
+            t3.`user_ids`,t4.id, t4.resource_id
+        FROM vm_digital_plan t1
+                 LEFT JOIN vm_digital_stage t2 ON t1.plan_id = t2.plan_id
+                 LEFT JOIN vm_digital_task t3 ON t2.stage_id = t3.stage_id
+                 LEFT JOIN vm_emergency_resource_info t4 ON t2.stage_id = t4.stage_id AND t3.task_id = t4.task_id
+        WHERE
+            t1.delete_flag = 0 AND t2.delete_flag = 0
+          AND t1.digital_id = #{digitalId}
+    </select>
+    <select id="findByNodeTenantAppVerCode" resultType="java.lang.Integer">
+        select count(1)
+        FROM vm_digital_info
+        WHERE
+            delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND accept_node = #{acceptNode}
+        AND event_name = #{eventName}
+    </select>
+</mapper>

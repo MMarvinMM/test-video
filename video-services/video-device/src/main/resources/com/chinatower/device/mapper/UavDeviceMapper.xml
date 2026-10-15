@@ -1,0 +1,1931 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.UavDeviceMapper">
+    <resultMap id="resultMap" type="com.chinatower.device.entity.vo.UavDeviceQueryVO">
+        <result property="deviceCode" column="device_code"/>
+        <result property="deviceName" column="device_name"/>
+        <result property="deviceStatus" column="device_status"/>
+        <result property="deviceStatusName" column="deviceStatusName"/>
+        <result property="manufacturerCode" column="manufacturer_code"/>
+        <result property="modelCode" column="model_code"/>
+        <result property="location" column="location"/>
+        <result property="siteCode" column="site_code"/>
+        <result property="manufacturerName" column="manufacturerName"/>
+        <result property="modelName" column="modelName"/>
+        <result property="provinceCode" column="province_code"/>
+        <result property="cityCode" column="city_code"/>
+        <result property="countyCode" column="county_code"/>
+        <result property="deviceType" column="device_type"/>
+        <result property="deviceTypeName" column="deviceTypeName"/>
+        <result property="orderStatusName" column="orderStatusName"/>
+        <result property="orderStatus" column="orderStatus"/>
+        <result property="distance" column="distance"/>
+        <result property="isMonitor" column="isMonitor"/>
+        <result property="height" column="height"/>
+        <result property="cameraModelCode" column="cameraModelCode"/>
+        <result property="cameraModelName" column="cameraModelName"/>
+        <result property="uavNestCode" column="uavNestCode"/>
+        <result property="accessNode" column="access_node"/>
+    </resultMap>
+
+    <resultMap id="treeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="province_code" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="city_code" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                <result column="county_code" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+                <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                    <result column="town_code" property="code" jdbcType="VARCHAR"/>
+                    <result column="townName" property="name" jdbcType="VARCHAR"/>
+                    <result column="townLevel" property="level" jdbcType="VARCHAR"/>
+                    <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+                        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+                        <result column="code" property="code" jdbcType="VARCHAR"/>
+                        <result column="name" property="name" jdbcType="VARCHAR"/>
+                        <result column="device_alias" property="deviceAlias" jdbcType="VARCHAR"/>
+                        <result column="device_status" property="status" jdbcType="VARCHAR"/>
+                        <result column="access_node" property="accessNode" jdbcType="VARCHAR"/>
+                    </collection>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <!-- mybatis嵌套查询  -->
+    <resultMap id="areaTreeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="provinceId" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="cityId" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                <result column="countyId" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+                <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                    <result column="deviceCode" property="code" jdbcType="VARCHAR"/>
+                    <result column="device_name" property="name" jdbcType="VARCHAR"/>
+                    <result column="deviceCode" property="deviceCode" jdbcType="VARCHAR"/>
+                    <result column="deviceName" property="deviceName" jdbcType="VARCHAR"/>
+                    <result column="uavNestCode" property="uavNestCode" jdbcType="VARCHAR"/>
+                    <result column="uavNestName" property="uavNestName" jdbcType="VARCHAR"/>
+                    <result column="uavNestStatus" property="uavNestStatus" jdbcType="VARCHAR"/>
+                    <result column="uavNestPositionFix" property="uavNestPositionFix" jdbcType="INTEGER"/>
+                    <result column="uavNestCalibrationStatus" property="uavNestCalibrationStatus" jdbcType="INTEGER"/>
+                    <result column="altitude" property="altitude" jdbcType="VARCHAR"/>
+                    <result column="deviceAlias" property="deviceAlias" jdbcType="VARCHAR"/>
+                    <result column="devLevel" property="level" jdbcType="VARCHAR"/>
+                    <result column="townCode" property="townCode" jdbcType="VARCHAR"/>
+                    <result column="townName" property="townName" jdbcType="VARCHAR"/>
+                    <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+                    <result column="device_status" property="status" jdbcType="VARCHAR"/>
+                    <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+                    <result column="tagCollect" property="tagCollect" jdbcType="VARCHAR"/>
+                    <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+                    <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+                    <result column="access_node" property="accessNode" jdbcType="VARCHAR"/>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <!-- 组织树查询 mybatis嵌套查询  -->
+    <resultMap id="orgTreeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="org_id" property="code" jdbcType="VARCHAR"/>
+        <result column="org_name" property="name" jdbcType="VARCHAR"/>
+        <result column="org_level" property="level" jdbcType="VARCHAR"/>
+        <result column="parent_org_id" property="parentCode" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="device_code" property="code" jdbcType="VARCHAR"/>
+            <result column="device_name" property="name" jdbcType="VARCHAR"/>
+            <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+            <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+            <result column="uavNestCode" property="uavNestCode" jdbcType="VARCHAR"/>
+            <result column="uavNestName" property="uavNestName" jdbcType="VARCHAR"/>
+            <result column="uavNestStatus" property="uavNestStatus" jdbcType="VARCHAR"/>
+            <result column="uavNestPositionFix" property="uavNestPositionFix" jdbcType="INTEGER"/>
+            <result column="nestCalibrationStatus" property="uavNestCalibrationStatus" jdbcType="INTEGER"/>
+            <result column="devLevel" property="level" jdbcType="VARCHAR"/>
+            <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+            <result column="device_status" property="status" jdbcType="VARCHAR"/>
+            <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+            <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+            <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="detailMap" type="com.chinatower.device.entity.vo.UavDeviceQueryVO">
+        <result property="deviceCode" column="device_code"/>
+        <result property="deviceName" column="deviceName"/>
+        <result property="deviceStatus" column="device_status"/>
+        <result property="provinceCode" column="province_code"/>
+        <result property="cityCode" column="city_code"/>
+        <result property="countyCode" column="county_code"/>
+        <result property="townCode" column="town_code"/>
+        <result property="location" column="location"/>
+        <result property="longitude" column="longitude"/>
+        <result property="latitude" column="latitude"/>
+        <result property="areaCode" column="area_code"/>
+        <result property="admCode" column="adm_code"/>
+        <result property="manufacturerCode" column="manufacturer_code"/>
+        <result property="modelCode" column="model_code"/>
+        <result property="deviceType" column="device_type"/>
+        <result property="deviceTypeName" column="deviceTypeName"/>
+        <result property="provinceName" column="provinceName"/>
+        <result property="cityName" column="cityName"/>
+        <result property="countyName" column="countyName"/>
+        <result property="townName" column="townName"/>
+        <result property="manufacturerName" column="manufacturerName"/>
+        <result property="modelName" column="modelName"/>
+        <result property="modifier" column="modifier"/>
+        <result property="creator" column="creator"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="isMonitor" column="isMonitor"/>
+        <result property="tagCollect" column="tagCollect"/>
+        <result property="height" column="height"/>
+        <result property="cameraModelCode" column="cameraModelCode"/>
+        <result property="uavNestCode" column="uavNestCode"/>
+        <result property="siteCode" column="site_code"/>
+        <result property="accessNode" column="access_node"/>
+<!--        <collection property="channelList" ofType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">-->
+<!--            <result property="channelCode" column="channel_code"/>-->
+<!--            <result property="parentDeviceCode" column="device_code"/>-->
+<!--            <result property="channelName" column="channel_name"/>-->
+<!--            <result property="status" column="channel_status"/>-->
+<!--        </collection>-->
+    </resultMap>
+
+    <sql id="sqlWhere">
+        uav.delete_flag = '0'
+        and od.delete_flag ='0'
+        <choose>
+            <when test='param.deviceCodeList != null and param.deviceCodeList.size() > 0'>
+                and uav.device_code in
+                <foreach item="item" index="index" collection="param.deviceCodeList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <when test='param.deviceCode !=null and param.deviceCode !=""'>
+                and uav.device_code like CONCAT('%', #{param.deviceCode}, '%')
+            </when>
+        </choose>
+        <if test='param.deviceStatus != null'>
+            and uav.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.manufacturerCode != null and param.manufacturerCode != ""'>
+            and uav.manufacturer_code = #{param.manufacturerCode}
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and uav.model_code = #{param.modelCode}
+        </if>
+        <if test="param.modelCodeList != null and param.modelCodeList.size() >0">
+            and uav.manufacturer_code in
+            <foreach collection="param.modelCodeList" open="(" close=")" separator="," index="index" item="modelCode">
+                #{modelCode}
+            </foreach>
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() >0">
+            and uav.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="deviceStatus">
+                #{deviceStatus}
+            </foreach>
+        </if>
+        <if test='param.deviceType != null and param.deviceType != ""'>
+            and uav.device_type = #{param.deviceType}
+        </if>
+        <if test='param.provinceCode != null and param.provinceCode != ""'>
+            and uav.province_code = #{param.provinceCode}
+        </if>
+        <if test='param.cityCode != null and param.cityCode != ""'>
+            and uav.city_code = #{param.cityCode}
+        </if>
+        <if test='param.countyCode != null and param.countyCode != ""'>
+            and uav.county_code = #{param.countyCode}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            and uav.town_code = #{param.townCode}
+        </if>
+        <if test='param.orderStatus == 0'>
+            and od.ord_status in ('0', '1', '2')
+        </if>
+        <if test='param.orderStatus == 1'>
+            and od.ord_status = '4'
+        </if>
+        <if test='param.orderStatus == 2'>
+            and od.ord_status = '3'
+        </if>
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0"'>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+
+        <if test='param.location != null and param.location != ""'>
+            and uav.location like CONCAT('%', #{param.location}, '%')
+        </if>
+
+        <if test='param.uavNestCode != null and param.uavNestCode != ""'>
+            and uav.uav_nest_code like CONCAT('%', #{param.uavNestCode}, '%')
+        </if>
+        <if test='param.cameraModelCode != null and param.cameraModelCode != ""'>
+            and uav.camera_model_code like CONCAT('%', #{param.cameraModelCode}, '%')
+        </if>
+        <if test="param.uavNestCodeList != null and param.uavNestCodeList.size() >0">
+            and uav.uav_nest_code in
+            <foreach collection="param.uavNestCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="queryUavDeviceInfoList" parameterType="com.chinatower.device.entity.dto.UavDeviceDTO" resultMap="resultMap">
+        select * from (select distinct uav.device_code,
+               (case when length(IFNULL(rel.device_name, '')) = 0 then uav.device_name else rel.device_name end ) device_name,
+               uav.device_status,
+               ( SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'uav_device_status' AND DICT_VALUE = uav.device_status LIMIT 1 ) deviceStatusName,
+               uav.manufacturer_code,
+               uav.model_code,
+               uav.location,
+               uav.site_code,
+               uav.province_code,
+               uav.city_code,
+               uav.county_code,
+               uav.town_code,
+               uav.device_type,
+               uav.longitude,
+               uav.latitude,
+               uav.hanging_height as height,
+               uav.camera_model_code cameraModelCode,
+               uav.uav_nest_code uavNestCode,
+               uav.access_node,
+               pro.area_name as provinceName,
+               city.area_name as cityName,
+               county.area_name as countyName,
+               town.area_name as townName,
+               <if test="param.userLatitude != null and param.userLatitude != '' and param.userLongitude != null and param.userLongitude != ''">
+                   CAST(ST_DISTANCE(POINT(#{param.userLongitude},#{param.userLatitude}),POINT(uav.longitude,uav.latitude))*111195 as DECIMAL(65,2)) as distance,
+               </if>
+               case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+               (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_manufacturer' AND DICT_VALUE = uav.manufacturer_code limit 1) manufacturerName,
+               model.model_name modelName,
+               (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_device_type' and status = '0' AND DICT_VALUE = uav.device_type limit 1) deviceTypeName,
+                (CASE WHEN od.ord_status in ('0','1','2') THEN '0'
+                        WHEN od.ord_status = '3' THEN '2'
+                        WHEN od.ord_status = '4' THEN '1'
+                    END) orderStatus,
+                (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+                            WHEN od.ord_status = '3' THEN '退订'
+                            WHEN od.ord_status = '4' THEN '失效'
+                    END) orderStatusName
+            from vm_uav_device_info_t uav
+                INNER JOIN vm_order_uav_devices od ON od.device_code = uav.device_code
+                LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = uav.device_code
+                    and rel.tenant_id = od.tenant_id
+                    and rel.industry_code = od.industry_code
+                    and rel.delete_flag = '0'
+                    and rel.device_type = 1
+                LEFT JOIN sys_area pro ON pro.area_code = uav.province_code
+                LEFT JOIN sys_area city ON city.area_code = uav.city_code
+                LEFT JOIN sys_area county ON county.area_code = uav.county_code
+                LEFT JOIN sys_area town ON town.area_code = uav.town_code
+                LEFT JOIN vm_uav_device_model_t model ON uav.model_code = model.model_code and model.delete_flag = 0
+                LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = uav.device_code
+                AND dct.coll_obj_type = '11' AND dct.user_id = #{param.userId}
+                <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+                    LEFT JOIN vm_organ_device_rel_t vod
+                    on vod.device_code = uav.device_code and vod.delete_flag = '0' and vod.tenant_id = od.tenant_id
+                    and vod.device_type = 11
+                </if>
+            where
+               <include refid="sqlWhere"/>
+               ${param.dataScope}
+                GROUP BY od.tenant_id, od.industry_code, od.device_code
+               <choose>
+                   <when test='param.appflag != null and param.appflag != "" and param.appflag == "1"'>
+                       <choose>
+                           <when test="param.userLatitude != null and param.userLatitude != '' and param.userLongitude != null and param.userLongitude != ''">
+                               order by distance,uav.device_status,cast(uav.device_code as UNSIGNED),uav.device_code
+                           </when>
+                           <otherwise>
+                               order by uav.device_status,cast(uav.device_code as UNSIGNED),uav.device_code
+                           </otherwise>
+                       </choose>
+                   </when>
+                   <otherwise>
+<!--                       <if test="param.orderField !=null and param.orderField !='' and param.orderType != null and param.orderType != ''">-->
+<!--                           order by ${param.orderField} ${param.orderType}-->
+<!--                       </if>-->
+                       <if test="param.orderField == null ">
+                           order by uav.province_code, uav.city_code, uav.county_code,uav.device_code
+                       </if>
+                   </otherwise>
+               </choose>
+        ) uav_data
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                uav_data.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+            <if test='param.codeOrName != null and param.codeOrName != ""'>
+                and ((uav_data.device_code like CONCAT('%', #{param.codeOrName}, '%')) or (uav_data.device_name like CONCAT('%', #{param.codeOrName}, '%')))
+            </if>
+        </where>
+
+    </select>
+
+    <select id="queryUavNestDeviceInfoList" parameterType="com.chinatower.device.entity.dto.UavDeviceDTO"
+            resultType="com.chinatower.device.entity.vo.UavDeviceQueryVO">
+
+        select distinct a.uavNestCode, a.uavNestName, a.uavNestStatus, a.accessNode from (
+        select distinct uav.device_code uavNestCode,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then uav.device_name else rel.device_name end ) uavNestName,
+        uav.resource_status uavNestStatus,
+        uav.location_code accessNode
+        from vm_uav_nest_device_info uav
+        INNER JOIN vm_order_uav_nest_devices od ON od.device_code = uav.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = uav.device_code
+        and rel.tenant_id = od.tenant_id
+        and rel.industry_code = od.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 4
+        where uav.delete_flag = '0'
+        and od.delete_flag ='0'
+        <if test='param.orderStatus == 0'>
+            and od.ord_status in ('0', '1', '2')
+        </if>
+        <if test='param.orderStatus == 1'>
+            and od.ord_status = '4'
+        </if>
+        <if test='param.orderStatus == 2'>
+            and od.ord_status = '3'
+        </if>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+
+        union all
+
+        select distinct uav.uav_nest_code uavNestCode,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then nest.device_name else rel.device_name end ) uavNestName,
+        nest.resource_status uavNestStatus,
+        nest.location_code accessNode
+        from vm_uav_device_info_t uav
+        INNER JOIN vm_order_uav_devices od ON od.device_code = uav.device_code
+        inner join vm_uav_nest_device_info nest on uav.uav_nest_code = nest.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = nest.device_code
+        and rel.tenant_id = od.tenant_id
+        and rel.industry_code = od.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 4
+        where uav.delete_flag = '0'
+        and od.delete_flag ='0'
+        and uav.uav_nest_code is not null and uav.uav_nest_code != ''
+        <if test='param.orderStatus == 0'>
+            and od.ord_status in ('0', '1', '2')
+        </if>
+        <if test='param.orderStatus == 1'>
+            and od.ord_status = '4'
+        </if>
+        <if test='param.orderStatus == 2'>
+            and od.ord_status = '3'
+        </if>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+        ) a
+
+
+    </select>
+
+    <select id="getUavMonitorTree" resultMap="treeMap" parameterType="com.chinatower.device.entity.dto.UavDeviceDTO">
+        select * from (select distinct uav.device_code,
+                 uav.device_status, uav.access_node,
+                 (case when length(IFNULL(rel.device_name, '')) = 0 then uav.device_name else rel.device_name end ) device_name,
+                 uav.longitude,
+                 uav.latitude,
+                 uav.province_code,
+                 uav.city_code,
+                 uav.county_code,
+                 uav.town_code,
+                 pro.area_name as provinceName,
+                 city.area_name as cityName,
+                 county.area_name as countyName,
+                 town.area_name as townName,
+                 '1' as prolevel,
+                 '2' as citylevel,
+                 '3' as countrylevel,
+                 uav.device_code as code,
+                 uav.device_name as name,
+                 '4' as townLevel,
+                 (case when length(IFNULL(rel.device_name, '')) = 0 then uav.device_name else rel.device_name end ) device_alias
+        FROM vm_uav_device_info_t uav
+            INNER JOIN vm_order_uav_devices od ON od.device_code = uav.device_code
+            LEFT JOIN sys_area pro ON pro.area_code = uav.province_code
+            LEFT JOIN sys_area city ON city.area_code = uav.city_code
+            LEFT JOIN sys_area county ON county.area_code = uav.county_code
+            LEFT JOIN sys_area town ON town.area_code = uav.town_code
+            LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = uav.device_code
+              and rel.tenant_id = od.tenant_id
+              and rel.industry_code = od.industry_code
+              and rel.delete_flag = '0'
+              and rel.device_type = 1
+            <if test='param.needDevice != null and "true".toString() == param.needDevice.toString()'>
+                and uav.device_status in (0, 1)
+            </if>
+            <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+                LEFT JOIN vm_organ_device_rel_t vod
+                on vod.device_code = uav.device_code and vod.delete_flag = '0' and vod.tenant_id = od.tenant_id
+                and vod.device_type = 11
+            </if>
+        where
+             <include refid="sqlWhere"/>
+         ${param.dataScope}
+        order by uav.province_code, uav.city_code, uav.county_code,uav.device_code
+        ) uav_data
+        <if test='param.deviceName != null and param.deviceName != ""'>
+            where uav_data.device_name like CONCAT('%', #{param.deviceName}, '%')
+        </if>
+    </select>
+
+    <select id="qryByDeviceCode" resultMap="detailMap">
+        select
+            uav.device_code,
+            (case when length(IFNULL(rel.device_name, '')) = 0 then uav.device_name else rel.device_name end ) deviceName,
+            uav.device_status,
+            uav.province_code,
+            uav.city_code,
+            uav.county_code,
+            uav.town_code,
+            uav.location,
+            uav.longitude,
+            uav.latitude,
+            uav.area_code,
+            uav.adm_code,
+            uav.manufacturer_code,
+            uav.model_code,
+            uav.device_type,
+            uav.hanging_height as height,
+            uav.camera_model_code cameraModelCode,
+            uav.uav_nest_code uavNestCode,
+            uav.access_node,
+            (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_device_type' and status = '0' AND DICT_VALUE = uav.device_type limit 1) deviceTypeName,
+            pro.area_name as provinceName,
+            city.area_name as cityName,
+            county.area_name as countyName,
+            town.area_name as townName,
+            (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_manufacturer' and status = '0' AND DICT_VALUE = uav.manufacturer_code limit 1) manufacturerName,
+            model.model_name modelName,
+            rel.modifier,
+            uav.creator,
+            uav.create_time,
+            uav.site_code,
+            rel.update_time,
+            case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+            case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from vm_uav_device_info_t uav
+            LEFT JOIN vm_uav_device_model_t model ON uav.model_code = model.model_code and model.delete_flag = 0
+            LEFT JOIN sys_area pro ON pro.area_code = uav.province_code
+            LEFT JOIN sys_area city ON city.area_code = uav.city_code
+            LEFT JOIN sys_area county ON county.area_code = uav.county_code
+            LEFT JOIN sys_area town ON town.area_code = uav.town_code
+            LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = uav.device_code
+                and rel.tenant_id = #{tenantId}
+                and rel.industry_code = #{industryCode}
+                and rel.delete_flag = '0'
+                and rel.device_type = 1
+            LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = uav.device_code
+                and dct.coll_obj_type = '11' AND dct.user_id = #{userId}
+            LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = uav.device_code
+                and art.coll_obj_type = '11' and art.user_id = #{userId}
+          where uav.device_code = #{deviceCode}
+                and uav.delete_flag = '0'
+                and exists(select od.id from vm_order_uav_devices od join sys_tenant_info ti on od.tenant_id =
+                ti.tenant_id
+                where od.device_code = uav.device_code and od.delete_flag ='0' and ti.del_flag = '0'
+                and od.tenant_id = #{tenantId} and od.industry_code = #{industryCode}
+                )
+    </select>
+
+    <select id="queryOrgInfoList" resultType="com.chinatower.device.entity.vo.UavDeviceQueryVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        select t.device_code as deviceCode, GROUP_CONCAT(t.id) as orgRelId, GROUP_CONCAT(t.DEPT_ID) as orgCode,
+        GROUP_CONCAT(org.DEPT_NAME) as orgName
+        from vm_organ_device_rel_t t LEFT JOIN sys_dept org ON org.DEPT_ID = t.DEPT_ID
+        where
+        t.delete_flag = '0'
+        and t.device_type = #{deviceType} and org.DEL_FLAG='0' and org.`STATUS` = '0'
+        and t.TENANT_ID = org.tenant_id
+        <choose>
+            <when test='deviceCodeList != null and deviceCodeList.size() > 0'>
+                and t.device_code in
+                <foreach item="item" index="index" collection="deviceCodeList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <when test='deviceCode !=null and deviceCode !=""'>
+                and t.device_code = #{deviceCode}
+            </when>
+        </choose>
+        <if test='tenantId != null and tenantId != ""'>
+            and t.tenant_id = #{tenantId}
+        </if>
+        <if test='orgCode != null and orgCode != ""'>
+            and t.dept_id = #{orgCode}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            and t.industry_code = #{industryCode}
+        </if>
+        group by t.device_code
+    </select>
+
+    <select id="qryAliasByDeviceCode" resultType="com.chinatower.device.entity.vo.UavDeviceQueryVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        select rel.device_code,
+               rel.device_name
+            from vm_tenant_device_common_rel_t rel
+            where rel.device_code = #{param.deviceCode}
+                  and rel.tenant_id = #{param.tenantId}
+                  and rel.industry_code = #{param.industryCode}
+                  and rel.device_type = #{param.deviceType}
+                  and rel.delete_flag = '0'
+    </select>
+
+    <update id="updateUavAlias" parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        update vm_tenant_device_common_rel_t
+           set device_name = #{param.deviceName},
+               modifier = #{param.modifier},
+               update_time = now()
+            where
+                  device_code = #{param.deviceCode}
+              and tenant_id = #{param.tenantId}
+              and industry_code = #{param.industryCode}
+              and device_type = #{param.deviceType}
+              and delete_flag = '0'
+    </update>
+
+    <insert id="addUavAlias" parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        insert into vm_tenant_device_common_rel_t(
+            device_code,
+            device_name,
+            tenant_id,
+            industry_code,
+            app_ver_code,
+            device_type,
+            delete_flag,
+            creator,
+            create_time,
+            modifier,
+            update_time
+            )
+            values (#{param.deviceCode},
+                    #{param.deviceName},
+                    #{param.tenantId},
+                    #{param.industryCode},
+                    #{param.appVerCode},
+                    #{param.deviceType},
+                    '0',
+                    #{param.creator},
+                    now(),
+                    #{param.modifier},
+                    now()
+                    )
+    </insert>
+
+    <select id="queryOrgUavDevRels" resultType="com.chinatower.platform.entity.devicemgmt.vo.OrganDeviceRelVO" parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        select t.id, t.tenant_id, t.dept_id, t.device_code, d.dept_name,t.industry_code
+        from vm_organ_device_rel_t t left join sys_dept d on t.dept_id = d.dept_id and d.del_flag='0'
+        where t.delete_flag='0'
+        and t.tenant_id = #{param.tenantId}
+        <if test='param.industryCode != null and param.industryCode != ""'>
+            and t.industry_code = #{param.industryCode}
+        </if>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and t.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test="param.deviceType != null" >
+            and t.device_type = #{param.deviceType}
+        </if>
+    </select>
+
+    <select id="queryUavDeviceDistanceInfo" resultType="com.chinatower.platform.entity.device.DeviceDistanceVO">
+        select
+        t.device_code,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then t.device_name else rel.device_name end ) name,
+        t.location,
+        ST_Distance_Sphere(
+        ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+        ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+        ) as distance,
+        t.manufacturer_code modelCode,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_manufacturer' AND DICT_VALUE = t.manufacturer_code limit 1) modelName,
+        <if test='param.userId != null and param.userId != "" '>
+            case when IFNULL(dct.user_device_coll_id, 0) = 0 then '0' else '1' end isMonitor,
+        </if>
+        t.longitude,
+        t.latitude,
+        t.device_status,
+        t.access_node,
+        nest.device_code uavNestCode,
+        (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName,
+        nest.resource_status uavNestStatus
+        from vm_order_uav_devices o
+        inner join vm_uav_device_info_t t on t.device_code = o.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON   rel.device_code = o.device_code and rel.tenant_id = o.tenant_id
+        and rel.industry_code = o.industry_code and rel.delete_flag = 0 and rel.device_type = 1
+        left join `vm_uav_nest_device_info` nest on t.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t nrel on nrel.device_code = nest.device_code
+        and nrel.industry_code = o.industry_code and nrel.tenant_id = o.tenant_id
+        and nrel.delete_flag = '0'
+        and nrel.device_type = 4
+        <if test='param.userId != null and param.userId != "" '>
+            LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = t.device_code AND dct.coll_obj_type = '11' AND dct.user_id = #{param.userId}
+        </if>
+        where o.delete_flag = '0'
+        and t.delete_flag = '0'
+        and o.ord_status in (0,1,2)
+        <if test="param.radius != -1">
+            and ST_Distance_Sphere(
+            ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+            ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+            )  <![CDATA[<=]]> #{param.radius}
+        </if>
+        ${param.dataScope}
+        group by t.device_code
+        order by t.id
+        <if test='param.limitSize != null'>
+            limit #{param.limitSize}
+        </if>
+    </select>
+
+    <select id="getUavMonitorAreaTree" parameterType="com.chinatower.platform.entity.device.DeviceReqDTO"
+            resultMap="areaTreeMap">
+        SELECT DISTINCT m.device_code as deviceCode, m.device_status, m.access_node,
+        m.device_name, m.province_code as provinceId,pro.area_name as provinceName,m.city_code as cityId,
+        city.area_name as cityName,m.county_code as countyId,county.area_name as countyName,
+        m.town_code as townCode, town.area_name as townName, m.site_code,
+        m.longitude,m.latitude, 'false' AS checked, '1' AS proLevel,
+        '2' AS cityLevel,'3' AS countryLevel,'4' AS devLevel,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        </if>
+        (case when length(IFNULL(rel.device_name, '')) = 0 then m.device_name else rel.device_name end ) deviceAlias,
+        nest.device_code uavNestCode, nest.altitude,
+        (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName,
+        nest.resource_status uavNestStatus,
+        nest.position_fix uavNestPositionFix,
+        nest.calibration_status uavNestCalibrationStatus
+        FROM vm_order_uav_devices ord
+        LEFT JOIN vm_uav_device_info_t m on m.device_code = ord.device_code
+        LEFT JOIN sys_area pro on pro.area_code = m.province_code
+        LEFT JOIN sys_area city on city.area_code = m.city_code
+        LEFT JOIN sys_area county on county.area_code = m.county_code
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = m.device_code
+        and rel.tenant_id = ord.tenant_id
+        and rel.industry_code = ord.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '11' AND dct.user_id = #{param.userId}
+        left join `vm_uav_nest_device_info` nest on m.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t nrel on nrel.device_code = nest.device_code
+        and nrel.industry_code = ord.industry_code and nrel.tenant_id = ord.tenant_id
+        and nrel.delete_flag = '0'
+        and nrel.device_type = 4
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code and art.coll_obj_type = '11' and art.user_id = #{param.userId}
+        </if>
+        WHERE m.delete_flag= '0' and ord.ord_status in (0, 1, 2) and ord.delete_flag= '0'
+        <if test='param.industryCode != null and param.industryCode != ""'>
+            and ord.industry_code = #{param.industryCode}
+        </if>
+        <if test='param.tenantId != "" and param.tenantId != null'>
+            and ord.tenant_id = #{param.tenantId}
+        </if>
+        <if test='param.needDevice != null and "true".toString() == param.needDevice.toString()'>
+            and m.device_status != 2
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            <if test='param.isArTagFlag != null and param.isArTagFlag != "" and param.isArTagFlag == "0" '>
+                and art.coll_obj_code IS NOT NULL
+            </if>
+        </if>
+
+        <if test='param.deviceCodes != null and param.deviceCodes.size() >0'>
+            and m.device_code in
+            <foreach collection="param.deviceCodes" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+
+        <if test='param.deviceStatusList != null and param.deviceStatusList.size() >0'>
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.uavNestCode != null and param.uavNestCode != ""'>
+            and m.uav_nest_code like CONCAT('%', #{param.uavNestCode}, '%')
+        </if>
+        <if test='param.cameraModelCode != null and param.cameraModelCode != ""'>
+            and m.camera_model_code = #{param.cameraModelCode}
+        </if>
+        <if test="param.uavNestCodeList != null and param.uavNestCodeList.size() >0">
+            and m.uav_nest_code in
+            <foreach collection="param.uavNestCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        ORDER BY m.province_code, m.city_code, m.county_code, m.town_code,
+        m.device_code
+    </select>
+
+    <select id="getUavMonitorAreaTreeWithoutFormat" parameterType="com.chinatower.platform.entity.device.DeviceReqDTO"
+            resultType="com.chinatower.platform.entity.device.DeviceTreeVO">
+        SELECT DISTINCT m.device_code as deviceCode, m.device_status, m.access_node,
+        m.device_name, m.province_code as provinceId,pro.area_name as provinceName,m.city_code as cityId,
+        city.area_name as cityName,m.county_code as countyId,county.area_name as countyName,
+        m.town_code as townCode, town.area_name as townName, m.site_code,
+        m.longitude,m.latitude, 'false' AS checked, '1' AS proLevel,
+        '2' AS cityLevel,'3' AS countryLevel,'4' AS devLevel,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor, 'false' isNestDevice,
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        </if>
+        (case when length(IFNULL(rel.device_name, '')) = 0 then m.device_name else rel.device_name end ) deviceAlias,
+        nest.device_code uavNestCode, nest.altitude,
+        nest.model_code deviceModelCode,
+        (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName,
+        nest.resource_status uavNestStatus,
+        nest.position_fix uavNestPositionFix,
+        nest.calibration_status uavNestCalibrationStatus
+        FROM vm_order_uav_devices ord
+        LEFT JOIN vm_uav_device_info_t m on m.device_code = ord.device_code
+        LEFT JOIN sys_area pro on pro.area_code = m.province_code
+        LEFT JOIN sys_area city on city.area_code = m.city_code
+        LEFT JOIN sys_area county on county.area_code = m.county_code
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = m.device_code
+        and rel.tenant_id = ord.tenant_id
+        and rel.industry_code = ord.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '11' AND dct.user_id = #{param.userId}
+        left join `vm_uav_nest_device_info` nest on m.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t nrel on nrel.device_code = nest.device_code
+        and nrel.industry_code = ord.industry_code and nrel.tenant_id = ord.tenant_id
+        and nrel.delete_flag = '0'
+        and nrel.device_type = 4
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code and art.coll_obj_type = '11' and art.user_id = #{param.userId}
+        </if>
+        WHERE m.delete_flag= '0' and ord.ord_status in (0, 1, 2) and ord.delete_flag= '0'
+        <if test='param.industryCode != null and param.industryCode != ""'>
+            and ord.industry_code = #{param.industryCode}
+        </if>
+        <if test='param.tenantId != "" and param.tenantId != null'>
+            and ord.tenant_id = #{param.tenantId}
+        </if>
+        <if test='param.needDevice != null and "true".toString() == param.needDevice.toString()'>
+            and m.device_status != 2
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+                and m.device_type in
+                <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                    #{type}
+                </foreach>
+            </if>
+            <if test='param.isArTagFlag != null and param.isArTagFlag != "" and param.isArTagFlag == "0" '>
+                and art.coll_obj_code IS NOT NULL
+            </if>
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+
+        <if test='param.deviceStatusList != null and param.deviceStatusList.size() >0'>
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.uavNestCode != null and param.uavNestCode != ""'>
+            and m.uav_nest_code like CONCAT('%', #{param.uavNestCode}, '%')
+        </if>
+        <if test='param.cameraModelCode != null and param.cameraModelCode != ""'>
+            and m.camera_model_code = #{param.cameraModelCode}
+        </if>
+        <if test="param.uavNestCodeList != null and param.uavNestCodeList.size() >0">
+            and m.uav_nest_code in
+            <foreach collection="param.uavNestCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.withoutSingleUav != null and "true".toString() == param.withoutSingleUav.toString()'>
+            and m.uav_nest_code is not null and m.uav_nest_code != ''
+        </if>
+        ${param.dataScope}
+        ORDER BY m.province_code, m.city_code, m.county_code, m.town_code,
+        m.device_code
+    </select>
+
+    <select id="getUavMonitorAreaTreeWithoutLogin" parameterType="com.chinatower.platform.entity.device.DeviceReqDTO"
+            resultMap="areaTreeMap">
+        SELECT DISTINCT m.device_code as deviceCode, m.device_status, m.access_node,
+        m.device_name, m.province_code as provinceId,pro.area_name as provinceName,m.city_code as cityId,
+        city.area_name as cityName,m.county_code as countyId,county.area_name as countyName,
+        m.town_code as townCode, town.area_name as townName, m.site_code,
+        m.longitude,m.latitude, 'false' AS checked, '1' AS proLevel,
+        '2' AS cityLevel,'3' AS countryLevel,'4' AS devLevel,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        </if>
+        (case when length(IFNULL(rel.device_name, '')) = 0 then m.device_name else rel.device_name end ) deviceAlias,
+        nest.device_code uavNestCode, nest.altitude,
+        (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName,
+        nest.resource_status uavNestStatus
+        FROM vm_order_uav_devices ord
+        LEFT JOIN vm_uav_device_info_t m on m.device_code = ord.device_code
+        LEFT JOIN sys_area pro on pro.area_code = m.province_code
+        LEFT JOIN sys_area city on city.area_code = m.city_code
+        LEFT JOIN sys_area county on county.area_code = m.county_code
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = m.device_code
+        and rel.tenant_id = ord.tenant_id
+        and rel.industry_code = ord.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '11' AND dct.user_id = #{param.userId}
+        left join `vm_uav_nest_device_info` nest on m.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t nrel on nrel.device_code = nest.device_code
+        and nrel.industry_code = ord.industry_code and nrel.tenant_id = ord.tenant_id
+        and nrel.delete_flag = '0'
+        and nrel.device_type = 4
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code and art.coll_obj_type = '11' and art.user_id = #{param.userId}
+        </if>
+        WHERE m.delete_flag= '0' and ord.ord_status in (0, 1, 2) and ord.delete_flag= '0'
+        <if test='param.industryCode != null and param.industryCode != ""'>
+            and ord.industry_code = #{param.industryCode}
+        </if>
+        <if test='param.tenantId != "" and param.tenantId != null'>
+            and ord.tenant_id = #{param.tenantId}
+        </if>
+        <if test='param.platformCode != "" and param.platformCode != null'>
+            and ord.accept_node = #{param.platformCode}
+        </if>
+        <if test='param.needDevice != null and "true".toString() == param.needDevice.toString()'>
+            and m.device_status != 2
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            <if test='param.isArTagFlag != null and param.isArTagFlag != "" and param.isArTagFlag == "0" '>
+                and art.coll_obj_code IS NOT NULL
+            </if>
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+
+        <if test='param.deviceStatusList != null and param.deviceStatusList.size() >0'>
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.uavNestCode != null and param.uavNestCode != ""'>
+            and m.uav_nest_code like CONCAT('%', #{param.uavNestCode}, '%')
+        </if>
+        <if test='param.cameraModelCode != null and param.cameraModelCode != ""'>
+            and m.camera_model_code = #{param.cameraModelCode}
+        </if>
+        <if test="param.uavNestCodeList != null and param.uavNestCodeList.size() > 0">
+            and m.uav_nest_code in
+            <foreach collection="param.uavNestCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY m.province_code, m.city_code, m.county_code, m.town_code,
+        m.device_code
+    </select>
+
+    <select id="getUavMonitorOrgTree" parameterType="com.chinatower.platform.entity.device.DeviceReqDTO"
+            resultMap="orgTreeMap">
+        SELECT DISTINCT gg.dept_id as org_id, gg.dept_name as org_name, gg.dept_level as org_level,
+        gg.parent_id as parent_org_id, dd.device_code, IFNULL(rel.device_name, de.device_name) AS device_name,
+        concat(gg.dept_level + 1) AS devLevel, 'false' AS checked, de.longitude, de.latitude, 1 AS num, de.site_code,de.device_status,
+        case when IFNULL(dct.user_device_coll_id, 0) = 0 then '0' else '1' end isMonitor,
+        nest.device_code uavNestCode,
+        (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName,
+        nest.resource_status uavNestStatus,
+        nest.position_fix uavNestPositionFix,
+        nest.calibration_status uavNestCalibrationStatus
+        FROM sys_dept gg
+        LEFT JOIN vm_organ_device_rel_t dd ON gg.dept_id = dd.dept_id and dd.device_type = 11 and gg.industry_code = dd.industry_code
+        LEFT JOIN vm_uav_device_info_t de ON dd.device_code = de.device_code
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = de.device_code
+        AND dct.coll_obj_type = '11' and dct.user_id = #{param.userId}
+        left join vm_order_uav_devices vod on vod.industry_code = dd.industry_code and vod.device_code = de.device_code and vod.tenant_id = gg.tenant_id
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = vod.device_code
+        and rel.tenant_id = vod.tenant_id
+        and rel.industry_code = vod.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        left join `vm_uav_nest_device_info` nest on de.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t nrel on nrel.device_code = nest.device_code
+        and nrel.industry_code = vod.industry_code and nrel.tenant_id = vod.tenant_id
+        and nrel.delete_flag = '0'
+        and nrel.device_type = 4
+        WHERE gg.del_flag = '0' AND dd.delete_flag = '0' AND de.delete_flag = '0'
+        AND dd.device_code IS NOT NULL AND dd.device_code != '' AND vod.delete_flag = '0' AND vod.ord_status in (0,1,2)
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test='param.needDevice != null and "true".toString() == param.needDevice.toString()'>
+            and de.device_status != 2
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and de.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+
+        <if test='param.deviceCodes != null and param.deviceCodes.size() >0'>
+            and de.device_code in
+            <foreach collection="param.deviceCodes" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test='param.deviceStatus != null'>
+            and de.device_status = #{param.deviceStatus}
+        </if>
+
+        <if test='param.deviceStatusList != null and param.deviceStatusList.size() >0'>
+            and de.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test='param.uavNestCode != null and param.uavNestCode != ""'>
+            and de.uav_nest_code like CONCAT('%', #{param.uavNestCode}, '%')
+        </if>
+        <if test='param.cameraModelCode != null and param.cameraModelCode != ""'>
+            and de.camera_model_code = #{param.cameraModelCode}
+        </if>
+        <if test="param.uavNestCodeList != null and param.uavNestCodeList.size() >0">
+            and de.uav_nest_code in
+            <foreach collection="param.uavNestCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        ${param.dataScope}
+        ORDER BY gg.dept_id,dd.device_code
+    </select>
+
+    <select id="getUavMonitorOrgTreeWithoutFormat" parameterType="com.chinatower.platform.entity.device.DeviceReqDTO"
+            resultType="com.chinatower.platform.entity.device.DeviceTreeVO">
+        SELECT DISTINCT gg.dept_id as org_id, gg.dept_name as org_name, gg.dept_level as org_level,
+        gg.parent_id as parent_org_id, dd.device_code, IFNULL(rel.device_name, de.device_name) AS device_name,
+        concat(gg.dept_level + 1) AS devLevel, 'false' AS checked, de.longitude, de.latitude, 1 AS num, de.site_code,de.device_status,
+        case when IFNULL(dct.user_device_coll_id, 0) = 0 then '0' else '1' end isMonitor, 'false' isNestDevice,
+        nest.device_code uavNestCode,
+        (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName,
+        nest.resource_status uavNestStatus,
+        nest.position_fix uavNestPositionFix,
+        nest.calibration_status uavNestCalibrationStatus
+        FROM sys_dept gg
+        LEFT JOIN vm_organ_device_rel_t dd ON gg.dept_id = dd.dept_id and dd.device_type = 11 and gg.industry_code = dd.industry_code
+        LEFT JOIN vm_uav_device_info_t de ON dd.device_code = de.device_code
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = de.device_code
+        AND dct.coll_obj_type = '11' and dct.user_id = #{param.userId}
+        left join vm_order_uav_devices vod on vod.industry_code = dd.industry_code and vod.device_code = de.device_code and vod.tenant_id = gg.tenant_id
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = vod.device_code
+        and rel.tenant_id = vod.tenant_id
+        and rel.industry_code = vod.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        left join `vm_uav_nest_device_info` nest on de.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t nrel on nrel.device_code = nest.device_code
+        and nrel.industry_code = vod.industry_code and nrel.tenant_id = vod.tenant_id
+        and nrel.delete_flag = '0'
+        and nrel.device_type = 4
+        WHERE gg.del_flag = '0' AND dd.delete_flag = '0' AND de.delete_flag = '0'
+        AND dd.device_code IS NOT NULL AND dd.device_code != '' AND vod.delete_flag = '0' AND vod.ord_status in (0,1,2)
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test='param.needDevice != null and "true".toString() == param.needDevice.toString()'>
+            and de.device_status != 2
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and de.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+
+        <if test='param.deviceStatus != null'>
+            and de.device_status = #{param.deviceStatus}
+        </if>
+
+        <if test='param.deviceStatusList != null and param.deviceStatusList.size() >0'>
+            and de.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test='param.uavNestCode != null and param.uavNestCode != ""'>
+            and de.uav_nest_code like CONCAT('%', #{param.uavNestCode}, '%')
+        </if>
+        <if test='param.cameraModelCode != null and param.cameraModelCode != ""'>
+            and de.camera_model_code = #{param.cameraModelCode}
+        </if>
+        <if test="param.uavNestCodeList != null and param.uavNestCodeList.size() >0">
+            and de.uav_nest_code in
+            <foreach collection="param.uavNestCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        ${param.dataScope}
+        ORDER BY gg.dept_id,dd.device_code
+    </select>
+
+
+    <select id="queryUavSitesForWE" parameterType="com.chinatower.device.entity.dto.SiteRequestDTO"
+            resultType="com.chinatower.device.entity.vo.SiteResultVO">
+        SELECT DISTINCT t2.site_code,t2.longitude,t2.latitude,t2.device_code as deviceCode,
+        max(t2.hanging_height) as height, min(t2.device_status) as allLine
+        FROM vm_order_uav_devices t1
+        left JOIN vm_uav_device_info_t t2 ON t1.device_code = t2.device_code
+        WHERE t2.delete_flag = '0'
+        AND t1.delete_flag = '0'
+        and t1.ord_status in (0,1,2)
+        <if test='param.cityId!= null and param.cityId != ""'>
+            AND t2.city_code = #{param.cityId}
+        </if>
+        ${param.dataScope}
+        group by t2.site_code, t2.device_code
+    </select>
+
+    <resultMap id="queryUavSitesTree" type="com.chinatower.industry.vo.IndustryDeviceTree">
+        <result property="siteCode" column="site_code"/>
+        <result property="longitude" column="longitude"/>
+        <result property="latitude" column="latitude"/>
+        <collection property="list" ofType="com.chinatower.industry.vo.IndustryDeviceTree">
+            <result property="height" column="height"/>
+            <result property="deviceCode" column="device_code"/>
+            <result property="deviceName" column="device_name"/>
+            <result property="status" column="device_status"/>
+            <result property="uavNestCode" column="uav_nest_code"/>
+            <result property="uavNestStatus" column="uavNestStatus"/>
+            <result property="isNestDevice" column="isNestDevice"/>
+        </collection>
+    </resultMap>
+
+    <select id="queryUavSites" parameterType="com.chinatower.device.entity.dto.SiteRequestDTO"
+            resultMap="queryUavSitesTree">
+        SELECT distinct dev.device_code,
+        (case when length(IFNULL(tdr.device_name, '')) = 0
+        then dev.device_name else tdr.device_name end ) as device_name,
+        dev.device_status,
+        dev.uav_nest_code,
+        nest.resource_status uavNestStatus,
+        'false' isNestDevice,
+        ifnull(dev.hanging_height, 0) as height,
+        dev.latitude,
+        dev.longitude,
+        dev.site_code
+        FROM vm_uav_device_info_t dev
+        left join vm_order_uav_devices t1 on dev.device_code = t1.device_code
+        left join `vm_uav_nest_device_info` nest on dev.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t tdr on tdr.device_code = t1.device_code and tdr.tenant_id = t1.tenant_id
+        and tdr.industry_code = t1.industry_code and tdr.delete_flag = 0 and tdr.device_type = 1
+        where dev.delete_flag = '0'
+        AND t1.delete_flag = '0'
+        AND t1.ord_status IN ( 0, 1, 2 )
+        <if test='param.provinceId != null and param.provinceId != ""'>
+            AND dev.province_code = #{param.provinceId}
+        </if>
+        <if test='param.cityId != null and param.cityId != ""'>
+            AND dev.city_code = #{param.cityId}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND dev.county_code = #{param.countyId}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND dev.town_code = #{param.townCode}
+        </if>
+        ${param.dataScope}
+    </select>
+
+    <select id="queryUavDevicesBySiteCode" parameterType="com.chinatower.device.entity.dto.SiteRequestDTO"
+            resultType="com.chinatower.device.entity.vo.DeviceSiteVO">
+        SELECT distinct dev.device_code,
+        (case
+        when length(IFNULL(rel.device_name, '')) = 0
+        then dev.device_name
+        else rel.device_name end) as device_name,
+        <if test="param.queryFlag == '1'">
+            max(t2.hanging_height) as height,
+            min(t2.device_status) as allLine,
+        </if>
+        <if test="param.queryFlag == null and param.queryFlag == ''">
+            ifnull(dev.hanging_height, 0) as height,
+            dev.device_status as status,
+        </if>
+        dev.location, dev.latitude, dev.longitude, dev.site_code,
+        dev.model_code,'false' isNestDevice,
+        model.model_name model_name,
+        nest.device_code uavNestCode,
+        (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName,
+        nest.position_fix uavNestPositionFix,
+        nest.calibration_status uavNestCalibrationStatus,
+        nest.resource_status uavNestStatus
+        FROM vm_uav_device_info_t dev
+        left join vm_order_uav_devices t1 on dev.device_code = t1.device_code
+        LEFT JOIN vm_uav_device_model_t model ON dev.model_code = model.model_code and model.delete_flag = 0
+        left join vm_tenant_device_common_rel_t rel ON rel.device_code = t1.device_code
+        and rel.tenant_id = t1.tenant_id
+        and rel.industry_code = t1.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        left join `vm_uav_nest_device_info` nest on dev.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t nrel on nrel.device_code = nest.device_code
+        and nrel.industry_code = t1.industry_code and nrel.tenant_id = t1.tenant_id
+        and nrel.delete_flag = '0'
+        and nrel.device_type = 4
+        where t1.delete_flag = '0' and dev.delete_flag = '0' and t1.ord_status in (0,1,2)
+        <if test='param.siteCode!= null and param.siteCode != "" '>
+            AND dev.site_code = #{param.siteCode}
+        </if>
+        <if test='param.latitude!= null and param.latitude != "" '>
+            AND dev.latitude = #{param.latitude}
+        </if>
+        <if test='param.longitude!= null and param.longitude != "" '>
+            AND dev.longitude = #{param.longitude}
+        </if>
+        <if test='param.cityId!= null and param.cityId != ""'>
+            AND dev.city_code = #{param.cityId}
+        </if>
+        ${param.dataScope}
+        <if test="param.queryFlag == '1'">
+            group by t2.site_code, t2.device_code
+        </if>
+        order by dev.device_status,dev.device_code
+    </select>
+
+    <select id="queryDeviceListByKeyWord" parameterType="com.chinatower.device.entity.dto.DeviceComprehensiveReq" resultType="com.chinatower.device.entity.vo.DeviceComprehensiveVO">
+        select * from (select distinct uav.device_code,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then uav.device_name else rel.device_name end ) device_name,
+        uav.location,
+        uav.longitude,
+        uav.site_code,
+        uav.latitude,
+        uav.device_status
+        from vm_uav_device_info_t uav
+        INNER JOIN vm_order_uav_devices od ON od.device_code = uav.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = uav.device_code
+        and rel.tenant_id = od.tenant_id
+        and rel.industry_code = od.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        where
+        uav.delete_flag = '0'
+        and od.delete_flag ='0'
+        AND od.ord_status in (0, 1, 2)
+        <if test="param.longitude != null and param.longitude != ''">
+            and uav.longitude like CONCAT('%', #{param.longitude}, '%')
+        </if>
+        <if test="param.latitude != null and param.latitude != ''">
+            and uav.latitude like CONCAT('%', #{param.latitude}, '%')
+        </if>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+        order by uav.province_code, uav.city_code, uav.county_code,uav.device_code
+        ) uav_data
+        <where>
+            <if test='param.keyWord != null and param.keyWord != ""'>
+                and ((uav_data.device_code =  #{param.keyWord}) or (uav_data.device_name like CONCAT('%', #{param.keyWord}, '%')))
+            </if>
+        </where>
+    </select>
+
+    <select id="queryUavNestInfoByCodeList" resultType="com.chinatower.device.dto.UavNestDeviceInfoDTO">
+        select t.device_code, t.resource_status, t.manufacturer_code manufacturerCode, t.model_code modelCode, t.altitude,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then t.device_name else rel.device_name end ) device_name,
+        (SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'uav_nest_manufacturer' AND DICT_VALUE = t.manufacturer_code LIMIT 1) uavNestManufacturerName,
+        nestM.model_name uavNestModelName,
+        (SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'uav_nest_status' AND DICT_VALUE = t.resource_status LIMIT 1) uavNestStatusName,
+        t.position_fix uavNestPositionFix, t.calibration_status uavNestCalibrationStatus,
+        t.province_code uavNestProvinceCode, t.city_code uavNestCityCode, t.county_code uavNestCountyCode, t.town_code uavNestTownCode,
+        t.longitude uavNestLongitude, t.latitude uavNestLatitude
+        from `vm_uav_nest_device_info` t
+        LEFT JOIN vm_uav_nest_device_model_t nestM ON t.model_code = nestM.model_code and nestM.delete_flag = 0
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = t.device_code
+        and rel.tenant_id = #{tenantId} and rel.industry_code = #{industryCode}
+        and rel.delete_flag = '0' and rel.device_type = 4
+        where t.device_code in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryUavNestCodeByCondition" resultType="java.lang.String">
+        select uavNest.deviceCode from (
+        select t.device_code deviceCode,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then t.device_name else rel.device_name end ) deviceName
+        from `vm_uav_nest_device_info` t
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = t.device_code
+        and rel.tenant_id = #{param.tenantId} and rel.industry_code = #{param.industryCode}
+        and rel.delete_flag = '0' and rel.device_type = 4
+        where t.delete_flag = 0
+        <if test='param.uavNestManufacturerCode != null and param.uavNestManufacturerCode != "" '>
+            AND t.manufacturer_code = #{param.uavNestManufacturerCode}
+        </if>
+        <if test='param.uavNestModelCode != null and param.uavNestModelCode != "" '>
+            AND t.model_code = #{param.uavNestModelCode}
+        </if>
+        <if test='param.uavNestStatus != null and param.uavNestStatus != "" '>
+            AND t.resource_status = #{param.uavNestStatus}
+        </if>
+
+        <if test='param.uavNestStatus != null and param.uavNestStatus != "" '>
+            AND t.resource_status = #{param.uavNestStatus}
+        </if>
+
+        <if test='param.uavNestStatusList != null and param.uavNestStatusList.size() >0'>
+            and t.resource_status in
+            <foreach collection="param.uavNestStatusList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        ) uavNest
+        <where>
+            <if test='param.uavNestName != null and param.uavNestName != ""'>
+                and uavNest.deviceName like CONCAT('%', #{param.uavNestName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="countDeviceName" resultType="java.lang.Integer">
+        select count(*)
+        from vm_uav_device_info_t t
+        inner join vm_order_uav_devices o on t.device_code = o.device_code
+        where o.tenant_id = #{param.tenantId} and o.industry_code = #{param.industryCode} and o.delete_flag = '0' and o.ord_status in (0,1,2)
+        and t.delete_flag = '0' and t.device_code != #{param.deviceCode} and t.device_name = #{param.deviceName}
+    </select>
+
+    <select id="countAliasName" resultType="java.lang.Integer">
+        select count(*)
+        from vm_tenant_device_common_rel_t t
+        inner join vm_order_uav_devices o on t.device_code = o.device_code and t.tenant_id = o.tenant_id and t.industry_code = o.industry_code and t.device_type = 1
+        where o.tenant_id = #{param.tenantId} and o.industry_code = #{param.industryCode} and o.delete_flag = '0' and o.ord_status in (0,1,2)
+        and t.delete_flag = '0' and t.device_code != #{param.deviceCode} and t.device_name = #{param.deviceName}
+    </select>
+
+    <select id="countNestDeviceName" resultType="java.lang.Integer">
+        select count(*)
+        from vm_uav_nest_device_info nest
+        inner join vm_uav_device_info_t t on t.uav_nest_code = nest.device_code
+        inner join vm_order_uav_devices o on t.device_code = o.device_code
+        where o.tenant_id = #{param.tenantId} and o.industry_code = #{param.industryCode} and o.delete_flag = '0' and o.ord_status in (0,1,2)
+        and t.delete_flag = '0' and nest.device_code != #{param.deviceCode} and nest.device_name = #{param.deviceName}
+    </select>
+
+    <select id="countNestAliasName" resultType="java.lang.Integer">
+        select count(*)
+        from vm_uav_nest_device_info nest
+        inner join vm_uav_device_info_t t on t.uav_nest_code = nest.device_code
+        inner join vm_order_uav_devices o on t.device_code = o.device_code
+        inner join vm_tenant_device_common_rel_t rel on rel.device_code = nest.device_code and rel.tenant_id = o.tenant_id and rel.industry_code = o.industry_code and t.device_type = 4
+        where o.tenant_id = #{param.tenantId} and o.industry_code = #{param.industryCode} and o.delete_flag = '0' and o.ord_status in (0,1,2)
+        and t.delete_flag = '0' and nest.device_code != #{param.deviceCode} and nest.device_name = #{param.deviceName}
+    </select>
+
+    <select id="queryCameraModelCodeByDeviceCode" resultType="java.lang.String">
+        select camera_model_code
+        from vm_uav_device_info_t
+        where delete_flag = 0 and device_code = #{deviceCode}
+    </select>
+
+    <select id="queryUavDetailInfo" resultType="com.chinatower.device.entity.dto.UavDeviceDTO">
+        select m.device_code, m.device_name, m.device_type, m.location, m.longitude, m.latitude, m.model_code,
+               model.model_name, m.rc_number, m.device_serial_id, m.camera_model_code,
+               nest.device_code as uavNestCode, nest.device_name as uavNestName,
+               nest.longitude as nestLongitude, nest.latitude as nestLatitude,
+               nest.altitude as nestAltitude, nest.address as nestAddress,
+               nest.device_type as nestDeviceType, nest.model_code as uavNestModelCode, nestModel.model_name as uavNestModelName,
+               model.domain, model.type, model.sub_type, model.aircraft_category, model.aircraft_type,
+               model.weight as modelWeight, model.support_camera, model.max_fly_time, model.max_level_speed, model.manufacturer_code as modelManufacturerCode,
+               (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_model_manufacturer' AND DICT_VALUE = model.manufacturer_code limit 1) modelManufacturerName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_device_type' and status = '0' AND DICT_VALUE = m.device_type limit 1) deviceTypeName
+        from vm_uav_device_info_t m
+        left join vm_uav_device_model_t model on model.model_code = m.model_code and model.delete_flag = 0
+        left join vm_uav_nest_device_info nest on m.uav_nest_code = nest.device_code and nest.delete_flag = 0
+        left join vm_uav_nest_device_model_t nestModel on nest.model_code = nestModel.model_code and nestModel.delete_flag = 0
+        where m.delete_flag = 0 and m.device_code = #{deviceCode}
+    </select>
+
+    <select id="queryUavByNestInfo" resultType="com.chinatower.device.entity.dto.UavDeviceDTO">
+        select distinct m.device_code,
+        m.device_name,
+        m.device_type,
+        (select GROUP_CONCAT(t.mount_type SEPARATOR ',')
+        from vm_uav_mount_model_rel_t rel
+        left join vm_uav_mount_model_t t on t.model_code = rel.uav_mount_model
+        where rel.device_code = m.device_code
+        and rel.delete_flag = 0) as mount_type,
+        (select GROUP_CONCAT(rel.uav_mount_model SEPARATOR ',')
+        from vm_uav_mount_model_rel_t rel
+        where rel.device_code = m.device_code
+        and rel.delete_flag = 0) as uav_mount_model,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_device_type' and status = '0' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        (select GROUP_CONCAT(
+        (select DICT_LABEL FROM sys_dict_data
+        where DICT_TYPE = 'uav_mount_model_type'
+        AND DICT_VALUE = t.mount_type limit 1)
+        SEPARATOR ',')
+        from vm_uav_mount_model_rel_t rel
+        left join vm_uav_mount_model_t t on t.model_code = rel.uav_mount_model
+        where rel.device_code = m.device_code
+        and rel.delete_flag = 0) as mountTypeName
+        from vm_order_uav_nest_devices o1
+        inner join vm_uav_device_info_t m on o1.device_code = m.uav_nest_code
+        inner join vm_order_uav_devices o2 on o1.industry_code = o2.industry_code
+        and o1.app_ver_code = o2.app_ver_code
+        and o1.tenant_id = o2.tenant_id
+        and o2.device_code = m.device_code
+        where m.delete_flag = 0
+        and m.uav_nest_code = #{param.uavNestCode}
+        ${param.dataScope}
+        limit 1
+    </select>
+
+    <resultMap id="uavCameraMap" type="com.chinatower.device.entity.vo.DeviceCameraModelVO">
+        <result column="yg_id" property="ygId" jdbcType="BIGINT"/>
+        <result column="model_code" property="modelCode" jdbcType="VARCHAR"/>
+        <result column="model_name" property="modelName" jdbcType="VARCHAR"/>
+        <result column="range_of_pan" property="rangeOfPan" jdbcType="VARCHAR"/>
+        <result column="range_of_yaw" property="rangeOfYaw" jdbcType="VARCHAR"/>
+        <result column="manufacturer_code" property="manufacturerCode" jdbcType="VARCHAR"/>
+        <result column="domain" property="domain" jdbcType="VARCHAR"/>
+        <result column="type" property="type" jdbcType="VARCHAR"/>
+        <result column="sub_type" property="subType" jdbcType="VARCHAR"/>
+        <result column="manufacturerName" property="manufacturerName" jdbcType="VARCHAR"/>
+        <result column="support_function" property="supportFunction" jdbcType="VARCHAR"/>
+        <collection property="cameraLensParamList" ofType="com.chinatower.device.entity.vo.DeviceCameraModelParamVO">
+            <result column="camera_model_code" property="cameraModelCode" jdbcType="VARCHAR"/>
+            <result column="lens_name" property="lensName" jdbcType="VARCHAR"/>
+            <result column="spectral_type" property="spectralType" jdbcType="VARCHAR"/>
+            <result column="spectralTypeName" property="spectralTypeName" jdbcType="VARCHAR"/>
+            <result column="sensor_size" property="sensorSize" jdbcType="VARCHAR"/>
+            <result column="pixel_size" property="pixelSize" jdbcType="VARCHAR"/>
+            <result column="focal_length_type" property="focalLengthType" jdbcType="VARCHAR"/>
+            <result column="zoom_conversion_coefficient" property="zoomConversionCoefficient" jdbcType="VARCHAR"/>
+            <result column="actual_focal_length_range" property="actualFocalLengthRange" jdbcType="VARCHAR"/>
+            <result column="equivalent_focal_length_range" property="equivalentFocalLengthRange" jdbcType="VARCHAR"/>
+            <result column="optical_zoom_range" property="opticalZoomRange" jdbcType="VARCHAR"/>
+            <result column="digital_zoom_range" property="digitalZoomRange" jdbcType="VARCHAR"/>
+            <result column="color_palette_style" property="colorPaletteStyle" jdbcType="VARCHAR"/>
+            <result column="supporting_feature" property="supportingFeature" jdbcType="VARCHAR"/>
+            <result column="sensor_size_width" property="sensorSizeWidth" jdbcType="VARCHAR"/>
+            <result column="sensor_size_height" property="sensorSizeHeight" jdbcType="VARCHAR"/>
+            <result column="pixel_size_width" property="pixelSizeWidth" jdbcType="VARCHAR"/>
+            <result column="pixel_size_height" property="pixelSizeHeight" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <select id="queryUavCameraModelInfo" resultMap="uavCameraMap">
+        select m.yg_id, m.model_code, m.model_name, m.range_of_pan, m.range_of_yaw, m.manufacturer_code, m.domain, m.type, m.sub_type, m.support_function,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_camera_model_manufacturer' AND DICT_VALUE = m.manufacturer_code limit 1) manufacturerName,
+        p.camera_model_code, p.lens_name, p.spectral_type, p.sensor_size, p.pixel_size,
+        p.focal_length_type, p.zoom_conversion_coefficient, p.actual_focal_length_range, p.equivalent_focal_length_range,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'uav_camera_lens_param_spectral_type' AND DICT_VALUE = p.`spectral_type` limit 1) spectralTypeName,
+        p.optical_zoom_range, p.digital_zoom_range, p.color_palette_style, p.supporting_feature, p.sensor_size_width, p.sensor_size_height, p.pixel_size_width, p.pixel_size_height
+        from vm_uav_camera_model_t m
+        left join `vm_uav_camera_lens_param` p on m.model_code = p.camera_model_code
+        where m.delete_flag = 0 and m.model_code in
+        <foreach collection="cameraModelCodeList" open="(" close=")" separator="," index="index" item="item">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryUavNestModelList" resultType="com.chinatower.device.entity.vo.UavNestModelVO">
+        select model_code, model_name from vm_uav_nest_device_model_t where delete_flag = 0
+    </select>
+
+    <select id="queryUavModelList" resultType="com.chinatower.device.entity.vo.UavModelVO">
+        select model_code, model_name from vm_uav_device_model_t where delete_flag = 0
+    </select>
+
+    <update id="updateUavDeviceLocationInfo" parameterType="com.chinatower.device.entity.vo.UavNestLocationVO">
+        update vm_uav_device_info_t
+        set province_code = #{param.provinceCode},
+            city_code = #{param.cityCode},
+            county_code = #{param.countyCode},
+            town_code = #{param.townCode},
+            location = #{param.address},
+            latitude = #{param.latitude},
+            longitude = #{param.longitude},
+            update_time = now()
+        where
+            uav_nest_code = #{param.deviceCode}
+                <if test="uavDeviceCodeList != null and uavDeviceCodeList.size() >0">
+                    and device_code in
+                    <foreach collection="uavDeviceCodeList" open="(" close=")" separator="," index="index" item="deviceCode">
+                        #{deviceCode}
+                    </foreach>
+                </if>
+            and delete_flag = '0'
+    </update>
+
+    <update id="updateUavNestDeviceLocationInfo" parameterType="com.chinatower.device.entity.vo.UavNestLocationVO">
+        update vm_uav_nest_device_info
+        set province_code = #{param.provinceCode},
+            city_code = #{param.cityCode},
+            county_code = #{param.countyCode},
+            town_code = #{param.townCode},
+            address = #{param.address},
+            latitude = #{param.latitude},
+            longitude = #{param.longitude},
+            altitude = #{param.altitude},
+            update_time = now()
+        where
+            device_code = #{param.deviceCode}
+          and delete_flag = '0'
+    </update>
+
+    <select id="queryUavDeviceCodesByUavNestDeviceCode" resultType="com.chinatower.device.entity.dto.UavDeviceDTO">
+        select
+            uav.device_code, uav.uav_nest_code
+        from vm_uav_device_info_t uav
+                 join vm_order_uav_devices od on od.device_code = uav.device_code and od.delete_flag ='0' and od.ord_status IN ( 0, 1, 2 )
+                      and od.tenant_id = #{tenantId} and od.industry_code = #{industryCode}
+                 join sys_tenant_info ti on od.tenant_id = ti.tenant_id and ti.del_flag = '0'
+        where uav.uav_nest_code = #{uavNestCode}
+          and uav.delete_flag = '0'
+    </select>
+
+    <select id="queryUavInfoList" parameterType="com.chinatower.platform.entity.device.DeviceReqDTO"
+            resultType="com.chinatower.device.entity.vo.UavCardQueryVO">
+        SELECT DISTINCT
+        m.device_code AS code,
+        m.device_name AS name,
+        m.device_name AS deviceName,
+        m.device_status AS status,
+        m.access_node AS accessNode,
+        m.province_code AS provinceId,
+        pro.area_name AS provinceName,
+        m.city_code AS cityId,
+        city.area_name AS cityName,
+        m.county_code AS countyId,
+        county.area_name AS countyName,
+        m.town_code AS townCode,
+        town.area_name AS townName,
+        m.site_code AS siteCode,
+        m.longitude,
+        m.latitude,
+        'false' AS checked,
+        '1' AS proLevel,
+        '2' AS cityLevel,
+        '3' AS countryLevel,
+        '4' AS devLevel,
+        CASE WHEN IFNULL(dct.user_device_coll_id, 0) = 0 THEN '0' ELSE '1' END isMonitor,
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            case when IFNULL(art.id,0) = 0 then '0' else '1' end as tagCollect,
+        </if>
+        (CASE WHEN length(IFNULL(rel.device_name, '')) = 0 THEN m.device_name ELSE rel.device_name END) deviceAlias,
+        nest.device_code uavNestCode,
+        nest.altitude,
+        nest.longitude AS uavNestLongitude,
+        nest.latitude AS uavNestLatitude,
+        (CASE WHEN length(IFNULL(nrel.device_name, '')) = 0 THEN nest.device_name ELSE nrel.device_name END) uavNestName,
+        nest.resource_status uavNestStatus,
+        nest.position_fix nestPositionFix,
+        nest.calibration_status uavNestCalibrationStatus,
+        mount.uav_mount_model AS uavMountModel,
+        'false' as isNestDevice,
+        null as uavNestPositionFix
+        FROM
+        vm_order_uav_devices ord
+        LEFT JOIN vm_uav_device_info_t m ON m.device_code = ord.device_code
+        LEFT JOIN (
+        SELECT
+        device_code,
+        GROUP_CONCAT(uav_mount_model) AS uav_mount_model
+        FROM vm_uav_mount_model_rel_t
+        WHERE delete_flag = 0
+        GROUP BY device_code
+        ) mount ON mount.device_code = m.device_code
+        LEFT JOIN sys_area pro ON pro.area_code = m.province_code
+        LEFT JOIN sys_area city ON city.area_code = m.city_code
+        LEFT JOIN sys_area county ON county.area_code = m.county_code
+        LEFT JOIN sys_area town ON town.area_code = m.town_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = m.device_code
+        AND rel.tenant_id = ord.tenant_id
+        AND rel.industry_code = ord.industry_code
+        AND rel.delete_flag = '0'
+        AND rel.device_type = 1
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '11' AND dct.user_id = #{param.userId}
+        LEFT JOIN `vm_uav_nest_device_info` nest ON m.uav_nest_code = nest.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t nrel ON nrel.device_code = nest.device_code
+        AND nrel.industry_code = ord.industry_code
+        AND nrel.tenant_id = ord.tenant_id
+        AND nrel.delete_flag = '0'
+        AND nrel.device_type = 4
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code
+            and art.coll_obj_type = '11' and art.user_id = #{param.userId}
+        </if>
+        WHERE
+        m.delete_flag = '0'
+        AND ord.ord_status IN (0, 1, 2)
+        AND ord.delete_flag = '0'
+        <if test='param.industryCode != null and param.industryCode != ""'>
+            AND ord.industry_code = #{param.industryCode}
+        </if>
+        <if test='param.tenantId != "" and param.tenantId != null'>
+            AND ord.tenant_id = #{param.tenantId}
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0"'>
+            AND dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            <if test='param.isArTagFlag != null and param.isArTagFlag != "" and param.isArTagFlag == "0"'>
+                AND art.coll_obj_code IS NOT NULL
+            </if>
+        </if>
+        <if test='param.deviceStatusList != null and param.deviceStatusList.size() >0'>
+            AND m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.uavNestStatusList != null and param.uavNestStatusList.size() >0'>
+            AND nest.resource_status in
+            <foreach collection="param.uavNestStatusList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.uavNestCodeList != null and param.uavNestCodeList.size() >0">
+            AND m.uav_nest_code in
+            <foreach collection="param.uavNestCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.keywords != null and param.keywords != ""'>
+            AND (m.device_code like concat('%',#{param.keywords},'%') or m.device_name like concat('%',#{param.keywords},'%'))
+        </if>
+        <if test='param.deviceCodes != null and param.deviceCodes.size() >0'>
+            AND m.device_code in
+            <foreach collection="param.deviceCodes" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        ${param.dataScope}
+
+        UNION ALL
+
+        SELECT DISTINCT
+        s.device_code AS code,
+        NULL AS name,
+        NULL AS deviceName,
+        NULL AS status,
+        NULL AS accessNode,
+        s.province_code AS provinceId,
+        pro2.area_name AS provinceName,
+        s.city_code AS cityId,
+        city2.area_name AS cityName,
+        s.county_code AS countyId,
+        county2.area_name AS countyName,
+        s.town_code AS townCode,
+        town2.area_name AS townName,
+        null AS siteCode,
+        null as longitude,
+        null as latitude,
+        'false' AS checked,
+        '1' AS proLevel,
+        '2' AS cityLevel,
+        '3' AS countryLevel,
+        '4' AS devLevel,
+        '0' AS isMonitor,
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            '0' AS tagCollect,
+        </if>
+        (CASE WHEN length(IFNULL(rel2.device_name, '')) = 0 THEN s.device_name ELSE rel2.device_name END) deviceAlias,
+        s.device_code uavNestCode,
+        s.altitude,
+        s.longitude AS uavNestLongitude,
+        s.latitude AS uavNestLatitude,
+        (CASE WHEN length(IFNULL(rel2.device_name, '')) = 0 THEN s.device_name ELSE rel2.device_name END) uavNestName,
+        s.resource_status uavNestStatus,
+        s.position_fix nestPositionFix,
+        s.calibration_status uavNestCalibrationStatus,
+        NULL AS uavMountModel,
+        'true' as isNestDevice,
+        s.position_fix  as uavNestPositionFix
+        FROM
+        vm_order_uav_nest_devices z
+        LEFT JOIN vm_uav_nest_device_info s ON z.device_code = s.device_code
+        LEFT JOIN sys_area pro2 ON pro2.area_code = s.province_code
+        LEFT JOIN sys_area city2 ON city2.area_code = s.city_code
+        LEFT JOIN sys_area county2 ON county2.area_code = s.county_code
+        LEFT JOIN sys_area town2 ON town2.area_code = s.town_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel2 ON rel2.device_code = s.device_code
+        AND rel2.tenant_id = z.tenant_id
+        AND rel2.industry_code = z.industry_code
+        AND rel2.delete_flag = '0'
+        AND rel2.device_type = 4
+        LEFT JOIN vm_user_device_collection_t dct2 ON dct2.coll_obj_code = s.device_code
+        AND dct2.coll_obj_type = '11' AND dct2.user_id = #{param.userId}
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            LEFT JOIN vm_ar_tags_tree_user_rel art2 ON art2.coll_obj_code = s.device_code
+            AND art2.coll_obj_type = '11' AND art2.user_id = #{param.userId}
+        </if>
+        WHERE
+        z.device_code IN (
+        SELECT
+        nest.device_code
+        FROM
+        vm_uav_nest_device_info AS nest
+        LEFT JOIN vm_uav_device_info_t AS uav ON nest.device_code = uav.uav_nest_code and uav.delete_flag = 0
+        and uav.device_code in
+        (SELECT device_code from vm_order_uav_devices  where ord_status in (0,1,2)
+        <if test='param.industryCode != null and param.industryCode != ""'>
+            AND industry_code = #{param.industryCode}
+        </if>
+        <if test='param.tenantId != "" and param.tenantId != null'>
+            AND tenant_id =  #{param.tenantId}
+        </if>)
+        WHERE
+        uav.uav_nest_code IS NULL
+        )
+        AND z.delete_flag = '0'
+        and z.ord_status in (0,1,2)
+        <if test='param.industryCode != null and param.industryCode != ""'>
+            AND z.industry_code = #{param.industryCode}
+        </if>
+        <if test='param.tenantId != "" and param.tenantId != null'>
+            AND z.tenant_id = #{param.tenantId}
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0"'>
+
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            <if test='param.isArTagFlag != null and param.isArTagFlag != "" and param.isArTagFlag == "0"'>
+
+            </if>
+        </if>
+        <if test='param.deviceStatusList != null and param.deviceStatusList.size() >0'>
+
+        </if>
+        <if test='param.uavNestStatusList != null and param.uavNestStatusList.size() >0'>
+            AND s.resource_status in
+            <foreach collection="param.uavNestStatusList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.uavNestCodeList != null and param.uavNestCodeList.size() >0">
+            AND s.device_code in
+            <foreach collection="param.uavNestCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.keywords != null and param.keywords != ""'>
+            AND (s.device_code like concat('%',#{param.keywords},'%') or s.device_name like concat('%',#{param.keywords},'%'))
+        </if>
+        <if test='param.deviceCodes != null and param.deviceCodes.size() >0'>
+
+        </if>
+        ${param.nestDataScope}
+        ORDER BY
+        provinceId,
+        cityId,
+        countyId,
+        townCode,
+        code
+    </select>
+
+    <select id="getLatestTaskStatus" resultType="java.util.Map">
+        SELECT
+            deviceCode,
+            status,
+            planTaskId,
+            createTime
+        FROM (
+            SELECT
+                line.uav_code AS deviceCode,
+                task.task_status AS status,
+                task.plan_task_id AS planTaskId,
+                task.create_time AS createTime,
+                ROW_NUMBER() OVER (
+                PARTITION BY line.uav_code
+                ORDER BY task.plan_time DESC
+                ) AS rn
+            FROM vm_air_line_t line
+            LEFT JOIN vm_air_task_t task
+            ON task.flight_route_id = line.flight_route_id
+            AND task.delete_flag = '0'
+            AND task.plan_time <![CDATA[<]]> #{currentTime}
+            WHERE
+                line.delete_flag = 0
+                AND line.uav_code IN
+                <foreach collection="deviceCodes" open="(" close=")" separator="," item="code">
+                    #{code}
+                </foreach>
+        ) AS temp
+        WHERE temp.rn = 1
+    </select>
+
+    <select id="getFuturePlanTasks" resultType="java.util.Map">
+        SELECT
+            deviceCode,
+            planTime,
+            planName
+        FROM (
+            SELECT
+            line.uav_code AS deviceCode,
+            task.plan_time AS planTime,
+            task.plan_name AS planName,
+            ROW_NUMBER() OVER (
+            PARTITION BY line.uav_code
+            ORDER BY task.plan_time ASC
+            ) AS rn
+            FROM vm_air_line_t line
+            INNER JOIN vm_air_task_t task
+            ON task.flight_route_id = line.flight_route_id
+            AND task.delete_flag = '0'
+            AND task.plan_time BETWEEN #{currentTime} AND #{endTime}
+            WHERE
+                line.delete_flag = 0
+                AND line.uav_code IN
+                <foreach collection="deviceCodes" open="(" close=")" separator="," item="code">
+                    #{code}
+                </foreach>
+        ) AS temp
+        WHERE temp.rn = 1
+    </select>
+
+
+
+    <select id="getAlarmOrderCount" resultType="java.lang.Integer">
+        select count(dataTable.warning_order_id) from ${tableName} as dataTable
+        where dataTable.delete_flag = '0'
+        AND dataTable.task_record_id = #{planTaskId}
+        AND dataTable.tenant_id = #{tenantId}
+        AND dataTable.industry_code = #{industryCode}
+    </select>
+
+    <!-- 根据挂载型号编码列表查询挂载型号信息 -->
+    <select id="queryUavMountModelInfo" resultType="com.chinatower.device.entity.vo.UavMountModelInfoVO">
+        SELECT
+            model_code AS modelCode,
+            model_name AS modelName,
+            manufacturer_code AS manufacturerCode,
+            mount_type AS mountType,
+            support_function AS supportFunction
+        FROM vm_uav_mount_model_t
+        WHERE delete_flag = '0'
+        <if test="mountModelCodeList != null and mountModelCodeList.size() > 0">
+            AND model_code IN
+            <foreach collection="mountModelCodeList" item="code" open="(" separator="," close=")">
+                #{code}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="queryUavListByCondition" parameterType="com.chinatower.device.entity.dto.UavDeviceDTO" resultMap="resultMap">
+        select distinct uav.device_code,
+            (case when length(IFNULL(rel.device_name, '')) = 0 then uav.device_name else rel.device_name end ) device_name,
+            uav.device_status,
+            uav.manufacturer_code,
+            uav.model_code,
+            uav.location,
+            uav.site_code,
+            uav.province_code,
+            uav.city_code,
+            uav.county_code,
+            uav.town_code,
+            uav.device_type,
+            uav.longitude,
+            uav.latitude,
+            uav.hanging_height as height,
+            uav.camera_model_code cameraModelCode,
+            uav.uav_nest_code uavNestCode,
+            uav.access_node,
+            (CASE WHEN od.ord_status in ('0','1','2') THEN '0'
+            WHEN od.ord_status = '3' THEN '2'
+            WHEN od.ord_status = '4' THEN '1'
+            END) orderStatus,
+            (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+            WHEN od.ord_status = '3' THEN '退订'
+            WHEN od.ord_status = '4' THEN '失效'
+            END) orderStatusName
+        from vm_uav_device_info_t uav
+        INNER JOIN vm_order_uav_devices od ON od.device_code = uav.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = uav.device_code
+            and rel.tenant_id = od.tenant_id
+            and rel.industry_code = od.industry_code
+            and rel.delete_flag = '0'
+            and rel.device_type = 1
+        where
+        <include refid="sqlWhere"/>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+
+    </select>
+
+    <!-- 统计当前租户当前行业下正在飞行中的无人机设备数量 -->
+    <select id="countFlyingUavDevices" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT temp.deviceCode) AS count
+        FROM (
+            SELECT
+                line.uav_code AS deviceCode,
+                task.task_status AS status,
+                ROW_NUMBER() OVER (
+                    PARTITION BY line.uav_code
+                    ORDER BY task.plan_time DESC
+                ) AS rn
+            FROM vm_air_line_t line
+            INNER JOIN vm_order_uav_devices od ON od.device_code = line.uav_code
+                AND od.delete_flag = '0'
+                AND od.ord_status IN ('0', '1', '2')
+            LEFT JOIN vm_air_task_t task ON task.flight_route_id = line.flight_route_id
+                AND task.delete_flag = '0'
+                AND task.plan_time <![CDATA[<]]> #{currentTime}
+            WHERE line.delete_flag = '0'
+                ${param.dataScope}
+        ) AS temp
+        WHERE temp.rn = 1
+            AND temp.status = '3'
+    </select>
+    <select id="getFuturePlanTasksByDeviceCodes" resultType="java.util.Map">
+        SELECT deviceCode, planTime, planName
+        FROM (
+        SELECT line.uav_code AS deviceCode,
+        task.plan_time AS planTime,
+        task.plan_name AS planName,
+        ROW_NUMBER() OVER (PARTITION BY line.uav_code ORDER BY task.plan_time ASC) AS rn
+        FROM vm_air_line_t line
+        JOIN vm_air_task_t task
+        ON task.flight_route_id = line.flight_route_id
+        AND task.delete_flag = '0'
+        WHERE line.delete_flag = 0
+        AND line.uav_code IN
+        <foreach collection="deviceCodes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+        AND task.plan_time BETWEEN #{currentTime} AND #{endTime}
+        ) tmp
+        WHERE tmp.rn = 1;
+    </select>
+</mapper>

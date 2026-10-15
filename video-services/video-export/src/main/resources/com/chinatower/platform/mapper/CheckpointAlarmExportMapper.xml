@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.CheckpointAlarmExportMapper">
+
+
+
+    <select id="exportCheckpointAlarmList" resultType="com.chinatower.common.core.vo.CheckpointAlarmExportVO" parameterType="com.chinatower.common.core.dto.CheckpointAlarmDTO" >
+        SELECT  a.vehicle_number,
+                <trim prefix="(case" suffix="end) as carType,">
+                    <foreach collection="sysDictDataList" item="item">
+                        <if test="item.dictValue!=null and item.dictValue != ''">
+                            when vehicle_type=#{item.dictValue} then #{item.dictLabel}
+                        </if>
+                    </foreach>
+                </trim>
+                concat(a.province_name, a.city_name, a.county_name) areaName,
+                a.device_name,
+                a.device_code,
+                a.alarm_time
+        FROM vm_checkpoint_warning_order_t a
+        WHERE a.delete_flag = 0
+        <if test="deviceCodes != null and deviceCodes.size() > 0">
+            and a.device_code in
+            <foreach collection="deviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+        <choose>
+            <when test='ids != null and ids.size() > 0'>
+                AND a.alarm_id in
+                <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                <if test='provinceCode != null and provinceCode != ""'>
+                    and a.province_code = #{provinceCode}
+                </if>
+                <if test='cityCode != null and cityCode != ""'>
+                    and a.city_code = #{cityCode}
+                </if>
+                <if test='countyCode != null and countyCode != ""'>
+                    and a.county_code = #{countyCode}
+                </if>
+                <if test='vehicleNumber != null and vehicleNumber != ""'>
+                    and a.vehicle_number like concat('%',#{vehicleNumber},'%')
+                </if>
+                <if test='deviceCode != null and deviceCode != ""'>
+                    and a.device_code like CONCAT('%', #{deviceCode}, '%')
+                </if>
+                <if test='deviceName != null and deviceName != ""'>
+                    AND a.device_name like CONCAT('%', #{deviceName}, '%')
+                </if>
+                <if test='alarmTimeEnd != null and alarmTimeEnd != ""'>
+                    and #{alarmTimeEnd} >= a.alarm_time
+                </if>
+                <if test='alarmTimeStart != null and alarmTimeStart != ""'>
+                    and a.alarm_time >= #{alarmTimeStart}
+                </if>
+            </otherwise>
+        </choose>
+        <choose>
+            <when test='sortName == "deviceCode" and sort == "asc"'>
+                order by a.device_code, a.alarm_time DESC
+            </when>
+            <when test='sortName == "deviceName" and sort == "asc"'>
+                order by CONVERT(a.device_name USING GBK), a.alarm_time DESC
+            </when>
+            <when test='sortName == "areaName" and sort == "asc"'>
+                order by CONVERT(areaName USING GBK), a.alarm_time DESC
+            </when>
+            <when test='sortName == "vehicleType" and sort == "asc"'>
+                order by a.vehicle_type, a.alarm_time DESC
+            </when>
+            <when test='sortName == "vehicleNumber" and sort == "asc"'>
+                order by a.vehicle_number, a.alarm_time DESC
+            </when>
+            <when test='sortName == "alarmTime" and sort == "asc"'>
+                order by a.alarm_time, a.vehicle_number
+            </when>
+            <when test='sortName == "deviceCode" and sort == "desc"'>
+                order by a.device_code DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "deviceName" and sort == "desc"'>
+                order by CONVERT(a.device_name USING GBK) DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "areaName" and sort == "desc"'>
+                order by CONVERT(areaName USING GBK) DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "vehicleType" and sort == "desc"'>
+                order by a.vehicle_type DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "vehicleNumber" and sort == "desc"'>
+                order by a.vehicle_number DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "alarmTime" and sort == "desc"'>
+                order by a.alarm_time DESC, a.vehicle_number
+            </when>
+            <otherwise>
+                order by a.alarm_time desc,a.alarm_id desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="getVehicleTypeDict" resultType="com.chinatower.platform.entity.admin.SysDictData">
+        select dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, remark
+        from sys_dict_data where status = '0' and dict_type = #{dictType} order by dict_sort asc
+    </select>
+
+</mapper>

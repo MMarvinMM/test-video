@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.SysUserMapper">
+
+    <insert id="insertUser" parameterType="com.chinatower.platform.entity.admin.SysUser" useGeneratedKeys="true"
+            keyProperty="userId">
+        insert into sys_user(
+        user_id,
+        <if test="deptId != null and deptId != ''">dept_id,</if>
+        <if test="userName != null and userName != ''">user_name,</if>
+        <if test="nickName != null and nickName != ''">nick_name,</if>
+        <if test="userType != null and userType != ''">user_type,</if>
+        <if test="email != null and email != ''">email,</if>
+        <if test="avatar != null and avatar != ''">avatar,</if>
+        <if test="phonenumber != null and phonenumber != ''">phonenumber,</if>
+        <if test="telPhone != null and telPhone != ''">tel_phone,</if>
+        <if test="sex != null and sex != ''">sex,</if>
+        <if test="password != null and password != ''">password,</if>
+        <if test="status != null and status != ''">status,</if>
+        <if test="createBy != null and createBy != ''">create_by,</if>
+        <if test="remark != null and remark != ''">remark,</if>
+        <if test="enterpriseId != null and enterpriseId != ''">enterprise_id,</if>
+        <if test="tenantId != null and tenantId != ''">tenant_id,</if>
+        <if test="isTenantAdmin != null and isTenantAdmin != ''">is_tenant_admin,</if>
+        <if test="userSource != null and userSource != ''">user_source,</if>
+        create_time
+        )values(
+        #{userId},
+        <if test="deptId != null and deptId != ''">#{deptId},</if>
+        <if test="userName != null and userName != ''">#{userName},</if>
+        <if test="nickName != null and nickName != ''">#{nickName},</if>
+        <if test="userType != null and userType != ''">#{userType},</if>
+        <if test="email != null and email != ''">#{email},</if>
+        <if test="avatar != null and avatar != ''">#{avatar},</if>
+        <if test="phonenumber != null and phonenumber != ''">#{phonenumber},</if>
+        <if test="telPhone != null and telPhone != ''">#{telPhone},</if>
+        <if test="sex != null and sex != ''">#{sex},</if>
+        <if test="password != null and password != ''">#{password},</if>
+        <if test="status != null and status != ''">#{status},</if>
+        <if test="createBy != null and createBy != ''">#{createBy},</if>
+        <if test="remark != null and remark != ''">#{remark},</if>
+        <if test="enterpriseId != null and enterpriseId != ''">#{enterpriseId},</if>
+        <if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+        <if test="isTenantAdmin != null and isTenantAdmin != ''">#{isTenantAdmin},</if>
+        <if test="userSource != null and userSource != ''">#{userSource},</if>
+        #{createTime}
+        )
+    </insert>
+
+    <insert id="batchUserRole" useGeneratedKeys="false">
+        insert into sys_user_role(user_id, role_id) values
+        <foreach open="" collection="list" item="item"  close="" separator=",">
+            (#{item.userId},#{item.roleId})
+        </foreach>
+    </insert>
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysRole" id="SysRoleResult">
+        <id property="roleId" column="role_id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleKey" column="role_key"/>
+        <result property="roleSort" column="role_sort"/>
+        <result property="dataScope" column="data_scope"/>
+        <result property="status" column="status"/>
+        <result property="deleteFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifier" column="modifier"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="tenantName" column="tenant_name"/>
+        <result property="provinceName" column="province_name"/>
+        <result property="cityName" column="city_name"/>
+        <result property="tradeInfo" column="trade_info"/>
+        <result property="tradeId" column="trade_id"/>
+    </resultMap>
+
+    <select id="selectRoleByTrades" resultMap="SysRoleResult">
+        select distinct r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.tenant_id,
+        r.status, r.del_flag, r.create_time, r.remark, r.role_type, r.create_by
+        from sys_role r, sys_role_trade rt
+        where r.role_id = rt.role_id
+        and r.role_type = '2' and r.del_flag = '0'
+        and
+        <foreach collection="tenantTrades" item="item" open="(" separator=" or " close=")">
+            (rt.trade_id = #{item.industryCode} and rt.app_ver_code = #{item.appVerCode})
+        </foreach>
+    </select>
+
+    <select id="checkTenantAdminUnique" parameterType="String" resultType="int">
+        select count(1) from sys_user where tenant_id = #{tenantId} and is_tenant_admin = 1 and del_flag = '0'
+    </select>
+
+    <select id="checkUserNameUnique" parameterType="String"  resultType="int">
+        select count(1) from sys_user where user_name = #{userName} AND del_flag = '0'
+    </select>
+
+    <select id="findUserIdByUserName" parameterType="String"  resultType="java.lang.String">
+        select user_id from sys_user where user_name = #{userName} AND del_flag = '0' limit 1
+    </select>
+
+    <update id="updateDeptByUserId">
+        update sys_user
+        set dept_id = #{deptId}
+        <if test="password != null and password != ''">
+            , password = #{password}
+        </if>
+        where user_id = #{userId}
+    </update>
+
+    <select id="getRoleByIndustryCode" resultType="java.lang.Long">
+        select distinct ra.role_id
+        from sys_industry_auth ia
+        inner join sys_role_industry_auth ra on ia.auth_id = ra.auth_id
+        where ia.industry_code = #{industryCode}
+        and ia.app_ver_code = #{appVerCode}
+        and (ia.tenant_id is null or ia.tenant_id = '')
+        and (ra.tenant_id is null or ra.tenant_id = '')
+
+    </select>
+
+    <select id="getRoleByIndustryCodeBatch" resultType="com.chinatower.order.dto.UserRoleDTO">
+        select ra.role_id, ia.industry_code, ia.app_ver_code
+        from sys_industry_auth ia
+        inner join sys_role_industry_auth ra on ia.auth_id = ra.auth_id
+        where ia.industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and ia.app_ver_code in
+        <foreach collection="appVerCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and (ia.tenant_id is null or ia.tenant_id = '')
+        and (ra.tenant_id is null or ra.tenant_id = '')
+        group by ia.industry_code, ia.app_ver_code, ra.role_id
+    </select>
+
+    <select id="getRoleByUserId" resultType="java.lang.Long">
+        select distinct role_id
+        from sys_user_role
+        where user_id  = #{userId}
+    </select>
+
+    <update id="deleteByTenantId">
+       update sys_user set del_flag =2 where tenant_id = #{tenantId} and is_tenant_admin = 1
+    </update>
+
+    <select id="getAdminByTenantId" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select * from sys_user where tenant_id = #{tenantId} and is_tenant_admin = 1 and del_flag = '0'
+    </select>
+
+    <select id="selectByTenantId" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select * from sys_user where tenant_id = #{tenantId} and del_flag = '0'
+    </select>
+
+    <select id="selectByUserId" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select * from sys_user where user_id = #{userId} limit 1
+    </select>
+
+    <select id="countAdminUserNameByTenantId" resultType="java.lang.Integer">
+        select count(*) from sys_user where tenant_id = #{tenantId} and del_flag = '0' and is_tenant_admin = '1'
+    </select>
+
+    <select id="queryNodeAlias" resultType="java.lang.String">
+        select node_alias from vm_platform_data_config where platform_code = #{nodeCode} limit 1
+    </select>
+
+    <sql id="selectConfigVo">
+        select config_id, config_name, config_key, config_value, config_type, creator, create_time, modifier, update_time, remark
+		from sys_config
+    </sql>
+
+    <select id="selectConfig" parameterType="com.chinatower.platform.entity.admin.SysConfig" resultType="com.chinatower.platform.entity.admin.SysConfig">
+        <include refid="selectConfigVo"/>
+        <where>
+            <if test="configId !=null">
+                and config_id = #{configId}
+            </if>
+            <if test="configKey !=null and configKey != ''">
+                and config_key = #{configKey}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByUserIdList" resultType="com.chinatower.order.dto.SysUserHisMongoDTO">
+        SELECT
+        `USER_ID`, `USER_NAME`, `NICK_NAME`, `USER_TYPE`, `EMAIL`,
+        `PHONENUMBER`, `TELEPHONE`, `SEX`, `AVATAR`, `PASSWORD`,
+        `STATUS`, `DEL_FLAG`, `LOGIN_IP`, `LOGIN_DATE`, `CREATE_BY`,
+        `CREATE_TIME`, `UPDATE_BY`, `UPDATE_TIME`, `REMARK`,
+        `LOGIN_FAIL_NUM`, `DEPT_ID`, `GRADE`, `EMP_NO`, `SORT_NO`,
+        `ENTERPRISE_ID`, `tenant_id`, `is_tenant_admin`, `TOWER_USER_SOURCE`, `SOURCE`,
+        `province_id`,  `city_id`, `user_source`, `tel_phone`, `pwd_update_time`,
+        `account_validity_period`, `white_ip_flag`, `validity_period_state`
+        FROM sys_user
+        WHERE USER_ID IN
+        <foreach collection="userIdList" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </select>
+
+    <delete id="deletePhysicalByUserIdList">
+        DELETE FROM sys_user
+        WHERE
+        USER_ID IN
+        <foreach collection="userIdList" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

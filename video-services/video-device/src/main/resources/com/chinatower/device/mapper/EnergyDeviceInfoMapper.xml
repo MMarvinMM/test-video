@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.EnergyDeviceInfoMapper">
+
+    <select id="queryAllStationInfo" resultType="com.chinatower.device.entity.vo.EnergyDeviceStationVO">
+        select id, latitude lat, longitude lon
+        from `vm_aiot_energy_station_info_t`
+        where `del_flag` = 0 and longitude is not null and longitude is not null
+        order by id
+    </select>
+
+    <select id="queryStationList" resultType="com.chinatower.device.entity.vo.EnergyDeviceStationVO">
+        select t.station_code, t.station_name, t.business_type, t.province_id, t.city_id, t.county_id,
+        t.province_name, t.city_name, t.county_name, t.location address, t.longitude lat, t.longitude lon, t.create_time
+        from `vm_aiot_energy_station_info_t` t
+        where t.`del_flag` = 0
+        <if test="param.stationCodeList != null and param.stationCodeList.size() > 0">
+            and t.station_code in
+            <foreach collection="param.stationCodeList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.orderStationCodeList != null and param.orderStationCodeList.size() > 0">
+            and t.station_code in
+            <foreach collection="param.orderStationCodeList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.businessType != null and param.businessType != ''">
+            and t.business_type = #{param.businessType}
+        </if>
+        <if test="param.stationCode != null and param.stationCode != ''">
+            and t.station_code like CONCAT('%', #{param.stationCode},'%')
+        </if>
+        <if test="param.stationName != null and param.stationName != ''">
+            and t.station_name like CONCAT('%', #{param.stationName},'%')
+        </if>
+        <if test="param.provinceId != null">
+            and t.province_id = #{param.provinceId}
+        </if>
+        <if test="param.cityId != null">
+            and t.city_id = #{param.cityId}
+        </if>
+        <if test="param.countyId != null">
+            and t.county_id = #{param.countyId}
+        </if>
+        order by t.create_time desc, t.station_code
+    </select>
+
+    <select id="queryDeviceList" resultType="com.chinatower.device.entity.vo.EnergyDeviceVO">
+        select t.device_code devCode, t.device_name devName, t.dev_type devType, t.business_type businessType,
+        t.online_status onlineStatus, t.station_code stationCode, t.station_name, t.create_time, t.latitude lat, t.longitude lon, t.factory,
+        t.location address,
+        pro.area_name as provinceName,
+        pro.area_code as provinceId,
+        city.area_name as cityName,
+        city.area_code as cityId,
+        county.area_name as countyName,
+        county.area_code as countyId
+        from `vm_order_energy_devices` o
+        inner join `vm_aiot_energy_device_info_t` t on o.device_code = t.device_code and o.category_code = t.device_type
+        LEFT JOIN sys_area pro on pro.area_code = t.province_id
+        LEFT JOIN sys_area city on city.area_code = t.city_id
+        LEFT JOIN sys_area county on county.area_code = t.county_id
+        where o.delete_flag = 0 and t.`del_flag` = 0 and o.ord_status in (0,1,2) and o.tenant_id = #{param.tenantId}
+        and o.industry_code = #{param.industryCode}
+        <if test="param.stationCodeList != null and param.stationCodeList.size() > 0">
+            and t.station_code in
+            <foreach collection="param.stationCodeList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.businessType != null and param.businessType != ''">
+            and t.device_type = #{param.businessType}
+        </if>
+        <if test="param.stationCode != null and param.stationCode != ''">
+            and t.station_code like CONCAT('%', #{param.stationCode},'%')
+        </if>
+        <if test="param.stationName != null and param.stationName != ''">
+            and t.station_name like CONCAT('%', #{param.stationName},'%')
+        </if>
+        <if test="param.devCode != null and param.devCode != ''">
+            and t.device_code like CONCAT('%', #{param.devCode},'%')
+        </if>
+        <if test="param.devName != null and param.devName != ''">
+            and t.device_name like CONCAT('%', #{param.devName},'%')
+        </if>
+        <if test="param.devTypeList != null and param.devTypeList.size() > 0">
+            and t.dev_type in
+            <foreach collection="param.devTypeList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.provinceId != null">
+            and t.province_id = #{param.provinceId}
+        </if>
+        <if test="param.cityId != null">
+            and t.city_id = #{param.cityId}
+        </if>
+        <if test="param.countyId != null">
+            and t.county_id = #{param.countyId}
+        </if>
+        group by t.device_code
+        order by t.create_time desc, t.id
+    </select>
+
+    <select id="queryOrderStationCodeList" resultType="java.lang.String">
+        select distinct t.station_code
+        from `vm_order_energy_devices` o
+        inner join `vm_aiot_energy_device_info_t` t on o.device_code = t.device_code and o.category_code = t.device_type
+        where o.delete_flag = 0 and t.`del_flag` = 0 and o.ord_status in (0,1,2) and o.tenant_id = #{tenantId}
+        and o.industry_code = #{industryCode}
+    </select>
+
+    <select id="queryDeviceListByCondition" parameterType="com.chinatower.device.entity.dto.EnergyDeviceQueryDTO"
+            resultType="java.lang.String">
+        select distinct t.device_code
+        from `vm_order_energy_devices` o
+        inner join `vm_aiot_energy_device_info_t` t on o.device_code = t.device_code and o.category_code = t.device_type
+        where o.delete_flag = 0 and t.`del_flag` = 0 and o.ord_status in (0,1,2) and o.tenant_id = #{param.tenantId}
+        and o.industry_code = #{param.industryCode}
+        <if test="param.stationCodeList != null and param.stationCodeList.size() > 0">
+            and t.station_code in
+            <foreach collection="param.stationCodeList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.businessType != null and param.businessType != ''">
+            and t.device_type = #{param.businessType}
+        </if>
+        <if test="param.devCode != null and param.devCode != ''">
+            and t.device_code like CONCAT('%', #{param.devCode},'%')
+        </if>
+        <if test="param.devName != null and param.devName != ''">
+            and t.device_name like CONCAT('%', #{param.devName},'%')
+        </if>
+        <if test="param.devTypeList != null and param.devTypeList.size() > 0">
+            and t.dev_type in
+            <foreach collection="param.devTypeList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+   <select id="queryDeviceStatusStatistics" resultType="com.chinatower.device.entity.vo.EnergyDeviceStatusStatisticsVO">
+       select
+       count(distinct(t.device_code)) totalNum,
+       count(distinct case when t.online_status = 0 then t.device_code end) as offlineNum,
+       count(distinct case when t.online_status = 1 then t.device_code end) as onlineNum,
+       count(distinct case when t.online_status = 2 then t.device_code end) as noConnectedNum
+       from `vm_order_energy_devices` o
+       inner join `vm_aiot_energy_device_info_t` t on o.device_code = t.device_code and o.category_code = t.device_type
+       where o.delete_flag = 0 and t.`del_flag` = 0 and o.ord_status in (0,1,2) and o.tenant_id = #{param.tenantId}
+       and o.industry_code = #{param.industryCode}
+       <if test="param.stationCodeList != null and param.stationCodeList.size() > 0">
+           and t.station_code in
+           <foreach collection="param.stationCodeList" item="item" separator="," open="(" close=")">
+               #{item}
+           </foreach>
+       </if>
+       <if test="param.businessType != null and param.businessType != ''">
+           and t.device_type = #{param.businessType}
+       </if>
+   </select>
+
+    <select id="queryDeviceStatusStatisticsByStation" resultType="com.chinatower.device.entity.vo.EnergyDeviceStatusStatisticsVO">
+        select
+        t.station_code, t.station_name,
+        IFNULL(count(distinct(t.device_code)), 0) totalNum,
+        IFNULL(count(distinct case when t.online_status = 0 then t.device_code end), 0) as offlineNum,
+        IFNULL(count(distinct case when t.online_status = 1 then t.device_code end), 0) as onlineNum,
+        IFNULL(count(distinct case when t.online_status = 2 then t.device_code end), 0) as noConnectedNum
+        from `vm_order_energy_devices` o
+        inner join `vm_aiot_energy_device_info_t` t on o.device_code = t.device_code and o.category_code = t.device_type
+        where o.delete_flag = 0 and t.`del_flag` = 0 and o.ord_status in (0,1,2) and o.tenant_id = #{param.tenantId}
+        and o.industry_code = #{param.industryCode}
+        <if test="param.stationCodeList != null and param.stationCodeList.size() > 0">
+            and t.station_code in
+            <foreach collection="param.stationCodeList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.businessType != null and param.businessType != ''">
+            and t.device_type = #{param.businessType}
+        </if>
+        <if test="param.stationCode != null and param.stationCode != ''">
+            and t.station_code like CONCAT('%', #{param.stationCode},'%')
+        </if>
+        <if test="param.stationName != null and param.stationName != ''">
+            and t.station_name like CONCAT('%', #{param.stationName},'%')
+        </if>
+        group by t.station_code
+    </select>
+
+    <resultMap id="treeMap" type="com.chinatower.device.entity.vo.EnergyDeviceTreeVO">
+        <result column="province_id" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.device.entity.vo.EnergyDeviceTreeVO">
+            <result column="city_id" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.device.entity.vo.EnergyDeviceTreeVO">
+                <result column="county_id" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+                <collection property="list" ofType="com.chinatower.device.entity.vo.EnergyDeviceTreeVO">
+                    <result column="deviceLevel" property="level" jdbcType="VARCHAR"/>
+                    <result column="code" property="code" jdbcType="VARCHAR"/>
+                    <result column="name" property="name" jdbcType="VARCHAR"/>
+                    <result column="status" property="status" jdbcType="VARCHAR"/>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="queryDeviceTree" resultMap="treeMap">
+        select
+        m.device_code as code,
+        m.device_name as name,
+        m.online_status status,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        pro.area_name as provinceName,
+        city.area_name as cityName,
+        county.area_name as countyName,
+        '1' as prolevel,
+        '2' as citylevel,
+        '3' as countrylevel,
+        '4' as deviceLevel
+        from vm_order_energy_devices o
+        left join vm_aiot_energy_device_info_t m on m.device_code = o.device_code and o.category_code = m.device_type
+        left join sys_area pro on pro.area_code = m.province_id
+        left join sys_area city on city.area_code = m.city_id
+        left join sys_area county on county.area_code = m.county_id
+        where o.delete_flag= '0' and m.del_flag= '0'
+        and o.tenant_id =#{param.tenantId} and o.industry_code = #{param.industryCode} and o.ord_status in (0,1,2)
+        order by m.province_id, m.city_id, m.county_id, m.device_code
+    </select>
+
+    <update id="updateStationRegionBatch" parameterType="java.util.List">
+        <foreach collection="list" item="item" separator=";">
+            update vm_aiot_energy_station_info_t
+            set province_id = #{item.provinceId},
+                province_name = #{item.provinceName},
+                city_id = #{item.cityId},
+                city_name = #{item.cityName},
+                county_id = #{item.countyId},
+                county_name = #{item.countyName},
+                location = #{item.address}
+            where id = #{item.id}
+        </foreach>
+    </update>
+
+    <update id = "refreshChannelCustomCode">
+        update sys_tenant_cascade_device_rel rel, sys_plat_cascade_device_config c
+        set rel.`custom_channel_code` = c.`custom_channel_code`
+        where rel.plat_code = c.plat_code and rel.device_code = c.device_code and rel.channel_code = c.channel_code
+        and (rel.`custom_channel_code` is null or rel.`custom_channel_code` = '')
+    </update>
+
+    <update id = "refreshOrgCode">
+        update sys_tenant_cascade_device_rel rel, vm_device_info_t t
+        set rel.org_code = t.county_id
+        where rel.device_code = t.device_code
+        and (rel.org_code is null or rel.org_code = '')
+    </update>
+
+    <select id="queryCascadeDeviceOrgInfo" resultType="com.chinatower.device.dto.CasCadeOrgInitDTO">
+        select rel.tenant_id, rel.plat_code, rel.device_code,
+        t.province_id, pro.area_name provinceName, t.city_id, city.area_name cityName, t.county_id, county.area_name countyName
+        from sys_tenant_cascade_device_rel rel
+        inner join vm_device_info_t t on rel.device_code = t.device_code
+        LEFT JOIN sys_area pro on pro.area_code = t.province_id
+        LEFT JOIN sys_area city on city.area_code = t.city_id
+        LEFT JOIN sys_area county on county.area_code = t.county_id
+    </select>
+
+    <select id="queryCascadeOrgInfo" resultType="com.chinatower.platform.entity.device.CasCadeOrgBindVO">
+        select tenant_id, plat_code, org_code
+        from `sys_tenant_cascade_org_rel`
+    </select>
+
+    <insert id="insertCascadeOrgBatch" parameterType="com.chinatower.platform.entity.device.CasCadeOrgBindVO">
+        insert into `sys_tenant_cascade_org_rel` (`tenant_id`, `plat_code`, `org_code`, `org_name`, `parent_org_code`, `creator`, `create_time`)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.tenantId}, #{item.platCode}, #{item.orgCode}, #{item.orgName}, #{item.parentOrgCode}, #{item.creator}, #{item.createTime})
+        </foreach>
+    </insert>
+</mapper>

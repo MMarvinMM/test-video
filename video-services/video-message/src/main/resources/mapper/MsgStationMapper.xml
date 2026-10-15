@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 消息通知管理信息表(vm_message_send_info_t) -->
+<mapper namespace="com.chinatower.message.station.mapper.MsgStationMapper">
+
+    <!--查询消息通知信息-->
+    <select id="getMessageInfo" resultType="java.util.HashMap"
+            parameterType="com.chinatower.message.api.model.MsgStationReq">
+        SELECT
+        t1.uni_id AS 'uniId',
+        t1.msg_id AS 'msgId',
+        t1.user_id AS 'userId',
+        t1.notify_type AS 'notifyType',
+        (select s.DICT_LABEL from  sys_dict_data s where s.DICT_TYPE = 'sys_msg_type' and s.DICT_VALUE = t1.notify_type) AS 'notifyTypeName',
+        t1.notify_title AS 'notifyTitle',
+        t1.if_read AS 'ifRead',
+        t1.order_status AS 'orderStatus',
+        t1.address,
+        DATE_FORMAT(t1.creator_date,'%Y-%m-%d %H:%i:%s') AS 'creatorDate'
+        FROM
+        vm_message_send_info_t t1
+        WHERE t1.delete_flag = '1' AND t1.if_read = '0'
+        <if test='startTime != null and startTime != "" '>
+            AND t1.creator_date &gt;= STR_TO_DATE(CONCAT(#{startTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='endTime != null and endTime != "" '>
+            AND t1.creator_date &lt;= STR_TO_DATE(CONCAT(#{endTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='userId != null and userId != "" '>
+            AND t1.user_id = #{userId}
+        </if>
+        <if test='industryCode != null and industryCode != "" '>
+            AND (t1.industry_code = #{industryCode} OR t1.industry_code IS NULL)
+        </if>
+        ORDER BY t1.creator_date DESC
+    </select>
+
+    <!--保存消息通知信息-->
+    <insert id="saveMessageInfo" parameterType="com.chinatower.message.api.model.MsgStationReq">
+        INSERT INTO vm_message_send_info_t (
+            uni_id,
+            msg_id,
+            user_id,
+            notify_type,
+            notify_title,
+            if_read,
+            order_status,
+            address,
+            creator,
+            creator_date,
+            delete_flag,
+            sound_close_type,
+            sound_duration,
+            sound_id,
+            industry_code,
+            alarm_source,
+            device_code,
+            device_name
+        )
+            VALUES
+        (
+            #{uniId},#{msgId},#{creator},#{notifyType},#{notifyTitle},'0',#{orderStatus},#{address},#{creator},NOW(),'1',#{soundCloseType},#{soundDuration},#{soundId},#{industryCode},
+            #{alarmSource},#{deviceCode},#{deviceName}
+        )
+    </insert>
+
+    <!--更新消息通知信息-->
+    <update id="updateMessage" parameterType="com.chinatower.message.api.model.MsgStationReq">
+        UPDATE vm_message_send_info_t
+        SET if_read = '1',
+        modifier = #{body.modifier,jdbcType=VARCHAR},
+        modifier_date = NOW()
+        WHERE
+        user_id = #{body.userId,jdbcType=VARCHAR}
+        <if test='body.industryCode != null and body.industryCode != "" '>
+            AND (industry_code = #{body.industryCode} OR industry_code IS NULL)
+        </if>
+        <if test='body.uniId != null and body.uniId != "" '>
+            AND uni_id = #{body.uniId,jdbcType=VARCHAR}
+        </if>
+    </update>
+    <select id="getTenantAdminUserId" resultType="java.lang.String"
+            parameterType="java.lang.String">
+        SELECT
+          user_id
+        FROM
+        sys_user
+        WHERE
+        tenant_id = #{tenantId} and is_tenant_admin = '1'   limit 1
+
+    </select>
+    <select id="selectUserOnlyByUserName" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select * from sys_user u
+        where u.del_flag = '0' AND u.user_name = #{userName}
+    </select>
+    <select id="findSoundUrlByIds" resultType="com.chinatower.message.station.entity.AlarmSoundDTO">
+        SELECT
+            alarm_sound_id alarmSoundId,
+            doc_url docUrl
+            FROM vm_alarm_sound_info
+            WHERE alarm_sound_id IN
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+</mapper>

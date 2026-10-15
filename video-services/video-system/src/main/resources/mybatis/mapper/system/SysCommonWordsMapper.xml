@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysCommonWordsMapper">
+
+    <select id="getCommonWords" parameterType="com.chinatower.system.api.request.words.wordsRequest" resultType="com.chinatower.system.api.model.VmCommonWordsVO" >
+        SELECT WORDS_ID, TYPE_ID, CONTENT,user_id,create_date,tenant_id,app_ver_code,init_words_flag,industry_code
+        FROM vm_common_words_t
+        WHERE (1=1
+        <if test='appVerCode != null and appVerCode !=""'>
+            AND app_ver_code = #{appVerCode}
+        </if>
+        <if test='userId != null and userId !=""'>
+            AND user_id = #{userId}
+        </if>
+        <if test='tenantId != null and tenantId !=""'>
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test='typeId != null and typeId !=""'>
+            AND type_id = #{typeId}
+        </if>
+            OR (
+            (user_id IS NULL or user_id = '')
+            AND (app_ver_code IS NULL or app_ver_code = '')
+            AND (tenant_id IS NULL or tenant_id = '')
+            AND (industry_code IS NULL or industry_code = '')
+            <if test='typeId != null and typeId !=""'>
+                AND type_id = #{typeId}
+            </if>
+            )
+        )
+    </select>
+
+
+    <insert id="add" parameterType="com.chinatower.system.api.request.words.wordsRequest">
+        INSERT INTO vm_common_words_t
+        (WORDS_ID, USER_ID, TYPE_ID, CONTENT, CREATE_DATE, TENANT_ID, APP_VER_CODE)
+        VALUES
+        (UUID_SHORT(), #{userId}, #{typeId}, #{content}, NOW(), #{tenantId}, #{appVerCode})
+    </insert>
+
+    <delete id="deleteCommonWordsByWordsId" parameterType="com.chinatower.system.api.request.words.wordsRequest">
+        delete from vm_common_words_t where words_id=#{wordsId}
+    </delete>
+
+    <delete id="deleteCommonWordsByWordsIdBatch" parameterType="com.chinatower.system.api.request.words.wordsRequest">
+        delete from vm_common_words_t where words_id in
+        <foreach collection="wordsIds" item="wordsId" open="(" separator="," close=")">
+            #{wordsId}
+        </foreach>
+    </delete>
+
+    <update id="updateCommonWords" parameterType="com.chinatower.system.api.request.words.wordsRequest">
+        update vm_common_words_t
+        <set>
+            <if test="appVerCode != null and appVerCode != ''">app_ver_code = #{appVerCode},</if>
+            <if test="userId != null and userId != ''">user_id = #{userId},</if>
+            <if test="tenantId != null and tenantId != ''">tenant_id = #{tenantId},</if>
+            content = #{content}
+        </set>
+        where words_id = #{wordsId}
+    </update>
+    <update id="updateCommonWordsBatch">
+        update vm_common_words_t
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="app_ver_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.appVerCode!=null and item.appVerCode != ''">
+                        when words_id=#{item.wordsId} then #{item.appVerCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="user_id =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.userId!=null and item.userId != ''">
+                        when words_id=#{item.wordsId} then #{item.userId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="tenant_id =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.tenantId!=null and item.tenantId != ''">
+                        when words_id=#{item.wordsId} then #{item.tenantId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="content =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.content!=null and item.content != ''">
+                        when words_id=#{item.wordsId} then #{item.content}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        <where>
+            words_id IN
+            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+                #{item.wordsId}
+            </foreach>
+        </where>
+    </update>
+
+    <select id="queryFalseWords" parameterType="java.lang.String" resultType="java.lang.String">
+        select dict_label from sys_dict_data
+        where dict_type = 92 and dict_value = #{falseCode}
+    </select>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        words_id, init_words_flag, content, tenant_id, industry_code,type_id
+    </sql>
+
+    <select id="getCommonWordsForInspection"  resultType="com.chinatower.system.api.model.VmCommonWordsVO" >
+        SELECT <include refid="Base_Column_List" />
+        FROM vm_common_words_t
+        WHERE 1 = 1
+        <if test='typeId != null and typeId !=""'>
+            AND type_id = #{typeId}
+        </if>
+        AND ((industry_code = #{industryCode} AND tenant_id = #{tenantId})
+        OR (industry_code IS NULL AND tenant_id IS NULL))
+    </select>
+
+
+    <insert id="addCommonWordsBatchForInspection" parameterType="com.chinatower.system.api.request.words.wordsRequest">
+        INSERT INTO vm_common_words_t
+        (WORDS_ID,USER_ID,type_id,init_words_flag, content, create_date,tenant_id, industry_code,APP_VER_CODE)
+        VALUES
+        <foreach collection ="list" item="item" index="index" separator =",">
+            (UUID_SHORT(), #{item.userId}, #{item.typeId},#{item.initWordsFlag}, #{item.content}, NOW(), #{item.tenantId}, #{item.industryCode}, #{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <delete id="deleteCommonWordsBatchForInspection" parameterType="com.chinatower.system.api.request.words.wordsRequest">
+        delete from vm_common_words_t where init_words_flag in
+            <foreach collection="initWordsFlagList" item="initWordsFlag" open="(" separator="," close=")">
+                #{initWordsFlag}
+            </foreach>
+        <if test='tenantId != null and tenantId !=""'>
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode !=""'>
+            AND industry_code = #{industryCode}
+        </if>
+            AND type_id = #{typeId}
+
+    </delete>
+
+    <insert id="addCommonWordsBatch" parameterType="com.chinatower.system.api.request.words.wordsRequest">
+        INSERT INTO vm_common_words_t
+        (WORDS_ID,USER_ID,type_id,content, create_date,tenant_id, industry_code,APP_VER_CODE)
+        VALUES
+        <foreach collection ="list" item="item" index="index" separator =",">
+            (#{item.wordsId}, #{item.userId}, #{item.typeId}, #{item.content}, NOW(), #{item.tenantId}, #{item.industryCode}, #{item.appVerCode})
+        </foreach>
+    </insert>
+
+</mapper>

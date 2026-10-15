@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.CheckpointAlarmMapper">
+
+    <select id="getCheckpointAlarmList" resultType="com.chinatower.common.core.dto.CheckpointAlarmDTO" parameterType="com.chinatower.common.core.dto.CheckpointAlarmDTO" >
+        SELECT  a.alarm_id,
+                a.alarm_time,
+                a.province_name,
+                a.province_code,
+                a.city_name,
+                a.city_code,
+                a.county_code,
+                a.county_name,
+                a.device_code,
+                a.device_name,
+                a.original_picture_url,
+                a.alarm_picture_url,
+                a.vehicle_number,
+                <trim prefix="(case" suffix="end) as vehicleType,">
+                    <foreach collection="sysDictDataList" item="item">
+                        <if test="item.dictValue!=null and item.dictValue != ''">
+                            when vehicle_type=#{item.dictValue} then #{item.dictLabel}
+                        </if>
+                    </foreach>
+                </trim>
+                concat(a.province_name, a.city_name, a.county_name) areaName,
+                a.vehicle_color,
+                a.vehicle_num_color
+        FROM vm_checkpoint_warning_order_t a
+        WHERE a.delete_flag = 0
+        <if test='provinceCode != null and provinceCode != ""'>
+            and a.province_code = #{provinceCode}
+        </if>
+        <if test='cityCode != null and cityCode != ""'>
+            and a.city_code = #{cityCode}
+        </if>
+        <if test='countyCode != null and countyCode != ""'>
+            and a.county_code = #{countyCode}
+        </if>
+        <if test='vehicleNumber != null and vehicleNumber != ""'>
+            and a.vehicle_number like concat('%',#{vehicleNumber},'%')
+        </if>
+        <if test='vehicleType != null and vehicleType != ""'>
+            and a.vehicle_type = #{vehicleType}
+        </if>
+        <if test='deviceCode != null and deviceCode != ""'>
+            and a.device_code like CONCAT('%', #{deviceCode}, '%')
+        </if>
+        <if test='deviceName != null and deviceName != ""'>
+            AND a.device_name like CONCAT('%', #{deviceName}, '%')
+        </if>
+        <if test='alarmTimeEnd != null and alarmTimeEnd != ""'>
+            and #{alarmTimeEnd} >= a.alarm_time
+        </if>
+        <if test='alarmTimeStart != null and alarmTimeStart != ""'>
+            and a.alarm_time >= #{alarmTimeStart}
+        </if>
+        <if test='vehicleColor != null and vehicleColor != ""'>
+            and a.vehicle_color = #{vehicleColor}
+        </if>
+        <if test='vehicleNumColor != null and vehicleNumColor != ""'>
+            and a.vehicle_num_color = #{vehicleNumColor}
+        </if>
+        <if test="deviceCodes != null and deviceCodes.size() > 0">
+            and a.device_code in
+            <foreach collection="deviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+
+        <choose>
+            <when test='sortName == "deviceCode" and sort == "asc"'>
+                order by a.device_code, a.alarm_time DESC
+            </when>
+            <when test='sortName == "deviceName" and sort == "asc"'>
+                order by CONVERT(a.device_name USING GBK), a.alarm_time DESC
+            </when>
+            <when test='sortName == "areaName" and sort == "asc"'>
+                order by CONVERT(areaName USING GBK), a.alarm_time DESC
+            </when>
+            <when test='sortName == "vehicleType" and sort == "asc"'>
+                order by a.vehicle_type, a.alarm_time DESC
+            </when>
+            <when test='sortName == "vehicleNumber" and sort == "asc"'>
+                order by a.vehicle_number, a.alarm_time DESC
+            </when>
+            <when test='sortName == "alarmTime" and sort == "asc"'>
+                order by a.alarm_time, a.vehicle_number
+            </when>
+            <when test='sortName == "deviceCode" and sort == "desc"'>
+                order by a.device_code DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "deviceName" and sort == "desc"'>
+                order by CONVERT(a.device_name USING GBK) DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "areaName" and sort == "desc"'>
+                order by CONVERT(areaName USING GBK) DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "vehicleType" and sort == "desc"'>
+                order by a.vehicle_type DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "vehicleNumber" and sort == "desc"'>
+                order by a.vehicle_number DESC, a.alarm_time DESC
+            </when>
+            <when test='sortName == "alarmTime" and sort == "desc"'>
+                order by a.alarm_time DESC, a.vehicle_number
+            </when>
+            <otherwise>
+                order by a.alarm_time desc,a.alarm_id desc
+            </otherwise>
+        </choose>
+
+
+    </select>
+
+    <select id="exportCheckpointAlarmList" resultType="com.chinatower.common.core.vo.CheckpointAlarmExportVO" parameterType="com.chinatower.common.core.dto.CheckpointAlarmDTO" >
+        SELECT  a.vehicle_number,
+                <trim prefix="(case" suffix="end) as carType,">
+                    <foreach collection="sysDictDataList" item="item">
+                        <if test="item.dictValue!=null and item.dictValue != ''">
+                            when vehicle_type=#{item.dictValue} then #{item.dictLabel}
+                        </if>
+                    </foreach>
+                </trim>
+                concat(a.province_name, a.city_name, a.county_name) areaName,
+                a.device_name,
+                a.device_code,
+                a.alarm_time
+        FROM vm_checkpoint_warning_order_t a
+        WHERE a.delete_flag = 0
+        <if test="deviceCodes != null and deviceCodes.size() > 0">
+            and a.device_code in
+            <foreach collection="deviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+        <choose>
+            <when test='ids != null and ids.size() > 0'>
+                AND a.alarm_id in
+                <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                <if test='provinceCode != null and provinceCode != ""'>
+                    and a.province_code = #{provinceCode}
+                </if>
+                <if test='cityCode != null and cityCode != ""'>
+                    and a.city_code = #{cityCode}
+                </if>
+                <if test='countyCode != null and countyCode != ""'>
+                    and a.county_code = #{countyCode}
+                </if>
+                <if test='vehicleNumber != null and vehicleNumber != ""'>
+                    and a.vehicle_number like concat('%',#{vehicleNumber},'%')
+                </if>
+                <if test='deviceCode != null and deviceCode != ""'>
+                    and a.device_code like CONCAT('%', #{deviceCode}, '%')
+                </if>
+                <if test='deviceName != null and deviceName != ""'>
+                    AND a.device_name like CONCAT('%', #{deviceName}, '%')
+                </if>
+                <if test='alarmTimeEnd != null and alarmTimeEnd != ""'>
+                    and date_format(#{alarmTimeEnd},'%Y-%c-%d %h:%i:%s') > a.alarm_time
+                </if>
+                <if test='alarmTimeStart != null and alarmTimeStart != ""'>
+                    and a.alarm_time > date_format(#{alarmTimeStart},'%Y-%c-%d %h:%i:%s')
+                </if>
+            </otherwise>
+        </choose>
+        order by a.alarm_time desc
+    </select>
+
+    <select id="getCheckpointDeviceList" parameterType="com.chinatower.common.core.dto.CheckpointAlarmDTO" resultType="java.lang.String">
+        SELECT a.device_code from vm_order_devices a
+            left join vm_checkpoint_device_info_t t on a.device_code = t.device_code
+            left join vm_device_info_t d on a.device_code = d.device_code
+            where t.delete_flag = 0
+            and d.delete_flag = '0'
+            and a.delete_flag = 0
+            and a.ord_status in (0,1,2)
+            ${dataScope}
+    </select>
+    <select id="getVehicleTypeDict" resultType="com.chinatower.platform.entity.admin.SysDictData">
+        select dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, remark
+        from sys_dict_data where status = '0' and dict_type = #{dictType} order by dict_sort asc
+    </select>
+
+    <select id="getCheckAlarmByDevice" resultType="com.chinatower.event.api.model.CheckAlarmByDeviceVO" parameterType="com.chinatower.event.api.model.CheckAlarmByDeviceVO">
+        SELECT
+        t1.device_code,
+        count(*) AS count
+        FROM
+        `vm_checkpoint_warning_order_t` t1
+        WHERE
+        t1.delete_flag = '0'
+        and t1.device_code in
+        <foreach collection="deviceList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        <if test='alarmTimeEnd != null and alarmTimeEnd != ""'>
+            and #{alarmTimeEnd} >= date_format(t1.alarm_time,'%Y-%m-%d')
+        </if>
+        <if test='alarmTimeStart != null and alarmTimeStart != ""'>
+            and date_format(t1.alarm_time,'%Y-%m-%d') >= #{alarmTimeStart}
+        </if>
+        ${dataScope}
+        GROUP BY t1.device_code
+    </select>
+
+    <select id="getDeviceByTown" resultType="com.chinatower.event.api.model.CheckAlarmByDeviceVO" parameterType="com.chinatower.event.api.model.CheckAlarmByDeviceVO">
+        SELECT DISTINCT
+        t1.device_code,
+        (case when length(IFNULL(tdr.device_name, '')) = 0
+        then t2.device_name else tdr.device_name end ) as device_name,
+        t2.longitude,
+        t2.latitude,
+        0 as count
+        FROM
+        vm_checkpoint_device_info_t t1
+        LEFT JOIN vm_order_devices t ON t1.device_code = t.device_code AND t.delete_flag = '0' AND t1.tenant_id = t.tenant_id AND t1.industry_code = t.industry_code
+        LEFT JOIN vm_order_package vop ON t.order_code = vop.order_code AND t.delete_flag = '0'
+        LEFT JOIN vm_order_customer voc ON t.order_code = voc.order_code
+        LEFT JOIN vm_tenant_device_channel_rel_t tdr on tdr.device_code = t1.device_code
+        AND tdr.tenant_id = t1.tenant_id AND tdr.industry_code = t1.industry_code,
+        vm_device_info_t t2
+        WHERE
+        t1.device_code = t2.device_code
+        AND t1.delete_flag = 0
+        AND t2.delete_flag = '0'
+        AND voc.delete_flag = '0'
+        AND voc.ord_status IN ( 0, 1, 2 )
+        <if test='provinceCode != null and provinceCode != ""'>
+            and t2.province_id = #{provinceCode}
+        </if>
+        <if test='cityCode != null and cityCode != ""'>
+            and t2.city_id = #{cityCode}
+        </if>
+        <if test='countyCode != null and countyCode != ""'>
+            and t2.county_id = #{countyCode}
+        </if>
+        <if test='townCode != null and townCode != ""'>
+            and t2.town_code = #{townCode}
+        </if>
+        ${dataScope}
+    </select>
+    <select id="getCheckpointAlarmInfo" resultType="com.chinatower.event.api.model.CheckAlarmByDeviceVO">
+        SELECT
+        t1.device_code as deviceCode,
+        t1.vehicle_number,
+        DATE_FORMAT(t1.alarm_time,'%Y-%m-%d') time,
+		count(*) count
+        FROM
+            vm_checkpoint_warning_order_t t1
+        <where>
+            AND t1.delete_flag = 0
+            <if test="vehicleNumbers != null and vehicleNumbers.size() > 0">
+                and t1.vehicle_number in
+                <foreach collection="vehicleNumbers" item="item" index="index" open="(" separator="," close=") ">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="deviceCodes != null and deviceCodes.size() > 0">
+                and t1.device_code in
+                <foreach collection="deviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                    #{item}
+                </foreach>
+            </if>
+            <if test='queryEndTime != null and queryEndTime != ""'>
+                AND  DATE_FORMAT( t1.alarm_time, '%Y-%m-%d' ) &lt;= #{queryEndTime}
+            </if>
+            <if test='queryStartTime != null and queryStartTime != ""'>
+                and  DATE_FORMAT( t1.alarm_time, '%Y-%m-%d' ) &gt;= #{queryStartTime}
+            </if>
+            <if test='tenantId != null and tenantId != ""'>
+                and t1.tenant_id = #{tenantId}
+            </if>
+            <if test='industryCode != null and industryCode != ""'>
+                and t1.industry_code = #{industryCode}
+            </if>
+        </where>
+        GROUP BY DATE_FORMAT(t1.alarm_time,'%Y-%m-%d'),t1.vehicle_number,t1.device_code
+    </select>
+
+
+    <!-- 批量插入车辆进出记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO vm_checkpoint_warning_order_t (
+            warning_order_id,
+            warning_source,
+            alarm_type,
+            alarm_body,
+            device_code,
+            device_name,
+            channel_code,
+            channel_name,
+            alarm_time,
+            longitude,
+            latitude,
+            province_code,
+            province_name,
+            city_code,
+            city_name,
+            county_code,
+            county_name,
+            pan,
+            tilt,
+            zoom,
+            alarm_picture_url,
+            original_picture_url,
+            alarm_code,
+            algorithm_code,
+            alarm_video_url,
+            vehicle_number,
+            vehicle_type,
+            vehicle_num_color,
+            vehicle_color,
+            tenant_id,
+            tenant_name,
+            delete_flag,
+            app_ver_code,
+            importance_level,
+            industry_code,
+            task_id,
+            create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.warningOrderId},
+                #{item.warningSource},
+                #{item.alarmType},
+                #{item.alarmBody},
+                #{item.deviceCode},
+                #{item.deviceName},
+                #{item.channelCode},
+                #{item.channelName},
+                #{item.alarmTime},
+                #{item.longitude},
+                #{item.latitude},
+                #{item.provinceCode},
+                #{item.provinceName},
+                #{item.cityCode},
+                #{item.cityName},
+                #{item.countyCode},
+                #{item.countyName},
+                #{item.pan},
+                #{item.tilt},
+                #{item.zoom},
+                #{item.alarmPictureUrl},
+                #{item.originalPictureUrl},
+                #{item.alarmCode},
+                #{item.algorithmCode},
+                #{item.alarmVideoUrl},
+                #{item.vehicleNumber},
+                #{item.vehicleType},
+                #{item.vehicleNumColor},
+                #{item.vehicleColor},
+                #{item.tenantId},
+                #{item.tenantName},
+                #{item.deleteFlag},
+                #{item.appVerCode},
+                #{item.importanceLevel},
+                #{item.industryCode},
+                #{item.taskId},
+                NOW()
+            )
+        </foreach>
+    </insert>
+
+</mapper>
+

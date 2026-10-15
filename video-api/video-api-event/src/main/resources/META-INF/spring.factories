@@ -1,0 +1,9 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.event.api.factory.FlowFallbackFactory,\
+  com.chinatower.event.api.factory.AlarmOperateTaskFallbackFactory,\
+  com.chinatower.event.api.factory.TradeWarningOrderFallbackFactory,\
+  com.chinatower.event.api.factory.TowerEventWarningFallbackFactory,\
+  com.chinatower.platform.aspect.DynamicDataSourceAspect,\
+  com.chinatower.platform.aspect.DataScopeAspect,\
+  com.chinatower.event.api.factory.ReceiveAlarmFallbackFactory,\
+  com.chinatower.event.api.factory.TowerEventApiFallbackFactory\

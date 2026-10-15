@@ -1,0 +1,1277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.AlgorithmConfigMapper">
+
+    <update id="updAlgorithmArea">
+        update vm_algorithm_config set
+        <if test="taskId != null">
+            task_id = #{taskId},
+        </if>
+        <if test="status != null">
+            status = #{status},
+        </if>
+        <if test="algorithmStatus != null">
+            algorithm_status = #{algorithmStatus},
+        </if>
+        <if test='img != null and img!=""'>
+            img = #{img},
+        </if>
+            points = #{points},
+        <if test="deleteFlag != null">
+            delete_flag = #{deleteFlag},
+        </if>
+        <if test="modifier != null">
+            modifier = #{modifier},
+        </if>
+        <if test="thresh != null">
+            thresh = #{thresh},
+        </if>
+            model_config = #{modelConfig},
+            trip_thread = #{tripThread},
+            analysis_period = #{analysisPeriod},
+            oil_gas_pipelines = #{oilGasPipelines},
+        <if test="timeInterval != null">
+            time_interval = #{timeInterval},
+        </if>
+        <if test="timeIntervalUnit != null">
+            time_interval_unit = #{timeIntervalUnit},
+        </if>
+        <if test="alarmInterval != null">
+            alarmInterval = #{alarmInterval},
+        </if>
+        <if test='isUpdateLinkageAlgorithm != "0"'>
+            is_linkage_algorithm = #{isLinkageAlgorithm},
+            linkage_algorithm = #{linkageAlgorithm},
+        </if>
+        text_labels = #{textLabels},
+
+        points_lon_lat = #{pointsLonLat},
+        trip_thread_lon_lat = #{tripThreadLonLat},
+        oil_gas_pipelines_lon_lat = #{oilGasPipelinesLonLat},
+        text_labels_lon_lat = #{textLabelsLonLat},
+        <if test="extendJsonAlgo != null">
+            extend_json_algo = #{extendJsonAlgo},
+        </if>
+        <if test="sceneCode != null">
+            scene_code = #{sceneCode},
+        </if>
+        update_time = NOW()
+        where config_id = #{configId}
+    </update>
+    <delete id="delChannelByCodes">
+        DELETE FROM vm_channel_info_t
+        WHERE channel_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+    <select id="getAlgorithmConfigList" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO"
+            resultType="com.chinatower.platform.entity.device.AlgorithmListVO">
+        SELECT DISTINCT ch.channel_code as channelCode, dataTable.order_code,
+        (case when length(COALESCE(tdr.channel_name, '')) = 0 then ch.channel_name
+        else tdr.channel_name end) as channelName,
+        (case when length(COALESCE(tdr.device_name, '')) = 0 then dataTable.device_name
+        else tdr.device_name end) as deviceName,
+        dataTable.device_code, COALESCE(vac.algorithmCount, 0) AS algorithmCount,
+        dataTable.accept_node AS acceptNode
+        FROM
+        (SELECT ord.device_code,ord.tenant_id as tenant_id, m.device_name, m.province_id as province_code,
+        m.city_id as city_code ,m.county_id as county_code,ord.delete_flag,ord.industry_code,m.town_code,ord.order_code, ord.accept_node AS accept_node
+        FROM vm_order_devices ord
+        LEFT JOIN vm_device_info_t m on m.device_code = ord.device_code
+        where m.delete_flag = '0' and ord.ord_status in (0, 1, 2)
+        ) dataTable
+        LEFT JOIN vm_channel_info_t ch on ch.device_code = dataTable.device_code
+        LEFT JOIN (
+        SELECT config_id,device_code,channel_code,tenant_id,industry_code,algorithm_code,'1' AS task_type
+        FROM vm_algorithm_config
+        WHERE delete_flag = 0 AND industry_code = #{param.industryCode} AND tenant_id = #{param.tenantId}
+        UNION ALL
+        SELECT id AS config_id,device_code,channel_code,tenant_id,industry_code,alarm_type AS algorithm_code,'2' AS task_type
+        FROM vm_algorithm_give_config
+        WHERE delete_flag = 0 AND industry_code = #{param.industryCode} AND tenant_id = #{param.tenantId}
+        ) cf
+        ON ch.channel_code=cf.channel_code and cf.device_code = dataTable.device_code
+        and dataTable.tenant_id=cf.tenant_id and cf.industry_code = dataTable.industry_code
+        LEFT JOIN (
+        select count(*) AS algorithmCount, a.device_code AS device_code,a.channel_code AS channelCode, a.tenant_id AS tenantId
+        from (
+        SELECT config_id,device_code,channel_code,tenant_id
+        FROM vm_algorithm_config
+        WHERE delete_flag = 0 AND industry_code = #{param.industryCode} AND tenant_id = #{param.tenantId}
+        UNION ALL
+        SELECT id AS config_id,device_code,channel_code,tenant_id
+        FROM vm_algorithm_give_config
+        WHERE delete_flag = 0 AND industry_code = #{param.industryCode} AND tenant_id = #{param.tenantId}) a
+        group by a.device_code,a.channel_code,a.tenant_id
+        ) vac
+        ON vac.channelCode = ch.channel_code AND vac.device_code = ch.device_code AND vac.tenantId = dataTable.tenant_id
+        LEFT JOIN vm_tenant_device_channel_rel_t tdr on tdr.device_code = dataTable.device_code and
+        tdr.tenant_id = dataTable.tenant_id and tdr.channel_code = ch.channel_code and
+        tdr.industry_code = dataTable.industry_code
+        <if test='param.memoryType == "2" '>
+            LEFT JOIN vm_organ_device_rel_t odr ON dataTable.device_code = odr.device_code AND odr.device_type = 4
+        </if>
+        <if test='param.memoryType == "3" '>
+            LEFT JOIN (SELECT l.`label_id`, l.`label_name`, l.`tenant_id`, rel.`device_code`
+            FROM vm_device_labels_rel rel
+            INNER JOIN vm_tenant_label_config l USING (label_id)) lab ON
+            lab.tenant_id = dataTable.tenant_id AND lab.device_code = dataTable.device_code
+        </if>
+        <if test='param.memoryType == "4" '>
+            LEFT JOIN vm_device_diy_tree_node_t diy on dataTable.device_code = diy.device_code
+        </if>
+        WHERE dataTable.delete_flag = '0' AND ch.delete_flag = '0'
+        ${param.dataScope}
+        <if test='param.orgIdCode != null and param.orgIdCode != "" and param.memoryType == "2" '>
+            AND odr.dept_id LIKE CONCAT(#{param.orgIdCode},'%')
+        </if>
+        <if test='param.orgIdCodeList != null and param.orgIdCodeList.size() > 0 and param.memoryType == "2" '>
+            AND odr.dept_id in
+            <foreach collection="param.orgIdCodeList" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='param.labelId != null and param.labelId != "" and param.memoryType == "3" '>
+            AND lab.label_id = #{param.labelId}
+        </if>
+        <if test='param.labelIdList != null and param.labelIdList.size() > 0 and param.memoryType == "3" '>
+            AND lab.label_id in
+            <foreach collection="param.labelIdList" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='param.nodeCode != null and param.nodeCode != "" and param.treeId != null and param.treeId != "" and param.memoryType == "4" '>
+            AND diy.tree_id = #{param.treeId} AND diy.node_code like concat(#{param.nodeCode},'-%')
+        </if>
+        <if test='param.industryCode != null and param.industryCode != "" '>
+            AND dataTable.industry_code = #{param.industryCode}
+        </if>
+        <if test='param.provinceId!= null and param.provinceId != "" '>
+            AND dataTable.province_code = #{param.provinceId}
+        </if>
+        <if test='param.cityId!= null and param.cityId != "" '>
+            AND dataTable.city_code = #{param.cityId}
+        </if>
+        <if test='param.countryId!= null and param.countryId != "" '>
+            AND dataTable.county_code = #{param.countryId}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND dataTable.town_code = #{param.townCode}
+        </if>
+        <if test='param.deviceCode!= null and param.deviceCode != "" '>
+            AND dataTable.device_code like concat('%',#{param.deviceCode},'%')
+        </if>
+        <if test='param.channelCode!= null and param.channelCode != "" '>
+            AND ch.channel_code like concat('%',#{param.channelCode},'%')
+        </if>
+        <if test='param.tenantId!= null and param.tenantId != "" '>
+            AND dataTable.tenant_id like concat('%',#{param.tenantId},'%')
+        </if>
+        <if test='param.algorithmCode!= null and param.algorithmCode != ""'>
+            and cf.algorithm_code=#{param.algorithmCode}
+        </if>
+        <if test='param.taskType!= null and param.taskType != ""'>
+            and cf.task_type=#{param.taskType}
+        </if>
+        <if test='param.algorithmCodeList != null and param.algorithmCodeList != "" and param.algorithmCodeList.size() > 0 '>
+            AND cf.algorithm_code in
+            <foreach collection="param.algorithmCodeList" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        GROUP by ch.channel_code
+        <if test='param.hasAlgo == "1"'>
+            having algorithmCount>0
+        </if>
+        <if test='param.hasAlgo == "0" '>
+            having algorithmCount=0
+        </if>
+        <if test='param.memoryType == "1" '>
+            ORDER BY dataTable.province_code, dataTable.city_code, dataTable.county_code, dataTable.town_code,
+            dataTable.device_code, ch.channel_code
+        </if>
+        <if test='param.memoryType == "2" '>
+            ORDER BY odr.dept_id, dataTable.device_code, ch.channel_code
+        </if>
+        <if test='param.memoryType == "3" '>
+            ORDER BY lab.label_id, dataTable.device_code, ch.channel_code
+        </if>
+    </select>
+
+
+    <select id="getAlgorithmAreaRow2" resultType="com.chinatower.platform.entity.device.AlgorithmAreaVO">
+        select
+        config_id as configId,
+        algorithm_code as algorithmCode,
+        algorithm_name as algorithmName,
+        points,
+        img,
+        task_id as taskId,
+        status,
+        pos_type as posType,
+        algorithm_status as algorithmStatus,
+        extend_json_algo
+        extendJsonAlgo
+        from vm_algorithm_config
+        where delete_flag = '0'
+        <if test='industryCode != null and industryCode != "" '>
+            AND industry_code = #{industryCode}
+        </if>
+        and config_id in
+        <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+            #{item.configId}
+        </foreach>
+    </select>
+
+    <select id="queryalgorithmConfig" resultType="com.chinatower.platform.entity.device.AlgorithmConfigVO">
+        SELECT distinct ac.config_id, ac.device_code, ac.channel_code, ac.pos_type, ac.tenant_id, ac.create_time,
+        m.longitude,m.latitude,m.visual_radius,ac.algorithm_code,ac.algorithm_name, ac.creator,ac.modifier,
+        case when ac.preset_id = '0' then null else ac.preset_id end AS presetId, ac.oil_gas_pipelines,ac.update_time,
+        ac.points,ac.img,ac.task_id,ac.status,ac.algorithm_status,ac.tenant_id,'1' AS task_type,ac.thresh,
+        COALESCE(vp.preset_name, ac.preset_name) AS presetName,ac.model_config,ac.trip_thread,ac.analysis_period,
+        (case when length(COALESCE(tdr.channel_name, '')) = 0 then ch.channel_name else tdr.channel_name end) as channelName,
+        (case when length(COALESCE(tdr.device_name, '')) = 0 then m.device_name else tdr.device_name end) as deviceName,
+        us1.NICK_NAME AS creatorName, us2.NICK_NAME AS modifierName, ac.time_interval, ac.time_interval_unit, ac.text_labels,
+        ac.is_linkage_algorithm, ac.linkage_algorithm as linkageAlgorithmInfo, CONVERT(ac.extend_json_algo, CHAR) as extendJsonAlgo
+        ,CASE WHEN ac.scene_code IS NULL THEN 0 ELSE 1 END AS modelType
+        ,ac.scene_code
+        ,ac.alarmInterval
+        FROM vm_algorithm_config ac
+        LEFT JOIN vm_video_preset vp ON vp.preset_id = ac.preset_id and vp.device_code = ac.device_code
+        LEFT JOIN vm_device_info_t m ON m.device_code = ac.device_code
+        LEFT JOIN vm_channel_info_t ch ON ch.channel_code = ac.channel_code
+        LEFT JOIN vm_tenant_device_channel_rel_t tdr on tdr.device_code = m.device_code
+            and tdr.channel_code = ch.channel_code and tdr.tenant_id = ac.tenant_id
+            and tdr.industry_code = ac.industry_code
+        LEFT JOIN sys_user us1 on us1.USER_NAME = ac.creator AND us1.DEL_FLAG = '0'
+        LEFT JOIN sys_user us2 on us2.USER_NAME = ac.modifier AND us2.DEL_FLAG = '0'
+        WHERE ch.delete_flag = 0 and m.delete_flag = 0
+        <if test='configId != null and configId != "" '>
+            AND ac.config_id = #{configId}
+        </if>
+        <if test='configIdList != null and configIdList != "" and configIdList.size() > 0 '>
+            AND ac.config_id in
+            <foreach collection="configIdList" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="getAlgorithmAreaRow" resultType="com.chinatower.platform.entity.device.AlgorithmAreaVO">
+        SELECT distinct ac.config_id,ac.preset_id,pre.preset_name,ac.device_code,ac.channel_code,
+        (case when length(COALESCE(tdr.channel_name, '')) = 0 then ch.channel_name else tdr.channel_name end) as channelName,
+        (case when length(COALESCE(tdr.device_name, '')) = 0 then de.device_name else tdr.device_name end) as deviceName,
+        ac.algorithm_code,ac.algorithm_name,ac.points,ac.img,ac.task_id,ac.status,ac.create_time,ac.update_time,
+        ac.algorithm_status,ac.pos_type,ac.tenant_id,ac.creator,ac.modifier,ac.task_type,ac.model_config,
+        ac.trip_thread,ac.oil_gas_pipelines,second_switch,backendAlgoName,ac.text_labels,
+        ac.points_lon_lat AS pointsLonLat,
+        ac.trip_thread_lon_lat AS tripThreadLonLat,
+        ac.oil_gas_pipelines_lon_lat AS oilGasPipelinesLonLat,
+        ac.text_labels_lon_lat AS textLabelsLonLat
+        FROM (
+        SELECT config_id,device_code,channel_code,tenant_id,industry_code,algorithm_code,algorithm_name,
+        STATUS,'1' AS task_type,pos_type,preset_id,points,img,task_id,algorithm_status,thresh,model_config,
+        trip_thread,create_time,update_time,creator,modifier,delete_flag,oil_gas_pipelines, '' AS second_switch,
+        '' AS backendAlgoName,text_labels,
+        points_lon_lat,
+        trip_thread_lon_lat,
+        oil_gas_pipelines_lon_lat,
+        text_labels_lon_lat
+        FROM vm_algorithm_config
+        WHERE delete_flag = 0 AND industry_code = #{industryCode} AND tenant_id = #{tenantId}
+        <if test='posType!= "" and posType !=null'>
+            AND pos_type = #{posType}
+        </if>
+        <if test='deviceCode!= "" and deviceCode !=null'>
+            AND device_code = #{deviceCode}
+        </if>
+        <if test='channelCode!= "" and channelCode !=null'>
+            AND channel_code = #{channelCode}
+        </if>
+        <if test='bigModelAlgList != null and bigModelAlgList.size() > 0 '>
+            AND algorithm_code not in
+            <foreach item="item" index="index" collection="bigModelAlgList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test='deviceChannelList != null and deviceChannelList.size() > 0 '>
+            and (device_code, channel_code) in
+            <foreach item="item" index="index" collection="deviceChannelList" open="(" separator="," close=")">
+                (#{item.deviceCode}, #{item.channelCode})
+            </foreach>
+        </if>
+        UNION ALL
+        SELECT id AS config_id,device_code,channel_code,tenant_id,industry_code,alarm_type AS algorithm_code,
+        alarm_type_name AS algorithm_name,STATUS,'2' AS task_type,NULL AS pos_type,NULL AS preset_id,'' AS points,
+        '' AS img,'' AS task_id,sync_status AS algorithm_status,NULL AS thresh,'' AS model_config,'' AS trip_thread,
+        create_time,update_time,creator,modifier,delete_flag,'' AS oil_gas_pipelines,second_switch,
+        algorithm_name AS backendAlgoName,NULL AS text_labels,
+        NULL AS points_lon_lat,
+        NULL AS trip_thread_lon_lat,
+        NULL AS oil_gas_pipelines_lon_lat,
+        NULL AS text_labels_lon_lat
+        FROM vm_algorithm_give_config
+        WHERE delete_flag = 0 AND industry_code = #{industryCode} AND tenant_id = #{tenantId}
+        <if test='deviceCode!= "" and deviceCode !=null'>
+            AND device_code = #{deviceCode}
+        </if>
+        <if test='channelCode!= "" and channelCode !=null'>
+            AND channel_code = #{channelCode}
+        </if>
+        <if test='deviceChannelList != null and deviceChannelList.size() > 0 '>
+            and (device_code, channel_code) in
+            <foreach item="item" index="index" collection="deviceChannelList" open="(" separator="," close=")">
+                (#{item.deviceCode}, #{item.channelCode})
+            </foreach>
+        </if>
+        ) ac
+        LEFT JOIN vm_device_info_t de on ac.device_code = de.device_code and de.delete_flag = 0
+        LEFT JOIN vm_channel_info_t ch on ac.channel_code = ch.channel_code and ch.delete_flag = 0
+        LEFT JOIN vm_video_preset pre on pre.preset_id = ac.preset_id and ac.device_code = pre.device_code and pre.delete_flag = 0
+        LEFT JOIN vm_tenant_device_channel_rel_t tdr on tdr.device_code = de.device_code and
+        tdr.tenant_id = ac.tenant_id and tdr.channel_code = ch.channel_code and
+        tdr.industry_code = ac.industry_code and tdr.delete_flag = 0
+        WHERE 1=1
+        <if test='algorithmCode!= "" and algorithmCode !=null'>
+            AND ac.algorithm_code=#{algorithmCode}
+        </if>
+        <if test='configId != null and configId != "" '>
+            AND ac.config_id = #{configId}
+        </if>
+        <if test='taskType!= null and taskType != ""'>
+            AND ac.task_type=#{taskType}
+        </if>
+        <if test='status != null and status != ""'>
+            AND ac.status=#{status}
+        </if>
+        <if test='algorithmCodeList != null and algorithmCodeList != "" and algorithmCodeList.size() > 0 '>
+            AND ac.algorithm_code in
+            <foreach collection="algorithmCodeList" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <choose>
+            <when test="orderBy == 'createTime'">
+                order by ac.create_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+            </when>
+            <when test="orderBy == 'updateTime'">
+                order by ac.update_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+            </when>
+            <otherwise>
+                ORDER BY ac.create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="getAlgorithmConfigList2" resultType="com.chinatower.platform.entity.device.AlgorithmListVO">
+        SELECT DISTINCT
+        ch.channel_code as channelCode,m.longitude,m.latitude,m.visual_radius,
+        ord.device_code as deviceCode,
+        (case
+        when length(COALESCE(tdr.channel_name, '')) = 0
+        then ch.channel_name
+        else tdr.channel_name end
+        ) as channelName,
+        (case
+        when length(COALESCE(tdr.device_name, '')) = 0
+        then m.device_name
+        else tdr.device_name end
+        ) as deviceName,
+        ord.tenant_id as tenantId,
+        ord.industry_code as industryCode
+        FROM vm_order_devices ord
+        LEFT JOIN vm_device_info_t m on m.device_code = ord.device_code
+        LEFT JOIN vm_channel_info_t ch on ch.device_code = ord.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t tdr on tdr.device_code = m.device_code and
+        tdr.tenant_id = ord.tenant_id and tdr.channel_code = ch.channel_code and tdr.industry_code = ord.industry_code
+        WHERE ord.tenant_id = #{tenantId}
+        and ord.delete_flag = '0' and ord.ord_status in (0, 1, 2)
+        <if test='provinceId!= null and provinceId != "" '>
+            AND m.province_id = #{provinceId}
+        </if>
+        <if test='industryCode != null and industryCode != "" '>
+            AND ord.industry_code = #{industryCode}
+        </if>
+        <if test='cityId!= null and cityId != "" '>
+            AND m.city_id = #{cityId}
+        </if>
+        <if test='countryId!= null and countryId != "" '>
+            AND m.county_id = #{countryId}
+        </if>
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND m.device_code = #{deviceCode}
+        </if>
+        <if test='channelCode!= null and channelCode != "" '>
+            AND ch.channel_code = #{channelCode}
+        </if>
+        <if test='hasAlgo!= null and hasAlgo != "" '>
+            AND
+            <if test='hasAlgo == "1" '>exists</if>
+            <if test='hasAlgo == "0" '>not exists</if>
+            (
+            select 1 from vm_algorithm_config ac
+            where ac.device_code = m.device_code
+            and ac.channel_code = ch.channel_code
+            and ac.tenant_id = ord.tenant_id
+            )
+        </if>
+        <if test='algorithmCode!= null and algorithmCode != "" '>
+            AND exists
+            (
+            select 1 from vm_algorithm_config ac
+            where ac.device_code = m.device_code
+            and ac.channel_code = ch.channel_code
+            and ac.tenant_id = ord.tenant_id
+            and ac.algorithm_code = #{algorithmCode}
+            and ac.delete_flag = '0'
+            )
+        </if>
+        ORDER BY m.province_id,m.city_id, m.county_id,m.device_code,ch.channel_code
+    </select>
+    <select id="getAlgorithmConfigRow2" resultType="com.chinatower.platform.entity.device.AlgorithmConfigVO">
+        SELECT distinct ac.config_id, ac.pos_type, ac.preset_id,
+        COALESCE (vp.preset_name,ac.preset_name) as presetName,
+        ac.device_code,ac.channel_code
+
+        FROM vm_algorithm_config ac
+        LEFT JOIN vm_video_preset vp on vp.preset_id = ac.preset_id
+        WHERE ac.delete_flag = '0'
+        and ac.industry_code = #{industryCode}
+        and ac.tenant_id = #{tenantId}
+        and (ac.device_code, ac.channel_code) in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            (#{item.deviceCode}, #{item.channelCode})
+        </foreach>
+    </select>
+
+    <select id="getDeviceCode" resultType="string">
+        SELECT device_code
+        from vm_channel_info_t
+        where channel_code = #{channelCode}
+          and delete_flag = '0'
+    </select>
+    <select id="getAlgorithmStatusByTaskId" parameterType="java.lang.String" resultType="java.lang.String">
+        select algorithm_status from vm_algorithm_config where task_id = #{taskId}
+    </select>
+    <update id="updateAlgorithmStatus" parameterType="java.lang.String">
+        update vm_algorithm_config set algorithm_status = #{pushStatus} where task_id = #{taskId}
+    </update>
+
+    <select id="selectTenantName" parameterType="java.lang.String" resultType="java.lang.String">
+        select a.tenant_name from sys_tenant_info a where a.tenant_id = #{tenantId} and a.del_flag = 0
+    </select>
+
+
+    <select id="getTownCodeByCodes" resultType="java.lang.String">
+        select a.AREA_CODE from sys_area a where a.AREA_CODE IN
+        <foreach collection="sysAreaList" separator="," open="(" close=")" index="index" item="item">
+            #{item.townCode}
+        </foreach>
+        and a.DEL_FLAG = '0'
+    </select>
+    <select id="getDeviceParam" resultType="com.chinatower.platform.model.vo.DeviceModelVO">
+        SELECT
+            t2.model_code modelCode,
+            t2.device_model_code deviceModelCode,
+            t3.pic_sensor_length picSensorLength,
+            t3.pic_sensor_width picSensorWidth,
+            t3.min_focus minFocus
+        FROM
+            vm_device_info_t t2
+                LEFT JOIN vm_device_model_t t3 ON t2.model_code = t3.mfgr_code AND t2.device_model_code = t3.device_model_code
+        WHERE
+            t2.delete_flag = '0' AND t2.device_code = #{deviceCode}
+    </select>
+    <select id="getRank" resultType="com.chinatower.device.dto.AlgorithmRankDto">
+        WITH rank_values AS (
+        SELECT
+        t.channelCode,
+        t.channelName,
+        t.algorithmCount,
+        ROW_NUMBER() OVER ( ORDER BY t.algorithmCount DESC ) AS `rank`
+        FROM
+        (
+        SELECT t2.channel_code channelCode,
+        t2.channel_name channelName,
+        t2.algorithmCount
+        FROM vm_order_devices t1 left join ( select count(*) AS algorithmCount, channel_code,channel_name, tenant_id
+        ,algorithm_code, device_code, delete_flag,industry_code
+        from vm_algorithm_config a where delete_flag = '0'
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        group by channel_code,tenant_id) t2
+        ON t1.device_code = t2.device_code AND t1.tenant_id = t2.tenant_id AND t1.industry_code = t2.industry_code
+        WHERE t1.delete_flag = 0 AND t2.delete_flag = 0 AND t1.ord_status in (0, 1, 2)
+        ${dataScope}
+        GROUP BY t2.channel_code ) t
+        )
+        SELECT
+        *
+        FROM
+        rank_values
+        <if test="topN != null">
+            WHERE
+            `rank` <![CDATA[ <=]]> #{topN}
+        </if>
+
+    </select>
+
+    <update id="updateDeviceDelFlagByDeviceCode">
+        UPDATE vm_device_info_t SET delete_flag = '1', modifier_date = now()
+        WHERE delete_flag = '0' AND device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+    <update id="updateChannelDelFlagByDeviceCode">
+        UPDATE vm_channel_info_t SET delete_flag = '1', modifier_date = now()
+        WHERE delete_flag = '0' AND device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+    <update id="updateChannelDelFlagByChannelCode">
+        UPDATE vm_channel_info_t SET delete_flag = '1', modifier_date = now()
+        WHERE delete_flag = '0' AND channel_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+    <!--    <update id="updAlgorithmAreaBatch">-->
+    <!--        update vm_algorithm_config-->
+    <!--        <trim prefix="set" suffixOverrides=",">-->
+    <!--            <trim prefix="task_id =case" suffix="end,">-->
+    <!--                <foreach collection="list" item="item">-->
+    <!--                    <if test="item.taskId != null">-->
+    <!--                        when config_id=#{item.configId} then #{item.taskId}-->
+    <!--                    </if>-->
+    <!--                </foreach>-->
+    <!--            </trim>-->
+    <!--            <trim prefix="status =case" suffix="end,">-->
+    <!--                <foreach collection="list" item="item">-->
+    <!--                    <if test="item.status != null">-->
+    <!--                        when config_id=#{item.configId} then #{item.status}-->
+    <!--                    </if>-->
+    <!--                </foreach>-->
+    <!--            </trim>-->
+    <!--            <trim prefix="algorithm_status =case" suffix="end,">-->
+    <!--                <foreach collection="list" item="item">-->
+    <!--                    <if test="item.algorithmStatus!=null and item.algorithmStatus != ''">-->
+    <!--                        when config_id=#{item.configId} then #{item.algorithmStatus}-->
+    <!--                    </if>-->
+    <!--                </foreach>-->
+    <!--            </trim>-->
+    <!--            <trim prefix="img =case" suffix="end,">-->
+    <!--                <foreach collection="list" item="item">-->
+    <!--                    <if test="item.img!=null and item.img != ''">-->
+    <!--                        when config_id=#{item.configId} then #{item.img}-->
+    <!--                    </if>-->
+    <!--                </foreach>-->
+    <!--            </trim>-->
+    <!--            <trim prefix="points =case" suffix="end,">-->
+    <!--                <foreach collection="list" item="item">-->
+    <!--                    <if test="item.points!=null and item.points != ''">-->
+    <!--                        when config_id=#{item.configId} then #{item.points}-->
+    <!--                    </if>-->
+    <!--                </foreach>-->
+    <!--            </trim>-->
+    <!--            <trim prefix="delete_flag =case" suffix="end,">-->
+    <!--                <foreach collection="list" item="item">-->
+    <!--                    <if test="item.deleteFlag!=null and item.deleteFlag != ''">-->
+    <!--                        when config_id=#{item.configId} then #{item.deleteFlag}-->
+    <!--                    </if>-->
+    <!--                </foreach>-->
+    <!--            </trim>-->
+    <!--            <trim prefix="modifier =case" suffix="end,">-->
+    <!--                <foreach collection="list" item="item">-->
+    <!--                    <if test="item.modifier!=null and item.modifier != ''">-->
+    <!--                        when config_id=#{item.configId} then #{item.modifier}-->
+    <!--                    </if>-->
+    <!--                </foreach>-->
+    <!--            </trim>-->
+    <!--            update_time = NOW(),-->
+    <!--        </trim>-->
+    <!--        <where>-->
+    <!--            config_id IN-->
+    <!--            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">-->
+    <!--                #{item.configId}-->
+    <!--            </foreach>-->
+    <!--        </where>-->
+    <!--    </update>-->
+    <select id="selectMaxId" resultType="java.lang.Long">
+        SELECT max(Id) FROM sys_area
+    </select>
+
+    <insert id="insertSysAreaBatch">
+        insert into sys_area(
+        id,
+        AREA_CODE,
+        AREA_NAME,
+        AREA_LEVEL,
+        AREA_PARENT_CODE,
+        AREA_PARENT_NAME,
+        STATUS,
+        DEL_FLAG,
+        DEPT_ID,
+        BUSSNESS_UNIT,
+        CREATE_BY,
+        CREATE_TIME
+        ) values
+        <foreach collection ="sysAreaList" item="index" separator =",">
+            (#{index.id},#{index.townCode},#{index.township},'5',#{index.adCode},#{index.district},'0','0',#{index.townCode},'02','device_sync',now())
+        </foreach>
+    </insert>
+
+    <select id="getOrderAlgorithmTotal" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO"
+            resultType="com.chinatower.platform.entity.device.AlgorithmListVO">
+        SELECT DISTINCT dataTable.device_code, chan.channel_code, COUNT(*) AS orderAlgoCount
+        FROM vm_order_devices dataTable
+        LEFT JOIN vm_order_algorithms oral on oral.tenant_id = dataTable.tenant_id AND oral.order_code = dataTable.order_code
+        AND oral.package_code = dataTable.package_code
+        LEFT JOIN vm_channel_info_t chan ON dataTable.device_code = chan.device_code
+        LEFT JOIN vm_algorithm_info_t b on b.algorithm_code = oral.algorithm_code and b.delete_flag = '0'
+        WHERE dataTable.delete_flag = 0 AND dataTable.ord_status IN (0, 1, 2) AND oral.delete_flag = 0
+        AND oral.ord_status IN (0, 1, 2)
+        AND dataTable.industry_code = #{industryCode}
+        AND b.app_scenarios = '1'
+        ${dataScope}
+        <if test="channelCodeList!= null and channelCodeList.size() > 0 ">
+            AND chan.channel_code in
+            <foreach collection="channelCodeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        AND (
+            NOT EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = dataTable.order_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+            OR
+            EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = dataTable.order_code AND oac.device_code = dataTable.device_code AND oac.algorithm_code = oral.algorithm_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+        )
+        GROUP BY dataTable.device_code, chan.channel_code
+        ORDER BY dataTable.device_code,chan.channel_code
+    </select>
+
+    <select id="getAlgorithmConfigCount" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO"
+            resultType="com.chinatower.platform.entity.device.AlgorithmListVO">
+        SELECT DISTINCT mm.device_code, mm.channel_code, COUNT(*) AS algoConfigCount
+        FROM (SELECT DISTINCT tt.device_code, tt.channel_code, tt.algorithm_code, tt.tenant_id, tt.industry_code,tt.accept_node
+        FROM vm_algorithm_config tt WHERE tt.delete_flag = 0
+        AND tt.industry_code = #{industryCode} AND tt.tenant_id = #{tenantId}) mm
+        LEFT JOIN vm_order_devices ord ON mm.device_code = ord.device_code AND mm.tenant_id = ord.tenant_id
+        AND mm.industry_code = ord.industry_code AND mm.accept_node = ord.accept_node
+        LEFT JOIN vm_order_algorithms oral ON mm.algorithm_code = oral.algorithm_code AND mm.tenant_id = oral.tenant_id
+        AND mm.industry_code = oral.industry_code AND oral.order_code = ord.order_code
+        AND oral.package_code = ord.package_code
+        LEFT JOIN vm_algorithm_info_t b on b.algorithm_code = mm.algorithm_code and b.delete_flag = '0'
+        WHERE ord.delete_flag = 0 AND ord.ord_status IN (0, 1, 2)
+        AND b.app_scenarios = '1'
+        <if test="channelCodeList!= null and channelCodeList.size() > 0 ">
+            AND mm.channel_code in
+            <foreach collection="channelCodeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        AND (
+            (NOT EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = ord.order_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+             AND oral.delete_flag = 0 AND oral.ord_status IN (0, 1, 2))
+            OR
+            EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = ord.order_code AND oac.device_code = mm.device_code AND oac.algorithm_code = mm.algorithm_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+        )
+        GROUP BY mm.device_code, mm.channel_code
+        ORDER BY mm.device_code,mm.channel_code;
+    </select>
+
+    <select id="getOrderAlgorithmInfo" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO"
+            resultType="com.chinatower.platform.entity.order.OrderAlgorithmsVO">
+        SELECT DISTINCT oral.algorithm_code, oral.algorithm_name
+        FROM vm_order_devices tt
+        LEFT JOIN vm_order_algorithms oral on oral.tenant_id = tt.tenant_id AND oral.order_code = tt.order_code
+        AND oral.package_code = tt.package_code
+        LEFT JOIN vm_channel_info_t chan ON tt.device_code = chan.device_code
+        LEFT JOIN vm_algorithm_info_t b on b.algorithm_code = oral.algorithm_code and b.delete_flag = '0'
+        WHERE tt.delete_flag = 0 AND tt.ord_status IN (0, 1, 2) AND tt.industry_code = #{industryCode}
+        AND oral.delete_flag = 0 AND oral.ord_status IN (0, 1, 2)
+        AND b.app_scenarios = '1'
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND tt.device_code = #{deviceCode}
+        </if>
+        <if test='channelCode!= null and channelCode != "" '>
+            AND chan.channel_code = #{channelCode}
+        </if>
+        <if test='tenantId != null and tenantId != "" '>
+            AND tt.tenant_id = #{tenantId}
+        </if>
+        <if test='platformCode!= null and platformCode != "" '>
+            and oral.accept_node =#{platformCode}
+        </if>
+        AND (
+            NOT EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = tt.order_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+            OR
+            EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = tt.order_code AND oac.device_code = tt.device_code AND oac.algorithm_code = oral.algorithm_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+        )
+        ORDER BY oral.algorithm_code
+    </select>
+
+    <select id="getAlgorithmConfigInfo" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO"
+            resultType="com.chinatower.platform.entity.order.OrderAlgorithmsVO">
+        SELECT DISTINCT tt.algorithm_code, tt.algorithm_name
+        FROM vm_algorithm_config tt
+        LEFT JOIN vm_order_devices ord ON tt.device_code = ord.device_code AND tt.tenant_id = ord.tenant_id
+        AND tt.industry_code = ord.industry_code
+        LEFT JOIN vm_order_algorithms oral ON tt.algorithm_code = oral.algorithm_code AND tt.tenant_id = oral.tenant_id
+        AND tt.industry_code = oral.industry_code AND oral.order_code = ord.order_code
+        AND oral.package_code = ord.package_code
+        LEFT JOIN vm_algorithm_info_t b on b.algorithm_code = tt.algorithm_code and b.delete_flag = '0'
+        WHERE ord.delete_flag = 0 AND ord.ord_status IN (0, 1, 2)
+        AND tt.delete_flag = 0 AND tt.industry_code = #{industryCode} AND tt.tenant_id = #{tenantId}
+        AND b.app_scenarios = '1'
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND tt.device_code = #{deviceCode}
+        </if>
+        <if test='channelCode!= null and channelCode != "" '>
+            AND tt.channel_code = #{channelCode}
+        </if>
+        <if test='platformCode!= null and platformCode != "" '>
+            and oral.accept_node =#{platformCode}
+        </if>
+        AND (
+            (NOT EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = ord.order_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+             AND oral.delete_flag = 0 AND oral.ord_status IN (0, 1, 2))
+            OR
+            EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = ord.order_code AND oac.device_code = tt.device_code AND oac.algorithm_code = tt.algorithm_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+        )
+        ORDER BY tt.algorithm_code
+    </select>
+
+
+    <select id="getToBeConfigInfo" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO"
+            resultType="com.chinatower.platform.entity.order.OrderAlgorithmsVO">
+        SELECT DISTINCT oral.algorithm_code, oral.algorithm_name
+        FROM vm_order_devices tt
+        LEFT JOIN vm_order_algorithms oral on oral.tenant_id = tt.tenant_id AND oral.order_code = tt.order_code
+        AND oral.package_code = tt.package_code
+        LEFT JOIN vm_channel_info_t chan ON tt.device_code = chan.device_code
+        LEFT JOIN vm_algorithm_info_t b on b.algorithm_code = oral.algorithm_code and b.delete_flag = '0'
+        WHERE tt.delete_flag = 0 AND tt.ord_status IN (0, 1, 2) AND tt.industry_code = #{industryCode}
+        AND oral.delete_flag = 0 AND oral.ord_status IN (0, 1, 2) AND tt.tenant_id = #{tenantId}
+        AND b.app_scenarios = '1'
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND tt.device_code = #{deviceCode}
+        </if>
+        <if test='channelCode!= null and channelCode != "" '>
+            AND chan.channel_code = #{channelCode}
+        </if>
+        <if test='platformCode!= null and platformCode != "" '>
+            and oral.accept_node =#{platformCode}
+        </if>
+        AND oral.algorithm_code NOT IN (
+        SELECT DISTINCT tt.algorithm_code
+        FROM vm_algorithm_config tt
+        LEFT JOIN vm_order_devices ord ON tt.device_code = ord.device_code AND tt.tenant_id = ord.tenant_id
+        AND tt.industry_code = ord.industry_code
+        LEFT JOIN vm_order_algorithms oral ON tt.algorithm_code = oral.algorithm_code
+        AND tt.tenant_id = oral.tenant_id AND tt.industry_code = oral.industry_code
+        AND oral.order_code = ord.order_code AND oral.package_code = ord.package_code
+        LEFT JOIN vm_algorithm_info_t b on b.algorithm_code = oral.algorithm_code and b.delete_flag = '0'
+        WHERE ord.delete_flag = 0 AND ord.ord_status IN (0, 1, 2) AND oral.delete_flag = 0
+        AND oral.ord_status IN (0, 1, 2) AND tt.delete_flag = 0 AND tt.industry_code = #{industryCode}
+        AND tt.tenant_id = #{tenantId}
+        AND b.app_scenarios = '1'
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND tt.device_code = #{deviceCode}
+        </if>
+        <if test='channelCode!= null and channelCode != "" '>
+            AND tt.channel_code = #{channelCode}
+        </if>
+        )
+        AND (
+            NOT EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = tt.order_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+            OR
+            EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = tt.order_code AND oac.device_code = tt.device_code AND oac.algorithm_code = oral.algorithm_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+        )
+        ORDER BY oral.algorithm_code
+    </select>
+
+
+    <select id="getAlgoConfigInfo" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO"
+            resultType="com.chinatower.platform.entity.device.AlgorithmConfigVO">
+        SELECT DISTINCT vi.config_id, vi.task_type, vi.status, vi.device_code, vi.channel_code
+        FROM (
+        SELECT config_id,device_code,channel_code,tenant_id,STATUS,'1' AS task_type
+        FROM vm_algorithm_config
+        WHERE delete_flag = 0 AND tenant_id = #{tenantId}
+        <if test="configIdList!= null and configIdList.size() > 0 ">
+            AND config_id in
+            <foreach collection="configIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        UNION ALL
+        SELECT CONVERT( ID, CHAR ) AS config_id,device_code,channel_code,tenant_id,STATUS,'2' AS task_type
+        FROM vm_algorithm_give_config
+        WHERE delete_flag = 0 AND tenant_id = #{tenantId}
+        <if test="configIdList!= null and configIdList.size() > 0 ">
+            AND CONVERT( ID, CHAR )  in
+            <foreach collection="configIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        ) vi WHERE 1=1
+        <if test='deviceCode != null and deviceCode != "" '>
+            AND vi.device_code = #{deviceCode}
+        </if>
+        <if test='channelCode != null and channelCode != "" '>
+            AND vi.channel_code = #{channelCode}
+        </if>
+    </select>
+
+
+    <update id="delBackConfigBatch" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO">
+        update vm_algorithm_config set modifier = #{modifier}, update_time = now(), delete_flag = 1
+        where config_id IN
+        <foreach collection="configIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+            #{labelIdItem}
+        </foreach>
+    </update>
+
+    <update id="delForeConfigBatch" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO">
+        update vm_algorithm_give_config set modifier = #{modifier}, update_time = now(), delete_flag = 1
+        where id IN
+        <foreach collection="configIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+            #{labelIdItem}
+        </foreach>
+    </update>
+
+    <update id="uptBackStatusBatch" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO">
+        update vm_algorithm_config set modifier = #{modifier}, update_time = now(), status = #{status},
+        algorithm_status = #{algorithmStatus}
+        where config_id IN
+        <foreach collection="configIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+            #{labelIdItem}
+        </foreach>
+    </update>
+
+    <update id="uptForeStatusBatch" parameterType="com.chinatower.platform.entity.device.AlgorithmConfigDTO">
+        update vm_algorithm_give_config set modifier = #{modifier}, update_time = now(), status = #{status}
+        where id IN
+        <foreach collection="configIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+            #{labelIdItem}
+        </foreach>
+    </update>
+
+
+    <select id="selectOrderCode" parameterType="com.chinatower.device.dataobject.AlgorithmConfigDO"
+            resultType="com.chinatower.platform.entity.order.OrderAlgorithmsVO">
+        SELECT order_code,accept_node FROM vm_order_devices
+        WHERE delete_flag = 0 AND ord_status IN (0, 1, 2)
+        AND tenant_id = #{tenantId} AND device_code = #{deviceCode} AND industry_code = #{industryCode} LIMIT 1
+    </select>
+
+    <select id="getCustomerAlgorithm" resultType="com.chinatower.platform.entity.order.OrderAlgorithmsVO">
+        WITH filtered_alg AS (
+        SELECT algorithm_code, order_code, tenant_id, industry_code, package_code
+        FROM vm_order_algorithms
+        WHERE delete_flag = '0'
+        <if test='tenantId!= null and tenantId != "" '>
+            and tenant_id =#{tenantId}
+        </if>
+        <if test='industryCode!= null and industryCode != "" '>
+            and industry_code =#{industryCode}
+        </if>
+        <if test='platformCode!= null and platformCode != "" '>
+            and accept_node =#{platformCode}
+        </if>
+        <if test='algorithmName!= null and algorithmName != "" '>
+            and algorithm_name LIKE CONCAT('%',#{algorithmName},'%')
+        </if>
+        )
+        SELECT DISTINCT
+        fa.algorithm_code,
+        b.algorithm_name,
+        b.algorithm_shape,
+        CONVERT(b.extend_json, CHAR) AS extend_json,
+        b.analy_type,
+        b.algorithm_model_type
+        FROM filtered_alg fa
+        INNER JOIN vm_algorithm_info_t b ON b.algorithm_code = fa.algorithm_code AND b.delete_flag = '0' AND b.app_scenarios = '1'
+        INNER JOIN vm_order_customer voc ON fa.order_code = voc.order_code AND voc.delete_flag = '0' AND voc.ord_status IN (0,1,2)
+        INNER JOIN vm_order_devices e ON fa.order_code = e.order_code AND fa.tenant_id = e.tenant_id AND fa.industry_code = e.industry_code AND e.package_code = fa.package_code
+        AND e.delete_flag = '0'
+        <if test="tenantId != null and tenantId != ''">
+            AND e.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND e.industry_code = #{industryCode}
+        </if>
+        <if test="platformCode != null and platformCode != ''">
+            AND e.accept_node = #{platformCode}
+        </if>
+        <if test='deviceCode!= null and deviceCode != "" '>
+            and e.device_code =#{deviceCode}
+        </if>
+        AND (
+            NOT EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = e.order_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+            OR
+            EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = e.order_code AND oac.device_code = e.device_code AND oac.algorithm_code = fa.algorithm_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+        )
+    </select>
+
+    <select id="getCustomerAlgorithmBatch" resultType="com.chinatower.platform.entity.order.OrderAlgorithmsVO">
+        select distinct e.device_code,a.algorithm_code,b.algorithm_name,b.algorithm_shape,CONVERT(b.extend_json, CHAR) as extendJson, b.analy_type
+        from vm_order_algorithms a
+        inner join vm_algorithm_info_t b on b.algorithm_code = a.algorithm_code and b.delete_flag = '0'
+        left join vm_order_devices e on e.order_code = a.order_code and e.tenant_id = a.tenant_id
+        and e.industry_code = a.industry_code and a.package_code = e.package_code and e.delete_flag = '0'
+        left join vm_order_customer voc on a.order_code = voc.order_code and voc.delete_flag = '0'
+        where a.delete_flag = '0'
+        and voc.ord_status in (0,1,2)
+        AND b.app_scenarios = '1'
+        <if test='tenantId!= null and tenantId != "" '>
+            and a.tenant_id =#{tenantId}
+        </if>
+        <if test='industryCode!= null and industryCode != "" '>
+            and a.industry_code =#{industryCode}
+        </if>
+        <if test='platformCode!= null and platformCode != "" '>
+            and a.accept_node =#{platformCode}
+        </if>
+        <if test="deviceCodeList != null and deviceCodeList.size() > 0 ">
+            AND e.device_code in
+            <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        AND (
+            NOT EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = a.order_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+            OR
+            EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = a.order_code AND oac.device_code = e.device_code AND oac.algorithm_code = a.algorithm_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+        )
+    </select>
+
+    <select id="getAlgorithmConfig" parameterType="com.chinatower.platform.entity.device.CheckAlgorithmConfigVO"
+            resultType="com.chinatower.platform.entity.device.AlgorithmConfigVO">
+        SELECT distinct ac.config_id, ac.pos_type, ac.preset_id,ac.device_code,ac.channel_code,
+            ac.algorithm_code,ac.status
+        FROM vm_algorithm_config ac
+        WHERE ac.delete_flag = '0'
+        <if test='industryCode != null and industryCode != "" '>
+            and ac.industry_code = #{industryCode}
+        </if>
+        <if test='tenantId != null and tenantId != "" '>
+            and ac.tenant_id = #{tenantId}
+        </if>
+        <if test='deviceCode != null and deviceCode != "" '>
+            and ac.device_code = #{deviceCode}
+        </if>
+        <if test='channelCode != null and channelCode != "" '>
+            and ac.channel_code = #{channelCode}
+        </if>
+        <if test='algorithmCode != null and algorithmCode != "" '>
+            and ac.algorithm_code = #{algorithmCode}
+        </if>
+        <if test="configIdList != null and configIdList.size() > 0 ">
+            AND ac.config_id in
+            <foreach collection="configIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getFunctionInfo" parameterType="java.lang.String"
+            resultType="com.chinatower.device.dto.FunctionAlgorthmVO">
+        SELECT
+        t1.algorithm_code,
+        t1.algorithm_name,
+        t1.algorithm_description,
+        t2.function_code,
+        t2.icon_code,
+        t2.icon_colour
+        FROM
+        vm_algorithm_info_t t1,
+        vm_function_type t2
+        WHERE t1.function_code = t2.function_code
+        AND t1.delete_flag = '0'
+        AND t2.delete_flag = '0'
+        and t1.algorithm_code in
+        <foreach collection="list" item="labelIdItem" index="index" open="(" close=")" separator=",">
+            #{labelIdItem}
+        </foreach>
+    </select>
+    <select id="getAlgorithmConfigByDeviceList"
+            resultType="com.chinatower.platform.entity.order.OrderAlgorithmsVO">
+        select a.algorithm_code,b.algorithm_name,b.algorithm_shape,e.device_code
+        from vm_order_algorithms a
+        inner join vm_algorithm_info_t b on b.algorithm_code = a.algorithm_code and b.delete_flag = '0' and a.accept_node = #{acceptNode}
+        left join vm_order_devices e on e.order_code = a.order_code and e.tenant_id = a.tenant_id and
+        a.package_code = e.package_code and e.delete_flag = '0'
+        left join vm_order_customer voc on a.order_code = voc.order_code and voc.delete_flag = '0'
+        where a.delete_flag = '0'
+        and voc.ord_status in (0,1,2)
+        AND b.app_scenarios = '1'
+        <if test='tenantId!= null and tenantId != "" '>
+            and a.tenant_id =#{tenantId}
+        </if>
+        <if test='deviceCodes!= null and deviceCodes != "" '>
+            and e.device_code IN
+            <foreach collection="deviceCodes" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='industryCode!= null and industryCode != "" '>
+            and a.industry_code =#{industryCode}
+        </if>
+        AND (
+            NOT EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = a.order_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+            OR
+            EXISTS (SELECT 1 FROM vm_order_algorithm_config oac WHERE oac.order_code = a.order_code AND oac.device_code = e.device_code AND oac.algorithm_code = a.algorithm_code AND oac.delete_flag = 0 AND oac.algorithm_type = 1)
+        )
+    </select>
+
+    <!-- 结果集2：根据tenant_id、accept_node、industry_code、device_code、algorithm_type查询vm_order_algorithm_config表 -->
+    <select id="getOrderAlgorithmConfigCodes" resultType="java.lang.String">
+        SELECT DISTINCT algorithm_code
+        FROM vm_order_algorithm_config
+        WHERE delete_flag = 0
+        <if test="algorithmType != null">
+            AND algorithm_type = #{algorithmType}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test="acceptNode != null and acceptNode != ''">
+            AND accept_node = #{acceptNode}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND industry_code = #{industryCode}
+        </if>
+        <if test="deviceCode != null and deviceCode != ''">
+            AND device_code = #{deviceCode}
+        </if>
+        <if test="deviceCodes != null and deviceCodes.size() > 0">
+            AND device_code IN
+            <foreach collection="deviceCodes" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getAlgorithmByList" resultType="com.chinatower.platform.entity.device.AlgorithmConfigVO">
+        SELECT distinct ac.config_id, ac.pos_type, ac.preset_id,ac.device_code,ac.channel_code,
+        ac.algorithm_code,ac.status
+        FROM vm_algorithm_config ac
+        WHERE ac.delete_flag = '0' AND ac.pos_type = #{posType}
+        <if test='status != null and status != "" '>
+            and ac.status = #{status}
+        </if>
+        <if test='industryCode != null and industryCode != "" '>
+            and ac.industry_code = #{industryCode}
+        </if>
+        <if test='tenantId != null and tenantId != "" '>
+            and ac.tenant_id = #{tenantId}
+        </if>
+        AND
+        <foreach item="item" index="index" collection="list" open="(" separator="OR" close=")">
+            (ac.device_code = #{item.deviceCode} AND ac.channel_code = #{item.channelCode} AND ac.algorithm_code = #{item.algorithmCode})
+        </foreach>
+        GROUP BY ac.device_code,ac.channel_code,ac.algorithm_code
+    </select>
+    <select id="getAlgorithmInfoBatch" resultType="com.chinatower.industry.dto.AlgorithmInfoDO">
+        SELECT * FROM vm_algorithm_info_t where delete_flag = '0'
+        AND algorithm_code IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item.algorithmCode}
+        </foreach>
+    </select>
+    <select id="selectOrderCodeList" resultType="com.chinatower.platform.entity.order.OrderAlgorithmsVO">
+        SELECT device_code deviceCode,order_code orderCode,accept_node acceptNode FROM vm_order_devices
+        WHERE delete_flag = 0 AND ord_status IN (0, 1, 2)
+          AND tenant_id = #{tenantId} AND industry_code = #{industryCode}
+          AND device_code IN
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item.deviceCode}
+            </foreach>
+    </select>
+
+    <update id="updAlgoAreaBatch">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            UPDATE vm_algorithm_config SET modifier = #{item.modifier}, update_time = now(),
+            points = #{item.points},algorithm_status = #{item.algorithmStatus} WHERE config_id = #{item.configId}
+        </foreach>
+    </update>
+    <update id="updateAlgorithmAreaBatch">
+        update vm_algorithm_config
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="task_id =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.taskId != null and item.taskId != ''">
+                        when config_id=#{item.configId} then #{item.taskId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="status =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.status != null and item.status != ''">
+                        when config_id=#{item.configId} then #{item.status}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="algorithm_status =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.algorithmStatus != null and item.algorithmStatus != ''">
+                        when config_id=#{item.configId} then #{item.algorithmStatus}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="img =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.img != null and item.img != ''">
+                        when config_id=#{item.configId} then #{item.img}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="points =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when config_id=#{item.configId} then #{item.points}
+                </foreach>
+            </trim>
+            <trim prefix="delete_flag =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.deleteFlag != null and item.deleteFlag != ''">
+                        when config_id=#{item.configId} then #{item.deleteFlag}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="modifier =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.modifier != null and item.modifier != ''">
+                        when config_id=#{item.configId} then #{item.modifier}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="thresh =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.thresh != null and item.thresh != ''">
+                        when config_id=#{item.configId} then #{item.thresh}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="model_config =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when config_id=#{item.configId} then #{item.modelConfig}
+                </foreach>
+            </trim>
+            <trim prefix="trip_thread =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when config_id=#{item.configId} then #{item.tripThread}
+                </foreach>
+            </trim>
+            <trim prefix="analysis_period =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when config_id=#{item.configId} then #{item.analysisPeriod}
+                </foreach>
+            </trim>
+            <trim prefix="text_labels =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when config_id=#{item.configId} then #{item.textLabels}
+                </foreach>
+            </trim>
+            <trim prefix="oil_gas_pipelines =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when config_id=#{item.configId} then #{item.oilGasPipelines}
+                </foreach>
+            </trim>
+            <trim prefix="alarmInterval =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when alarmInterval =#{item.configId} then #{item.alarmInterval}
+                </foreach>
+            </trim>
+            update_time = NOW()
+        </trim>
+        <where>
+            config_id IN
+            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+                #{item.configId}
+            </foreach>
+        </where>
+    </update>
+
+
+    <select id="getAlgorithmPipelines" resultType="com.chinatower.platform.entity.device.AlgorithmConfigVO">
+        select
+            config_id,
+            oil_gas_pipelines
+        from vm_algorithm_config
+        where oil_gas_pipelines IS NOT NULL
+          and oil_gas_pipelines != '[]' and oil_gas_pipelines != 'null'
+        and delete_flag = 0
+    </select>
+
+    <update id="updateAlgorithmPipelinesBatch">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            UPDATE vm_algorithm_config SET oil_gas_pipelines = #{item.oilGasPipelines}, update_time = now(), algorithm_status = '3'
+            WHERE config_id = #{item.configId}
+        </foreach>
+    </update>
+
+    <select id="getPresetImgList" resultType="com.chinatower.platform.entity.device.PresetVO">
+        select device_code,preset_id,preset_name,img_url from vm_video_preset
+        where (device_code,preset_id) in (
+        <foreach collection="list" separator="," item="item" open="" close="" index="index">
+            (#{item.deviceCode},#{item.presetId})
+        </foreach>
+        )
+    </select>
+
+    <select id="addLargeModelAlgorithms" resultType="java.lang.String">
+        SELECT
+            t.config_id
+        FROM
+            vm_algorithm_config t
+            LEFT JOIN vm_algorithm_info_t t1 ON t.algorithm_code = t1.algorithm_code
+        WHERE
+            t.delete_flag = 0
+          AND t1.delete_flag = '0'
+          AND t.config_id IN
+          <foreach collection="configIdList" separator="," item="item" open="(" close=")" index="index">
+             #{item}
+          </foreach>
+          AND t1.algorithm_model_type = '2'
+    </select>
+
+    <select id="getLargeModelAlgorithms" resultType="java.lang.String">
+        SELECT DISTINCT
+            algorithm_code
+        FROM
+            vm_algorithm_info_t
+        WHERE
+            delete_flag = '0'
+          AND algorithm_model_type = '2'
+    </select>
+
+    <select id="selectModelConfigData" resultType="com.chinatower.device.dataobject.AlgorithmConfigDO">
+        SELECT
+            config_id, device_code, device_name, channel_code, channel_name,
+            pos_type, preset_id, preset_name, tenant_id, tenant_name,
+            algorithm_code, points, img, algorithm_name, task_id, status,
+            order_code, algorithm_status, thresh, alarmInterval, alarmInterval_type,
+            algorithm_time, app_ver_code_his, industry_code_his, industry_code,
+            app_ver_code, creator, create_time, modifier, update_time, delete_flag,
+            model_config, trip_thread, analysis_period, oil_gas_pipelines,
+            accept_node, access_node, time_stamp, time_interval, time_interval_unit,
+            text_labels, is_linkage_algorithm, linkage_algorithm,
+            points_lon_lat, trip_thread_lon_lat, oil_gas_pipelines_lon_lat,
+            text_labels_lon_lat, extend_json_algo, scene_code
+        FROM vm_algorithm_config
+        WHERE scene_code IS NOT NULL
+          AND delete_flag = 0
+          AND model_config NOT LIKE '%monitorAreaId%'
+    </select>
+</mapper>

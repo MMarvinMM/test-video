@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderAlgorithmsHisMapper">
+
+    <select id="selectOrderedModelAlgorithmCodeHis" resultType="java.lang.String">
+        select distinct algorithm_code
+        from vm_order_algorithms_his
+        where tenant_id = #{tenantId} and industry_code = #{industryCode}
+        and algorithm_code in
+        <foreach item="item" collection="algorithmCodeList" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectOrderedModelAlgorithmCode" resultType="java.lang.String">
+        select distinct algorithm_code
+        from vm_order_algorithms
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and order_code != #{orderCode}
+        and algorithm_code in
+        <foreach item="item" collection="algorithmCodeList" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectAlreadyInitAlgorithmCode" resultType="java.lang.String">
+        select distinct algorithm_code
+        from sys_scene_config
+        where tenant_id = #{tenantId} and industry_code = #{industryCode}
+        and algorithm_code in
+        <foreach item="item" collection="algorithmCodeList" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="initSceneConfigInfo" parameterType="com.chinatower.order.vo.SceneConfigVO">
+        insert into sys_scene_config
+        (scene_id, scene_name, type_value, algorithm_code, creator, create_time, delete_flag, tenant_id, industry_code, app_ver_code) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.sceneId}, #{item.sceneName}, #{item.typeValue}, #{item.algorithmCode}, #{item.creator}, #{item.createTime}, #{item.deleteFlag},
+            #{item.tenantId}, #{item.industryCode}, #{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <insert id="initSceneAlarmRelInfo" parameterType="com.chinatower.order.vo.SceneAlarmRelVO">
+        insert into sys_scene_alarm_rel
+        (scene_id, alarm_type, alarm_type_name, algorithm_code, creator, create_time, delete_flag, tenant_id, industry_code, app_ver_code) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.sceneId}, #{item.alarmType}, #{item.alarmTypeName}, #{item.algorithmCode}, #{item.creator}, #{item.createTime}, #{item.deleteFlag},
+            #{item.tenantId}, #{item.industryCode}, #{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <select id="selectModelAlgorithmCodeList" resultType="java.lang.String">
+        select algorithm_code
+        from vm_algorithm_info_t
+        where algorithm_model_type = 2 and delete_flag = 0
+    </select>
+</mapper>

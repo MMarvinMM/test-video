@@ -1,0 +1,945 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.AlarmTypeMapper">
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        alarm_type_id, alarm_type_class_id, type_name, type_value, tenantor, source, if_free, creator, create_time, delete_flag, icon
+    </sql>
+    <insert id="createIsVisible" parameterType="com.chinatower.event.vo.SysAlarmTypeIndustryRelVo">
+        insert into sys_alarm_type_industry_rel(alarm_type_id, industry_code, is_visible, creator,
+        create_time, modifier, update_time, delete_flag, tenant_id, app_ver_code, type_value)
+        values(#{body.alarmTypeId}, #{body.industryCode}, #{body.isVisible},
+        #{body.creator}, now(), #{body.modifier}, now(), '0', #{body.tenantId}, #{body.appVerCode}, #{body.typeValue})
+    </insert>
+    <update id="modifyIsVisible" parameterType="com.chinatower.event.vo.SysAlarmTypeIndustryRelVo">
+        UPDATE
+        sys_alarm_type_industry_rel
+        SET
+        is_visible = #{body.isVisible},
+        modifier = #{body.modifier},
+        update_time = #{body.updateTime}
+        where alarm_type_id = #{body.alarmTypeId}
+        and industry_code = #{body.industryCode}
+        and tenant_id = #{body.tenantId}
+    </update>
+
+    <select id="findOrderAlarm" resultType="com.chinatower.event.dataobject.AlarmTypeDO" parameterType="com.chinatower.event.entity.dto.AlarmTypeDTO">
+        select t.* from (
+        select DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue,
+        sat.alarm_source AS alarmSource,
+        sat.tenant_id AS tenantId,
+        sat.industry_code AS industryCode,
+        (SELECT is_visible FROM sys_alarm_type_industry_rel ir
+        WHERE ir.industry_code = t1.industry_code
+        AND ir.alarm_type_id = sat.alarm_type_id
+        and ir.tenant_id = #{body.tenantId}
+        ) AS isVisible
+        FROM vm_order_algorithms t1
+        inner JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+        inner JOIN vm_algorithm_alarm al ON t2.algo_min_type_code = al.algo_min_type
+        inner JOIN sys_alarm_type sat ON al.alarm_type = sat.type_value
+        WHERE
+        sat.delete_flag = 0
+        and sat.alarm_source = '1'
+        and t2.delete_flag = 0
+        and al.delete_flag = 0
+        and t1.delete_flag = 0
+        and t1.ord_status in (0, 1, 2)
+        AND t1.tenant_id = #{body.tenantId}
+        and t1.industry_code = #{body.industryCode}
+        <if test="body.typeValueList != null and body.typeValueList.size()>0">
+            AND sat.type_value IN
+            <foreach collection="body.typeValueList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        ${body.dataScope}
+        ORDER BY sat.alarm_type_id ASC
+        ) t
+        <if test="body.isQueryAll != 2">
+            where t.isVisible = '1000' or t.isVisible is null
+        </if>
+        union
+        select * from (
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue,
+        sat.alarm_source AS alarmSource,
+        sat.tenant_id AS tenantId,
+        sat.industry_code AS industryCode,
+        (SELECT is_visible FROM sys_alarm_type_industry_rel ir
+        WHERE ir.alarm_type_id = sat.alarm_type_id
+        and ir.industry_code = #{body.industryCode}
+        and ir.tenant_id = #{body.tenantId}
+        ) AS isVisible
+        FROM sys_alarm_type sat
+        WHERE (sat.delete_flag = 0 and sat.tenant_id is null and sat.industry_code is null
+        <if test="body.typeValueList != null and body.typeValueList.size()>0">
+            AND sat.type_value IN
+            <foreach collection="body.typeValueList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        and (sat.app_ver_code = #{body.appVerCode}
+        or sat.alarm_source in
+        <foreach collection="body.alarmSources" item="alarmSource" open="(" separator="," close=")">
+            #{alarmSource}
+        </foreach>
+        )
+        ${body.dataScope}
+        )) t
+        <if test="body.isQueryAll != 2">
+            where t.isVisible = '1000' or t.isVisible is null
+        </if>
+        <if test="body.findFlag != 1">
+            union
+            select * from (
+            SELECT DISTINCT
+            sat.alarm_type_id AS alarmTypeId,
+            sat.type_name AS typeName,
+            sat.icon AS icon,
+            sat.type_value AS typeValue,
+            sat.alarm_source AS alarmSource,
+            sat.tenant_id AS tenantId,
+            sat.industry_code AS industryCode,
+            (SELECT is_visible FROM sys_alarm_type_industry_rel ir
+            WHERE ir.alarm_type_id = sat.alarm_type_id
+            and ir.industry_code = #{body.industryCode}
+            and ir.tenant_id = #{body.tenantId}
+            ) AS isVisible
+            FROM sys_alarm_type sat
+            WHERE sat.tenant_id = #{body.tenantId}
+            and sat.industry_code = #{body.industryCode}
+            and sat.delete_flag = 0
+            and sat.source != 3
+            <if test="body.typeValueList != null and body.typeValueList.size()>0">
+                AND sat.type_value IN
+                <foreach collection="body.typeValueList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            ${body.dataScope}
+            ) t
+            <if test="body.isQueryAll != 2">
+                where t.isVisible = '1000' or t.isVisible is null
+            </if>
+        </if>
+    </select>
+
+    <select id="findOrderAlarmBySource" resultType="com.chinatower.event.dataobject.AlarmTypeDO" parameterType="com.chinatower.event.entity.dto.AlarmTypeDTO">
+        select * from (
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue,
+        sat.alarm_source AS alarmSource,
+        sat.tenant_id AS tenantId,
+        sat.industry_code AS industryCode,
+        (SELECT is_visible FROM sys_alarm_type_industry_rel ir
+        WHERE ir.alarm_type_id = sat.alarm_type_id
+        and ir.industry_code = #{body.industryCode}
+        and ir.tenant_id = #{body.tenantId}
+        ) AS isVisible
+        FROM sys_alarm_type sat
+        WHERE (sat.delete_flag = 0 and sat.tenant_id is null and sat.industry_code is null
+        and (sat.app_ver_code = #{body.appVerCode}
+        or sat.alarm_source in
+        <foreach collection="body.alarmSources" item="alarmSource" open="(" separator="," close=")">
+            #{alarmSource}
+        </foreach>
+        )
+        )) t
+        <if test="body.isQueryAll != 2">
+            where t.isVisible = '1000' or t.isVisible is null
+        </if>
+        <if test="body.findFlag != 1">
+            union
+            select * from (
+            SELECT DISTINCT
+            sat.alarm_type_id AS alarmTypeId,
+            sat.type_name AS typeName,
+            sat.icon AS icon,
+            sat.type_value AS typeValue,
+            sat.alarm_source AS alarmSource,
+            sat.tenant_id AS tenantId,
+            sat.industry_code AS industryCode,
+            (SELECT is_visible FROM sys_alarm_type_industry_rel ir
+            WHERE ir.alarm_type_id = sat.alarm_type_id
+            and ir.industry_code = #{body.industryCode}
+            and ir.tenant_id = #{body.tenantId}
+            ) AS isVisible
+            FROM sys_alarm_type sat
+            WHERE sat.tenant_id = #{body.tenantId}
+            and sat.industry_code = #{body.industryCode}
+            and sat.delete_flag = 0
+            ) t
+            <if test="body.isQueryAll != 2">
+                where t.isVisible = '1000' or t.isVisible is null
+            </if>
+        </if>
+    </select>
+
+    <!--
+      工单列表名称回填字典：曾经订购（当前∪历史，不限 ord_status）仍可解析类型名；
+      大模型下游走平台 model_config，不依赖有效订购/场景表。
+    -->
+    <select id="findOrderAlarmAll" resultType="com.chinatower.event.dataobject.AlarmTypeDO" parameterType="com.chinatower.event.entity.dto.AlarmTypeDTO">
+        select t.* from (
+        select DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue
+        FROM (
+            SELECT algorithm_code, tenant_id
+            FROM vm_order_algorithms
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+            UNION
+            SELECT algorithm_code, tenant_id
+            FROM vm_order_algorithms_his
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+        ) t1
+        inner JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+        inner JOIN vm_algorithm_alarm al ON t2.algo_min_type_code = al.algo_min_type
+        inner JOIN sys_alarm_type sat ON al.alarm_type = sat.type_value
+        WHERE
+        sat.alarm_source = '1'
+        and t2.app_scenarios = '1'
+        ${body.dataScope}
+        ORDER BY sat.alarm_type_id ASC
+        ) t
+        union
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue
+        FROM sys_alarm_type sat
+        WHERE sat.alarm_source in
+        <foreach collection="body.alarmSources" item="alarmSource" open="(" separator="," close=")">
+            #{alarmSource}
+        </foreach>
+        and ((sat.tenant_id is null and sat.industry_code is null) or (sat.tenant_id = #{body.tenantId} and sat.industry_code = #{body.industryCode}))
+        union
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        COALESCE(sat.type_name, cfg.itemName) AS typeName,
+        sat.icon AS icon,
+        cfg.itemCode COLLATE utf8mb4_unicode_ci AS typeValue
+        FROM (
+            SELECT algorithm_code
+            FROM vm_order_algorithms
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+              AND industry_code = #{body.industryCode}
+            UNION
+            SELECT algorithm_code
+            FROM vm_order_algorithms_his
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+              AND industry_code = #{body.industryCode}
+        ) algo
+        INNER JOIN vm_algorithm_info_t a
+            ON algo.algorithm_code = a.algorithm_code
+           AND a.delete_flag = 0
+           AND a.algorithm_model_type = 2
+        INNER JOIN JSON_TABLE(
+            a.model_config,
+            '$[*]' COLUMNS (
+                code VARCHAR(64) PATH '$.code',
+                NESTED PATH '$.dictList[*]' COLUMNS (
+                    itemCode VARCHAR(64) PATH '$.itemCode',
+                    itemName VARCHAR(128) PATH '$.itemName'
+                )
+            )
+        ) cfg
+        LEFT JOIN sys_alarm_type sat
+            ON sat.type_value = cfg.itemCode COLLATE utf8mb4_unicode_ci
+           AND sat.delete_flag = 0
+           AND (
+                (sat.source = 3 AND sat.tenant_id = #{body.tenantId} AND sat.industry_code = #{body.industryCode})
+                OR IFNULL(sat.source, 0) != 3
+           )
+        WHERE a.model_config IS NOT NULL
+          AND a.model_config != ''
+          AND LOWER(cfg.code) LIKE '%modetype%'
+          AND cfg.itemCode IS NOT NULL
+          AND cfg.itemCode != ''
+        union
+        <!-- 大模型场景：工单 warning_type_id 为场景 UUID(source=3)；
+             findAlarmSource 不含 AI(1)，第二段无法命中，列表回填名称依赖本段 -->
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue
+        FROM sys_alarm_type sat
+        WHERE sat.delete_flag = 0
+          AND IFNULL(sat.source, 0) = 3
+          AND sat.tenant_id = #{body.tenantId}
+          AND sat.industry_code = #{body.industryCode}
+          AND sat.type_value IS NOT NULL
+          AND sat.type_value != ''
+    </select>
+
+    <select id="findOrderAlarmTT" resultType="com.chinatower.event.dataobject.AlarmTypeDO" parameterType="com.chinatower.event.entity.dto.AlarmTypeDTO">
+        SELECT
+        t3.type_value AS typeValue,
+        t3.type_name AS typeName,
+        t3.icon AS icon
+        FROM
+        sys_alarm_type t3
+        WHERE t3.source = '0'
+        AND t3.delete_flag = '0'
+        <if test="body.typeName != null and body.typeName != ''">
+            AND t3.type_name like concat(concat('%',#{body.typeName}),'%')
+        </if>
+        ORDER BY t3.type_value
+    </select>
+
+    <select id="findOrderAlarmByKeyWord"  parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT
+        t3.type_value AS typeValue
+        FROM
+        sys_alarm_type t3
+        WHERE t3.delete_flag = '0'
+        <if test="typeName != null and typeName != ''">
+            AND t3.type_name like concat(concat('%',#{typeName}),'%')
+        </if>
+    </select>
+
+    <select id="getAlgorithm" resultType="com.chinatower.event.entity.vo.AlgorithmEventVO">
+        SELECT
+        DISTINCT t4.tenant_id as customerCode,
+        t4.thresh,
+        t4.alarm_interval as alarmInterval,
+        t4.alarm_interval_type as alarmIntervalType,
+        t4.algorithm_time as algorithmTime
+        FROM
+        sys_alarm_type t3
+        LEFT JOIN sys_alarm_class_param t4 ON t3.alarm_type_id = t4.alarm_type_id
+        WHERE
+        t3.source='0'
+        AND t3.delete_flag = '0'
+        AND t4.tenant_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        AND t3.type_value = #{alarmType}
+    </select>
+
+    <select id="findOrderAlarmList" resultType="com.chinatower.event.vo.AlarmTypeClassVO" parameterType="com.chinatower.common.core.dto.AlarmTypeClassDTO">
+        SELECT DISTINCT t.* FROM (
+        SELECT t.* FROM (
+        -- 第一个子查询
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS alarmTypeName,
+        sat.icon,
+        sat.type_value AS typeValue,
+        'false' as modelAlgorithmFlag,
+        d.alarmLevel,
+        d.alarmLevelName,
+        t1.tenant_id AS tenantId,
+        i.tenant_name AS userName,
+        i.province_id AS provinceId,
+        i.city_id AS cityId,
+        (SELECT is_visible FROM sys_alarm_type_industry_rel ir
+        WHERE ir.industry_code = t1.industry_code
+        AND ir.alarm_type_id = sat.alarm_type_id
+        AND ir.tenant_id = #{body.tenantId}) AS isVisible
+        FROM vm_order_algorithms t1
+        INNER JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+        INNER JOIN vm_algorithm_alarm al ON t2.algo_min_type_code = al.algo_min_type
+        INNER JOIN sys_alarm_type sat ON al.alarm_type = sat.type_value
+        LEFT JOIN sys_alarm_type_level satl
+        ON satl.type_value = sat.type_value AND satl.tenant_id = #{body.tenantId} AND satl.industry_code = #{body.industryCode}
+        LEFT JOIN (SELECT DICT_VALUE AS alarmLevel, DICT_LABEL AS alarmLevelName FROM sys_dict_data WHERE DICT_TYPE = 'alarm_level') d
+        ON COALESCE(satl.alarm_level, '1') = d.alarmLevel
+        INNER JOIN sys_tenant_info i ON i.tenant_id = t1.tenant_id AND i.del_flag = '0'
+        <if test="body.tagIdList != null and body.tagIdList.size()>0">
+            LEFT JOIN sys_alarm_tags_type_rel tr
+            ON sat.type_value = tr.type_value
+            AND tr.tenant_id = t1.tenant_id
+            AND tr.delete_flag = '0'
+        </if>
+        WHERE
+        sat.delete_flag = 0
+        AND sat.alarm_source = '1'
+        AND t2.delete_flag = 0
+        AND al.delete_flag = 0
+        AND t1.delete_flag = 0
+        AND t1.ord_status IN (0, 1, 2)
+        AND t1.tenant_id = #{body.tenantId}
+        <if test="body.industryCode != null and body.industryCode != ''">
+            AND t1.industry_code = #{body.industryCode}
+        </if>
+        <choose>
+            <when test='body.orgLevel!= null and body.orgLevel != ""'>
+                <if test="body.tenantList!= null and body.tenantList.size() > 0 ">
+                    AND t1.tenant_id IN
+                    <foreach collection="body.tenantList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                        #{labelIdItem}
+                    </foreach>
+                </if>
+            </when>
+        </choose>
+        <if test="body.alarmTypeName != null and body.alarmTypeName != ''">
+            AND sat.type_name LIKE CONCAT(CONCAT('%',#{body.alarmTypeName}),'%')
+        </if>
+        <if test="body.alarmLevel != null and body.alarmLevel != ''">
+            AND d.alarmLevel = #{body.alarmLevel}
+        </if>
+        <if test="body.provinceId != null and body.provinceId != ''">
+            AND i.province_id = #{body.provinceId}
+        </if>
+        <if test="body.cityId != null and body.cityId != ''">
+            AND i.city_id = #{body.cityId}
+        </if>
+        <if test="body.tagIdList != null and body.tagIdList.size()>0">
+            AND tr.tag_id IN
+            <foreach collection="body.tagIdList" item="tagIdItem" index="index" open="(" close=")" separator=",">
+                #{tagIdItem}
+            </foreach>
+        </if>
+        ${body.dataScope}
+        ) t WHERE 1=1
+        <if test="body.isVisible == '1100'">
+            AND t.isVisible = #{body.isVisible}
+        </if>
+        <if test="body.isVisible == '1000'">
+            AND (t.isVisible = '1000' OR t.isVisible IS NULL)
+        </if>
+        UNION
+        -- 第二个子查询
+        SELECT * FROM (
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS alarmTypeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue,
+        'false' as modelAlgorithmFlag,
+        d.alarmLevel,
+        d.alarmLevelName,
+        i.tenant_id AS tenantId,
+        i.tenant_name AS userName,
+        i.province_id AS provinceId,
+        i.city_id AS cityId,
+        (SELECT is_visible FROM sys_alarm_type_industry_rel ir
+        WHERE ir.alarm_type_id = sat.alarm_type_id
+        AND ir.industry_code = #{body.industryCode}
+        AND ir.tenant_id = #{body.tenantId}) AS isVisible
+        FROM sys_alarm_type sat
+        LEFT JOIN sys_alarm_type_level satl
+        ON satl.type_value = sat.type_value AND satl.tenant_id = #{body.tenantId} AND satl.industry_code = #{body.industryCode}
+        LEFT JOIN (SELECT DICT_VALUE AS alarmLevel, DICT_LABEL AS alarmLevelName FROM sys_dict_data WHERE DICT_TYPE = 'alarm_level') d
+        ON COALESCE(satl.alarm_level, '1') = d.alarmLevel
+        LEFT JOIN sys_tenant_info i ON i.tenant_id = #{body.tenantId} AND i.del_flag = '0'
+        <if test="body.tagIdList != null and body.tagIdList.size()>0">
+            LEFT JOIN sys_alarm_tags_type_rel tr
+            ON sat.type_value = tr.type_value
+            AND tr.tenant_id = i.tenant_id
+            AND tr.delete_flag = '0'
+        </if>
+        WHERE
+        (sat.delete_flag = 0 AND sat.tenant_id IS NULL AND sat.industry_code IS NULL
+        AND sat.alarm_source IN
+        <foreach collection="body.alarmSources" item="alarmSource" open="(" separator="," close=")">#{alarmSource}
+        </foreach>
+        )
+        <if test="body.alarmTypeName != null and body.alarmTypeName != ''">
+            AND sat.type_name LIKE CONCAT(CONCAT('%',#{body.alarmTypeName}),'%')
+        </if>
+        <if test="body.alarmLevel != null and body.alarmLevel != ''">
+            AND d.alarmLevel = #{body.alarmLevel}
+        </if>
+        <if test="body.tagIdList != null and body.tagIdList.size()>0">
+            AND tr.tag_id IN
+            <foreach collection="body.tagIdList" item="tagIdItem" index="index" open="(" close=")" separator=",">
+                #{tagIdItem}
+            </foreach>
+        </if>
+        ${body.dataScope}
+        ) t WHERE 1=1
+        <if test="body.isVisible == '1100'">
+            AND t.isVisible = #{body.isVisible}
+        </if>
+        <if test="body.isVisible == '1000'">
+            AND (t.isVisible = '1000' OR t.isVisible IS NULL)
+        </if>
+        UNION
+        -- 第三个子查询
+        SELECT * FROM (
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS alarmTypeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue,
+        'false' as modelAlgorithmFlag,
+        d.alarmLevel,
+        d.alarmLevelName,
+        i.tenant_id AS tenantId,
+        i.tenant_name AS userName,
+        i.province_id AS provinceId,
+        i.city_id AS cityId,
+        (SELECT is_visible FROM sys_alarm_type_industry_rel ir
+        WHERE ir.alarm_type_id = sat.alarm_type_id
+        AND ir.industry_code = #{body.industryCode}
+        AND ir.tenant_id = #{body.tenantId}) AS isVisible
+        FROM sys_alarm_type sat
+        LEFT JOIN sys_alarm_type_level satl
+        ON satl.type_value = sat.type_value AND satl.tenant_id = #{body.tenantId} AND satl.industry_code = #{body.industryCode}
+        LEFT JOIN (SELECT DICT_VALUE AS alarmLevel, DICT_LABEL AS alarmLevelName FROM sys_dict_data WHERE DICT_TYPE = 'alarm_level') d
+        ON COALESCE(satl.alarm_level, '1') = d.alarmLevel
+        LEFT JOIN sys_tenant_info i ON i.tenant_id = #{body.tenantId} AND i.del_flag = '0'
+        <if test="body.tagIdList != null and body.tagIdList.size()>0">
+            LEFT JOIN sys_alarm_tags_type_rel tr
+            ON sat.type_value = tr.type_value
+            AND tr.tenant_id = i.tenant_id
+            AND tr.delete_flag = '0'
+        </if>
+        WHERE
+        sat.delete_flag = 0
+        and sat.source != 3
+        AND sat.tenant_id = #{body.tenantId}
+        AND sat.industry_code = #{body.industryCode}
+        <if test="body.alarmTypeName != null and body.alarmTypeName != ''">
+            AND sat.type_name LIKE CONCAT(CONCAT('%',#{body.alarmTypeName}),'%')
+        </if>
+        <if test="body.alarmLevel != null and body.alarmLevel != ''">
+            AND d.alarmLevel = #{body.alarmLevel}
+        </if>
+        <if test="body.tagIdList != null and body.tagIdList.size()>0">
+            AND tr.tag_id IN
+            <foreach collection="body.tagIdList" item="tagIdItem" index="index" open="(" close=")" separator=",">
+                #{tagIdItem}
+            </foreach>
+        </if>
+        ${body.dataScope}
+        ) t WHERE 1=1
+        <if test="body.isVisible == '1100'">
+            AND t.isVisible = #{body.isVisible}
+        </if>
+        <if test="body.isVisible == '1000'">
+            AND (t.isVisible = '1000' OR t.isVisible IS NULL)
+        </if>
+
+        <if test="body.modelAlgorithmCodeList != null and body.modelAlgorithmCodeList.size() > 0">
+            UNION
+            -- 第四个子查询
+            SELECT t.* FROM (
+            SELECT DISTINCT
+            sat.alarm_type_id AS alarmTypeId,
+            sat.type_name AS alarmTypeName,
+            sat.icon,
+            sat.type_value AS typeValue,
+            'true' as modelAlgorithmFlag,
+            d.alarmLevel,
+            d.alarmLevelName,
+            t1.tenant_id AS tenantId,
+            i.tenant_name AS userName,
+            i.province_id AS provinceId,
+            i.city_id AS cityId,
+            (SELECT is_visible FROM sys_alarm_type_industry_rel ir
+            WHERE ir.industry_code = t1.industry_code
+            AND ir.alarm_type_id = sat.alarm_type_id
+            AND ir.tenant_id = #{body.tenantId}) AS isVisible
+            FROM vm_order_algorithms t1
+            inner join sys_scene_config sc on t1.tenant_id = sc.tenant_id and t1.industry_code = sc.industry_code and t1.algorithm_code = sc.algorithm_code and sc.delete_flag = 0
+            inner join sys_alarm_type sat on sc.type_value = sat.type_value and sat.delete_flag = 0
+            and ((sat.source = 3 and sat.tenant_id = t1.tenant_id and sat.industry_code = t1.industry_code) or sat.source != 3)
+            LEFT JOIN sys_alarm_type_level satl
+            ON satl.type_value = sat.type_value AND satl.tenant_id = #{body.tenantId} AND satl.industry_code = #{body.industryCode}
+            LEFT JOIN (SELECT DICT_VALUE AS alarmLevel, DICT_LABEL AS alarmLevelName FROM sys_dict_data WHERE DICT_TYPE = 'alarm_level') d
+            ON COALESCE(satl.alarm_level, '1') = d.alarmLevel
+            INNER JOIN sys_tenant_info i ON i.tenant_id = t1.tenant_id AND i.del_flag = '0'
+            <if test="body.tagIdList != null and body.tagIdList.size()>0">
+                LEFT JOIN sys_alarm_tags_type_rel tr
+                ON sat.type_value = tr.type_value
+                AND tr.tenant_id = t1.tenant_id
+                AND tr.delete_flag = '0'
+            </if>
+            WHERE
+            sat.delete_flag = 0
+            AND sat.alarm_source = '1'
+            AND t1.delete_flag = 0
+            AND t1.ord_status IN (0, 1, 2)
+            and t1.tenant_id = #{body.tenantId} and t1.industry_code = #{body.industryCode} and t1.ord_status in (0,1,2)
+            and t1.algorithm_code in
+            <foreach collection="body.modelAlgorithmCodeList" separator="," item="item" open="(" close=")" index="index">
+                #{item}
+            </foreach>
+            <choose>
+                <when test='body.orgLevel!= null and body.orgLevel != ""'>
+                    <if test="body.tenantList!= null and body.tenantList.size() > 0 ">
+                        AND t1.tenant_id IN
+                        <foreach collection="body.tenantList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                            #{labelIdItem}
+                        </foreach>
+                    </if>
+                </when>
+            </choose>
+            <if test="body.alarmTypeName != null and body.alarmTypeName != ''">
+                AND sat.type_name LIKE CONCAT(CONCAT('%',#{body.alarmTypeName}),'%')
+            </if>
+            <if test="body.alarmLevel != null and body.alarmLevel != ''">
+                AND d.alarmLevel = #{body.alarmLevel}
+            </if>
+            <if test="body.provinceId != null and body.provinceId != ''">
+                AND i.province_id = #{body.provinceId}
+            </if>
+            <if test="body.cityId != null and body.cityId != ''">
+                AND i.city_id = #{body.cityId}
+            </if>
+            <if test="body.tagIdList != null and body.tagIdList.size()>0">
+                AND tr.tag_id IN
+                <foreach collection="body.tagIdList" item="tagIdItem" index="index" open="(" close=")" separator=",">
+                    #{tagIdItem}
+                </foreach>
+            </if>
+            ${body.dataScope}
+            ) t WHERE 1=1
+            <if test="body.isVisible == '1100'">
+                AND t.isVisible = #{body.isVisible}
+            </if>
+            <if test="body.isVisible == '1000'">
+                AND (t.isVisible = '1000' OR t.isVisible IS NULL)
+            </if>
+        </if>
+        ) t
+        <choose>
+            <when test="body.sortName == 'alarmLevel'">
+                ORDER BY t.alarmLevel
+                <if test="body.sort == 'desc'">
+                    DESC
+                </if>
+                <if test="body.sort == 'asc'">
+                    ASC
+                </if>
+            </when>
+            <otherwise>
+                ORDER BY t.alarmTypeId ASC
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="findAlarmTypeList" resultType="com.chinatower.common.core.dto.AlarmType" parameterType="com.chinatower.common.core.dto.AlarmType">
+        SELECT
+        c.type_class_id AS alarmTypeClassId,
+        c.alarm_type_id AS alarmTypeId,
+        t.type_value AS typeValue,
+        t.type_name AS typeName,
+        t.icon
+        FROM sys_alarm_type_class c INNER JOIN sys_alarm_type t ON c.alarm_type_id = t.alarm_type_id
+        WHERE c.delete_flag = '0'
+        <if test="body.tenantId != null and body.tenantId != ''">
+            AND c.tenantor = #{body.tenantId}
+        </if>
+        <if test="body.typeList != null">
+            AND t.type_value in (
+            <foreach collection="body.typeList" item="item" index="index" open="" close="" separator=",">
+                #{item.typeValue}
+            </foreach>
+            )
+        </if>
+    </select>
+
+    <select id="devByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        select count(*) from
+        vm_order_devices where
+        tenant_id = #{body.tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{body.industryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="uavByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        select count(*)
+        from vm_order_uav_devices where
+        tenant_id = #{body.tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{body.industryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="iotDevByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        select  count(*)
+        from vm_order_sensor_devices
+        where tenant_id = #{body.tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{body.industryCode}
+        and category_code = #{body.categoryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="serviceByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        select count(*)
+        from vm_order_services_rel
+        where tenant_id = #{body.tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{body.industryCode}
+        and service_code = '9'
+        and delete_flag = 0
+    </select>
+
+    <select id="findAlarmTypeByOrder" resultType="com.chinatower.event.entity.vo.AlarmTypeVO"
+            parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue,
+        voa.algorithm_code algorithmCode,
+        IFNULL(sat.alarm_source,'1') as alarmSource,
+        IFNULL(dict.DICT_LABEL,'AI告警') as alarmSourceName
+        FROM
+        vm_order_algorithms voa
+        inner join vm_algorithm_info_t ai on voa.algorithm_code = ai.algorithm_code
+        inner join vm_algorithm_alarm aa on ai.algo_min_type_code = aa.algo_min_type
+        inner join sys_alarm_type sat ON aa.alarm_type = sat.type_value
+        left join sys_dict_data dict on sat.alarm_source = dict.DICT_VALUE and dict.DICT_TYPE = 'warning_source_common'
+        WHERE sat.delete_flag = 0
+        and sat.alarm_source = '1'
+        and ai.delete_flag = 0
+        and aa.delete_flag = 0
+        and voa.delete_flag = 0
+        and sat.alarm_source = '1'
+        and voa.tenant_id = #{body.tenantId}
+        and voa.ord_status in (0, 1, 2)
+        and voa.industry_code = #{body.industryCode}
+        ${body.dataScope}
+        ORDER BY aa.alarm_type
+    </select>
+
+    <select id="queryOrderByAlgorithmCode" resultType="java.lang.String">
+        SELECT distinct algorithm_code
+        FROM vm_order_algorithms
+        where delete_flag = 0
+        and tenant_id = #{body.tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{body.industryCode}
+        <if test="body.algorithmCodeList != null and body.algorithmCodeList.size()>0">
+            AND algorithm_code IN
+            <foreach collection="body.algorithmCodeList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="findAlarmTypeBySource" resultType="com.chinatower.event.entity.vo.AlarmTypeVO"
+            parameterType="com.chinatower.event.entity.dto.AlarmSourceSubTypeDTO">
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue,
+        sat.alarm_source as alarmSource,
+        data.DICT_LABEL as alarmSourceName
+        FROM sys_alarm_type sat
+        left join sys_dict_data data on sat.alarm_source = data.DICT_VALUE and data.DICT_TYPE = 'warning_source_common'
+        WHERE sat.delete_flag = 0
+        and sat.source != 3
+        and sat.alarm_source in
+        <foreach collection="body.alarmSources" item="alarmSource" open="(" separator="," close=")">
+            #{alarmSource}
+        </foreach>
+        and ((sat.tenant_id is null and industry_code is null) or (sat.tenant_id = #{body.tenantId} and industry_code = #{body.industryCode}))
+        ${body.dataScope}
+    </select>
+    <select id="findAlgorithmAlarm" resultType="com.chinatower.event.dataobject.AlarmTypeDO" parameterType="com.chinatower.event.entity.dto.AlarmTypeDTO">
+        (select DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue
+        FROM vm_order_algorithms t1
+        inner JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+        inner JOIN vm_algorithm_alarm al ON t2.algo_min_type_code = al.algo_min_type
+        inner JOIN sys_alarm_type sat ON al.alarm_type = sat.type_value
+        WHERE
+        sat.delete_flag = 0
+        and t2.app_scenarios = '1'
+        and t2.delete_flag = 0
+        and al.delete_flag = 0
+        and t1.delete_flag = 0
+        and t1.ord_status in (0, 1, 2)
+        AND t1.tenant_id = #{body.tenantId}
+        ${body.dataScope}
+        ORDER BY sat.alarm_type_id ASC)
+        union
+        SELECT DISTINCT
+        sat.alarm_type_id AS alarmTypeId,
+        sat.type_name AS typeName,
+        sat.icon AS icon,
+        sat.type_value AS typeValue
+        FROM sys_alarm_type sat
+        WHERE sat.delete_flag = 0
+        and sat.alarm_source = '4'
+    </select>
+
+    <select id="getAlarmIconList" resultType="java.util.Map">
+        SELECT
+        type_value,
+        type_name,
+        ifnull(icon,'') as icon
+        FROM
+        sys_alarm_type
+    </select>
+    <select id="checkSysAlarmTypeIndustryRelVoCount" resultType="java.lang.Integer" parameterType="com.chinatower.common.core.dto.AlarmTypeClassDTO">
+        select count(1) from sys_alarm_type_industry_rel
+        where alarm_type_id = #{body.alarmTypeId}
+        and industry_code = #{body.industryCode}
+        and tenant_id = #{body.tenantId}
+    </select>
+
+    <select id="checkAlarmTypeName" resultType="com.chinatower.event.dataobject.AlarmTypeDO">
+        select * from sys_alarm_type
+        where
+        type_name in
+        <foreach collection="typeNameList" item="typeName" index="index" separator="," open="(" close=")">
+            #{typeName}
+        </foreach>
+        and industry_code=#{industryCode}
+        and tenant_id = #{tenantId}
+        and delete_flag = '0'
+    </select>
+
+    <insert id="addAlarmType" parameterType="com.chinatower.event.dataobject.AlarmTypeDO">
+        insert into sys_alarm_type
+        (alarm_source,
+        type_value,
+        type_name,
+        source,icon,
+        delete_flag,
+        creator,
+        create_time,
+        tenant_id,
+        industry_code)
+        values
+        <foreach collection="alarmTypeList" separator="," index="index" item="alarmType">
+            (
+            #{alarmType.alarmSource,jdbcType=VARCHAR},
+            #{alarmType.typeValue,jdbcType=VARCHAR},
+            #{alarmType.typeName,jdbcType=VARCHAR},
+            '0',
+            #{alarmType.icon,jdbcType=VARCHAR},
+            '0',
+            #{alarmType.creator,jdbcType=VARCHAR},
+            now(),
+            #{alarmType.tenantId,jdbcType=VARCHAR},
+            #{alarmType.industryCode,jdbcType=VARCHAR}
+            )
+        </foreach>
+    </insert>
+
+    <update id="delAlarmTypeBatch">
+        update sys_alarm_type set delete_flag = '1',modifier = 'system',update_time = NOW()
+        <where>
+            alarm_type_id IN
+            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+                #{item}
+            </foreach>
+        </where>
+    </update>
+
+    <select id="selectScreenDataConfigCountByIdAndType" resultType="long">
+        select id from vm_screen_data_config_count where screen_id = #{screenId} and screen_type = #{screenType} and tenant_id = #{tenantId}
+        and industry_code = #{industryCode} and app_ver_code = #{appVerCode} and is_customize = '1'
+    </select>
+
+    <select id="selectScreenDataConfig" resultType="com.chinatower.event.dto.ScreenDataConfigParticipationDTO">
+        select data_source as source, data_code as code from vm_screen_data_config where screen_data_config_id = #{screenConfigId} and
+        data_type = '9' and data_source = '3' and delete_flag = '0'
+    </select>
+
+    <select id="queryCustomModelAlarmTypeInfo" resultType="com.chinatower.event.entity.vo.AlarmTypeVO">
+        select al.type_value, al.type_name, 'true' as modelAlgorithmFlag, o.algorithm_code algorithmCode, al.alarm_type_id alarmTypeId
+        from vm_order_algorithms o
+        inner join sys_scene_config sc on o.tenant_id = sc.tenant_id and o.industry_code = sc.industry_code and o.algorithm_code = sc.algorithm_code and sc.delete_flag = 0
+        inner join sys_alarm_type al on sc.type_value = al.type_value and al.delete_flag = 0
+        and ((al.source = '3' and al.tenant_id = o.tenant_id and al.industry_code = o.industry_code) or al.source != '3')
+        where o.tenant_id = #{tenantId} and o.industry_code = #{industryCode} and o.ord_status in (0,1,2)
+        and o.algorithm_code in
+        <foreach collection="algorithmCodeList" separator="," item="item" open="(" close=")" index="index">
+            #{item}
+        </foreach>
+        group by al.type_value
+    </select>
+
+    <select id="selectModelAlgorithmInfoList" resultType="com.chinatower.industry.dto.AlgorithmInfoDO">
+        select algorithm_code, algorithm_name
+        from vm_algorithm_info_t
+        where algorithm_model_type = 2 and delete_flag = 0
+    </select>
+    <!--
+      方案 C：曾经订购过大模型（当前订购 ∪ 历史订购，不限 ord_status）即展示平台 model_config 下游目录；
+      不依赖 sys_scene_config / sys_scene_alarm_rel（退订清场景后仍可展示）。
+    -->
+    <select id="findOrderSubSceneAlarm" resultType="com.chinatower.event.dataobject.AlarmTypeDO"
+            parameterType="com.chinatower.event.entity.dto.AlarmTypeDTO">
+        SELECT DISTINCT
+            sat.alarm_type_id AS alarmTypeId,
+            COALESCE(sat.type_name, cfg.itemName) AS typeName,
+            sat.icon AS icon,
+            cfg.itemCode COLLATE utf8mb4_unicode_ci AS typeValue
+        FROM (
+            SELECT algorithm_code
+            FROM vm_order_algorithms
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+              AND industry_code = #{body.industryCode}
+            UNION
+            SELECT algorithm_code
+            FROM vm_order_algorithms_his
+            WHERE delete_flag = 0
+              AND tenant_id = #{body.tenantId}
+              AND industry_code = #{body.industryCode}
+        ) algo
+        INNER JOIN vm_algorithm_info_t a
+            ON algo.algorithm_code = a.algorithm_code
+           AND a.delete_flag = 0
+           AND a.algorithm_model_type = 2
+        INNER JOIN JSON_TABLE(
+            a.model_config,
+            '$[*]' COLUMNS (
+                code VARCHAR(64) PATH '$.code',
+                NESTED PATH '$.dictList[*]' COLUMNS (
+                    itemCode VARCHAR(64) PATH '$.itemCode',
+                    itemName VARCHAR(128) PATH '$.itemName'
+                )
+            )
+        ) cfg
+        LEFT JOIN sys_alarm_type sat
+            ON sat.type_value = cfg.itemCode COLLATE utf8mb4_unicode_ci
+           AND sat.delete_flag = 0
+           AND (
+                (sat.source = 3 AND sat.tenant_id = #{body.tenantId} AND sat.industry_code = #{body.industryCode})
+                OR IFNULL(sat.source, 0) != 3
+           )
+        WHERE a.model_config IS NOT NULL
+          AND a.model_config != ''
+          AND LOWER(cfg.code) LIKE '%modetype%'
+          AND cfg.itemCode IS NOT NULL
+          AND cfg.itemCode != ''
+        <if test="body.algorithmCodes != null and body.algorithmCodes.size() > 0">
+            AND algo.algorithm_code IN
+            <foreach collection="body.algorithmCodes" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="body.typeName != null and body.typeName != ''">
+            AND COALESCE(sat.type_name, cfg.itemName) LIKE CONCAT('%', #{body.typeName}, '%')
+        </if>
+        ORDER BY typeName, typeValue
+    </select>
+</mapper>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.RadarTargetFollowMapper">
+
+    <select id="queryByDeviceCodeList" resultType="com.chinatower.industry.vo.RadarTargetFollowVO">
+        select * from `vm_radar_target_follow`
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryByMessageId" resultType="com.chinatower.industry.vo.RadarTargetFollowVO">
+        select
+        r.*,
+        t.access_node
+        from vm_radar_target_follow r
+        left join vm_device_info_t t on t.device_code = r.device_code
+        where r.message_id = #{messageId}
+    </select>
+
+    <select id="getAccessNodeByDeviceCodeList" resultType="java.lang.String">
+        select access_node
+        from vm_device_info_t
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        limit 1
+    </select>
+
+    <delete id="deleteByMessageId">
+        delete from vm_radar_target_follow where message_id = #{messageId}
+    </delete>
+
+    <delete id="deleteByMessageIdBatch">
+        delete from vm_radar_target_follow where message_id in
+         <foreach collection="list" item="messageId" open="(" close=")" separator=",">
+             #{messageId}
+         </foreach>
+    </delete>
+
+    <delete id="deleteByDeviceCodeListAndTargetId">
+        delete from vm_radar_target_follow where target_id = #{targetId}
+        and device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <insert id="insertBatch" parameterType="com.chinatower.industry.vo.RadarTargetFollowVO">
+        insert into vm_radar_target_follow (device_code, `status`, target_id, message_id, tenant_id,
+        industry_code, app_ver_code, creator, create_time) values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode}, #{item.status}, #{item.targetId}, #{item.messageId}, #{item.tenantId},
+            #{item.industryCode}, #{item.appVerCode}, #{item.creator}, #{item.createTime})
+        </foreach>
+    </insert>
+</mapper>

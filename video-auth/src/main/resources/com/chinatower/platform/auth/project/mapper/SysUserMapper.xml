@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.auth.project.mapper.SysUserMapper">
+
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysUser" id="SysUser">
+        <id property="userId" column="user_id"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="userType" column="user_type"/>
+        <result property="userName" column="user_name"/>
+        <result property="nickName" column="nick_name"/>
+        <result property="email" column="email"/>
+        <result property="phonenumber" column="phonenumber"/>
+        <result property="sex" column="sex"/>
+        <result property="avatar" column="avatar"/>
+        <result property="password" column="password"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="loginIp" column="login_ip"/>
+        <result property="loginDate" column="login_date"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="loginFailNum" column="login_fail_num"/>
+        <result property="enterpriseId" column="enterprise_id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="isTenantAdmin" column="is_tenant_admin"/>
+        <result property="userSource" column="user_source"/>
+        <result property="telPhone" column="tel_phone"/>
+        <result property="pwdUpdateTime" column="pwd_update_time"/>
+    </resultMap>
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysUser" id="SysUserResult">
+        <id property="userId" column="user_id"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="userType" column="user_type"/>
+        <result property="userName" column="user_name"/>
+        <result property="nickName" column="nick_name"/>
+        <result property="email" column="email"/>
+        <result property="phonenumber" column="phonenumber"/>
+        <result property="sex" column="sex"/>
+        <result property="avatar" column="avatar"/>
+        <result property="password" column="password"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="loginIp" column="login_ip"/>
+        <result property="loginDate" column="login_date"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="loginFailNum" column="login_fail_num"/>
+        <result property="enterpriseId" column="enterprise_id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="isTenantAdmin" column="is_tenant_admin"/>
+        <result property="userSource" column="user_source"/>
+        <result property="telPhone" column="tel_phone"/>
+        <result property="tradeInfo" column="trade_info"/>
+        <result property="pwdUpdateTime" column="pwd_update_time"/>
+
+
+        <association property="dept" column="dept_id" javaType="com.chinatower.platform.entity.admin.SysDept"
+                     resultMap="deptResult"/>
+        <association property="tenantInfo" column="tenant_id"
+                     javaType="com.chinatower.platform.entity.admin.SysTenantInfo" resultMap="tenantResult"/>
+        <collection property="roles" javaType="java.util.List" resultMap="RoleResult"/>
+    </resultMap>
+
+    <resultMap id="deptResult" type="com.chinatower.platform.entity.admin.SysDept">
+        <id property="deptId" column="dept_id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="parentName" column="parent_name"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="leader" column="leader"/>
+        <result property="status" column="dept_status"/>
+        <result property="deptLevel" column="dept_level"/>
+        <result property="ancestors" column="ancestors"/>
+    </resultMap>
+
+    <resultMap id="RoleResult" type="com.chinatower.platform.entity.admin.SysRole">
+        <id property="roleId" column="role_id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleKey" column="role_key"/>
+        <result property="roleSort" column="role_sort"/>
+        <result property="dataScope" column="data_scope"/>
+        <result property="status" column="role_status"/>
+    </resultMap>
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysTenantInfo" id="tenantResult">
+        <result property="tenantName" column="tenant_name"/>
+        <result property="tenantDesc" column="tenant_desc"/>
+        <result property="tradeInfo" column="trade_info"/>
+        <result property="provinceId" column="province_id"/>
+        <result property="cityId" column="city_id"/>
+        <result property="countyId" column="county_id"/>
+    </resultMap>
+
+    <sql id="SysUser_clonum">
+        user_id, dept_id,user_type,user_name,nick_name,email,phonenumber,sex,avatar,password,status,del_flag,login_ip,login_date,create_by,
+        create_time,update_by,update_time,remark,login_fail_num,enterprise_id,tenant_id,is_tenant_admin,user_source,tel_phone,pwd_update_time
+    </sql>
+    <sql id="selectUserVo">
+        select u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, u.avatar, u.phonenumber, u.sex, u.status,u.user_source,u.tel_phone,
+               u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, u.login_fail_num,
+               d.parent_id, d.dept_name, d.parent_name, d.dept_level, d.order_num, d.leader, d.status as dept_status,d.ancestors,
+               r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.status as role_status,u.pwd_update_time
+        from sys_user u
+                 left join sys_dept d on u.dept_id = d.dept_id
+                 left join sys_user_role ur on u.user_id = ur.user_id
+                 left join sys_role r on r.role_id = ur.role_id
+    </sql>
+
+    <select id="selectUserByUserName" parameterType="String" resultMap="SysUserResult">
+        select u.user_id, u.user_name, u.password,u.nick_name, u.email, u.avatar
+             , u.phonenumber, u.status,u.pwd_update_time,u.tenant_id,u.user_type
+        from sys_user u
+        where u.del_flag = '0' AND u.user_name = #{userName}
+    </select>
+    <select id="getTenantName" resultType="java.lang.String">
+        select tenant_name from sys_tenant_info where tenant_id = #{tenantId}
+    </select>
+
+    <select id="selectUserOnlyByUserName" parameterType="String" resultMap="SysUserResult">
+        select u.user_id,u.dept_id,u.tenant_id, u.user_name, u.password,u.nick_name, u.email, u.avatar, u.dept_id
+             , u.phonenumber, u.status,u.pwd_update_time,u.user_type
+        from sys_user u
+        where u.user_name = #{userName} and u.del_flag = '0' limit 1
+    </select>
+
+    <select id="selectUserWithPwdByUserName" parameterType="String" resultMap="SysUserResult">
+        select  DISTINCT u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, u.avatar, u.phonenumber,
+        u.password,u.enterprise_id,
+        u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, u.login_fail_num,
+        u.user_type, u.tenant_id, u.is_tenant_admin,
+        d.parent_id, d.dept_name, d.parent_name, d.dept_level, d.order_num, d.leader, d.status as
+        dept_status,d.ancestors,
+        r.role_id, r.role_name, r.role_key, r.role_sort, dr.data_scope, r.status as role_status,
+        t.tenant_name,t.tenant_desc,t.trade_info,t.province_id,t.county_id,t.city_id,u.tel_phone,u.pwd_update_time
+        from sys_user u
+        left join sys_dept d on u.dept_id = d.dept_id
+        left join sys_user_role ur on u.user_id = ur.user_id
+        left join sys_role r on r.role_id = ur.role_id
+        left join sys_role_data_rel dr on dr.role_id = ur.role_id
+        left join sys_tenant_info t on u.tenant_id = t.tenant_id
+        where u.del_flag = '0' and u.status='0' AND u.user_name = #{userName}
+        <if test="tradeId != null and tradeId != ''">and ( r.trade_info = #{tradeId} or r.role_type='1')</if>
+    </select>
+
+    <select id="selectUserWithPwdByUserId" parameterType="String" resultMap="SysUserResult">
+        select  DISTINCT u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, u.avatar, u.phonenumber,
+        u.password,u.enterprise_id,
+        u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, u.login_fail_num,
+        u.user_type, u.tenant_id, u.is_tenant_admin,
+        d.parent_id, d.dept_name, d.parent_name, d.dept_level, d.order_num, d.leader, d.status as
+        dept_status,d.ancestors,
+        r.role_id, r.role_name, r.role_key, r.role_sort, dr.data_scope, r.status as role_status,
+        t.tenant_name,t.tenant_desc,t.trade_info,t.province_id,t.county_id,t.city_id,u.tel_phone,u.pwd_update_time
+        from sys_user u
+        left join sys_dept d on u.dept_id = d.dept_id
+        left join sys_user_role ur on u.user_id = ur.user_id
+        left join sys_role r on r.role_id = ur.role_id
+        left join sys_role_data_rel dr on dr.role_id = ur.role_id
+        left join sys_tenant_info t on u.tenant_id = t.tenant_id
+        where u.del_flag = '0' and u.status='0' AND u.user_id = #{userId}
+        <if test="tradeId != null and tradeId != ''">and ( r.trade_info = #{tradeId} or r.role_type='1')</if>
+    </select>
+
+
+    <select id="selectMenuPermsByUserId" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="String">
+        SELECT DISTINCT
+        m.PERM_URL
+        FROM
+        sys_menu m inner join (SELECT
+        ria.role_id,
+        ia.menu_id
+        FROM
+        sys_industry_auth ia
+        INNER JOIN sys_role_industry_auth ria ON ia.auth_id = ria.auth_id
+        WHERE 1=1
+        <if test="user.industryCode != null and user.industryCode != ''">
+            and ia.industry_code = #{user.industryCode}
+        </if>
+        <if test="user.appVerCode != null and user.appVerCode != ''">
+            and ia.app_ver_code = #{user.appVerCode}
+        </if>
+        <foreach collection="user.roleIds" item="item" open=" and ria.role_id IN (" close=")" separator=",">
+            #{item}
+        </foreach>
+        ) tmp on tmp.menu_id = m.MENU_ID
+        WHERE
+        1=1
+        <if test='user.userType == "0"'>
+            and m.MENU_CLASSIFY like '%0%'
+        </if>
+        <if test='user.userType == "2"'>
+            and m.MENU_CLASSIFY like '%1%'
+        </if>
+    </select>
+
+    <select id="selectMenuPermsByUser" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="com.chinatower.platform.auth.project.entity.dto.RolePermUrlDto">
+        SELECT DISTINCT
+        tmp.role_id,
+        m.perm_url
+        FROM
+        sys_menu m inner join (SELECT
+        ria.role_id,
+        ia.menu_id
+        FROM
+        sys_industry_auth ia
+        INNER JOIN sys_role_industry_auth ria ON ia.auth_id = ria.auth_id
+        WHERE 1=1
+        <if test="user.industryCode != null and user.industryCode != ''">
+            and ia.industry_code = #{user.industryCode}
+        </if>
+        <if test="user.appVerCode != null and user.appVerCode != ''">
+            and ia.app_ver_code = #{user.appVerCode}
+        </if>
+        <foreach collection="user.roleIds" item="item" open=" and ria.role_id IN (" close=")" separator=",">
+            #{item}
+        </foreach>
+        ) tmp on tmp.menu_id = m.MENU_ID
+        WHERE
+        1=1
+        <if test='user.userType == "0"'>
+            and m.MENU_CLASSIFY like '%0%'
+        </if>
+        <if test='user.userType == "2"'>
+            and m.MENU_CLASSIFY like '%1%'
+        </if>
+    </select>
+
+    <select id="selectMenuPermsByRoleId" parameterType="Long" resultType="String">
+        select distinct m.PERM_URL
+        from sys_menu m INNER JOIN (
+            SELECT
+                ria.role_id,
+                ia.menu_id
+            FROM
+                sys_industry_auth ia
+                    INNER JOIN sys_role_industry_auth ria ON ia.auth_id = ria.auth_id
+            WHERE
+                ria.role_id = #{roleId}
+        ) tmp ON m.menu_id = tmp.menu_id
+    </select>
+
+    <update id="updatePassword">
+        update sys_user set password = #{password}, update_by = #{username}, update_time = current_timestamp() , pwd_update_time = current_timestamp() where user_id = #{userId}
+    </update>
+
+    <update id="updateSysUser" parameterType="com.chinatower.platform.entity.admin.SysUser">
+        update sys_user
+        <set>
+            <if test="deptId != null and deptId != ''">dept_id = #{deptId},</if>
+            <if test="nickName != null and nickName != ''">nick_name = #{nickName},</if>
+            <if test="email != null and email != ''">email = #{email},</if>
+            <if test="phonenumber != null and phonenumber != ''">phonenumber = #{phonenumber},</if>
+            <if test="sex != null and sex != ''">sex = #{sex},</if>
+            <if test="avatar != null and avatar != ''">avatar = #{avatar},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="loginIp != null and loginIp != ''">login_ip = #{loginIp},</if>
+            <if test="loginDate != null">login_date = #{loginDate},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="loginFailNum != null">login_fail_num = #{loginFailNum},</if>
+            update_time = #{updateTime}
+        </set>
+        where user_id = #{userId}
+    </update>
+
+    <select id="getTenantUsers" parameterType="Long" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select
+        <include refid="SysUser_clonum"></include>
+        from sys_user where del_flag = '0'  and is_tenant_admin = '1'  and tenant_id in (
+        select  a.tenant_id  from  sys_tenant_info a where  1=1  ${dataScope})
+    </select>
+
+    <select id="selectUserByUserId" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select
+        <include refid="SysUser_clonum"></include>
+        from sys_user where user_id=#{userId}
+    </select>
+
+    <!--<select id="selectAppVerCodes"  parameterType="java.util.Map" resultType="com.chinatower.platform.entity.even.SysIndustryViewRel">
+        select a.industry_code,a.app_ver_code,c.app_ver_name,c.img_url
+        from sys_industry_ver_conf a left join
+        sys_tenant_trade b on a.app_ver_code=b.app_ver_code
+         where  b.tenant_id  = #{tenantId}
+        and a.industry_code
+        <foreach collection="tradeId" item="item" index="index" open=" in (" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>-->
+
+    <select id="selectUserAppVerCodesByDeptId" resultType="com.chinatower.platform.entity.even.SysIndustryViewRel">
+        SELECT
+            d.INDUSTRY_CODE,
+            d.APP_VER_CODE,
+            ic.industry_name,
+            ic.img_url
+        FROM
+            sys_dept d
+                LEFT JOIN sys_industry_conf ic ON d.INDUSTRY_CODE = ic.industry_code and ic.delete_flag = 0
+        WHERE
+            FIND_IN_SET( d.DEPT_ID, #{deptIds}) and d.del_flag = '0'
+            <if test="platformCode != null and platformCode != ''">
+                and ic.accept_node = #{platformCode}
+            </if>
+    </select>
+    <select id="selectCurrentDept" resultType="com.chinatower.platform.entity.admin.SysDept">
+        SELECT
+            d.*
+        FROM
+            sys_dept d
+        WHERE
+            FIND_IN_SET( d.DEPT_ID, #{deptIds} ) AND d.INDUSTRY_CODE=#{industryCode}  and d.del_flag = '0'
+    </select>
+    <select id="getPermissions" resultType="java.util.HashMap">
+        SELECT
+            i.device_code AS deviceCode,
+            i.device_name AS deviceName,
+            u.tenant_id AS tenantId,
+            i.province_id AS provinceId,
+            a1.area_name AS provinceName ,
+            i.city_id AS cityId,
+            a2.area_name AS cityName,
+            i.county_id AS countyId,
+            a3.area_name AS countyName
+        FROM
+            vm_device_info_t i
+                LEFT JOIN vm_organ_device_rel_t t ON t.device_code = i.device_code
+                LEFT JOIN sys_user u ON u.dept_id = t.org_id
+                LEFT JOIN sys_area a1 ON a1.AREA_CODE = i.province_id
+                LEFT JOIN sys_area a2 ON a2.AREA_CODE = i.city_id
+                LEFT JOIN sys_area a3 ON a3.AREA_CODE = i.county_id
+                AND u.tenant_id = t.tenant_id
+        WHERE
+            u.user_id = #{userId}
+          AND i.province_id IS NOT NULL
+          AND u.del_flag = '0'
+          AND t.delete_flag = '0'
+
+    </select>
+
+    <select id="validateSwitchUser" parameterType="com.chinatower.platform.auth.model.SwitchUserDTO" resultType="java.lang.Long">
+        SELECT
+            count(*)
+        FROM
+            sys_user u
+        WHERE
+            u.user_type = '2'
+          AND u.is_tenant_admin = 1
+          AND u.USER_NAME = #{userName}
+            ${dataScope}
+    </select>
+
+    <select id="selectStreeByDeptId" resultType="com.chinatower.platform.entity.admin.SysAreaStreet">
+        select * from sys_area where area_code in (select street_area_code from sys_dept_street_rel where dept_id=#{deptId})
+                                 and area_code IS NOT NULL AND AREA_PARENT_CODE is not NULL
+    </select>
+
+
+    <select id="selectAreaListByDeptId" resultType="com.chinatower.platform.entity.admin.SysDeptStreetRel">
+        select sdsr.DEPT_ID, sdsr.STREET_AREA_CODE,sdsr.PROVINCE_CODE,sdsr.CITY_CODE  from (select * from
+            sys_dept WHERE  dept_id=#{deptId} or PARENT_ID=#{deptId} ) a LEFT JOIN sys_dept_street_rel sdsr on
+            a.DEPT_ID = sdsr.DEPT_ID
+    </select>
+
+    <select id="selectParent" resultType="com.chinatower.platform.entity.admin.SysAreaStreet">
+        select * from sys_area where area_code in (
+        select area_parent_code from sys_area where area_code in
+        <foreach collection="list" item="areacode" index="index" open="(" close=")" separator=",">
+            #{areacode}
+        </foreach>
+        )
+    </select>
+
+    <select id="selectALLDeptListByDeptId" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="java.util.Map">
+        SELECT
+        d.dept_id AS deptCode,
+        d.DEPT_NAME AS deptName,
+        d.parent_id AS parentdeptCode,
+        d.order_num AS orderNum
+        FROM
+        sys_dept d
+        WHERE
+        d.del_flag = '0'
+        AND d.TENANT_ID = #{tenantId}
+        AND d.industry_code = #{industryCode}
+        AND d.APP_VER_CODE = #{appVerCode}
+        AND EXISTS (
+        WITH recursive t1 ( dept_id, parent_id ) AS (
+        SELECT
+        t0.dept_id,
+        t0.parent_id
+        FROM
+        sys_dept t0
+        WHERE
+        t0.dept_id = #{deptId}
+        UNION ALL
+        SELECT
+        t2.dept_id,
+        t2.parent_id
+        FROM
+        sys_dept t2,
+        t1
+        WHERE
+        t2.parent_id = t1.dept_id
+        ) SELECT
+        1
+        FROM
+        t1
+        WHERE
+        t1.dept_id = d.DEPT_ID
+        )
+        <if test="dataScope != null and dataScope != ''">
+            ${dataScope}
+        </if>
+        ORDER BY
+        d.parent_id ASC,
+        d.dept_id ASC,
+        d.order_num ASC
+    </select>
+
+    <select id="selectALLStreetListByDeptId" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="java.util.Map">
+        SELECT
+            d.dept_id AS deptCode,
+            d.DEPT_NAME AS deptName,
+            d.parent_id AS parentdeptCode,
+            d.order_num AS orderNum,
+            d2.PROVINCE_CODE,
+            d2.CITY_CODE,
+            d2.COUNTY_CODE,
+            d2.industry_code,
+            d2.APP_VER_CODE
+        FROM
+            sys_dept d
+                LEFT JOIN sys_dept_street_rel d2 ON d.dept_id = d2.dept_id
+                AND d.TENANT_ID = d2.TENANT_ID
+                AND d.industry_code = d2.industry_code
+                AND d.APP_VER_CODE = d2.APP_VER_CODE
+        WHERE
+            d.del_flag = '0'
+          AND d.TENANT_ID = #{tenantId}
+          AND d.industry_code = #{industryCode}
+          AND d.APP_VER_CODE = #{appVerCode}
+          AND EXISTS (
+                WITH recursive t1 ( dept_id, parent_id ) AS (
+                    SELECT
+                        t0.dept_id,
+                        t0.parent_id
+                    FROM
+                        sys_dept t0
+                    WHERE
+                        t0.dept_id = #{deptId}
+                    UNION ALL
+                    SELECT
+                        t2.dept_id,
+                        t2.parent_id
+                    FROM
+                        sys_dept t2,
+                        t1
+                    WHERE
+                        t2.parent_id = t1.dept_id
+                ) SELECT
+                1
+                FROM
+                t1
+                WHERE
+                t1.dept_id = d.DEPT_ID
+            )
+        ORDER BY
+            d.parent_id ASC,
+            d.dept_id ASC,
+            d.order_num ASC
+    </select>
+
+    <select id="selectALLDeviceListByDeptId" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="java.util.Map">
+        SELECT
+        d.dept_id AS deptCode,
+        d.DEPT_NAME AS deptName,
+        d.parent_id AS parentdeptCode,
+        d.order_num AS orderNum,
+        d2.device_code,
+        d2.device_type,
+        d2.industry_code,
+        d2.APP_VER_CODE
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t d2 ON d.dept_id = d2.dept_id
+        AND d.TENANT_ID = d2.TENANT_ID
+        AND d.industry_code = d2.industry_code
+        AND d.APP_VER_CODE = d2.APP_VER_CODE
+        WHERE
+        d.del_flag = '0'
+        AND d2.delete_flag = '0'
+        AND d.TENANT_ID = #{tenantId}
+        AND d.industry_code = #{industryCode}
+        AND d.APP_VER_CODE = #{appVerCode}
+        AND EXISTS (
+        WITH recursive t1 ( dept_id, parent_id ) AS (
+        SELECT
+        t0.dept_id,
+        t0.parent_id
+        FROM
+        sys_dept t0
+        WHERE
+        t0.dept_id = #{deptId}
+        UNION ALL
+        SELECT
+        t2.dept_id,
+        t2.parent_id
+        FROM
+        sys_dept t2,
+        t1
+        WHERE
+        t2.parent_id = t1.dept_id
+        ) SELECT
+        1
+        FROM
+        t1
+        WHERE
+        t1.dept_id = d.DEPT_ID
+        )
+        <if test="dataScope != null and dataScope != ''">
+            ${dataScope}
+        </if>
+        ORDER BY
+        d.parent_id ASC,
+        d.dept_id ASC,
+        d.order_num ASC
+    </select>
+
+    <select id="selectALLWeixingListByDeptId" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="java.util.Map">
+        SELECT
+        d.dept_id AS deptCode,
+        d.DEPT_NAME AS deptName,
+        d.parent_id AS parentdeptCode,
+        d.order_num AS orderNum,
+        d2.province_code,
+        d2.city_code,
+        d2.county_code,
+        d2.street_code,
+        d2.category_code,
+        d2.industry_code,
+        d2.APP_VER_CODE
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_street_rel_t d2 ON d.dept_id = d2.dept_id
+        AND d.TENANT_ID = d2.TENANT_ID
+        AND d.industry_code = d2.industry_code
+        AND d.APP_VER_CODE = d2.APP_VER_CODE
+        WHERE
+        d.del_flag = '0'
+        AND d2.delete_flag = '0'
+        AND d.TENANT_ID = #{tenantId}
+        AND d.industry_code = #{industryCode}
+        AND d.APP_VER_CODE = #{appVerCode}
+        AND EXISTS (
+        WITH recursive t1 ( dept_id, parent_id ) AS (
+        SELECT
+        t0.dept_id,
+        t0.parent_id
+        FROM
+        sys_dept t0
+        WHERE
+        t0.dept_id = #{deptId}
+        UNION ALL
+        SELECT
+        t2.dept_id,
+        t2.parent_id
+        FROM
+        sys_dept t2,
+        t1
+        WHERE
+        t2.parent_id = t1.dept_id
+        ) SELECT
+        1
+        FROM
+        t1
+        WHERE
+        t1.dept_id = d.DEPT_ID
+        )
+        <if test="dataScope != null and dataScope != ''">
+            ${dataScope}
+        </if>
+        ORDER BY
+        d.parent_id ASC,
+        d.dept_id ASC,
+        d.order_num ASC
+    </select>
+
+    <select id="selectAuthTokenInfo" parameterType="java.lang.String" resultType="com.chinatower.platform.auth.model.SysAuthTokenVo">
+        SELECT user_id as userId, create_time as createTime
+        FROM sys_auth_token_t where uuid=#{uuid} order by create_time desc limit 1
+    </select>
+
+    <insert id="insertQrLogin" parameterType="com.chinatower.platform.auth.model.QrLoginDTO">
+        INSERT INTO sys_login_qr_t(code, status, create_time) values (#{code}, #{status}, now())
+    </insert>
+
+    <select id="getQrLoginInfo" parameterType="java.lang.String" resultType="com.chinatower.platform.auth.model.QrLoginDTO">
+        SELECT status,create_time,user_id,app_login_node,token
+        FROM sys_login_qr_t where code = #{code}
+    </select>
+
+    <update id="updateQrLoginInfo"  parameterType="com.chinatower.platform.auth.model.QrLoginDTO">
+        update sys_login_qr_t
+        <set>
+            <if test="status != null and status != '' ">
+                status = #{status},
+            </if>
+            <if test="userId != null and userId != '' ">
+                user_id = #{userId},
+            </if>
+            <if test="appLoginNode != null and appLoginNode != '' ">
+                app_login_node = #{appLoginNode},
+            </if>
+            <if test="token != null and token != '' ">
+                token = #{token},
+            </if>
+            update_time = now()
+        </set>
+        where code = #{code}
+    </update>
+
+    <delete id="deleteByDate">
+        DELETE FROM sys_login_qr_t
+        WHERE DATE_SUB(CURDATE(), INTERVAL 1 MONTH) > create_time and status != '2'
+    </delete>
+
+    <insert id="insertSwitchLogin" parameterType="com.chinatower.platform.auth.model.SwitchLoginVo">
+        INSERT INTO vm_platform_switch_data(uuid, token, json, creator, create_time, delete_flag, refresh_token, extend)
+        values (#{uuid}, #{token}, #{json}, #{creator}, now(), 0, #{refreshToken}, #{extend})
+    </insert>
+
+    <select id="getSwitchLogin" resultType="com.chinatower.platform.auth.model.SwitchLoginVo">
+        SELECT
+            uuid,
+            token,
+            json,
+            refresh_token,
+            extend
+        FROM
+            vm_platform_switch_data
+        WHERE
+            delete_flag = 0
+          AND uuid = #{uuid}
+    </select>
+
+    <delete id="updateSwitchLogin">
+        UPDATE vm_platform_switch_data
+        SET delete_flag = 1,
+            update_time = now()
+        WHERE
+            uuid = #{uuid}
+    </delete>
+
+    <select id="checkPlatformCode" resultType="java.lang.String">
+        SELECT DISTINCT
+            t2.accept_node
+        FROM
+            vm_order_customer t2
+        WHERE
+            t2.tenant_id = #{tenantId}
+          AND t2.ord_status IN ( 0, 1, 2 )
+    </select>
+    <select id="findWhiteIpList" resultType="com.chinatower.auth.api.entity.WhiteIpDto">
+        SELECT
+            wi.ip_start ipStart,
+            wi.ip_end ipEnd
+        FROM sys_user u LEFT JOIN vm_white_ip wi ON u.user_id = wi.user_id
+        WHERE u.del_flag = '0' AND u.white_ip_flag = 1 AND wi.delete_flag = 0 AND u.user_name = #{username}
+    </select>
+</mapper>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderSensorDeviceMapper">
+
+    <update id="cancelByOrderCode">
+        update vm_order_sensor_devices
+        set ord_status = 3, update_time = now()
+        where order_code = #{orderCode} and ord_status in (0,1,2);
+    </update>
+
+
+    <select id="getTenantSensorDeviceList" resultType="com.chinatower.system.api.model.DeviceTreeVO">
+        SELECT
+            de.province_id,
+            de.city_id,
+            de.county_id,
+            de.device_code,
+            de.device_name,
+            ord.industry_code,
+            ord.app_ver_code as appVersion,
+            de.town_code town_code
+        FROM
+            vm_order_sensor_devices ord
+                JOIN vm_iot_device_t de ON de.device_code = ord.device_code
+        WHERE
+            de.delete_flag = '0'
+          AND de.province_id != ''
+	AND de.province_id IS NOT NULL
+	AND de.city_id != ''
+	AND de.city_id IS NOT NULL
+	AND de.county_id != ''
+	AND de.county_id IS NOT NULL
+	AND ord.order_code = #{orderCode}
+        <if test='categoryCode != null and categoryCode != ""'>
+            and ord.category_code = #{categoryCode}
+        </if>
+          and ord.ord_status in (0,1,2)
+        ORDER BY
+            de.province_id,
+            de.city_id,
+            de.county_id,
+            de.town_code;
+    </select>
+
+    <select id="getOrderSensorDeviceByOrderCodeAndPackageCode" resultType="com.chinatower.platform.entity.order.OrderDevicesVO">
+        select order_code,package_code,tenant_id,category_code,device_code,
+               device_name,site_code,site_name,adm_code,area_code,public_site_code,
+               move_sign,status,longitude, location,latitude,height,industry_code,app_ver_code,
+               ord_status,delete_flag,create_time,update_time,accept_node,access_node
+        from vm_order_sensor_devices a
+        where
+          a.delete_flag = '0'
+        and a.category_code = #{categoryCode}
+        and a.order_code = #{orderCode}
+        and a.package_code = #{packageCode}
+            ${dataScope}
+        order by a.create_time, a.id desc
+    </select>
+
+    <select id="getOrderRadarDeviceByOrderCodesAndPackageCodes" resultType="com.chinatower.common.core.domain.OrderSensorDeviceDO">
+        select order_code,package_code,tenant_id,category_code,device_code,
+               device_name,site_code,site_name,adm_code,area_code,public_site_code,
+               move_sign,status,longitude, location,latitude,height,industry_code,app_ver_code,
+               ord_status,delete_flag,create_time,update_time,accept_node,access_node
+        from vm_order_sensor_devices a
+        where  a.delete_flag = '0'
+          and a.category_code = 1
+        and a.order_code in
+        <foreach collection="orderCodeList" item="orderCode" index="index" open="(" close=")" separator=",">
+            #{orderCode}
+        </foreach>
+        AND a.package_code in
+        <foreach collection="packageCodeList" item="packageCode" index="index" open="(" close=")" separator=",">
+            #{packageCode}
+        </foreach>
+        order by create_time desc
+    </select>
+
+</mapper>

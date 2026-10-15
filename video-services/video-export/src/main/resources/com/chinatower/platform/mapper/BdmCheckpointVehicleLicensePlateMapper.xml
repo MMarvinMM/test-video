@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.BdmCheckpointVehicleLicensePlateMapper">
+    <select id="listVehicleLicensePlateByCondition"
+            resultType="com.chinatower.bdm.api.entity.CheckpointVehicleLicensePlate">
+        SELECT
+            a.tenant_id,
+            b.tenant_name as tenantName,
+            c.industry_name,
+            a.app_ver_code,
+            a.vehicle_number,
+            a.valid_period,
+            d.vehicle_name as vehicleName,
+            a.load_weight,
+            a.creator,
+            a.modifier,
+            a.create_time,
+            a.update_time,
+            CONCAT(IFNULL(e.area_name, ''),IFNULL(f.area_name, ''),IFNULL(g.area_name, '')) AS administrativeArea
+        FROM
+            vm_checkpoint_vehicle_license_plate_t a
+            LEFT JOIN sys_tenant_info b ON a.tenant_id = b.tenant_id
+            LEFT JOIN sys_industry_conf c on a.industry_code = c.industry_code and c.delete_flag = 0
+            LEFT JOIN vm_checkpoint_vehicle_type_t d on a.vehicle_type = d.vehicle_type and d.delete_flag = 0
+            LEFT JOIN sys_area e ON a.province_code = e.area_code AND e.status = 0
+            LEFT JOIN sys_area f ON a.city_code = f.area_code AND f.status = 0
+            LEFT JOIN sys_area g ON a.county_code = g.area_code AND g.status = 0
+        <where>
+            a.delete_flag =0
+            AND
+            c.accept_node = #{acceptNode}
+            <if test="blackOrWhite != null  and blackOrWhite != ''"> AND a.black_or_white = #{blackOrWhite}</if>
+            <if test="tenantId != null  and tenantId != ''"> AND a.tenant_id = #{tenantId}</if>
+            <if test="industryCode != null  and industryCode != ''"> AND a.industry_code = #{industryCode}</if>
+            <if test="vehicleNumber != null  and vehicleNumber != ''"> AND a.vehicle_number like concat('%',#{vehicleNumber},'%') </if>
+            <if test="vehicleType != null  and vehicleType != ''"> AND a.vehicle_type = #{vehicleType}</if>
+            <if test="creator != null  and creator != ''"> AND a.creator like concat('%',#{creator},'%')</if>
+            <if test="createTimeStart != null and createTimeStart != ''">
+                <![CDATA[and DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i:%s') >= DATE_FORMAT(#{createTimeStart}, '%Y-%m-%d %H:%i:%s')]]>
+            </if>
+            <if test="createTimeEnd != null and createTimeEnd != ''">
+                <![CDATA[and DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i:%s') <= DATE_FORMAT(#{createTimeEnd}, '%Y-%m-%d %H:%i:%s')]]>
+            </if>
+            <if test="modifier != null  and modifier != ''"> AND a.modifier like concat('%',#{modifier},'%')</if>
+            <if test="updateTimeStart != null and updateTimeStart != ''">
+                <![CDATA[and DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i:%s') >= DATE_FORMAT(#{updateTimeStart}, '%Y-%m-%d %H:%i:%s')]]>
+            </if>
+            <if test="updateTimeEnd != null and updateTimeEnd != ''">
+                <![CDATA[and DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i:%s') <= DATE_FORMAT(#{updateTimeEnd}, '%Y-%m-%d %H:%i:%s')]]>
+            </if>
+        </where>
+        <choose>
+            <when test="sort eq 'asc' and sortName eq 'createTime'">
+                ORDER BY  a.create_time ASC
+            </when>
+            <when test="sort eq 'asc' and sortName eq 'updateTime'">
+                ORDER BY a.update_time ASC
+            </when>
+            <when test="sort eq 'desc' and sortName eq 'createTime'">
+                ORDER BY a.create_time DESC
+            </when>
+            <when test="sort eq 'desc' and sortName eq 'updateTime'">
+                ORDER BY a.update_time DESC
+            </when>
+        </choose>
+    </select>
+</mapper>

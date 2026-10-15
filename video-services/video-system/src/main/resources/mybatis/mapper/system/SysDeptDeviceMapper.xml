@@ -1,0 +1,879 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysDeptDeviceMapper">
+    <select id="getCameras" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT d.DEPT_ID, it.device_code,IFNULL(id.device_name,it.device_name) device_name,it.province_id,it.city_id,it.town_code,it.county_id
+        from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_device_info_t it ON it.device_code = dt.device_code
+        left join vm_order_devices od on it.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t id ON id.device_code = it.device_code and d.TENANT_ID = id.TENANT_ID and id.delete_flag='0'
+        AND od.industry_code = id.industry_code
+        WHERE it.delete_flag = '0' AND dt.TENANT_ID=#{tenantId}
+        <if test="deptId != null and deptId != ''">
+            and  d.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        and dt.industry_code=#{industryCode} and  dt.device_type NOT IN(8,9,10,11,12,13)
+           and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} and od.industry_code=#{industryCode}
+        ${dataScope}
+    </select>
+
+    <select id="getRaders" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT d.DEPT_ID, it.device_code,IFNULL(id.device_name,it.device_name) device_name,it.province_id,it.city_id,it.town_code,it.county_id
+        from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_iot_device_t it ON it.device_code = dt.device_code
+        left join vm_order_sensor_devices od on it.device_code = od.device_code
+        LEFT JOIN vm_tenant_iot_device_rel_t id ON id.device_code = it.device_code and d.TENANT_ID = id.TENANT_ID
+        AND od.industry_code = id.industry_code
+        WHERE it.delete_flag = '0' AND dt.device_type = 10 and it.category_code=1 and dt.TENANT_ID=#{tenantId} and dt.industry_code=#{industryCode}
+        <if test="deptId != null and deptId != ''">
+            and  d.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} and od.industry_code=#{industryCode} AND od.category_code=1
+        ${dataScope}
+    </select>
+
+    <select id="getSensors" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT d.DEPT_ID, it.device_code,IFNULL(id.device_name,it.device_name) device_name,it.province_id,it.city_id,it.town_code,it.county_id
+        from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_iot_device_t it ON it.device_code = dt.device_code
+        left join vm_order_sensor_devices od on it.device_code = od.device_code
+        LEFT JOIN vm_tenant_iot_device_rel_t id ON id.device_code = it.device_code and d.TENANT_ID = id.TENANT_ID
+        AND od.industry_code = id.industry_code
+        WHERE it.delete_flag = '0' AND dt.device_type = 8 and it.category_code=2 and dt.TENANT_ID=#{tenantId} and dt.industry_code=#{industryCode}
+        <if test="deptId != null and deptId != ''">
+            and  d.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} and od.industry_code=#{industryCode} AND od.category_code=2
+        ${dataScope}
+    </select>
+
+    <select id="getSatellites" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+                        rt.DEPT_ID,
+                        rt.province_code province_id,
+                        rt.city_code     city_id,
+                        rt.county_code   county_id,
+                        rt.street_code   town_code
+        from vm_organ_street_rel_t rt
+                 LEFT JOIN sys_dept d ON rt.DEPT_ID = d.DEPT_ID
+                 left join vm_order_services_rel od on od.provice_code = rt.province_code
+            and od.city_code = rt.city_code
+            and od.county_code = rt.county_code
+        WHERE rt.delete_flag = '0' AND rt.category_code = 9
+          and rt.TENANT_ID = #{tenantId}
+          and rt.industry_code = #{industryCode}
+        <if test="deptId != null and deptId != ''">
+            and rt.DEPT_ID = #{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND rt.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+          and od.ord_status IN (0, 1, 2)
+          AND od.tenant_id = #{tenantId}
+          and od.industry_code = #{industryCode}
+          AND od.service_code = 9
+            ${dataScope}
+    </select>
+
+    <select id="getUavs" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+            d.DEPT_ID,
+            it.device_code,
+            IFNULL(
+                id.device_name,
+                it.device_name
+            ) device_name,
+            it.province_code AS province_id,
+            it.city_code AS city_id,
+            it.town_code,
+            it.county_code county_id,
+            (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName
+        FROM
+            sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_uav_device_info_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_uav_devices od ON it.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = it.device_code
+        AND d.TENANT_ID = id.TENANT_ID AND d.INDUSTRY_CODE = id.industry_code
+        and id.device_type = 1
+        left join `vm_uav_nest_device_info` nest on it.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t nrel on nrel.device_code = nest.device_code AND nrel.tenant_id = od.tenant_id
+        and nrel.industry_code = od.industry_code
+        and nrel.delete_flag = '0'
+        and nrel.device_type = 4
+        WHERE
+        it.delete_flag = '0' AND
+        dt.device_type = 11
+        AND dt.TENANT_ID = #{tenantId} and dt.industry_code=#{industryCode}
+        <if test="deptId != null and deptId != ''">
+            and d.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        AND od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId} and od.industry_code=#{industryCode}
+        ${dataScope}
+    </select>
+
+    <select id="getUavNest" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        d.DEPT_ID,
+        it.device_code,
+        IFNULL(
+        id.device_name,
+        it.device_name
+        ) device_name,
+        it.province_code AS province_id,
+        it.city_code AS city_id,
+        it.town_code,
+        it.county_code county_id
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_uav_nest_device_info it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_uav_nest_devices od ON it.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = it.device_code
+        AND d.TENANT_ID = id.TENANT_ID AND d.INDUSTRY_CODE = id.industry_code
+        and id.device_type = 4
+        WHERE
+        it.delete_flag = '0' AND
+        dt.device_type = 15
+        AND dt.TENANT_ID = #{tenantId} and dt.industry_code=#{industryCode}
+        <if test="deptId != null and deptId != ''">
+            and d.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        AND od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId} and od.industry_code=#{industryCode}
+        ${dataScope}
+    </select>
+
+
+    <select id="getHorns" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+         SELECT DISTINCT
+            d.DEPT_ID,
+            it.device_code,
+            IFNULL(
+                id.device_name,
+                it.device_name
+            ) device_name,
+            it.province_code AS province_id,
+            it.city_code AS city_id,
+            it.town_code,
+            it.county_code county_id
+        FROM
+            sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_horn_device_info_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_horn_devices od ON it.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = it.device_code
+        AND d.TENANT_ID = id.TENANT_ID AND d.INDUSTRY_CODE = id.industry_code
+        WHERE
+        it.delete_flag = '0' AND
+        dt.device_type = 12
+        AND dt.TENANT_ID = #{tenantId} and dt.industry_code=#{industryCode}
+        <if test="deptId != null and deptId != ''">
+            and d.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        AND od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId} and od.industry_code=#{industryCode}
+        ${dataScope}
+    </select>
+
+
+    <select id="getAlarmType" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+        SELECT DISTINCT
+        t1.dept_id,
+        t2.warning_source,
+        t2.type_value
+        FROM
+        sys_dept t1,vm_organ_alarm_type_rel_t t2
+        WHERE t1.dept_id = t2.dept_id AND t2.delete_flag = '0'
+        AND	t1.DEL_FLAG = '0'
+        AND t1.TENANT_ID = #{tenantId} and t1.industry_code=#{industryCode}
+        <if test="deptId != null and deptId != ''">
+            and t1.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND t1.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="getCamerasScop" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT di.device_code,IFNULL(id.device_name,di.device_name) device_name,di.city_id,di.town_code,di.county_id,di.province_id
+        from vm_order_devices od LEFT JOIN vm_device_info_t di ON di.device_code=od.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t id ON id.device_code = di.device_code and od.TENANT_ID = id.TENANT_ID
+        AND od.industry_code = id.industry_code
+        WHERE di.delete_flag = '0' AND od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId}
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+    <select id="getRadersScop" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT IFNULL(id.device_name,di.device_name) device_name,di.device_code,di.province_id,di.city_id,di.town_code,di.county_id
+        from vm_order_sensor_devices od LEFT JOIN vm_iot_device_t di ON di.device_code=od.device_code
+        LEFT JOIN vm_tenant_iot_device_rel_t id ON id.device_code = di.device_code and od.TENANT_ID = id.TENANT_ID
+        AND od.industry_code = id.industry_code
+        WHERE di.delete_flag = '0' AND od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} AND od.category_code=1 and di.category_code=1
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+
+    <select id="getSensorsScop" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT di.device_code,IFNULL(id.device_name,di.device_name) device_name,di.province_id,di.city_id,di.town_code,di.county_id
+        from vm_order_sensor_devices od LEFT JOIN vm_iot_device_t di ON di.device_code=od.device_code
+        LEFT JOIN vm_tenant_iot_device_rel_t id ON id.device_code = di.device_code and od.TENANT_ID = id.TENANT_ID
+        AND od.industry_code = id.industry_code
+        WHERE di.delete_flag = '0' AND od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} AND od.category_code=2 and di.category_code=2
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+    
+    <select id="getSatellitesScop" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT od.provice_code province_id,
+        od.city_code city_id,
+        od.street_code town_code,
+        od.county_code county_id from vm_order_services_rel od
+        WHERE od.delete_flag = 0 AND od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} AND od.service_code=9
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+    <select id="getUavsScop" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        IFNULL(
+        id.device_name,
+        di.device_name
+        ) device_name,
+        di.device_code,
+        di.province_code AS provinceId,
+        di.city_code AS cityId,
+        di.town_code,
+        di.county_code AS countyId,
+        (case when length(IFNULL(nrel.device_name, '')) = 0 then nest.device_name else nrel.device_name end ) uavNestName
+        FROM
+        vm_order_uav_devices od
+        LEFT JOIN vm_uav_device_info_t di ON di.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = di.device_code
+        AND od.TENANT_ID = id.TENANT_ID AND od.industry_code = id.industry_code
+        and id.device_type = 1
+        left join `vm_uav_nest_device_info` nest on di.uav_nest_code = nest.device_code
+        left join vm_tenant_device_common_rel_t nrel on nrel.device_code = nest.device_code AND nrel.tenant_id = od.tenant_id
+        and nrel.industry_code = od.industry_code
+        and nrel.delete_flag = '0'
+        and nrel.device_type = 4
+
+        WHERE
+        di.delete_flag = '0' AND
+        od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId}
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+
+    </select>
+
+
+    <select id="getHornsScop" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        IFNULL(
+        id.device_name,
+        di.device_name
+        ) device_name,
+        di.device_status,
+        di.device_code,
+        di.province_code AS provinceId,
+        di.city_code AS cityId,
+        di.town_code,
+        di.county_code AS countyId
+        FROM
+        vm_order_horn_devices od
+        LEFT JOIN vm_horn_device_info_t di ON di.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = di.device_code
+        AND od.TENANT_ID = id.TENANT_ID AND od.industry_code = id.industry_code
+        WHERE
+        di.delete_flag = '0' AND
+        od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId}
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+
+    <select id="getCamerasByTenantIdUser" resultType="com.chinatower.system.api.model.DeviceVO">
+        SELECT DISTINCT it.device_code,IFNULL(od.device_name,it.device_name) device_name,it.device_status,it.province_id,it.city_id,it.town_code,it.county_id,dt.device_type from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_device_info_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_devices od ON it.device_code=od.device_code
+        WHERE dt.TENANT_ID=#{tenantId}  and  dt.device_type NOT IN(8,9,10)
+        and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId}
+        <if test="industryCode != null and industryCode !=''">
+            and dt.industry_code=#{industryCode}
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="deptIds != null">
+            and d.DEPT_ID IN
+            <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+    <select id="getCamerasByTenantId" resultType="com.chinatower.system.api.model.DeviceVO">
+        SELECT DISTINCT it.device_code,IFNULL(od.device_name,it.device_name) device_name,it.province_id,it.city_id,it.town_code,it.county_id
+        from vm_device_info_t it
+        LEFT JOIN vm_order_devices od ON it.device_code=od.device_code
+        WHERE od.tenant_id=#{tenantId} AND od.ord_status IN(0,1,2)
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+
+    <select id="getRadersByTenantIdUser" resultType="com.chinatower.system.api.model.DeviceVO">
+        SELECT DISTINCT it.device_code,IFNULL(od.device_name,it.device_name)  device_name,it.province_id,it.city_id,it.town_code,it.county_id,dt.device_type  from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_iot_device_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_sensor_devices od on it.device_code = od.device_code
+        WHERE dt.device_type = 10 and it.category_code=1 and dt.TENANT_ID=#{tenantId}
+        and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId}  AND od.category_code=1
+        <if test="industryCode != null and industryCode !=''">
+            and dt.industry_code=#{industryCode}
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="deptIds != null">
+            and d.DEPT_ID IN
+            <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+    <select id="getRadersByTenantId" resultType="com.chinatower.system.api.model.DeviceVO">
+        SELECT DISTINCT it.device_code,IFNULL(od.device_name,it.device_name)  device_name,it.province_id,it.city_id,it.town_code,it.county_id
+        from vm_iot_device_t it
+        LEFT JOIN vm_order_sensor_devices od on it.device_code = od.device_code
+        WHERE od.tenant_id=#{tenantId}
+            and it.category_code=1
+            and od.ord_status IN(0,1,2)
+            AND od.category_code=1
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+    <select id="getSensorsByTenantIdUser" resultType="com.chinatower.system.api.model.DeviceVO">
+        SELECT DISTINCT it.device_status, it.device_code,it.device_type iotDeviceType, IFNULL(od.device_name,it.device_name) device_name,it.province_id,it.city_id,it.town_code,it.county_id,dt.device_type  from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_iot_device_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_sensor_devices od on it.device_code = od.device_code
+        WHERE dt.device_type = 8 and it.category_code=2 and dt.TENANT_ID=#{tenantId}
+        and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} AND od.category_code=2
+        <if test="industryCode != null and industryCode !=''">
+            and dt.industry_code=#{industryCode}
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="deptIds != null">
+            and d.DEPT_ID IN
+            <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+    <select id="getSensorsByTenantId" resultType="com.chinatower.system.api.model.DeviceVO">
+        SELECT DISTINCT it.device_code,it.device_type iotDeviceType, IFNULL(od.device_name,it.device_name) device_name,it.province_id,it.city_id,it.town_code,it.county_id
+        from vm_iot_device_t it
+        LEFT JOIN vm_order_sensor_devices od on it.device_code = od.device_code
+        WHERE od.tenant_id=#{tenantId} and it.category_code=2
+        and od.ord_status IN(0,1,2)  AND od.category_code=2
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+
+    </select>
+
+    <select id="getSatellitesByTenantIdUser" resultType="com.chinatower.system.api.model.DeviceVO">
+        SELECT DISTINCT rt.province_code province_id,rt.city_code city_id,rt.county_code county_id,rt.street_code town_code
+        from sys_dept d LEFT JOIN vm_organ_street_rel_t rt ON rt.DEPT_ID=d.DEPT_ID
+        left join vm_order_services_rel od on od.provice_code = rt.province_code
+        and od.city_code = rt.city_code
+        and od.county_code = rt.county_code
+        WHERE rt.category_code = 9 and rt.TENANT_ID=#{tenantId}
+        and od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId}
+        AND od.service_code = 9
+        <if test="industryCode != null and industryCode !=''">
+            and rt.industry_code=#{industryCode}
+            and od.industry_code = #{industryCode}
+        </if>
+        <if test="deptIds != null">
+            and d.DEPT_ID IN
+            <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+    <select id="getUavsByTenantIdUser" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        it.device_code,
+        IFNULL(
+        id.device_name,
+        it.device_name
+        ) device_name,
+        it.province_code AS province_id,
+        it.city_code AS city_id,
+        it.town_code,
+        it.county_code county_id
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_uav_device_info_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_uav_devices od ON it.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = it.device_code
+        AND d.TENANT_ID = id.TENANT_ID AND d.INDUSTRY_CODE = id.industry_code
+        WHERE
+        dt.device_type = 11
+        AND dt.TENANT_ID = #{tenantId} and dt.industry_code=#{industryCode}
+        AND od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId} and od.industry_code=#{industryCode}
+        AND d.tenant_id = #{tenantId} and d.industry_code=#{industryCode}
+        <if test="deptIds != null">
+            and d.DEPT_ID IN
+            <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+    <select id="getHornsByTenantIdUser" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        it.device_code,
+        IFNULL(
+        id.device_name,
+        it.device_name
+        ) device_name,
+        it.province_code AS province_id,
+        it.city_code AS city_id,
+        it.town_code,
+        it.county_code county_id
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_horn_device_info_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_horn_devices od ON it.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = it.device_code
+        AND d.TENANT_ID = id.TENANT_ID AND d.INDUSTRY_CODE = id.industry_code
+        WHERE
+        dt.device_type = 12
+        AND dt.TENANT_ID = #{tenantId} and dt.industry_code=#{industryCode}
+        AND od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId} and od.industry_code=#{industryCode}
+        AND d.tenant_id = #{tenantId} and d.industry_code=#{industryCode}
+        <if test="deptIds != null">
+            and d.DEPT_ID IN
+            <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+    <select id="getSatellitesByTenantId" resultType="com.chinatower.system.api.model.DeviceVO">
+        SELECT DISTINCT od.provice_code province_id,od.city_code city_id,od.county_code county_id
+        from vm_order_services_rel od
+        WHERE od.tenant_id = #{tenantId}
+        and od.ord_status IN (0, 1, 2)
+        AND od.service_code = 9
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code = #{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+
+    <select id="getCamerasTemp" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT dt.device_code from sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        WHERE dt.TENANT_ID=#{tenantId}
+            <if test="deptIds != null">
+                and d.DEPT_ID IN
+                <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        and dt.industry_code=#{industryCode} and  dt.device_type NOT IN(8,9)
+    </select>
+
+    <select id="getCamerasTempAll" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT dt.device_code,d.dept_id from sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        WHERE dt.TENANT_ID=#{tenantId}
+        and dt.industry_code=#{industryCode} and  dt.device_type NOT IN(8,9)
+    </select>
+
+    <select id="getSensorsTemp" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT dt.device_code from sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        WHERE dt.device_type = 8 and dt.TENANT_ID=#{tenantId} and dt.industry_code=#{industryCode}
+            <if test="deptIds != null">
+                and d.DEPT_ID IN
+                <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+    </select>
+
+    <select id="getSensorsTempAll" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT dt.device_code,d.dept_id from sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        WHERE dt.device_type = 8 and dt.TENANT_ID=#{tenantId} and dt.industry_code=#{industryCode}
+    </select>
+
+    <select id="getSatellitesTemp" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT rt.province_code province_id,rt.city_code city_id,rt.county_code county_id,rt.street_code town_code from sys_dept d
+        LEFT JOIN vm_organ_street_rel_t rt ON rt.DEPT_ID=d.DEPT_ID
+        WHERE rt.category_code = 9  and rt.TENANT_ID=#{tenantId} and rt.industry_code=#{industryCode}
+            <if test="deptIds != null">
+                and d.DEPT_ID IN
+                <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+    </select>
+
+    <select id="getSatellitesTempAll" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT rt.province_code province_id,rt.city_code city_id,rt.county_code county_id,rt.street_code town_code,d.dept_id from sys_dept d
+        LEFT JOIN vm_organ_street_rel_t rt ON rt.DEPT_ID=d.DEPT_ID
+        WHERE rt.category_code = 9  and rt.TENANT_ID=#{tenantId} and rt.industry_code=#{industryCode}
+    </select>
+
+    <select id="getStreetByRadarVO" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        ot.province_id AS provinceId,
+        ot.city_id AS cityId,
+        ot.county_id AS countyId,
+        od.dept_id AS deptId
+        FROM
+        vm_organ_device_rel_t od
+        LEFT JOIN vm_iot_device_t ot ON ot.device_code = od.device_code
+        WHERE od.industry_code = #{industryCode} and od.tenant_id =#{tenantId} and ot.category_code = '1' and od.device_type = '10'
+    </select>
+    <select id="getLERsScop" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        IFNULL(
+        id.device_name,
+        di.device_name
+        ) device_name,
+        di.device_code,
+        di.province_code AS provinceId,
+        di.city_code AS cityId,
+        di.town_code,
+        di.county_code AS countyId
+        FROM
+        vm_order_recorder_devices od
+        LEFT JOIN vm_recorder_device_info_t di ON di.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = di.device_code AND id.device_type = 3
+        AND od.TENANT_ID = id.TENANT_ID AND od.industry_code = id.industry_code
+        WHERE
+        od.ord_status IN (0, 1, 2)
+        and od.delete_flag = '0'
+        and di.delete_flag = '0'
+        AND od.tenant_id = #{tenantId}
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+    <select id="getLERs" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        d.DEPT_ID,
+        it.device_code,
+        IFNULL(
+        id.device_name,
+        it.device_name
+        ) device_name,
+        it.province_code AS province_id,
+        it.city_code AS city_id,
+        it.town_code,
+        it.county_code county_id
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_recorder_device_info_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_recorder_devices od ON it.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = it.device_code
+        AND d.TENANT_ID = id.TENANT_ID AND d.INDUSTRY_CODE = id.industry_code
+        WHERE
+        dt.device_type = 13
+        and it.delete_flag = '0'
+        AND dt.delete_flag = '0'
+        AND od.delete_flag = '0'
+        AND dt.TENANT_ID = #{tenantId} and dt.industry_code=#{industryCode}
+        <if test="deptId != null and deptId != ''">
+            and d.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        AND od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId} and od.industry_code=#{industryCode}
+        ${dataScope}
+    </select>
+    <select id="getLERsByTenantIdUser" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        it.device_code,
+        IFNULL(
+        id.device_name,
+        it.device_name
+        ) device_name,
+        it.province_code AS province_id,
+        it.city_code AS city_id,
+        it.town_code,
+        it.county_code county_id
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_recorder_device_info_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_recorder_devices od ON it.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = it.device_code
+        AND d.TENANT_ID = id.TENANT_ID AND d.INDUSTRY_CODE = id.industry_code
+        WHERE
+        dt.device_type = 13
+        AND dt.TENANT_ID = #{tenantId} and dt.industry_code=#{industryCode}
+        AND od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId} and od.industry_code=#{industryCode}
+        AND d.tenant_id = #{tenantId} and d.industry_code=#{industryCode}
+        <if test="deptIds != null">
+            and d.DEPT_ID IN
+            <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+
+
+    <select id="getCamerasScopNew" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT di.city_id,di.town_code,di.county_id,di.province_id
+        from vm_order_devices od LEFT JOIN vm_device_info_t di ON di.device_code=od.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t id ON id.device_code = di.device_code and od.TENANT_ID = id.TENANT_ID
+        AND od.industry_code = id.industry_code
+        WHERE od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId}
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+    </select>
+
+
+    <select id="getCamerasNew" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT it.province_id,it.city_id,it.town_code,it.county_id
+        from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_device_info_t it ON it.device_code = dt.device_code
+        left join vm_order_devices od on it.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t id ON id.device_code = it.device_code and d.TENANT_ID = id.TENANT_ID and id.delete_flag='0'
+        AND od.industry_code = id.industry_code
+        WHERE dt.TENANT_ID=#{tenantId}
+        <if test="deptId != null and deptId != ''">
+            and  d.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        and dt.industry_code=#{industryCode} and  dt.device_type NOT IN(8,9,10,13)
+        and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} and od.industry_code=#{industryCode}
+        ${dataScope}
+    </select>
+
+    <select id="getLayers" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        d.DEPT_ID,
+        dt.layer_id as device_code,
+        sl.custom_name device_name
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_layer_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN sys_layer sl ON dt.layer_id = sl.id
+        AND d.TENANT_ID = sl.TENANT_ID
+        AND d.INDUSTRY_CODE = sl.industry_code
+        WHERE
+        dt.delete_flag = '0'
+        AND dt.TENANT_ID = #{tenantId} and dt.industry_code=#{industryCode}
+        <if test="deptId != null and deptId != ''">
+            and d.DEPT_ID=#{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getLayerScop" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        s.custom_name as device_name,
+        s.id as device_code
+        FROM
+        sys_layer s
+        LEFT JOIN vm_organ_layer_rel_t od ON od.layer_id = s.id
+        AND s.TENANT_ID = od.TENANT_ID AND s.industry_code = od.industry_code
+        WHERE
+        s.delete_flag = '0'
+        and od.delete_flag = '0'
+        AND s.tenant_id = #{tenantId}
+        <if test="industryCode != null and industryCode !=''">
+            and s.industry_code=#{industryCode}
+        </if>
+    </select>
+    <select id="getLayersByTenantIdUser" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        d.DEPT_ID,
+        dt.layer_id as device_code,
+        sl.custom_name device_name
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_layer_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN sys_layer sl ON dt.layer_id = sl.id
+        AND d.TENANT_ID = sl.TENANT_ID
+        AND d.INDUSTRY_CODE = sl.industry_code
+        WHERE
+         dt.delete_flag = '0'
+        AND dt.TENANT_ID = #{tenantId} and dt.industry_code=#{industryCode}
+        <if test='deptIds != null and deptIds.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIds" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="getUavNestScop" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        IFNULL(
+        id.device_name,
+        di.device_name
+        ) device_name,
+        di.device_code,
+        di.province_code AS provinceId,
+        di.city_code AS cityId,
+        di.town_code,
+        di.county_code AS countyId
+        FROM
+        vm_order_uav_nest_devices od
+        LEFT JOIN vm_uav_nest_device_info di ON di.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t id ON id.device_code = di.device_code
+        AND od.TENANT_ID = id.TENANT_ID AND od.industry_code = id.industry_code
+        and id.device_type = 4
+        WHERE
+        di.delete_flag = '0' AND
+        od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId}
+        <if test="industryCode != null and industryCode !=''">
+            and od.industry_code=#{industryCode}
+        </if>
+        <if test="acceptNode != null and acceptNode !=''">
+            and od.accept_node=#{acceptNode}
+        </if>
+    </select>
+
+</mapper>

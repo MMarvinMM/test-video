@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.SensorStatusDAO">
+
+    <select id="queryDevice" resultType="java.lang.String">
+        select device_code from vm_iot_device_t
+        where device_code in
+        <foreach collection="list" item="deviceCode" open="(" separator="," close=")">
+            #{deviceCode}
+        </foreach>
+        and delete_flag = 0
+    </select>
+
+    <select id="queryMonitor" parameterType="string" resultType="int">
+        select count(*) from vm_sensor_monitor_status where device_code = #{deviceCode} and monitor_code = #{monitorName}
+    </select>
+
+    <select id="queryMonitorList" resultType="com.chinatower.sync.consumer.item.MonitorStatusReprot">
+        select device_code, monitor_code monitorName, IFNULL(sensor_code, '') sensorCode
+        from vm_sensor_monitor_status
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        AND monitor_code in
+        <foreach collection="monitorNameList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="addDevice">
+      insert into vm_iot_device_t
+      (
+       device_code,
+       device_name,
+       device_type,
+       device_status,
+       province_id,
+       city_id,
+       county_id,
+       category_code,
+       remark,
+       site_code,
+       site_name,
+       public_site_code,
+       model_code,
+       height,
+       location,
+       longitude,
+       latitude,
+       area_code,
+       adm_code,
+       device_model_code,
+       access_protocols,
+       app_mod_flag,
+       town_code,
+       town_name,
+       creator,
+       modifier,
+       delete_flag,
+       create_time,
+       update_time,
+       device_period,
+       w_zone,
+       par_angle,
+       access_node
+       )
+      values
+      (
+       #{item.deviceCode},
+       #{item.deviceName},
+       #{item.catalogType},
+       #{item.onlineStatus},
+       #{item.provinceId},
+       #{item.cityId},
+       #{item.countyId},
+       #{item.deviceType},
+       #{item.remark},
+       #{item.siteCode},
+       #{item.siteName},
+       #{item.publicSiteCode},
+       #{item.manufacturer},
+       #{item.hangingHeight},
+       #{item.address},
+       #{item.longitude},
+       #{item.latitude},
+       #{item.dept},
+       #{item.adminArea},
+       #{item.deviceModel},
+       #{item.accessProtocols},
+       '0',
+       #{item.townCode},
+       #{item.townName},
+       #{item.createBy},
+       #{item.updateBy},
+       #{item.deleteFlag},
+       DATE_FORMAT(#{item.createTime}, '%Y-%m-%d %H:%i:%S'),
+       DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'),
+       #{item.devicePeriod},
+       #{item.wZone},
+       #{item.parAngle},
+       #{item.locationCode}
+       )
+    </insert>
+
+    <insert id="insertDeviceBatch" parameterType="com.chinatower.sync.consumer.item.SensorStatusReport">
+        insert into vm_iot_device_t
+        (device_code, device_name, device_type, device_status, province_id, city_id, county_id, category_code,
+        remark, site_code, site_name, public_site_code, model_code, height, location, longitude, latitude, area_code, adm_code,
+        device_model_code, access_protocols, app_mod_flag, town_code, town_name, creator, modifier, delete_flag, create_time,
+        update_time, device_period, w_zone, par_angle, access_node, demo_flag) values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode}, #{item.deviceName}, #{item.catalogType}, #{item.onlineStatus}, #{item.provinceId},
+            #{item.cityId}, #{item.countyId}, #{item.deviceType}, #{item.remark}, #{item.siteCode}, #{item.siteName},
+            #{item.publicSiteCode}, #{item.manufacturer}, #{item.hangingHeight}, #{item.address}, #{item.longitude},
+            #{item.latitude}, #{item.dept}, #{item.adminArea}, #{item.deviceModel}, #{item.accessProtocols}, '0',
+            #{item.townCode}, #{item.townName}, #{item.createBy}, #{item.updateBy}, #{item.deleteFlag},
+            DATE_FORMAT(#{item.createTime}, '%Y-%m-%d %H:%i:%S'),
+            DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'),
+            #{item.devicePeriod}, #{item.wZone}, #{item.parAngle}, #{item.locationCode}, #{item.demoFlag})
+        </foreach>
+    </insert>
+
+    <insert id="insertDeviceBatch4Aiot" parameterType="com.chinatower.sync.consumer.item.SensorStatusReport">
+        insert into vm_iot_device_t
+        (device_code, device_name, device_type, device_status, province_id, city_id, county_id, category_code,
+        remark, site_code, site_name, public_site_code, model_code, height, location, longitude, latitude, area_code, adm_code,
+        device_model_code, access_protocols, app_mod_flag, town_code, town_name, creator, modifier, delete_flag, create_time,
+        update_time, device_period, w_zone, par_angle, access_node, device_version, status_version) values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode}, #{item.deviceName}, #{item.catalogType}, #{item.onlineStatus}, #{item.provinceId},
+            #{item.cityId}, #{item.countyId}, #{item.deviceType}, #{item.remark}, #{item.siteCode}, #{item.siteName},
+            #{item.publicSiteCode}, #{item.manufacturer}, #{item.hangingHeight}, #{item.address}, #{item.longitude},
+            #{item.latitude}, #{item.dept}, #{item.adminArea}, #{item.deviceModel}, #{item.accessProtocols}, '0',
+            #{item.townCode}, #{item.townName}, #{item.createBy}, #{item.updateBy}, #{item.deleteFlag},
+            DATE_FORMAT(#{item.createTime}, '%Y-%m-%d %H:%i:%S'),
+            DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'),
+            #{item.devicePeriod}, #{item.wZone}, #{item.parAngle}, #{item.locationCode}, #{item.deviceVersion}, #{item.statusVersion})
+        </foreach>
+    </insert>
+
+    <insert id="insertMonitorBatch" parameterType="com.chinatower.sync.consumer.item.MonitorStatusReprot">
+        insert into `vm_sensor_monitor_status`
+        (device_code, sensor_code, monitor_code, status, monitor_time,create_time, monitor_desc, delete_flag)
+        values
+        <foreach collection ="list" item="item" index="index" separator =",">
+            (#{item.deviceCode},
+            #{item.sensorCode},
+            #{item.monitorName},
+            #{item.status},
+            DATE_FORMAT(#{item.monitorTime}, '%Y-%m-%d %H:%i:%S'),
+            NOW(),
+            #{item.monitorDiscription},
+            #{item.deleteFlag})
+        </foreach>
+    </insert>
+
+    <update id="updateDevice">
+      update vm_iot_device_t
+        set device_name = #{item.deviceName},
+            device_status = #{item.onlineStatus},
+            <if test='item.catalogType != null and item.catalogType != ""'>
+                device_type = #{item.catalogType},
+            </if>
+            province_id = #{item.provinceId},
+            city_id = #{item.cityId},
+            county_id = #{item.countyId},
+            category_code = #{item.deviceType},
+            remark = #{item.remark},
+            site_code = #{item.siteCode},
+            site_name= #{item.siteName},
+            public_site_code = #{item.publicSiteCode},
+            model_code = #{item.manufacturer},
+            height = #{item.hangingHeight},
+            location = #{item.address},
+            longitude = #{item.longitude},
+            latitude = #{item.latitude},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            device_model_code = #{item.deviceModel},
+            access_protocols = #{item.accessProtocols},
+            app_mod_flag = #{item.appModFlag},
+            town_code = #{item.townCode},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.deleteFlag},
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'),
+            device_period = #{item.devicePeriod},
+            w_zone = #{item.wZone},
+            <if test='item.locationCode != null and item.locationCode != ""'>
+                access_node = #{item.locationCode},
+            </if>
+            par_angle = #{item.parAngle}
+      where device_code = #{item.deviceCode}
+    </update>
+
+    <update id="updateDeviceBatch">
+        <foreach collection="list" item="item" separator=";">
+            update vm_iot_device_t
+            set device_name = #{item.deviceName},
+            device_status = #{item.onlineStatus},
+            <if test='item.catalogType != null and item.catalogType != ""'>
+                device_type = #{item.catalogType},
+            </if>
+            province_id = #{item.provinceId},
+            city_id = #{item.cityId},
+            county_id = #{item.countyId},
+            category_code = #{item.deviceType},
+            remark = #{item.remark},
+            site_code = #{item.siteCode},
+            site_name= #{item.siteName},
+            public_site_code = #{item.publicSiteCode},
+            model_code = #{item.manufacturer},
+            height = #{item.hangingHeight},
+            location = #{item.address},
+            longitude = #{item.longitude},
+            latitude = #{item.latitude},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            device_model_code = #{item.deviceModel},
+            access_protocols = #{item.accessProtocols},
+            app_mod_flag = #{item.appModFlag},
+            town_code = #{item.townCode},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.deleteFlag},
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'),
+            device_period = #{item.devicePeriod},
+            w_zone = #{item.wZone},
+            <if test='item.locationCode != null and item.locationCode != ""'>
+                access_node = #{item.locationCode},
+            </if>
+            demo_flag = #{item.demoFlag},
+            par_angle = #{item.parAngle}
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <update id="updateDeviceBatch4Aiot">
+        <foreach collection="list" item="item" separator=";">
+            update vm_iot_device_t
+            set device_name = #{item.deviceName},
+            <if test='item.catalogType != null and item.catalogType != ""'>
+                device_type = #{item.catalogType},
+            </if>
+            province_id = #{item.provinceId},
+            city_id = #{item.cityId},
+            county_id = #{item.countyId},
+            category_code = #{item.deviceType},
+            remark = #{item.remark},
+            site_code = #{item.siteCode},
+            site_name= #{item.siteName},
+            public_site_code = #{item.publicSiteCode},
+            model_code = #{item.manufacturer},
+            height = #{item.hangingHeight},
+            location = #{item.address},
+            longitude = #{item.longitude},
+            latitude = #{item.latitude},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            device_model_code = #{item.deviceModel},
+            access_protocols = #{item.accessProtocols},
+            app_mod_flag = #{item.appModFlag},
+            town_code = #{item.townCode},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.deleteFlag},
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'),
+            device_period = #{item.devicePeriod},
+            <if test='item.wZone != null and item.wZone != ""'>
+                w_zone = #{item.wZone},
+            </if>
+            <if test='item.locationCode != null and item.locationCode != ""'>
+                access_node = #{item.locationCode},
+            </if>
+            par_angle = #{item.parAngle},
+            device_version = #{item.deviceVersion}
+            where device_code = #{item.deviceCode} and (device_version is null or device_version <![CDATA[<]]> #{item.deviceVersion})
+        </foreach>
+    </update>
+
+    <update id="updateDeviceStatusBatch4Aiot">
+        <foreach collection="list" item="item" separator=";">
+            update
+            vm_iot_device_t
+            set
+            device_status = #{item.onlineStatus},
+            status_version = #{item.statusVersion},
+            update_time = now()
+            where device_code = #{item.deviceCode} and (status_version is null or status_version <![CDATA[<]]> #{item.statusVersion})
+        </foreach>
+    </update>
+
+    <select id="queryDeviceAppModInfo" resultType="com.chinatower.sync.consumer.item.DeviceAppModVO">
+        select device_code, IFNULL(app_mod_flag, 0) appModFlag
+        from vm_iot_device_t
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryDeviceAppModAndVersionInfo" resultType="com.chinatower.sync.consumer.item.DeviceAppModVO">
+        select device_code, IFNULL(app_mod_flag, 0) appModFlag, IFNULL(device_version, 0) deviceVersion, IFNULL(status_version, 0) statusVersion
+        from vm_iot_device_t
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateDeviceModBatch">
+        <foreach collection="list" item="item" separator=";">
+            update vm_iot_device_t
+            set
+            device_status = #{item.onlineStatus},
+            category_code = #{item.deviceType},
+            <if test='item.catalogType != null and item.catalogType != "" and item.deviceType == 1'>
+                device_type = #{item.catalogType},
+            </if>
+            remark = #{item.remark},
+            public_site_code = #{item.publicSiteCode},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            access_protocols = #{item.accessProtocols},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.deleteFlag},
+            <if test='item.locationCode != null and item.locationCode != ""'>
+                access_node = #{item.locationCode},
+            </if>
+            demo_flag = #{item.demoFlag},
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S')
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <update id="updateDeviceModBatch4Aiot">
+        <foreach collection="list" item="item" separator=";">
+            update vm_iot_device_t
+            set
+            category_code = #{item.deviceType},
+            remark = #{item.remark},
+            public_site_code = #{item.publicSiteCode},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            access_protocols = #{item.accessProtocols},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.deleteFlag},
+            <if test='item.locationCode != null and item.locationCode != ""'>
+                access_node = #{item.locationCode},
+            </if>
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'),
+            device_version = #{item.deviceVersion}
+            where device_code = #{item.deviceCode} and (device_version is null or device_version <![CDATA[<]]> #{item.deviceVersion})
+        </foreach>
+    </update>
+
+    <update id="modifyMonitorBatch">
+        <foreach collection="list" item="item" separator=";">
+            update vm_sensor_monitor_status
+            set status = #{item.status},
+            monitor_time = DATE_FORMAT(#{item.monitorTime}, '%Y-%m-%d %H:%i:%S'),
+            monitor_desc = #{item.monitorDiscription},
+            delete_flag = #{item.deleteFlag}
+            where device_code = #{item.deviceCode}
+            and monitor_code = #{item.monitorName}
+            <if test='item.sensorCode != null and item.sensorCode != ""'>
+                and sensor_code = #{item.sensorCode}
+            </if>
+        </foreach>
+    </update>
+
+    <update id="updateMonitorBatch">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE
+            vm_sensor_monitor_status
+            set
+            status = #{item.status},
+            monitor_time = DATE_FORMAT(#{item.monitorTime}, '%Y-%m-%d %H:%i:%S'),
+            monitor_desc = #{item.monitorDiscription},
+            delete_flag = #{item.deleteFlag}
+            where
+            device_code = #{item.deviceCode} and monitor_code = #{item.monitorName}
+            <if test='item.sensorCode != null and item.sensorCode != ""'>
+                and sensor_code = #{item.sensorCode}
+            </if>
+              and monitor_time &lt;= #{item.monitorTime}
+        </foreach>
+    </update>
+
+    <select id="fakeQueryCount" resultType="java.lang.Long" >
+        select count(*) from (select distinct iot.site_code,
+        iot.device_code,
+        iot.device_status as status,
+        iot.latitude as lat,
+        iot.longitude as lon,
+        iot.location,
+        iot.model_code,
+        iot.device_model_code,
+        iot.device_name,
+        iot.province_id,
+        p.area_name as provinceName,
+        iot.city_id,
+        c.area_name as cityName,
+        iot.county_id,
+        co.area_name as countyName
+        from vm_order_sensor_devices d
+        inner join vm_iot_device_t iot on d.device_code = iot.device_code and d.category_code = iot.category_code
+        left join vm_order_customer cust on cust.order_code = d.order_code and cust.industry_code = d.industry_code
+        left join sys_user u on u.user_id = cust.user_id and u.del_flag = '0'
+        left join sys_area p on iot.province_id = p.AREA_CODE
+        left join sys_area c on iot.city_id= c.AREA_CODE
+        left join sys_area co on iot.county_id= co.AREA_CODE
+        <if test="item.deptIdList != null and item.deptIdList.size() > 0 ">
+            left join vm_organ_device_rel_t rel on d.tenant_id = rel.tenant_id and d.industry_code = rel.industry_code
+            and d.device_code = rel.device_code and rel.device_type in (8,10)
+        </if>
+        where d.ord_status in (0,1,2)
+        and iot.delete_flag = 0
+        <if test='item.userId != null and item.userId != ""'>
+            AND cust.user_id = #{item.userId}
+        </if>
+        <if test='item.industryCode != null and item.industryCode != "" '>
+            AND d.industry_code = #{item.industryCode}
+        </if>
+        <if test='item.tenantId != null and item.tenantId != "" '>
+            AND d.tenant_id = #{item.tenantId}
+        </if>
+        <if test="item.siteCodeList != null and item.siteCodeList.size() > 0 ">
+            AND iot.site_code in
+            <foreach collection="item.siteCodeList" item="siteCode" index="index" open="(" close=")" separator=",">
+                #{siteCode}
+            </foreach>
+        </if>
+        <if test="item.provinceId != null and item.provinceId != '' ">
+            AND iot.province_id = #{item.provinceId}
+        </if>
+        <if test="item.cityId != null and item.cityId != '' ">
+            AND iot.city_id = #{item.cityId}
+        </if>
+        <if test="item.countyId != null and item.countyId != '' ">
+            AND iot.county_id = #{item.countyId}
+        </if>
+        <if test="item.deviceCode != null and item.deviceCode != '' ">
+            AND iot.device_code = #{item.deviceCode}
+        </if>
+        <if test="item.deviceName != null and item.deviceName != '' ">
+            AND iot.device_name like concat('%', #{item.deviceName}, '%')
+        </if>
+        <if test="item.deptIdList != null and item.deptIdList.size() > 0">
+            AND rel.dept_id in
+            <foreach collection="item.deptIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="item.status != null and item.status != '' ">
+            AND iot.device_status = #{item.status}
+        </if>) countNum
+    </select>
+
+    <select id="countIotDeviceModel" parameterType="java.lang.String" resultType="Integer">
+        select count(*)
+        from vm_iot_device_model_t
+        where mfgr_code = #{modelCode} and device_model_code = #{deviceModel}
+    </select>
+
+    <select id="queryIotDeviceModel" parameterType="java.lang.String" resultType="com.chinatower.sync.consumer.item.SensorStatusReport">
+        select mfgr_code manufacturer, device_model_code deviceModel
+        from vm_iot_device_model_t
+        where mfgr_code in
+        <foreach collection="modelCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and device_model_code in
+        <foreach collection="deviceModelList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="addIotDeviceModel" parameterType="java.lang.String">
+        insert into vm_iot_device_model_t
+        (mfgr_code, device_model_code, device_type, create_time, create_by)
+        values (#{modelCode}, #{deviceModel}, #{deviceType}, now(), "自动同步")
+    </insert>
+
+    <insert id="addIotDeviceModelBatch" parameterType="com.chinatower.sync.consumer.item.SensorStatusReport">
+        insert into vm_iot_device_model_t
+        (mfgr_code, device_model_code, device_type, create_time, create_by)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.manufacturer}, #{item.deviceModel}, #{item.deviceType}, #{item.createTime}, "自动同步")
+        </foreach>
+    </insert>
+
+    <select id="queryOrderFlowRecordList" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+            a.order_flow_id,
+            b.industry_code
+        FROM
+            ${flowRecordTableName} a
+            LEFT JOIN ${warnOrderTableName} b ON a.order_id = b.warning_order_id
+        <where>
+            b.industry_code <![CDATA[ <> ]]> '000000'
+            <if test="orderFlowIds != null and orderFlowIds != ''">
+                AND a.order_flow_id IN
+                <foreach collection="orderFlowIds" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="queryOrderList" parameterType="string" resultType="java.util.Map">
+        SELECT
+            industry_code
+        FROM
+            ${orderTableName}
+        WHERE industry_code <![CDATA[ <> ]]> '000000'
+    </select>
+
+    <select id="getSysConfig" resultType="com.chinatower.platform.entity.admin.SysConfig">
+        select config_id, config_name, config_key, config_value, config_type, creator, create_time, modifier, update_time, remark
+        from sys_config
+        where config_key = #{configKey}
+    </select>
+
+    <update id="updateRadarDeviceBatch">
+        <foreach collection="list" item="param" separator=";">
+            update
+            vm_iot_device_t t
+            set
+            t.device_status = #{param.deviceStatus},
+            t.sync_status = 1,
+            t.sync_time = #{param.updateTime}
+            where
+            t.device_code = #{param.deviceCode}
+            and t.category_code = 1
+        </foreach>
+    </update>
+
+
+    <update id="updateLocationDeviceBatch">
+        <foreach collection="list" item="item" separator=";">
+            update vm_iot_device_t
+            set
+            device_status = #{item.onlineStatus},
+            sync_status = '1',
+            sync_time = DATE_FORMAT(#{item.lastTime}, '%Y-%m-%d %H:%i:%S'),
+            update_time = NOW()
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <update id="updateHornDevice" parameterType="com.chinatower.sync.consumer.item.HornStatusReport">
+        update
+        vm_horn_device_info_t m
+        set
+        m.device_status = #{param.onlineStatus},
+        m.update_time = now()
+        where m.device_code = #{param.deviceCode}
+    </update>
+
+    <update id="updateHornDeviceBatch" parameterType="com.chinatower.sync.consumer.item.HornStatusReport">
+        <foreach collection="list" item="item" separator=";">
+            update
+            vm_horn_device_info_t m
+            set
+            m.device_status = #{item.onlineStatus},
+            m.status_version = #{item.statusVersion},
+            m.update_time = now()
+            where m.device_code = #{item.deviceCode} and (status_version is null or status_version > #{item.statusVersion})
+        </foreach>
+    </update>
+
+    <select id="querySensorDeviceCollectionInfo" resultType="java.lang.String">
+        SELECT coll_obj_code
+        FROM vm_user_device_collection_t
+        WHERE user_id = #{userId} AND coll_obj_type = '7'
+        AND coll_obj_code IN
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getCustomersBySensorDeviceList" resultType="java.util.Map">
+        SELECT DISTINCT
+        b.tenant_id AS tenantId,
+        b.tenant_name AS tenantName,
+        b.is_operation AS isOperation,
+        od.app_ver_code,
+        od.industry_code,
+        od.device_code AS deviceCode,
+        b.operation_alarm_type_str AS operationAlarmTypeStr
+        FROM
+        sys_tenant_info b,vm_order_sensor_devices od
+        where
+        od.device_code IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and od.tenant_id = b.tenant_id
+        and od.delete_flag = '0'
+        and od.ord_status in(0, 1, 2)
+        and od.category_code = 2
+    </select>
+
+    <select id="queryDeviceSensorMonitorCount" parameterType="java.util.Map" resultType="java.lang.Integer">
+        SELECT
+        COUNT( 1 )
+        FROM
+        vm_iot_alarm_config_t iac
+        LEFT JOIN vm_iot_alarm_groups_t g on iac.id = g.iot_config_id and g.delete_flag = '0'
+        LEFT JOIN vm_iot_alarm_factor_t iaf ON iaf.group_id = g.id and iaf.delete_flag = '0'
+        LEFT JOIN vm_iot_alarm_device_t iad ON iad.group_id = g.id and iad.delete_flag = '0'
+        where iac.config_status = '1'
+        and iac.delete_flag = '0'
+        <if test="param.deviceCodeList != null and param.deviceCodeList.size() > 0">
+                AND iad.device_code in
+                <foreach collection="param.deviceCodeList" item="deviceCode" open="(" separator="," close=")">
+                    #{deviceCode}
+                </foreach>
+
+        </if>
+        <if test="param.tenantIdList != null and param.tenantIdList.size() > 0">
+            and iac.tenant_id in
+            <foreach collection="param.tenantIdList" item="tenantId" open="(" separator="," close=")">
+                #{tenantId}
+            </foreach>
+        </if>
+    </select>
+</mapper>

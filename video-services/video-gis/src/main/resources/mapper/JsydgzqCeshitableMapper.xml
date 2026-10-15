@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.JsydgzqCeshitableMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.gis.modules.gis.entity.JsydgzqCeshitable" >
+        <result column="gid" property="gid" />
+        <result column="geom" property="geom" />
+        <result column="layertype" property="layertype" />
+        <result column="calarea" property="calarea" />
+        <result column="bsm" property="bsm" />
+        <result column="ysdm" property="ysdm" />
+        <result column="gzqlxdm" property="gzqlxdm" />
+        <result column="gzqmj" property="gzqmj" />
+        <result column="sm" property="sm" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        gid,
+                geom,
+                layertype,
+                calarea,
+                bsm,
+                ysdm,
+                gzqlxdm,
+                gzqmj,
+                sm
+    </sql>
+
+    <insert id="saveBatch">
+        INSERT INTO ${tableName}
+            (
+        <if test="list.get(0).containsKey('the_geom')">
+            geom
+        </if>
+        <if test="layerType != null and layerType != ''">
+            ,layertype
+        </if>
+        <if test="list.get(0).containsKey('calarea')">
+            ,calarea
+        </if>
+        <if test="list.get(0).containsKey('bsm')">
+            ,bsm
+        </if>
+        <if test="list.get(0).containsKey('ysdm')">
+            ,ysdm
+        </if>
+        <if test="list.get(0).containsKey('gzqlxdm')">
+            ,gzqlxdm
+        </if>
+        <if test="list.get(0).containsKey('gzqmj')">
+            ,gzqmj
+        </if>
+        <if test="list.get(0).containsKey('sm')">
+            ,sm
+        </if>
+
+            )
+        values
+        <foreach collection="list" item="item" separator=",">
+        (
+            <if test="list.get(0).containsKey('the_geom')">
+                ST_GeomFromText(#{item.the_geom},4326)
+            </if>
+            <if test="layerType != null and layerType != ''">
+                ,#{layerType}
+            </if>
+            <if test="list.get(0).containsKey('calarea')">
+                ,#{item.calarea}
+            </if>
+            <if test="list.get(0).containsKey('bsm')">
+                ,#{item.bsm}
+            </if>
+            <if test="list.get(0).containsKey('ysdm')">
+                ,#{item.ysdm}
+            </if>
+            <if test="list.get(0).containsKey('gzqlxdm')">
+                ,#{item.gzqlxdm}
+            </if>
+            <if test="list.get(0).containsKey('gzqmj')">
+                ,CAST(#{item.gzqmj} AS double precision)
+            </if>
+            <if test="list.get(0).containsKey('sm')">
+                ,#{item.sm}
+            </if>
+        )
+        </foreach>
+    </insert>
+
+
+    <insert id="createTable">
+        create table IF NOT EXISTS ${tableName} (like jsydgzq_ceshitable INCLUDING indexes including constraints including comments including defaults) ;
+        CREATE SEQUENCE IF NOT EXISTS ${tableName}_gid_seq
+            INCREMENT 1
+            START 1
+            MINVALUE 1
+            MAXVALUE 2147483647
+            CACHE 1;
+        alter table ${tableName} alter column "gid" set default nextval('${tableName}_gid_seq');
+    </insert>
+
+
+    <insert id="createTableView">
+        CREATE VIEW view_${tableName} AS
+        SELECT gid, geom, bsm, minx, miny, maxx, maxy, GZQLXDM, GZQMJ
+        FROM ${tableName}
+    </insert>
+
+    <update id="updateCalarea">
+        update ${tableName}
+        set minx = ST_X ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 1 ) ) ),
+            miny = ST_Y ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 1 ) ) ),
+            maxx = ST_X ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 3 ) ) ),
+            maxy = ST_Y ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 3 ) ) ),
+            calarea=st_area(st_transform(geom, CAST ( ( FLOOR ( ( ST_X ( st_centroid ( geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )))
+        where calarea is null;
+    </update>
+    <select id="inspectionRoute" resultType="java.lang.String"
+            parameterType="com.chinatower.gis.api.entity.layer.GetXjxlFeaturesByIdsReq">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        SELECT
+        'FeatureCollection' AS type,
+        '212' AS id,
+        array_to_json(array_agg(f)) AS features
+        FROM (
+        SELECT
+        'Feature' AS type
+        <if test="req.returnGeometry">
+            ,ST_AsGeoJSON(geom)::json as geometry
+        </if>
+        ,(
+        SELECT
+        row_to_json(t)
+        FROM (
+        SELECT bsm as tbbh,bsm,'' as dlmc,'' as zldwmc
+        <if test="req.returnAllCols">
+            ,ysdm,gzqlxdm,gzqmj,sm
+        </if>
+        ) AS t
+        ) AS properties
+        FROM ${tableName}
+        <where>
+            <if test="req.tbbhs != null and req.tbbhs.size() > 0">
+                and bsm in
+                <foreach collection="req.tbbhs" item="item"  open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        ) AS f
+        ) AS fc
+    </select>
+
+    <select id="inspectionRouteCount" resultType="java.lang.Integer">
+        select
+        count(1)
+        from ${tableName}
+        <where>
+            <if test="req.tbbhs != null and req.tbbhs.size() > 0">
+                and bsm in
+                <foreach collection="req.tbbhs" item="item"  open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getXlsjFeatures" resultType="java.lang.String">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        SELECT
+        'FeatureCollection' AS type,
+        '212' AS id,
+        array_to_json(array_agg(f)) AS features
+        FROM (
+        SELECT
+        'Feature' AS type
+        <if test="req.returnGeometry">
+            ,ST_AsGeoJSON(geom)::json as geometry
+        </if>
+        ,(
+        SELECT
+        row_to_json(t)
+        FROM (
+        SELECT bsm as tbbh,bsm,gzqmj as area
+        ) AS t
+        ) AS properties
+        FROM ${tableName}
+        <where>
+            <if test="req.tbbh != null and req.tbbh != ''">
+                and bsm like concat('%',#{req.tbbh},'%')
+            </if>
+        </where>
+        limit ${size} offset ${offset}
+        ) AS f
+        ) AS fc
+    </select>
+    <select id="getXlsjFeaturesCount" resultType="java.lang.Integer">
+        select
+            count(1)
+        from ${tableName}
+        <where>
+            <if test="req.tbbh != null and req.tbbh != ''">
+                and bsm like concat('%',#{req.tbbh},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="getLayerArea" resultType="java.lang.Double">
+        select
+            sum(gzqmj)
+        from ${tableName}
+    </select>
+
+    <delete id="deleteBadData">
+        delete from ${tableName} where BSM is null or GZQMJ is null
+    </delete>
+
+</mapper>

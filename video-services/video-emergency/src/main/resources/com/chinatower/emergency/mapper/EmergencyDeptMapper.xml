@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.emergency.mapper.EmergencyDeptMapper">
+
+    <insert id="generatInitialDept">
+        insert into vm_emergency_dept
+        (emergency_dept_name,parent_id,event_code,tenant_id,commander_flag,creator,create_time,
+        app_ver_code,
+        industry_code,dept_level,ancestors)
+        values
+        <foreach collection="deptNameList" item="deptName" index="index" separator=",">
+            (
+            #{deptName},
+            0,
+            #{eventCode},
+            #{tenantId},
+            <choose>
+                <when test="deptName eq '指挥官'">
+                    1,
+                </when>
+                <otherwise>
+                    0,
+                </otherwise>
+            </choose>
+            #{creator},
+            NOW(),
+            #{appVerCode},
+            #{industryCode},
+            #{deptLevel},
+            #{ancestors}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="addEmergencyGroup"  useGeneratedKeys="true" keyProperty="id">
+        insert into vm_emergency_dept
+        (emergency_dept_name,parent_id,event_code,tenant_id,creator,create_time,commander_flag,
+        app_ver_code,
+        industry_code,dept_level,ancestors)
+        values(
+        #{emergencyDeptName},
+        #{parentId},
+        #{eventCode},
+        #{tenantId},
+        #{creator},
+        NOW(),
+        #{commanderFlag},
+        #{appVerCode},
+        #{industryCode},
+        #{deptLevel},
+        #{ancestors}
+        )
+    </insert>
+    <insert id="batchSave" useGeneratedKeys="true" keyProperty="id">
+        insert into vm_emergency_dept
+        (emergency_dept_name,parent_id,event_code,tenant_id,creator,create_time,
+         app_ver_code,
+         industry_code,dept_level,ancestors)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.emergencyDeptName},
+            #{item.parentId},
+            #{item.eventCode},
+            #{item.tenantId},
+            #{item.creator},
+            NOW(),
+            #{item.appVerCode},
+            #{item.industryCode},
+            #{item.deptLevel},
+            #{item.ancestors}
+            )
+        </foreach>
+
+    </insert>
+    <update id="updateEventCodeByDeptIds">
+        update vm_emergency_dept
+        set event_code = #{digitalId},
+            modifier = #{modifier},
+            update_time = now()
+        where
+            delete_flag = 0
+            AND id in
+        <foreach collection="deptIds" item="deptId" open="(" close=")" index="index" separator=",">
+            #{deptId}
+        </foreach>
+    </update>
+    <select id="checkImportDept" resultType="java.lang.String">
+        SELECT IF(COUNT(DISTINCT emergency_dept_name) = 4 AND
+                  SUM(IF(emergency_dept_name NOT IN ('指挥官', '中心组', '计划组', '行动组'), 1, 0)) = 0 AND
+                  SUM(IF(dept_level != 1, 1, 0)) = 0, 'Yes', 'No') AS is_valid
+        FROM vm_emergency_dept
+        WHERE event_code = #{eventCode}
+          and delete_flag = 0;
+    </select>
+
+    <delete id="delEmergencyGroup">
+        update vm_emergency_dept
+        set delete_flag = 1,
+        modifier = #{modifier},
+        update_time = now()
+        where
+        tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+        and id = #{id}
+    </delete>
+
+
+    <select id="getEmergencyGroup" resultType="com.chinatower.emergency.dto.EmergencyDeptDTO">
+        select id, emergency_dept_name, commander_flag
+        from vm_emergency_dept
+        where delete_flag = 0
+          and tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+        <if test="flag != null and flag != ''">
+            and commander_flag != 1
+        </if>
+        <if test="eventCode != null and eventCode != ''">
+            and event_code = #{eventCode}
+        </if>
+        <if test="parentId != null and parentId != ''">
+            and parent_id = #{parentId}
+        </if>
+        <if test="deptLevel != null and deptLevel != ''">
+            and dept_level = #{deptLevel}
+        </if>
+        <if test="emergencyDeptName != null and emergencyDeptName != ''">
+            and emergency_dept_name = #{emergencyDeptName}
+        </if>
+        order by  commander_flag DESC,create_time desc
+    </select>
+
+    <select id="getEmergencyDeptList" resultType="com.chinatower.emergency.dto.EmergencyGroupVO">
+        WITH RECURSIVE category_descendants AS (
+        SELECT id as messageId, emergency_dept_name as emessageName, parent_id as emessageParentId , 1 as
+        informationFlag ,create_time,ancestors,dept_level
+        FROM vm_emergency_dept
+        WHERE
+        delete_flag = 0
+        <if test="tenantId != null and tenantId != ''">
+            and tenant_id = #{tenantId}
+        </if>
+        <choose>
+            <when test="idList != null and idList.size() > 0">
+                and id in
+                <foreach collection="idList" item="pid" open="(" close=")" index="index" separator=",">
+                    #{pid}
+                </foreach>
+            </when>
+            <when test="id != null and id != ''">
+                and id = #{id}
+            </when>
+            <otherwise>
+                and dept_level = 1
+            </otherwise>
+        </choose>
+        and event_code = #{eventCode}
+        and commander_flag != 1
+        UNION ALL
+        SELECT c.id as messageId, c.emergency_dept_name as emessageName, c.parent_id as emessageParentId , 1 as
+        informationFlag ,c.create_time,c.ancestors,c.dept_level
+        FROM vm_emergency_dept c
+        INNER JOIN category_descendants cd ON c.parent_id = cd.messageId and c.delete_flag = 0
+        )
+        SELECT * FROM category_descendants order by create_time
+    </select>
+
+    <select id="getEmergencyUserList" resultType="com.chinatower.emergency.dto.EmergencyUserDTO">
+        SELECT *
+        FROM (select veu.user_id,
+        su.NICK_NAME,
+        veu.emergency_dept_id,
+        vfct.mobile_terminal_num,
+        vfct.dispatch_desk_num,
+        IF(SUBSTRING(su.NICK_NAME, 1, 1) REGEXP '[一-龥]', firstPinyin(su.NICK_NAME),
+        SUBSTRING(su.NICK_NAME, 1, 1)) AS nickNameGbk
+        from vm_emergency_user veu
+        left join vm_fusion_communication_t vfct on veu.user_id = vfct.user_id
+        left join sys_user su on veu.user_id = su.USER_ID
+        where veu.delete_flag = 0 and veu.emergency_dept_id in
+        <foreach collection="deptIdSet" item="deptId" open="(" close=")" index="index" separator=",">
+            #{deptId}
+        </foreach>) AS subquery
+        ORDER BY nickNameGbk
+    </select>
+
+    <select id="getEmergencyDeptById" resultType="com.chinatower.emergency.dto.EmergencyDeptDTO">
+        select id,
+               emergency_dept_name,
+               parent_id,
+               dept_level,
+               ancestors,
+               event_code,
+               tenant_id,
+               commander_flag
+        from vm_emergency_dept
+        where id = #{id}
+    </select>
+    <select id="getIdList" resultType="java.lang.String">
+        SELECT
+            id
+        FROM
+            vm_emergency_dept
+        WHERE
+            event_code in
+            <foreach collection="eventCodes" item="eventCode" open="(" close=")" index="index" separator=",">
+                #{eventCode}
+            </foreach>
+    </select>
+
+    <delete id="clearDeptInfo">
+        delete from vm_emergency_dept where id in
+        <foreach collection="idList" item="deptId" open="(" close=")" index="index" separator=",">
+            #{deptId}
+        </foreach>
+    </delete>
+    <delete id="clearUserInfo">
+        delete from vm_emergency_user where emergency_dept_id in
+        <foreach collection="idList" item="deptId" open="(" close=")" index="index" separator=",">
+            #{deptId}
+        </foreach>
+    </delete>
+    <delete id="deleteByEventCode">
+        DELETE FROM vm_emergency_dept WHERE event_code  = #{digitalId} AND commander_flag <![CDATA[<>]]> 1
+    </delete>
+    <select id="getDeptByEventCode" resultType="com.chinatower.emergency.dto.DigitalDeptUserTreeVO">
+        select id as deptId,
+               emergency_dept_name,
+               parent_id,
+               event_code,
+               tenant_id,
+               commander_flag,
+               app_ver_code,
+               industry_code,
+               dept_level,
+               ancestors
+        from vm_emergency_dept
+        WHERE event_code = #{digitalId}
+          and delete_flag = '0'
+    </select>
+    <select id="findCommanderDept" resultType="java.lang.String">
+        SELECT id from vm_emergency_dept where commander_flag = 1 and event_code = #{digitalId}
+    </select>
+
+</mapper>

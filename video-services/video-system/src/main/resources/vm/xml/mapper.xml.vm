@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="${packageName}.mapper.${ClassName}Mapper">
+
+    <sql id="select${ClassName}Vo">
+        SELECT
+            #foreach($column in $columns)T.$column.columnName#if($velocityCount != $columns.size()),#end #end
+
+        FROM ${tableName} T
+        WHERE T.DEL_FLAG = '0'
+    </sql>
+
+    <select id="select${ClassName}List" parameterType="${packageName}.domain.${ClassName}" resultType="${packageName}.domain.${ClassName}">
+        <include refid="select${ClassName}Vo"/>
+#foreach($column in $columns)
+#set($queryType=$column.queryType)
+#set($javaField=$column.javaField)
+#set($javaType=$column.javaType)
+#set($columnName=$column.columnName)
+#set($AttrName=$column.javaField.substring(0,1).toUpperCase() + ${column.javaField.substring(1)})
+#if($column.query)
+#if($column.queryType == "EQ")
+        <if test="$javaField != null #if($javaType == 'String' ) and $javaField.trim() != ''#end"> AND T.$columnName = #{$javaField}</if>
+#elseif($queryType == "NE")
+        <if test="$javaField != null #if($javaType == 'String' ) and $javaField.trim() != ''#end"> AND T.$columnName != #{$javaField}</if>
+#elseif($queryType == "GT")
+        <if test="$javaField != null #if($javaType == 'String' ) and $javaField.trim() != ''#end"> AND T.$columnName &gt; #{$javaField}</if>
+#elseif($queryType == "GTE")
+        <if test="$javaField != null #if($javaType == 'String' ) and $javaField.trim() != ''#end"> AND T.$columnName &gt;= #{$javaField}</if>
+#elseif($queryType == "LT")
+        <if test="$javaField != null #if($javaType == 'String' ) and $javaField.trim() != ''#end"> AND T.$columnName &lt; #{$javaField}</if>
+#elseif($queryType == "LTE")
+        <if test="$javaField != null #if($javaType == 'String' ) and $javaField.trim() != ''#end"> AND T.$columnName &lt;= #{$javaField}</if>
+#elseif($queryType == "LIKE")
+        <if test="$javaField != null #if($javaType == 'String' ) and $javaField.trim() != ''#end"> AND T.$columnName like '%'|| #{$javaField} ||'%'</if>
+#elseif($queryType == "BETWEEN")
+        <if test="params.begin$AttrName != null and params.begin$AttrName != '' and params.end$AttrName != null and params.end$AttrName != ''"> AND T.$columnName between #{params.begin$AttrName} and #{params.end$AttrName}</if>
+#end
+#end
+#end
+        ${dataScope}
+        ORDER BY T.${pkColumn.columnName} DESC
+    </select>
+    
+    <select id="select${ClassName}ById" parameterType="${pkColumn.javaType}" resultType="${packageName}.domain.${ClassName}">
+        <include refid="select${ClassName}Vo"/>
+        AND T.${pkColumn.columnName} = #{${pkColumn.javaField}}
+    </select>
+        
+    <insert id="insert${ClassName}" parameterType="${packageName}.domain.${ClassName}"#if($pkColumn.increment) useGeneratedKeys="true" keyProperty="$pkColumn.javaField"#end>
+        INSERT INTO ${tableName}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+#foreach($column in $columns)
+#if($column.columnName != $pkColumn.columnName || !$pkColumn.increment)
+            <if test="$column.javaField != null #if($column.javaType == 'String' ) and $column.javaField != ''#end">$column.columnName,</if>
+#end
+#end
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+#foreach($column in $columns)
+#if($column.columnName != $pkColumn.columnName || !$pkColumn.increment)
+            <if test="$column.javaField != null #if($column.javaType == 'String' ) and $column.javaField != ''#end">#{$column.javaField},</if>
+#end
+#end
+         </trim>
+    </insert>
+
+    <update id="update${ClassName}" parameterType="${packageName}.domain.${ClassName}">
+        UPDATE ${tableName}
+        <trim prefix="SET" suffixOverrides=",">
+#foreach($column in $columns)
+#if($column.columnName != $pkColumn.columnName)
+            <if test="$column.javaField != null">$column.columnName = #{$column.javaField},</if>
+#end
+#end
+        </trim>
+        WHERE ${pkColumn.columnName} = #{${pkColumn.javaField}}
+    </update>
+
+    <update id="delete${ClassName}ById" parameterType="${pkColumn.javaType}">
+        UPDATE ${tableName} SET DEL_FLAG = '2' WHERE ${pkColumn.columnName} = #{${pkColumn.javaField}}
+    </update>
+
+    <update id="delete${ClassName}ByIds" parameterType="String">
+        UPDATE ${tableName} SET DEL_FLAG = '2' WHERE ${pkColumn.columnName} IN
+        <foreach item="${pkColumn.javaField}" collection="array" open="(" separator="," close=")">
+            #{${pkColumn.javaField}}
+        </foreach>
+    </update>
+    
+</mapper>

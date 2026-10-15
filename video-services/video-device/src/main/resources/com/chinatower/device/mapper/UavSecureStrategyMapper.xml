@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.UavSecureStrategyMapper">
+    <sql id="vmUavSecureStrategyFields">
+        ss.id
+        ,ss.device_code
+        ,ss.strategy_type
+        ,ss.min_value
+        ,ss.max_value
+        ,ss.min_symbol
+        ,ss.max_symbol
+        ,ss.delete_flag
+        ,ss.creator
+        ,ss.create_time
+        ,ss.modifier
+        ,ss.update_time
+        ,ss.industry_code
+        ,ss.tenant_id
+        ,ss.open
+    </sql>
+
+    <sql id="vmUavUnconnectedAlarmFields">
+        ua.id
+        ,ua.device_code
+        ,ua.alarm_user_id
+        ,ua.alarm_delay_hour
+        ,ua.alarm_delay_minute
+        ,ua.delete_flag
+        ,ua.creator
+        ,ua.create_time
+        ,ua.modifier
+        ,ua.update_time
+        ,ua.industry_code
+        ,ua.tenant_id
+        ,ua.unconnected_open
+        ,ua.delay_open
+    </sql>
+
+    <select id="queryVmUavSecureStrategy" resultType="com.chinatower.device.entity.dto.VmUavSecureStrategyDTO">
+        select <include refid="vmUavSecureStrategyFields"/>
+        from vm_uav_secure_strategy ss
+        where ss.delete_flag = '0'
+        and ss.device_code = #{param.deviceCode}
+        ${param.dataScope}
+    </select>
+
+    <select id="queryVmUavUnconnectedAlarm" resultType="com.chinatower.device.entity.dto.VmUavUnconnectedAlarmDTO">
+        select <include refid="vmUavUnconnectedAlarmFields"/>
+        from vm_uav_unconnected_alarm ua
+        where ua.delete_flag = '0'
+        and ua.device_code = #{param.deviceCode}
+        ${param.dataScope}
+    </select>
+
+    <delete id="batchDeleteStrategy">
+        delete from vm_uav_secure_strategy ua
+            where
+            delete_flag = '0' and tenant_id = #{tenantId} and industry_code = #{industryCode}
+            and device_code in
+            <foreach collection="deviceCodes" item="deviceCode" index="index" open="(" close=")" separator=",">
+                #{deviceCode}
+            </foreach>
+        ${dataScope}
+    </delete>
+
+    <delete id="batchDeleteAlarm">
+        delete from vm_uav_unconnected_alarm
+        where
+        delete_flag = '0' and tenant_id = #{tenantId} and industry_code = #{industryCode}
+        and device_code in
+        <foreach collection="deviceCodes" item="deviceCode" index="index" open="(" close=")" separator=",">
+            #{deviceCode}
+        </foreach>
+        ${dataScope}
+    </delete>
+
+    <insert id="batchInsertStrategy">
+        insert into vm_uav_secure_strategy(`device_code`,`strategy_type`,`min_value`,`max_value`,
+        `open`, `min_symbol`, `max_symbol`, `creator`, `create_time`,`industry_code`, `tenant_id`, `app_ver_code`) values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode},  #{item.strategyType},  #{item.minValue}, #{item.maxValue}, #{item.open},
+            #{item.minSymbol}, #{item.maxSymbol}, #{item.creator}, now(),  #{item.industryCode}, #{item.tenantId}, #{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <insert id="batchInsertAlarm">
+        insert into vm_uav_unconnected_alarm(`device_code`,`delay_open`, `unconnected_open`, `alarm_user_id`, `alarm_delay_hour`, `alarm_delay_minute`,
+        `creator`, `create_time`, `industry_code`, `tenant_id`, `app_ver_code`) values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode},  #{item.delayOpen}, #{item.unconnectedOpen},  #{item.alarmUserId}, #{item.alarmDelayHour}, #{item.alarmDelayMinute},
+            #{item.creator}, now(),  #{item.industryCode}, #{item.tenantId}, #{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <select id="queryVmUavSecureStrategyByUavTask" resultType="com.chinatower.device.entity.dto.VmUavSecureStrategyDTO">
+        select <include refid="vmUavSecureStrategyFields"/>
+        from vm_uav_secure_strategy ss
+        where ss.delete_flag = '0'
+        and ss.open = 1
+        and ss.device_code = #{deviceCode}
+        and ss.tenant_id = #{tenantId}
+        and ss.industry_code = #{industryCode}
+    </select>
+</mapper>

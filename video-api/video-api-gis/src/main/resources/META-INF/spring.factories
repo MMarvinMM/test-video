@@ -1,0 +1,5 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.gis.api.factory.GisFallbackFactory,\
+  com.chinatower.gis.api.factory.GisGuotuFallbackFactory,\
+  com.chinatower.gis.api.factory.GisMapFallbackFactory,\
+  com.chinatower.gis.api.factory.GisPgFallbackFactory

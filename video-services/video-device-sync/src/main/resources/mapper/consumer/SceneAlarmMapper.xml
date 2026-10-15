@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.SceneAlarmMapper">
+
+    <!-- 查询 sys_scene_config 表中指定算法的所有客户、行业组合 -->
+    <select id="selectSceneAlarmTenants" resultType="com.chinatower.sync.consumer.entity.SceneAlarmTenantDTO">
+        SELECT DISTINCT
+            tenant_id AS tenantId,
+            industry_code AS industryCode
+        FROM sys_scene_config
+        WHERE delete_flag = 0
+        AND algorithm_code = #{algorithmCode}
+    </select>
+
+    <!-- 查询算法信息表中的 model_config 字段 -->
+    <select id="selectModelConfigFromAlgorithmInfo" resultType="com.chinatower.sync.consumer.entity.AlgorithmInfoDO">
+        SELECT model_config, algorithm_model_type
+        FROM vm_algorithm_info_t
+        WHERE delete_flag = 0
+        AND algorithm_code = #{algorithmCode}
+        LIMIT 1
+    </select>
+
+    <!-- 查询现有场景配置 -->
+    <select id="selectSceneConfigByAlgorithmCode" resultType="com.chinatower.sync.consumer.entity.SceneConfigDTO">
+        SELECT
+            scene_id AS sceneId,
+            scene_name AS sceneName,
+            algorithm_code AS algorithmCode
+        FROM sys_scene_config
+        WHERE delete_flag = 0
+        AND algorithm_code = #{algorithmCode}
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        <if test="appVerCode != null and appVerCode != ''">
+            AND app_ver_code = #{appVerCode}
+        </if>
+    </select>
+
+    <!-- 查询现有场景告警关系 -->
+    <select id="selectSceneAlarmRelByAlgorithmCode" resultType="com.chinatower.sync.consumer.entity.SceneAlarmRelDTO">
+        SELECT
+            rel.scene_id AS sceneId,
+            rel.alarm_type AS alarmType,
+            rel.alarm_type_name AS alarmTypeName
+        FROM sys_scene_alarm_rel rel
+        INNER JOIN sys_scene_config config ON rel.scene_id = config.scene_id
+        WHERE rel.delete_flag = 0
+        AND config.delete_flag = 0
+        AND config.algorithm_code = #{algorithmCode}
+        AND rel.tenant_id = #{tenantId}
+        AND rel.industry_code = #{industryCode}
+        <if test="appVerCode != null and appVerCode != ''">
+            AND rel.app_ver_code = #{appVerCode}
+        </if>
+    </select>
+
+    <!-- 批量插入场景配置 -->
+    <insert id="insertSceneConfigBatch" parameterType="java.util.List">
+        INSERT INTO sys_scene_config
+        (scene_id, scene_name, type_value, algorithm_code, creator, create_time, delete_flag, tenant_id, industry_code, app_ver_code)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.sceneId}, #{item.sceneName}, #{item.typeValue}, #{item.algorithmCode}, 
+             #{item.creator}, NOW(), 0, #{item.tenantId}, #{item.industryCode}, #{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <!-- 批量插入场景告警关系 -->
+    <insert id="insertSceneAlarmRelBatch" parameterType="java.util.List">
+        INSERT INTO sys_scene_alarm_rel
+        (scene_id, alarm_type, alarm_type_name, algorithm_code, creator, create_time, delete_flag, tenant_id, industry_code, app_ver_code)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.sceneId}, #{item.alarmType}, #{item.alarmTypeName}, #{item.algorithmCode}, 
+             #{item.creator}, NOW(), 0, #{item.tenantId}, #{item.industryCode}, #{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <!-- 批量插入告警类型 -->
+    <insert id="insertAlarmTypeBatch" parameterType="java.util.List">
+        INSERT INTO sys_alarm_type
+        (alarm_source, type_value, type_name, source, delete_flag, creator, create_time, tenant_id, industry_code)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.alarmSource}, #{item.typeValue}, #{item.typeName}, #{item.source}, 
+             0, #{item.creator}, NOW(), #{item.tenantId}, #{item.industryCode})
+        </foreach>
+    </insert>
+
+    <select id="getOrderAlgList" resultType="com.chinatower.sync.consumer.entity.SceneAlarmTenantDTO">
+        SELECT DISTINCT
+            tenant_id,
+            industry_code
+        FROM
+            vm_order_algorithms
+        WHERE
+            ord_status IN ( 0, 1, 2 )
+          AND delete_flag = 0
+          AND algorithm_code = #{algorithmCode}
+    </select>
+</mapper>
+

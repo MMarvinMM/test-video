@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysUserWhiteListMapper">
+    <insert id="add" parameterType="com.chinatower.system.api.model.SysUserWhiteListVO">
+        INSERT INTO sys_user_white_list
+        (ID, USER_NAME, NICK_NAME, TENANT_ID, TENANT_NAME, PHONE_NUMBER, SOURCE, CREATE_BY, CREATE_TIME)
+        VALUES
+            (UUID_SHORT(), #{userName}, #{nickName}, #{tenantId}, #{tenantName}, #{phoneNumber}, #{source}, #{createBy}, NOW())
+    </insert>
+
+    <update id="delete">
+        UPDATE sys_user_white_list SET DELETE_FLAG = '1',UPDATE_BY = #{userId},UPDATE_TIME = NOW()
+        WHERE id IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+
+    <select id="getUser" resultType="com.chinatower.system.api.model.SysUserWhiteListVO">
+        SELECT
+        DISTINCT	a.USER_NAME,
+        a.NICK_NAME,
+        a.TENANT_NAME,
+        a.PHONE_NUMBER AS phone_number,
+        CONCAT(
+        SUBSTRING( a.PHONE_NUMBER, 1, 3 ),
+        '****',
+        SUBSTRING( a.PHONE_NUMBER, 8 )) AS phone_number_desensitization,
+        a.tenant_id,
+        IF
+        ( a.tenant_id IS NULL, '0', '1' ) AS `source`
+        FROM
+        sys_user_white_list a
+        WHERE
+        a.USER_NAME = #{userName} and  DELETE_FLAG=0
+    </select>
+
+    <select id="getUserList" resultType="java.lang.String">
+        SELECT DISTINCT
+            t.USER_NAME
+        FROM
+            sys_user t
+        WHERE
+            t.del_flag = '0'
+        <choose>
+            <when test=" list != null and list.size() > 0 ">
+                AND (t.tenant_id IN
+                <foreach collection="list" item="item" index="index" open="(" separator="," close=") ">
+                    #{item}
+                </foreach>
+                or t.user_type = '0')
+            </when>
+            <otherwise>
+                AND t.user_type = '0'
+            </otherwise>
+        </choose>
+        ORDER BY
+            CONVERT ( t.USER_NAME USING GBK )
+    </select>
+
+    <select id="getTenantId" resultType="java.lang.String">
+        SELECT tenant_id FROM vm_order_customer WHERE ord_status IN ( 0, 1, 2 ) AND accept_node = #{platformCode}
+    </select>
+
+    <select id="getTenantName" resultType="java.lang.String">
+        SELECT a.tenant_name FROM sys_tenant_info a WHERE a.tenant_id = #{tenantId} AND a.del_flag = 0
+    </select>
+
+    <select id="list" resultType="com.chinatower.system.api.model.SysUserWhiteListVO">
+        SELECT ID, USER_NAME, NICK_NAME, TENANT_ID, TENANT_NAME,
+        CONCAT(SUBSTRING(PHONE_NUMBER,1,3),'****',SUBSTRING(PHONE_NUMBER,8)) AS PHONE_NUMBER,
+        `SOURCE`
+        FROM sys_user_white_list
+        WHERE DELETE_FLAG = '0'
+        <if test='userName != null and userName !=""'>
+            AND USER_NAME LIKE concat('%',#{userName},'%')
+        </if>
+        <if test='nickName != null and nickName !=""'>
+        AND NICK_NAME LIKE concat('%',#{nickName},'%')
+        </if>
+        <if test='phoneNumber != null and phoneNumber !=""'>
+        AND PHONE_NUMBER LIKE concat('%',#{phoneNumber},'%')
+        </if>
+        <if test='tenantId != null and tenantId !=""'>
+        AND (TENANT_ID LIKE concat('%',#{tenantId},'%') OR TENANT_NAME LIKE concat('%',#{tenantId},'%'))
+        </if>
+        <if test='source != null and source !=""'>
+        AND `SOURCE` = #{source}
+        </if>
+        order by create_time desc
+    </select>
+
+    <select id="checkUserId" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM sys_user_white_list
+        WHERE USER_NAME = #{userName}
+        AND DELETE_FLAG = '0'
+    </select>
+
+
+</mapper>

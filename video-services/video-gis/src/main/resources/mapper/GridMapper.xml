@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.GridMapper">
+
+
+
+    <select id="gridCompress" resultType="java.lang.String">
+        select ST_AsGeoJSON(st_transform(
+           ST_Simplify(st_transform(st_geomfromtext, 3857), (select greatest(
+                     st_x(ST_PointN(ST_ExteriorRing(st_geomfromtext(st_astext(ST_Envelope(st_transform(st_geomfromtext, 3857))), 3857)), 2))-
+                     st_x(ST_PointN(ST_ExteriorRing(st_geomfromtext(st_astext(ST_Envelope(st_transform(st_geomfromtext, 3857))), 3857)), 1)),
+               st_y(ST_PointN(ST_ExteriorRing(st_geomfromtext(st_astext(ST_Envelope(st_transform(st_geomfromtext, 3857))), 3857)), 2))-
+                     st_y(ST_PointN(ST_ExteriorRing(st_geomfromtext(st_astext(ST_Envelope(st_transform(st_geomfromtext, 3857))), 3857)), 1))
+        )from grid_chouxi) * 0.0001),4326),6)from grid_chouxi;
+    </select>
+
+    <update id="updateChouxi" >
+ 		UPDATE grid_chouxi
+        SET st_geomfromtext = ST_SetSRID (
+            ST_GeomFromGeoJSON (
+                #{gridRange}
+            ),
+            4326
+        )
+        where id = 1;
+	</update>
+
+</mapper>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.AlgorithmInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.sync.consumer.entity.AlgorithmInfoDO">
+        <id column="algorithm_id" property="algorithmId" />
+        <result column="algorithm_code" property="algorithmCode" />
+        <result column="algorithm_name" property="algorithmName" />
+        <result column="algo_min_type_code" property="algoMinTypeCode" />
+        <result column="algo_min_type_name" property="algoMinTypeName" />
+        <result column="algo_type_code" property="algoTypeCode" />
+        <result column="algo_type_name" property="algoTypeName" />
+        <result column="algo_sub_type_code" property="algoSubTypeCode" />
+        <result column="algo_sub_type_name" property="algoSubTypeName" />
+        <result column="product_name" property="productName" />
+        <result column="product_code" property="productCode" />
+        <result column="chip_platform" property="chipPlatform" />
+        <result column="algorithm_description" property="algorithmDescription" />
+        <result column="app_scenarios" property="appScenarios" />
+        <result column="document_url" property="documentUrl" />
+        <result column="logo_url" property="logoUrl" />
+        <result column="version" property="version" />
+        <result column="publish_time" property="publishTime" />
+        <result column="algorithm_shape" property="algorithmShape" />
+        <result column="status" property="status" />
+        <result column="function_code" property="functionCode" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        algorithm_id, algorithm_code, algorithm_name, algo_min_type_code, algo_min_type_name, algo_type_code, algo_type_name, algo_sub_type_code, algo_sub_type_name, product_name, product_code, chip_platform, algorithm_description, app_scenarios, document_url, logo_url, version, publish_time, algorithm_shape, status, function_code, create_time, update_time, delete_flag
+    </sql>
+
+    <update id="updateFuncCodeByMinTypeCode" parameterType="java.util.List">
+        update vm_algorithm_info_t
+        <set>
+            <if test="funcMinTypeCode != null" >
+                function_code = #{funcMinTypeCode},
+            </if>
+            update_time = now()
+        </set>
+        where algo_min_type_code in
+        <foreach collection="algoMinTypeCodeList" item="algoMinTypeItem" index="index" open="(" close=")" separator=",">
+            #{algoMinTypeItem.algoMinTypeCode}
+        </foreach>
+    </update>
+
+    <update id="updateModelConfigBatch"  parameterType="java.util.List">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_algorithm_info_t set model_config = #{item.modelConfigJson},update_time = now()
+            where function_code = #{item.funcMinTypeCode}
+        </foreach>
+    </update>
+    <update id="updateFuncCodeByMinTypeCodes">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_algorithm_info_t
+            <set>
+                <if test="item.funcMinTypeCode != null">
+                    function_code = #{item.funcMinTypeCode},
+                </if>
+                update_time = now()
+            </set>
+            where algo_min_type_code in
+            <foreach collection="item.algoMinTypeCodeList" item="algoMinTypeItem" open="(" close=")" separator=",">
+                #{algoMinTypeItem.algoMinTypeCode}
+            </foreach>
+        </foreach>
+    </update>
+</mapper>

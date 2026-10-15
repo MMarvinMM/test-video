@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.uesrconfig.mapper.SysUserPrefMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.platform.project.uesrconfig.domain.SysUserPref">
+        <id property="sysUserPrefId" column="sys_user_pref_id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="prefType" column="pref_type" jdbcType="VARCHAR"/>
+        <result property="prefPage" column="pref_page" jdbcType="VARCHAR"/>
+        <result property="prefValue" column="pref_value" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="CHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        sys_user_pref_id
+        ,user_id,pref_type,
+        pref_page,pref_value,create_time,
+        update_time,delete_flag
+    </sql>
+
+</mapper>

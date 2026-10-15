@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.CasCadeMapper">
+
+    <select id="getEffPlatCode" resultType="String" parameterType="java.util.List">
+        SELECT distinct rel.plat_code
+        FROM `sys_tenant_cascade_device_rel` rel
+        JOIN sys_tenant_info sti  on rel.tenant_id = sti.tenant_id
+        WHERE rel.plat_code IN
+        <foreach collection="reqList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        AND sti.is_cascade = '1' and sti.del_flag = 0
+    </select>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        insert into cascade_platform_info
+        (plat_code,
+        plat_name,
+        access_code,
+        sip_type,
+        protocol_type,
+        super_plat_ip,
+        super_plat_password,
+        super_plat_code,
+        super_plat_port,
+        net_type,
+        plat_model_code,
+        synchronize_online_device,
+        keep_alive_stream,
+        service_port,
+        creator,
+        create_time,
+        south_platform_id,
+        cascade_type,
+        access_node)
+        values
+        <foreach collection="reqList" item="req" separator=",">
+            (#{req.platCode},
+            #{req.platName},
+            #{req.accessCode},
+            #{req.sipType},
+            #{req.protocolType},
+            #{req.superPlatIp},
+            #{req.superPlatPassWord},
+            #{req.superPlatCode},
+            #{req.superPlatPort},
+            #{req.netType},
+            #{req.platModelCode},
+            #{req.synchronizeOnlineDevice},
+            #{req.keepAliveStream},
+            #{req.servicePort},
+            #{req.creator},
+            NOW(),
+            #{req.platId},
+            #{req.cascadeType},
+            #{req.accessNode})
+        </foreach>
+    </insert>
+    <update id="batchUpdate" parameterType="java.util.List">
+        <foreach collection="reqList" item="req" separator=";">
+            update cascade_platform_info
+            <set>
+                plat_name=#{req.platName},
+                access_code=#{req.accessCode},
+                sip_type=#{req.sipType},
+                protocol_type=#{req.protocolType},
+                super_plat_ip=#{req.superPlatIp},
+                super_plat_password=#{req.superPlatPassWord},
+                super_plat_code=#{req.superPlatCode},
+                super_plat_port=#{req.superPlatPort},
+                net_type=#{req.netType},
+                plat_model_code=#{req.platModelCode},
+                synchronize_online_device=#{req.synchronizeOnlineDevice},
+                keep_alive_stream=#{req.keepAliveStream},
+                service_port=#{req.servicePort},
+                <if test="req.platId != null and req.platId != '' ">
+                    south_platform_id = #{req.platId},
+                </if>
+                <if test="req.accessNode != null and req.accessNode != '' ">
+                    access_node = #{req.accessNode},
+                </if>
+                <if test="req.cascadeType != null and req.cascadeType != '' ">
+                    cascade_type = #{req.cascadeType},
+                </if>
+                update_time=NOW()
+            </set>
+            where plat_code = #{req.platCode}
+        </foreach>
+    </update>
+    <delete id="deleteByIds" parameterType="java.util.List">
+        DELETE FROM cascade_platform_info
+        WHERE plat_code IN
+        <foreach collection="reqList" index="index" item="req" open="(" close=")" separator=",">
+            #{req.platCode}
+        </foreach>
+    </delete>
+    <select id="getRelTenantIdByPlatCode" parameterType="java.util.List" resultType="String">
+        select distinct tenant_id from `sys_tenant_cascade_device_rel`
+        WHERE plat_code IN
+        <foreach collection="reqList" index="index" item="req" open="(" close=")" separator=",">
+            #{req.platCode}
+        </foreach>
+    </select>
+
+    <select id="getRelTenantIdByTenantIdList" resultType="java.lang.String">
+        select distinct tenant_id
+        from `sys_tenant_cascade_device_rel`
+        WHERE tenant_id in
+        <foreach collection="tenantIdList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="clearCascadeTenant" parameterType="java.util.List">
+        update sys_tenant_info
+        set is_cascade = 0,
+        cascade_modifier = '',
+        cascade_modifier_name='',
+        cascade_modifier_date = null
+        where tenant_id in
+        <foreach collection="reqList" index="index" item="item" open="(" close=")" separator=",">
+        #{item}
+    </foreach>
+    </update>
+    <delete id="delCascadeRel" parameterType="java.util.List">
+        delete from `sys_tenant_cascade_device_rel` WHERE plat_code IN
+        <foreach collection="reqList" index="index" item="req" open="(" close=")" separator=",">
+            #{req.platCode}
+        </foreach>
+    </delete>
+
+    <delete id="delCascadeOrgRel" parameterType="java.util.List">
+        delete from `sys_tenant_cascade_org_rel` WHERE plat_code IN
+        <foreach collection="reqList" index="index" item="req" open="(" close=")" separator=",">
+            #{req.platCode}
+        </foreach>
+    </delete>
+
+    <select id="qryOrderDevCodeByTenantId" resultType="String">
+        select ord.device_code FROM vm_order_devices ord
+        where ord.delete_flag = '0'
+        and ord.ord_status in (0, 1, 2)
+        and ord.tenant_id = #{tenantId}
+    </select>
+
+    <select id="qryCasCadeByTenantId" resultType="com.chinatower.device.dto.CasCadeDto">
+        SELECT rel.tenant_id,
+        rel.plat_code,
+        rel.device_code,
+        rel.permission_type,
+        rel.channel_code,
+        rel.org_code,
+        rel.custom_channel_code,
+        t.device_name,
+        c.channel_name,
+        sti.is_cascade
+        FROM sys_tenant_cascade_device_rel rel
+        inner join sys_tenant_info sti on rel.tenant_id = sti.tenant_id
+        left join vm_device_info_t t on rel.device_code = t.device_code
+        left join vm_channel_info_t c on rel.channel_code = c.channel_code
+        where sti.tenant_id = #{tenantId} and sti.del_flag = 0
+    </select>
+
+    <select id="qryCasCadeByPlatCode" resultType="com.chinatower.device.dto.CasCadeDto">
+        SELECT rel.tenant_id,
+        rel.plat_code,
+        rel.device_code,
+        rel.permission_type,
+        rel.channel_code,
+        rel.org_code,
+        rel.custom_channel_code,
+        t.device_name,
+        c.channel_name
+        FROM sys_tenant_cascade_device_rel rel
+        left join vm_device_info_t t on rel.device_code = t.device_code
+        left join vm_channel_info_t c on rel.channel_code = c.channel_code
+        where rel.plat_code = #{platCode}
+    </select>
+
+    <select id="queryCascadeOrgInfoByTenantId" resultType="com.chinatower.platform.entity.device.CasCadeBindDeviceInfoTreeVO">
+        SELECT rel.plat_code,
+        rel.org_code code,
+        rel.org_name name,
+        '1' orgType,
+        rel.parent_org_code parentCode
+        FROM `sys_tenant_cascade_org_rel` rel
+        inner join sys_tenant_info sti on rel.tenant_id = sti.tenant_id
+        where sti.tenant_id = #{tenantId} and sti.del_flag = 0
+    </select>
+
+    <select id="queryCascadeOrgInfoByPlatCode" resultType="com.chinatower.platform.entity.device.CasCadeBindDeviceInfoTreeVO">
+        SELECT rel.plat_code,
+        rel.org_code code,
+        rel.org_name name,
+        '1' orgType,
+        rel.parent_org_code parentCode
+        FROM `sys_tenant_cascade_org_rel` rel
+        where rel.plat_code = #{platCode}
+        group by rel.org_code
+    </select>
+
+    <select id="queryTenantInfoById" resultType="com.chinatower.platform.entity.device.CasCadeBindVO">
+        SELECT tenant_id customerCode, tenant_name customerName, is_cascade cascadeStatus
+        FROM sys_tenant_info
+        where tenant_id = #{tenantId}
+    </select>
+
+    <select id="qryCasCadePlatCodeByTenantId" resultType="java.lang.String">
+        SELECT distinct rel.plat_code
+        FROM sys_tenant_cascade_device_rel rel
+        inner join sys_tenant_info sti on rel.tenant_id = sti.tenant_id
+        where sti.tenant_id = #{tenantId} and sti.del_flag = 0
+    </select>
+
+    <select id="findCascadeList" resultType="com.chinatower.platform.entity.device.SynCobtainVO">
+        SELECT
+        plat.plat_code,
+        plat.plat_name
+        FROM cascade_platform_info plat
+        where delete_flag = '0' and (cascade_type is null or cascade_type = 1)
+        <if test="platformCode != null and platformCode != ''">
+            and access_node = #{platformCode}
+        </if>
+    </select>
+
+    <select id="findCascadeByPlatCodeList" resultType="com.chinatower.platform.entity.device.SynCobtainVO">
+        SELECT
+        plat.plat_code,
+        plat.plat_name
+        FROM cascade_platform_info plat
+        where delete_flag = '0' and plat.plat_code in
+        <foreach collection="reqList" index="index" item="item" open="(" close=")" separator=",">
+            #{item.platCode}
+        </foreach>
+    </select>
+
+    <update id="updateCascadeBinding" parameterType="com.chinatower.platform.entity.device.CasCadeBindVO">
+        update sys_tenant_info
+        set is_cascade = #{cascadeStatus},
+        cascade_modifier = #{cascadeModifier},
+        cascade_modifier_name= #{cascadeModifierName},
+        cascade_modifier_date = #{modifyTime}
+        WHERE tenant_id = #{customerCode} and del_flag = 0
+    </update>
+
+    <update id="updateCascadeBindingBatch" parameterType="com.chinatower.platform.entity.device.CasCadeBindVO">
+        update sys_tenant_info
+        set is_cascade = #{cascadeStatus},
+        cascade_modifier = #{cascadeModifier},
+        cascade_modifier_name= #{cascadeModifierName},
+        cascade_modifier_date = #{modifyTime}
+        WHERE del_flag = 0 and tenant_id in
+        <foreach collection="tenantIdList" index="item" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="selectCascadeRelByPlatCode" resultType="com.chinatower.device.dto.CasCadeDto">
+        SELECT rel.tenant_id, rel.plat_code, rel.device_code, rel.channel_code, rel.custom_channel_code, rel.permission_type
+        FROM `sys_tenant_cascade_device_rel` rel
+        where rel.plat_code = #{platCode}
+        <if test="notIncludeTenantId != null and notIncludeTenantId != ''">
+            and rel.tenant_id != #{notIncludeTenantId}
+        </if>
+    </select>
+
+    <insert id="insertCascadeDeviceRelList" parameterType="com.chinatower.platform.entity.device.CasCadeDeviceBindVO">
+        insert into sys_tenant_cascade_device_rel
+        (tenant_id, plat_code, device_code, channel_code, custom_channel_code, org_code, permission_type, creator, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.tenantId}, #{item.platCode}, #{item.deviceCode}, #{item.channelCode}, #{item.customChannelCode},
+            #{item.orgCode}, #{item.permissionType}, #{item.creator}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <insert id="insertCascadeOrgRelList" parameterType="com.chinatower.platform.entity.device.CasCadeOrgBindVO">
+        insert into `sys_tenant_cascade_org_rel`
+        (tenant_id, plat_code, org_code, org_name, parent_org_code, creator, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.tenantId}, #{item.platCode}, #{item.orgCode}, #{item.orgName}, #{item.parentOrgCode}, #{item.creator}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <delete id="deleteCascadeDeviceRelList">
+        delete from sys_tenant_cascade_device_rel
+        where tenant_id = #{tenantId}
+        and plat_code in
+        <foreach collection="platCodeList" index="index" item="platCode" open="(" separator="," close=")">
+            #{platCode}
+        </foreach>
+    </delete>
+
+    <delete id="deleteCascadeOrgRelList">
+        delete from `sys_tenant_cascade_org_rel`
+        where tenant_id = #{tenantId}
+        and plat_code in
+        <foreach collection="platCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <delete id="deleteCascadeDeviceRelListByPlatCode">
+        delete from sys_tenant_cascade_device_rel
+        where plat_code = #{platCode}
+    </delete>
+
+    <delete id="deleteCascadeOrgRelListByPlatCode">
+        delete from `sys_tenant_cascade_org_rel`
+        where plat_code = #{platCode}
+    </delete>
+
+    <delete id="deleteCascadePushRel">
+        delete from `sys_tenant_cascade_rel`
+        where plat_code = #{platCode}
+    </delete>
+
+    <insert id="insertCascadePushRelBatch">
+        insert into `sys_tenant_cascade_rel`
+        (tenant_id, plat_code, creator, create_time)
+        values
+        <foreach collection="tenantIdList" item="tenantId" separator=",">
+            (#{tenantId}, #{platCode}, #{userName}, now())
+        </foreach>
+    </insert>
+    
+    <select id="queryCascadeRelPlatCodeByTenantId" resultType="java.lang.String">
+        select plat_code
+        from sys_tenant_cascade_rel
+        where tenant_id = #{tenantId}
+    </select>
+
+    <select id="queryCascadeRelPlatCodeByPlatCodeList" resultType="com.chinatower.device.dto.CasCadeDto">
+        select plat_code, tenant_id
+        from sys_tenant_cascade_rel
+        where plat_code in
+        <foreach collection="platCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <delete id="deleteCascadeRelByTenantId">
+        delete from sys_tenant_cascade_rel where tenant_id = #{tenantId}
+    </delete>
+
+    <delete id="deleteCascadeDeviceRel">
+        delete from sys_tenant_cascade_device_rel
+        where tenant_id = #{tenantId}
+        and device_code in
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="queryCascadeBindingTenantId" resultType="java.lang.String">
+        select tenant_id
+        from sys_tenant_cascade_rel
+        where plat_code = #{platCode}
+    </select>
+</mapper>

@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.LayerTypeAttrFilterMapper">
+
+
+    <resultMap id="BaseResultMap" type="com.chinatower.bdm.modules.layer.domain.LayerTypeAttrFilter" >
+        <result column="id" property="id" />
+        <result column="abbreviation" property="abbreviation" />
+        <result column="filter_type" property="filterType" />
+        <result column="filter_attr_key" property="filterAttrKey" />
+        <result column="filter_attr_value" property="filterAttrValue" />
+        <result column="show_type" property="showType" />
+        <result column="creator" property="creator" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier" property="modifier" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="is_show" property="isShow" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,
+                abbreviation,
+                filter_type,
+                filter_attr_key,
+                filter_attr_value,
+                show_type,
+                creator,
+                create_time,
+                modifier,
+                update_time,
+                delete_flag,
+                is_show
+    </sql>
+
+    <delete id="deleteByAbbreviation">
+        update  sys_layer_type_attr_filter set delete_flag = 1
+        WHERE abbreviation in
+        <foreach collection="list" separator="," item="abbreviation" open="(" close=")">
+            #{abbreviation}
+        </foreach>
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_layer_type_attr_filter
+        WHERE id in
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+
+    <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.chinatower.bdm.modules.layer.domain.LayerTypeAttrFilter">
+        INSERT INTO sys_layer_type_attr_filter
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="null != abbreviation and '' != abbreviation">
+                abbreviation,
+            </if>
+            <if test="null != filterType and '' != filterType">
+                filter_type,
+            </if>
+            <if test="null != filterAttrKey and '' != filterAttrKey">
+                filter_attr_key,
+            </if>
+            <if test="null != filterAttrValue and '' != filterAttrValue">
+                filter_attr_value,
+            </if>
+            <if test="null != showType and '' != showType">
+                show_type,
+            </if>
+            <if test="null != creator and '' != creator">
+                creator,
+            </if>
+            <if test="null != createTime ">
+                create_time,
+            </if>
+            <if test="null != modifier and '' != modifier">
+                modifier,
+            </if>
+            <if test="null != updateTime ">
+                update_time,
+            </if>
+            <if test="null != deleteFlag ">
+                delete_flag,
+            </if>
+            <if test="null != isShow and '' != isShow">
+                is_show
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="null != abbreviation and '' != abbreviation">
+                #{abbreviation},
+            </if>
+            <if test="null != filterType and '' != filterType">
+                #{filterType},
+            </if>
+            <if test="null != filterAttrKey and '' != filterAttrKey">
+                #{filterAttrKey},
+            </if>
+            <if test="null != filterAttrValue and '' != filterAttrValue">
+                #{filterAttrValue},
+            </if>
+            <if test="null != showType and '' != showType">
+                #{showType},
+            </if>
+            <if test="null != creator and '' != creator">
+                #{creator},
+            </if>
+            <if test="null != createTime ">
+                #{createTime},
+            </if>
+            <if test="null != modifier and '' != modifier">
+                #{modifier},
+            </if>
+            <if test="null != updateTime ">
+                #{updateTime},
+            </if>
+            <if test="null != deleteFlag ">
+                #{deleteFlag},
+            </if>
+            <if test="null != isShow and '' != isShow">
+                #{isShow}
+            </if>
+        </trim>
+    </insert>
+
+    <update id="update" parameterType="com.chinatower.bdm.modules.layer.domain.LayerTypeAttrFilter">
+        UPDATE sys_layer_type_attr_filter
+        <set>
+            <if test="null != abbreviation and '' != abbreviation">abbreviation = #{abbreviation},</if>
+            <if test="null != filterType and '' != filterType">filter_type = #{filterType},</if>
+            <if test="null != filterAttrKey and '' != filterAttrKey">filter_attr_key = #{filterAttrKey},</if>
+            <if test="null != filterAttrValue and '' != filterAttrValue">filter_attr_value = #{filterAttrValue},</if>
+            <if test="null != showType and '' != showType">show_type = #{showType},</if>
+            <if test="null != creator and '' != creator">creator = #{creator},</if>
+            <if test="null != createTime ">create_time = #{createTime},</if>
+            <if test="null != modifier and '' != modifier">modifier = #{modifier},</if>
+            <if test="null != updateTime ">update_time = #{updateTime},</if>
+            <if test="null != deleteFlag ">delete_flag = #{deleteFlag},</if>
+            <if test="null != isShow and '' != isShow">is_show = #{isShow}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="saveBatch">
+        INSERT INTO sys_layer_type_attr_filter
+        (abbreviation,filter_type,filter_attr_key,filter_attr_value,show_type,creator,create_time,modifier,update_time,is_show,delete_flag)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.abbreviation},#{item.filterType},#{item.filterAttrKey},#{item.filterAttrValue},#{item.showType},#{item.creator},#{item.createTime},#{item.modifier},#{item.updateTime},#{item.isShow},#{item.deleteFlag})
+        </foreach>
+    </insert>
+
+    <select id="selectByAbbreviation" resultMap="BaseResultMap">
+        select
+        *
+        from sys_layer_type_attr_filter
+        where abbreviation = #{abbreviation}
+        and delete_flag = 0
+    </select>
+
+    <select id="selectVOByAbbreviation" resultType="com.chinatower.common.core.dto.bdm.LayerTypeAttrFilterVO">
+        select
+            id,
+            LOWER(filter_type) code,
+            filter_attr_key filterAttrKey,
+            filter_attr_value filterAttrValue
+        from sys_layer_type_attr_filter
+        where abbreviation = #{abbreviation}
+          and delete_flag = 0
+    </select>
+
+    <select id="selectByAbbreviationAndCode" resultType="com.chinatower.common.core.dto.bdm.LayerFieldsFilterChildListDTO">
+        select
+            id,
+            #{code} code,
+            filter_attr_key filterAttrKey,
+            filter_attr_value filterAttrValue
+        from sys_layer_type_attr_filter
+        where abbreviation = #{abbreviation}
+        and delete_flag = 0
+        and filter_type = #{code}
+    </select>
+
+    <select id="selectByAbbreviationAndCodes" resultType="com.chinatower.common.core.dto.bdm.LayerTypeAttrFilterVO">
+        select
+            id,
+            LOWER(filter_type) code,
+            filter_attr_key filterAttrKey,
+            filter_attr_value filterAttrValue
+        from sys_layer_type_attr_filter
+        where abbreviation = #{abbreviation}
+          and delete_flag = 0
+          and filter_type in
+          <foreach collection="codes" separator="," open="(" close=")" item="code">
+              #{code}
+          </foreach>
+    </select>
+
+</mapper>

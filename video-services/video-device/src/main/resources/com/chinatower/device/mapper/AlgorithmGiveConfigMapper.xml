@@ -1,0 +1,531 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.AlgorithmGiveConfigMapper">
+
+    <resultMap type="com.chinatower.platform.entity.device.AlgorithmGiveConfigSaveVO" id="giveConfig">
+        <id property="id" column="id"/>
+        <result property="deviceCode" column="device_code"/>
+        <result property="deviceName" column="device_name"/>
+        <result property="channelCode" column="channel_code"/>
+        <result property="channelName" column="channel_name"/>
+        <result property="secondSwitch" column="second_switch"/>
+        <result property="alarmType" column="alarm_type"/>
+        <result property="alarmTypeName" column="alarm_type_name"/>
+        <result property="algorithmCode" column="algorithm_code"/>
+        <result property="algorithmName" column="algorithm_name"/>
+        <result property="status" column="status"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="industryCode" column="industry_code"/>
+        <result property="appVerCode" column="app_ver_code"/>
+        <result property="creator" column="creator"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifier" column="modifier"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="creatorName" column="creatorName"/>
+        <result property="modifierName" column="modifierName"/>
+        <result property="triggerRule" column="trigger_rule" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+
+    </resultMap>
+
+
+    <select id="queryById" parameterType="com.chinatower.device.dto.AlgorithmGiveConfigDO"
+            resultMap="giveConfig">
+        SELECT ac.id,ac.device_code,ac.device_name,ac.channel_code,ac.channel_name,ac.second_switch,ac.alarm_type,
+               ac.alarm_type_name,ac.algorithm_code,ac.algorithm_name,ac.status,ac.sync_status,ac.order_code,ac.grab_url,
+               ac.video_url,ac.tenant_id,ac.tenant_name,ac.industry_code,ac.app_ver_code,ac.creator,ac.create_time,
+               ac.modifier,ac.update_time,ac.delete_flag,us1.NICK_NAME AS creatorName, us2.NICK_NAME AS modifierName, trigger_rule
+        FROM vm_algorithm_give_config ac
+                 LEFT JOIN sys_user us1 on us1.USER_NAME = ac.creator AND us1.DEL_FLAG = '0'
+                 LEFT JOIN sys_user us2 on us2.USER_NAME = ac.modifier AND us2.DEL_FLAG = '0'
+        WHERE ac.delete_flag = 0
+        <if test='id != null and id != ""'>
+            AND ac.id = #{id}
+        </if>
+        <if test='ids != null and ids != "" and ids.size() > 0 '>
+            AND ac.id in
+            <foreach collection="ids" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="queryOrderCode" parameterType="com.chinatower.device.dto.AlgorithmGiveConfigDO"
+            resultType="java.lang.String">
+        SELECT order_code FROM vm_order_devices
+        WHERE
+            tenant_id = #{tenantId}
+          AND device_code = #{deviceCode}
+          AND industry_code = #{industryCode}
+          AND delete_flag = 0
+          AND ord_status IN ( 0, 1, 2 )
+        ORDER BY
+            create_time DESC
+            LIMIT 1
+    </select>
+
+    <select id="queryAlarmType"
+            resultType="com.chinatower.platform.entity.device.AlarmTypeInfoVO">
+        SELECT
+        type_value AS alarmType,
+        type_name AS alarmTypeName
+        FROM
+        sys_alarm_type
+        WHERE
+        <foreach collection="enumCodeList" item="item" index="index" open="(" separator="or" close=") ">
+            type_value LIKE CONCAT(#{item},'%')
+        </foreach>
+        AND delete_flag = 0
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test='alarmTypeName != null and alarmTypeName != ""'>
+            AND type_name LIKE CONCAT('%',#{alarmTypeName},'%')
+        </if>
+        order by type_value
+    </select>
+
+    <select id="algorithmGiveConfigMerge" parameterType="com.chinatower.device.dto.GiveMergeReq"
+            resultType="com.chinatower.device.dto.AlgorithmGiveMergeDO">
+        SELECT
+        device_code,
+        channel_code,
+        GROUP_CONCAT(distinct case when second_switch = 0 then alarm_type end) as alarmType,
+        GROUP_CONCAT(distinct case when second_switch = 1 then alarm_type end)	as alarmTypeNoalg,
+        GROUP_CONCAT(distinct case when algorithm_code = '' then null else algorithm_code end) as algorithmCode,
+        GROUP_CONCAT(DISTINCT CASE WHEN trigger_rule = '' THEN NULL ELSE trigger_rule END SEPARATOR ' | ') AS triggerRule
+        FROM
+        vm_algorithm_give_config
+        WHERE
+        delete_flag = 0
+        AND `status` = 0
+        <if test='deviceChannelList != null and deviceChannelList.size() > 0 '>
+            AND
+            <foreach collection="deviceChannelList" item="item" index="index" open="(" separator="or" close=") ">
+                device_code = #{item.deviceCode} AND channel_code = #{item.channelCode}
+            </foreach>
+        </if>
+        group by device_code,channel_code
+    </select>
+
+    <update id="editById" parameterType="com.chinatower.device.dto.AlgorithmGiveConfigDO">
+        UPDATE vm_algorithm_give_config
+        SET
+            second_switch = #{secondSwitch},
+            algorithm_code = #{algorithmCode},
+            algorithm_name = #{algorithmName},
+            modifier = #{modifier},
+            update_time = #{updateTime},
+            trigger_rule = #{triggerRule}
+        WHERE
+            id = #{id}
+    </update>
+
+    <select id="checkAlarmType" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveConfigSaveVO"
+            resultType="java.lang.Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            vm_algorithm_give_config
+        WHERE
+            delete_flag = 0
+          AND alarm_type = #{alarmType}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND device_code = #{deviceCode}
+          AND channel_code = #{channelCode}
+    </select>
+
+    <select id="checkConfigInfo" parameterType="com.chinatower.device.dto.AlgorithmGiveConfigDO"
+            resultType="java.lang.Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            vm_algorithm_give_config
+        WHERE
+            delete_flag = 0
+          AND device_code = #{deviceCode}
+          AND channel_code = #{channelCode}
+          AND id != #{id}
+    </select>
+
+    <select id="getDevChanInfo" parameterType="java.lang.String" resultType="com.chinatower.platform.entity.device.DeviceChannelVO">
+        SELECT distinct device_code,channel_code,channel_name
+        from vm_channel_info_t
+        where device_code in
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and delete_flag = '0'
+    </select>
+
+    <select id="selectDoStopBatch" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO" resultType="java.lang.Integer">
+        select count(*) from vm_algorithm_give_config
+        WHERE
+        tenant_id = #{tenantId}
+        AND order_code = #{orderCode}
+        AND industry_code = #{industryCode}
+        AND STATUS = '0'
+        AND device_code IN
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="doStopBatch" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO">
+        UPDATE vm_algorithm_give_config
+        SET STATUS = 1,
+        update_time = now(),
+        modifier = 'order'
+        WHERE
+        tenant_id = #{tenantId}
+        AND order_code = #{orderCode}
+        AND industry_code = #{industryCode}
+        AND device_code IN
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="editBatchConfigByChan" parameterType="com.chinatower.device.dto.AlgorithmGiveConfigDO">
+        <foreach collection="updateList" item="item" index="index" open="" separator=";" close="">
+            UPDATE vm_algorithm_give_config
+            SET
+            sync_status = #{item.syncStatus}
+            WHERE channel_code = #{item.channelCode}
+        </foreach>
+    </update>
+
+    <insert id="insertGiveLicenseRel" parameterType="com.chinatower.platform.entity.device.BlackWhiteVO">
+        insert into vm_algorithm_give_license_rel_t (config_id,black_or_white,vehicle_number,creator,create_time)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.configId},#{item.blackOrWhite},#{item.vehicleNumber},#{item.creator},now())
+        </foreach>
+    </insert>
+
+    <delete id="deleteGiveLicenseRel">
+        delete from vm_algorithm_give_license_rel_t where config_id = #{configId}
+    </delete>
+    <delete id="deleteGiveLicenseRelByVehicleNumber">
+        delete from vm_algorithm_give_license_rel_t where vehicle_number = #{vehicleNumber} and black_or_white = #{blackOrWhite}
+    </delete>
+    <delete id="deleteGiveLicenseRelBatch">
+        delete from vm_algorithm_give_license_rel_t where config_id IN
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </delete>
+    <select id="selectGiveLicenseRel" resultType="com.chinatower.platform.entity.device.BlackWhiteVO"
+            parameterType="com.chinatower.platform.entity.device.BlackWhiteReq">
+        SELECT
+        t.config_id,
+        t.black_or_white,
+        t.vehicle_number,
+        t.creator,
+        t1.create_time,
+        t1.valid_period,
+        t1.valid_period_vo
+        FROM
+        vm_algorithm_give_license_rel_t t
+        LEFT JOIN vm_checkpoint_vehicle_license_plate_t t1 ON t.black_or_white = t1.black_or_white
+        AND t.vehicle_number = t1.vehicle_number
+        where t1.delete_flag = 0
+        <if test='id != null and id != ""'>
+            AND t.config_id = #{id}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND t1.tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND t1.industry_code = #{industryCode}
+        </if>
+        <if test="key != null  and key != ''">
+            AND t.vehicle_number like CONCAT(CONCAT('%', #{key}),'%')
+        </if>
+        <if test="blackOrWhiteInt != null  and blackOrWhiteInt != ''">
+            AND t.black_or_white = #{blackOrWhiteInt}
+        </if>
+        <if test='ids != null and ids != "" and ids.size() > 0 '>
+            AND t.config_id in
+            <foreach collection="ids" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        order by t1.create_time desc ,t.vehicle_number
+    </select>
+    <select id="checkAlarmTypeByList"
+            resultType="com.chinatower.platform.entity.device.AlgorithmGiveConfigSaveVO">
+        SELECT
+        alarm_type alarmType,
+        device_code deviceCode,
+        channel_code channelCode,
+        id
+        FROM
+        vm_algorithm_give_config
+        WHERE
+        delete_flag = 0
+        AND
+        <foreach item="item" index="index" collection="list" open="(" separator="OR" close=")">
+            (device_code = #{item.deviceCode} AND channel_code = #{item.channelCode} AND alarm_type = #{item.alarmType})
+        </foreach>
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+    </select>
+    <select id="queryOrderCodeByDevices" resultType="com.chinatower.device.dto.AlgorithmGiveConfigDO">
+        SELECT order_code orderCode, device_code deviceCode, MAX(create_time)
+        FROM vm_order_devices
+        WHERE
+        tenant_id = #{tenantId}
+        AND device_code IN
+        <foreach item="item" index="index" collection="addList" open="(" separator="," close=")">
+            #{item.deviceCode}
+        </foreach>
+        AND industry_code = #{industryCode}
+        AND delete_flag = 0
+        AND ord_status IN ( 0, 1, 2 )
+        GROUP BY device_code,tenant_id,industry_code
+    </select>
+    <select id="getByIds" resultType="com.chinatower.device.dto.AlgorithmGiveConfigDO">
+        SELECT id,alarm_type alarmType,alarm_type_name alarmTypeName,device_code deviceCode, channel_code channelCode from vm_algorithm_give_config WHERE id IN
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </select>
+    <select id="findTriggerListByDeviceChannel" resultType="com.chinatower.device.dto.AlgorithmGiveMergeDO">
+        SELECT
+        device_code,
+        channel_code,
+        trigger_rule
+        FROM
+        vm_algorithm_give_config
+        WHERE
+        delete_flag = 0
+        AND `status` = 0
+        <if test='deviceChannelList != null and deviceChannelList.size() > 0 '>
+            AND
+            <foreach collection="deviceChannelList" item="item" index="index" open="(" separator="or" close=") ">
+                device_code = #{item.deviceCode} AND channel_code = #{item.channelCode}
+            </foreach>
+        </if>
+        AND alarm_type in ('1818127','1818128')
+    </select>
+
+    <select id="getAlgorithmGiveListMCP" resultType="com.chinatower.platform.entity.device.AlgorithmGiveConfigSaveVO"
+            parameterType="com.chinatower.platform.entity.device.AlgorithmGiveConfigSaveVO">
+        SELECT
+        DISTINCT
+        t.id,
+        t.tenant_id,
+        t.industry_code,
+        t.device_code,
+        t.device_name,
+        t.channel_code,
+        t.channel_name,
+        t.alarm_type,
+        t.alarm_type_name,
+        t.second_switch,
+        t.algorithm_code,
+        t.algorithm_name,
+        t.trigger_rule as triggerRuleStr
+        FROM
+        vm_algorithm_give_config t
+        WHERE
+        t.delete_flag = 0
+        and (t.tenant_id != #{tenantId} or t.industry_code != #{industryCode})
+        <if test='deviceCode!= null and deviceCode != "" '>
+            and t.device_code = #{deviceCode}
+        </if>
+        <if test='channelCode!= null and channelCode != "" '>
+            and t.channel_code = #{channelCode}
+        </if>
+        <if test='alarmType!= null and alarmType != "" '>
+            and t.alarm_type = #{alarmType}
+        </if>
+        order by t.create_time desc
+        limit 1
+    </select>
+
+    <!-- 精准匹配：查询vm_order_algorithm_config中algorithm_type=1的设备+算法关系 -->
+    <select id="selectOrderAlgorithmConfig" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO"
+            resultType="com.chinatower.device.dto.AlgorithmGiveConfigDO">
+        SELECT DISTINCT device_code, algorithm_code
+        FROM vm_order_algorithm_config
+        WHERE delete_flag = 0
+          AND algorithm_type = 1
+          AND order_code = #{orderCode}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+    </select>
+
+    <!-- 非精准匹配：关联查询vm_order_devices和vm_order_algorithms的设备+算法关系 -->
+    <select id="selectOrderDeviceAlgorithms" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO"
+            resultType="com.chinatower.device.dto.AlgorithmGiveConfigDO">
+        SELECT DISTINCT e.device_code, a.algorithm_code
+        FROM vm_order_algorithms a
+        INNER JOIN vm_order_devices e
+            ON e.order_code = a.order_code
+           AND e.tenant_id = a.tenant_id
+           AND a.package_code = e.package_code
+           AND e.delete_flag = '0'
+        WHERE a.delete_flag = '0'
+          AND a.order_code = #{orderCode}
+          AND a.tenant_id = #{tenantId}
+          AND a.industry_code = #{industryCode}
+    </select>
+
+    <!-- 精准匹配：更新vm_algorithm_give_config中不在vm_order_algorithm_config匹配范围内的数据 -->
+    <update id="updateGiveConfigNotInPrecise" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO">
+        UPDATE vm_algorithm_give_config
+        SET second_switch = '1',
+            algorithm_code = NULL,
+            algorithm_name = NULL,
+            update_time = now(),
+            modifier = 'order'
+        WHERE order_code = #{orderCode}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND NOT EXISTS (
+              SELECT 1 FROM vm_order_algorithm_config oac
+              WHERE oac.order_code = #{orderCode}
+                AND oac.tenant_id = #{tenantId}
+                AND oac.industry_code = #{industryCode}
+                AND oac.delete_flag = 0
+                AND oac.algorithm_type = 1
+                AND oac.device_code = vm_algorithm_give_config.device_code
+                AND oac.algorithm_code = vm_algorithm_give_config.algorithm_code
+          )
+    </update>
+
+    <!-- 非精准匹配：更新vm_algorithm_give_config中不在vm_order_devices+vm_order_algorithms匹配范围内的数据 -->
+    <update id="updateGiveConfigNotInOrder" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO">
+        UPDATE vm_algorithm_give_config
+        SET second_switch = '1',
+            algorithm_code = NULL,
+            algorithm_name = NULL,
+            update_time = now(),
+            modifier = 'order'
+        WHERE order_code = #{orderCode}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND NOT EXISTS (
+              SELECT 1
+              FROM vm_order_devices e
+              INNER JOIN vm_order_algorithms a
+                  ON e.order_code = a.order_code
+                 AND e.tenant_id = a.tenant_id
+                 AND a.package_code = e.package_code
+                 AND a.industry_code = e.industry_code
+              WHERE a.delete_flag = '0'
+                AND e.delete_flag = '0'
+                AND a.ord_status in (0, 1, 2)
+                AND e.ord_status in (0, 1, 2)
+                AND a.order_code = #{orderCode}
+                AND a.tenant_id = #{tenantId}
+                AND a.industry_code = #{industryCode}
+                AND e.device_code = vm_algorithm_give_config.device_code
+                AND a.algorithm_code = vm_algorithm_give_config.algorithm_code
+          )
+    </update>
+
+    <!-- 精准匹配：更新vm_video_preset中不在vm_order_algorithm_config匹配范围内的数据（解除算法关联） -->
+    <update id="updatePresetNotInPrecise" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO">
+        UPDATE vm_video_preset
+        SET is_algorithm_identify = '0',
+            algorithm_code = NULL,
+            update_time = now()
+        WHERE order_code = #{orderCode}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND delete_flag = 0
+          AND is_algorithm_identify = '1'
+          AND NOT EXISTS (
+              SELECT 1 FROM vm_order_algorithm_config oac
+              WHERE oac.order_code = #{orderCode}
+                AND oac.tenant_id = #{tenantId}
+                AND oac.industry_code = #{industryCode}
+                AND oac.delete_flag = 0
+                AND oac.algorithm_type = 1
+                AND oac.device_code = vm_video_preset.device_code
+                AND oac.algorithm_code = vm_video_preset.algorithm_code
+          )
+    </update>
+
+    <!-- 非精准匹配：更新vm_video_preset中不在vm_order_devices+vm_order_algorithms匹配范围内的数据（解除算法关联） -->
+    <update id="updatePresetNotInOrder" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO">
+        UPDATE vm_video_preset
+        SET is_algorithm_identify = '0',
+            algorithm_code = NULL,
+            update_time = now()
+        WHERE order_code = #{orderCode}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND delete_flag = 0
+          AND is_algorithm_identify = '1'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM vm_order_devices e
+              INNER JOIN vm_order_algorithms a
+                  ON e.order_code = a.order_code
+                 AND e.tenant_id = a.tenant_id
+                 AND a.package_code = e.package_code
+                 AND a.industry_code = e.industry_code
+              WHERE a.delete_flag = '0'
+                AND e.delete_flag = '0'
+                AND a.ord_status in (0, 1, 2)
+                AND e.ord_status in (0, 1, 2)
+                AND a.order_code = #{orderCode}
+                AND a.tenant_id = #{tenantId}
+                AND a.industry_code = #{industryCode}
+                AND e.device_code = vm_video_preset.device_code
+                AND a.algorithm_code = vm_video_preset.algorithm_code
+          )
+    </update>
+
+    <!-- 精准匹配：查询vm_algorithm_give_config中待更新的设备通道 -->
+    <select id="selectGiveConfigChannelsNotInPrecise" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO"
+            resultType="com.chinatower.platform.entity.device.DeviceChannelVO">
+        SELECT DISTINCT device_code, channel_code
+        FROM vm_algorithm_give_config
+        WHERE order_code = #{orderCode}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND NOT EXISTS (
+              SELECT 1 FROM vm_order_algorithm_config oac
+              WHERE oac.order_code = #{orderCode}
+                AND oac.tenant_id = #{tenantId}
+                AND oac.industry_code = #{industryCode}
+                AND oac.delete_flag = 0
+                AND oac.algorithm_type = 1
+                AND oac.device_code = vm_algorithm_give_config.device_code
+                AND oac.algorithm_code = vm_algorithm_give_config.algorithm_code
+          )
+    </select>
+
+    <!-- 非精准匹配：查询vm_algorithm_give_config中待更新的设备通道 -->
+    <select id="selectGiveConfigChannelsNotInOrder" parameterType="com.chinatower.platform.entity.device.AlgorithmGiveMergeOrderVO"
+            resultType="com.chinatower.platform.entity.device.DeviceChannelVO">
+        SELECT DISTINCT device_code, channel_code
+        FROM vm_algorithm_give_config
+        WHERE order_code = #{orderCode}
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND NOT EXISTS (
+              SELECT 1
+              FROM vm_order_devices e
+              INNER JOIN vm_order_algorithms a
+                  ON e.order_code = a.order_code
+                 AND e.tenant_id = a.tenant_id
+                 AND a.package_code = e.package_code
+                 AND a.industry_code = e.industry_code
+              WHERE a.delete_flag = '0'
+                AND e.delete_flag = '0'
+                AND a.ord_status in (0, 1, 2)
+                AND e.ord_status in (0, 1, 2)
+                AND a.order_code = #{orderCode}
+                AND a.tenant_id = #{tenantId}
+                AND a.industry_code = #{industryCode}
+                AND e.device_code = vm_algorithm_give_config.device_code
+                AND a.algorithm_code = vm_algorithm_give_config.algorithm_code
+          )
+    </select>
+</mapper>

@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.IndustryDeviceMapper">
+
+    <resultMap id="deviceByDeptMap" type="com.chinatower.industry.vo.DevicesDeptVO">
+        <result column="dept_id" property="deptId" jdbcType="VARCHAR"/>
+        <collection property="devicesList" ofType="com.chinatower.industry.vo.DevicesInfoVO">
+            <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+            <result column="isOnline" property="isOnline" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <select id="queryDeviceByDistance" resultType="com.chinatower.industry.dto.DeviceByDistanceDTO">
+        SELECT
+        tmp.deviceCode AS deviceCode,
+        tmp.deviceName AS deviceName,
+        tmp.deviceType AS deviceType,
+        tmp.longitude AS longitude,
+        tmp.latitude AS latitude,
+        tmp.distance AS distance
+        from (
+        <choose>
+            <when test="deviceType==1">
+                select de.device_code deviceCode,
+                (case when length(IFNULL(ten.device_name, '')) = 0 then de.device_name else ten.device_name end ) deviceName,
+                de.longitude,de.latitude,
+                '1' AS deviceType,
+                ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 AS distance
+                from vm_order_devices ord
+                left join vm_device_info_t de on ord.device_code = de.device_code
+                LEFT JOIN vm_tenant_device_channel_rel_t ten on ten.device_code = ord.device_code
+                and ten.tenant_id = ord.tenant_id and ten.delete_flag='0' and ten.industry_code = ord.industry_code
+                where ord.delete_flag = '0'
+                and de.delete_flag = '0'
+                and ord.ord_status in (0, 1, 2)
+                and de.device_status = 0
+                <if test="tenantId != '' and tenantId != null">
+                    and ord.tenant_id = #{tenantId}
+                </if>
+                <if test="industryCode != '' and industryCode != null">
+                    and ord.industry_code = #{industryCode}
+                </if>
+                and ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 <![CDATA[<=]]> #{distance}
+                ${dataScope}
+            </when>
+            <when test="deviceType==2">
+                SELECT
+                ord.device_code as deviceCode,
+                (
+                case when length(IFNULL(ten.device_name, '')) = 0
+                then de.device_name else ten.device_name end
+                ) AS deviceName,
+                de.longitude,
+                de.latitude,
+                '2' AS deviceType,
+                ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 AS distance
+                FROM vm_order_sensor_devices ord
+                LEFT JOIN vm_order_customer oc on ord.order_code = oc.order_code
+                LEFT JOIN vm_iot_device_t de on de.device_code = ord.device_code and de.category_code = 2
+                LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = ord.device_code
+                and ten.tenant_id = ord.tenant_id
+                and ten.delete_flag='0' and ten.industry_code = ord.industry_code
+                where ord.delete_flag = '0' and de.delete_flag = '0'
+                and ord.category_code = 2
+                and ord.ord_status in (0, 1, 2)
+                <if test="tenantId != '' and tenantId != null">
+                    and ord.tenant_id = #{tenantId}
+                </if>
+                <if test="industryCode != '' and industryCode != null">
+                    and ord.industry_code = #{industryCode}
+                </if>
+                and ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 <![CDATA[<=]]> #{distance}
+                ${dataScope}
+            </when>
+            <otherwise>
+                select de.device_code deviceCode,
+                (case when length(IFNULL(ten.device_name, '')) = 0 then de.device_name else ten.device_name end ) deviceName,
+                de.longitude,de.latitude, '1' AS deviceType,
+                ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 AS distance
+                from vm_order_devices ord
+                left join vm_device_info_t de on ord.device_code = de.device_code
+                LEFT JOIN vm_tenant_device_channel_rel_t ten on ten.device_code = ord.device_code
+                and ten.tenant_id = ord.tenant_id and ten.delete_flag='0' and ten.industry_code = ord.industry_code
+                where ord.delete_flag = '0'
+                and de.delete_flag = '0'
+                and ord.ord_status in (0, 1, 2)
+                and de.device_status = 0
+                <if test="tenantId != '' and tenantId != null">
+                    and ord.tenant_id = #{tenantId}
+                </if>
+                <if test="industryCode != '' and industryCode != null">
+                    and ord.industry_code = #{industryCode}
+                </if>
+                and ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 <![CDATA[<=]]> #{distance}
+                ${dataScope}
+                UNION ALL
+                SELECT
+                ord.device_code as deviceCode,
+                (
+                case when length(IFNULL(ten.device_name, '')) = 0
+                then de.device_name else ten.device_name end
+                ) AS deviceName,
+                de.longitude,
+                de.latitude,
+                '2' AS deviceType,
+                ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 AS distance
+                FROM vm_order_sensor_devices ord
+                LEFT JOIN vm_order_customer oc on ord.order_code = oc.order_code
+                LEFT JOIN vm_iot_device_t de on de.device_code = ord.device_code and de.category_code = 2
+                LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = ord.device_code
+                and ten.tenant_id = ord.tenant_id
+                and ten.delete_flag='0' and ten.industry_code = ord.industry_code
+                where ord.delete_flag = '0' and de.delete_flag = '0'
+                and ord.category_code = 2
+                and ord.ord_status in (0, 1, 2)
+                <if test="tenantId != '' and tenantId != null">
+                    and ord.tenant_id = #{tenantId}
+                </if>
+                <if test="industryCode != '' and industryCode != null">
+                    and ord.industry_code = #{industryCode}
+                </if>
+                and ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 <![CDATA[<=]]> #{distance}
+                ${dataScope}
+            </otherwise>
+        </choose>
+        ) tmp ORDER BY distance ASC
+
+    </select>
+
+    <select id="queryDeviceInfoByDistance" resultType="com.chinatower.industry.dto.DeviceInfoByDistanceDTO">
+        select de.device_code deviceCode,
+        (case when length(IFNULL(ten.device_name, '')) = 0 then de.device_name else ten.device_name end ) deviceName,
+        de.longitude, de.latitude, de.site_code siteCode,
+        ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 AS distance
+        from vm_order_devices ord
+        left join vm_device_info_t de on ord.device_code = de.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t ten on ten.device_code = ord.device_code
+        and ten.tenant_id = ord.tenant_id and ten.delete_flag='0' and ten.industry_code = ord.industry_code
+        where ord.delete_flag = '0'
+        and de.delete_flag = '0'
+        and ord.ord_status in (0, 1, 2)
+        and de.device_status != 2
+        and ord.tenant_id = #{tenantId}
+        and ord.industry_code = #{industryCode}
+        and ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(de.longitude,de.latitude))*111195 <![CDATA[<=]]> #{distance}
+        ${dataScope}
+        order by de.site_code, de.device_status, de.device_code
+    </select>
+
+    <select id="getLonLatByDeviceCode" resultType="com.chinatower.industry.dto.DeviceByDistanceDTO">
+        <choose>
+            <when test="deviceType==1">
+                SELECT longitude,latitude FROM vm_device_info_t WHERE delete_flag = '0' AND device_code = #{deviceCode}
+            </when>
+            <when test="deviceType==2">
+                SELECT longitude,latitude FROM vm_iot_device_t WHERE delete_flag = '0' AND device_code = #{deviceCode}
+            </when>
+            <otherwise>
+                SELECT DISTINCT tmp.longitude,tmp.latitude FROM (
+                SELECT longitude,latitude FROM vm_device_info_t WHERE delete_flag = '0' AND device_code = #{deviceCode}
+                UNION ALL
+                SELECT longitude,latitude FROM vm_iot_device_t WHERE delete_flag = '0' AND device_code = #{deviceCode} ) tmp
+            </otherwise>
+        </choose>
+    </select>
+    <select id="queryDevicesByCondition" resultType="com.chinatower.industry.dto.DeviceByConditionDTO">
+        SELECT
+        DISTINCT
+        t5.device_code,
+        t5.latitude,
+        t5.longitude,
+        ( case when length(IFNULL(ten.device_name, '')) = 0 then t1.device_name else ten.device_name end ) device_name,
+        t5.device_status deviceStatus,
+        t5.category_code deviceType,
+        IF(IFNULL(t6.user_device_coll_id,0) = 0, '0', '1') isMonitor
+        FROM
+        vm_order_devices t1
+        LEFT JOIN vm_tenant_device_channel_rel_t ten on ten.device_code = t1.device_code AND ten.industry_code = t1.industry_code AND ten.tenant_id = t1.tenant_id AND ten.delete_flag='0'
+        <if test="algorithmCodeList != null and algorithmCodeList != '' and algorithmCodeList.size() > 0">
+            LEFT JOIN vm_algorithm_config t2 ON t1.order_code = t2.order_code AND t2.delete_flag = 0 AND t2.device_code = t1.device_code
+        </if>
+        <if test="labelIdList != null and labelIdList != '' and labelIdList.size() > 0">
+            LEFT JOIN vm_device_labels_rel t3 ON t1.device_code = t3.device_code
+        </if>
+        <if test="deptList != null and deptList != '' and deptList.size() > 0">
+            LEFT JOIN vm_organ_device_rel_t t4 ON t1.device_code = t4.device_code AND t4.delete_flag = '0'
+        </if>
+        LEFT JOIN vm_device_info_t t5 ON t1.device_code = t5.device_code
+        LEFT JOIN vm_user_device_collection_t t6 ON t6.coll_obj_code = t1.device_code
+        AND t6.coll_obj_type = '5' AND t6.user_id = #{userId}
+        WHERE
+        t1.delete_flag = 0 AND t1.ord_status IN (0,1,2)
+        AND t5.delete_flag = '0'
+        <if test="labelIdList != null and labelIdList != '' and labelIdList.size() > 0">
+            and t3.label_id IN
+            <foreach collection="labelIdList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="algorithmCodeList != null and algorithmCodeList != '' and algorithmCodeList.size() > 0">
+            and t2.algorithm_code IN
+            <foreach collection="algorithmCodeList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceTypeList != null and deviceTypeList != '' and deviceTypeList.size() > 0">
+            and t5.category_code IN
+            <foreach collection="deviceTypeList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deptList != null and deptList != '' and deptList.size() > 0">
+            and t4.dept_id IN
+            <foreach collection="deptList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+    </select>
+
+    <select id="queryDevicesStatistics" resultType="com.chinatower.industry.vo.DevicesStatisticsResVO">
+        SELECT
+            count( a.device_code ) AS totalCnt,
+            sum( CASE WHEN a.device_status = 0 THEN 1 ELSE 0 END ) AS onlineCnt
+        FROM
+            (
+                SELECT DISTINCT
+                    t1.device_code,
+                    t2.device_status
+                FROM
+                    vm_order_devices t1
+                    LEFT JOIN vm_device_info_t t2 ON t1.device_code = t2.device_code
+                    LEFT JOIN vm_channel_info_t ci ON ci.device_code = t1.device_code
+                WHERE
+                    t1.delete_flag = 0
+                  AND t1.ord_status IN ( 0, 1, 2 )
+                  AND t2.delete_flag = 0
+                  AND ci.delete_flag = 0
+                  ${dataScope}
+            ) a
+    </select>
+
+    <select id="queryDevicesByDept" resultMap="deviceByDeptMap"
+            parameterType="com.chinatower.industry.vo.DevicesStatisticsReqVO">
+        SELECT DISTINCT
+        t.dept_id,
+        t.device_code,
+        t2.device_status AS isOnline
+        FROM
+        vm_organ_device_rel_t t
+        LEFT JOIN vm_device_info_t t2 ON t.device_code = t2.device_code
+        LEFT JOIN vm_order_devices t1 ON t.device_code = t1.device_code AND t1.tenant_id = t.tenant_id AND t1.industry_code = t.industry_code
+        LEFT JOIN vm_channel_info_t ci ON ci.device_code = t1.device_code
+        WHERE
+        t.delete_flag = 0
+        AND t.device_type = 4
+        AND t2.delete_flag = 0
+        AND t1.delete_flag = '0'
+        AND ci.delete_flag = '0'
+        AND t1.ord_status IN (0,1,2)
+        AND t.dept_id IN
+        <foreach collection="deptList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+          ${dataScope}
+    </select>
+
+    <delete id="deleteRadarByTargetId" parameterType="java.util.List">
+        delete from vm_radar_target_follow
+        where target_id IN
+        <foreach collection="list" item="item" index="index">
+            (
+            #{item}
+            )
+        </foreach>
+    </delete>
+
+    <select id="queryRadarTargetId" resultType="java.lang.String">
+        select
+        target_id
+        from vm_radar_target_follow
+        where
+        device_code in
+        <foreach collection="param.deviceCodeList" separator="," item="deviceCode" index="index" open="(" close=")">
+            #{deviceCode}
+        </foreach>
+        and delete_flag = 0 and tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+        and create_time <![CDATA[ <= ]]> #{param.timeBefore}
+    </select>
+
+    <select id="queryRadarStatusList" resultType="com.chinatower.industry.vo.RadarDeviceStatusVO">
+        select
+        device_code,
+        status,
+        target_id,
+        message_id,
+        tenant_id
+        from
+        vm_radar_target_follow
+        where
+        device_code in
+        <foreach collection="param.deviceCodeList" separator="," item="deviceCode" index="index" open="(" close=")">
+            #{deviceCode}
+        </foreach>
+        and delete_flag = 0 and tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+    </select>
+
+    <select id="getSysConfig" resultType="com.chinatower.platform.entity.admin.SysConfig">
+        select config_id, config_name, config_key, config_value, config_type, creator, create_time, modifier, update_time, remark
+        from sys_config
+        where config_key = #{configKey}
+    </select>
+
+    <select id="countIndustryDeviceNum" resultType="java.lang.Integer">
+        select count(*)
+        from vm_order_devices
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        and ord_status in (0,1,2) and delete_flag = 0
+    </select>
+
+    <select id="countIndustrySensorDeviceNum" resultType="java.lang.Integer">
+        select count(*)
+        from vm_order_sensor_devices
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        and ord_status in (0,1,2) and delete_flag = 0 and category_code = 2
+    </select>
+
+    <select id="countIndustryRadarDeviceNum" resultType="java.lang.Integer">
+        select count(*)
+        from vm_order_sensor_devices
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        and ord_status in (0,1,2) and delete_flag = 0  and category_code = 1
+    </select>
+
+    <select id="countIndustryUavDeviceNum" resultType="java.lang.Integer">
+        select count(*)
+        from vm_order_uav_devices
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        and ord_status in (0,1,2) and delete_flag = 0
+    </select>
+
+    <select id="countIndustryHornDeviceNum" resultType="java.lang.Integer">
+        select count(*)
+        from vm_order_horn_devices
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        and ord_status in (0,1,2) and delete_flag = 0
+    </select>
+
+    <select id="countIndustryRecorderDeviceNum" resultType="java.lang.Integer">
+        select count(*)
+        from vm_order_recorder_devices
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        and ord_status in (0,1,2) and delete_flag = 0
+    </select>
+
+    <select id="queryDeviceListByCondition" resultType="com.chinatower.industry.dto.DeviceByConditionDTO">
+        SELECT
+        DISTINCT
+        t5.device_code,
+        t5.latitude,
+        t5.longitude,
+        ( case when length(IFNULL(ten.device_name, '')) = 0 then t1.device_name else ten.device_name end ) device_name,
+        t5.device_status deviceStatus,
+        t5.category_code deviceType
+        FROM
+        vm_order_devices t1
+        LEFT JOIN vm_tenant_device_channel_rel_t ten on ten.device_code = t1.device_code AND ten.industry_code = t1.industry_code AND ten.tenant_id = t1.tenant_id AND ten.delete_flag='0'
+        LEFT JOIN vm_device_info_t t5 ON t1.device_code = t5.device_code
+        WHERE
+        t1.delete_flag = 0 AND t1.ord_status IN (0,1,2)
+        AND t5.delete_flag = '0'
+        AND t1.device_code in
+        <foreach collection="deviceCodeList" index="index" open="(" close=")" separator="," item="deviceCode">
+            #{deviceCode}
+        </foreach>
+        ${dataScope}
+    </select>
+</mapper>

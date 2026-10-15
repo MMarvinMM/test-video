@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.WarningInterceptMapper">
+    <insert id="insertInterceptAlarm" parameterType="java.util.List">
+
+        INSERT INTO `vm_warning_intercept_t` (
+        id, warning_order_id, task_id, warning_type_id, alarm_time, tenant_id, tenant_name, province_code, province_name, city_code,
+        city_name, county_code, county_name, longitude, latitude, alarm_body, channel_code, channel_name, device_code, device_name,
+        ptz_p, ptz_t, ptz_z, address, alarm_code, algorithm_code, emergency_level, customer_code, grid_id, grid_code, grid_name, video_url,
+        file_img_url_src, file_img_url_icon, judge_result, create_time, modifier_date, delete_flag, importance_level, intercept, prevAlarmTime,
+        this_thresh, thresh, alarmInterval, alarmInterval_type, algorithm_time,industry_code,app_ver_code, alarm_param, alarm_param_value, extra_field, hori_azimuth_angle,
+        confidence_level,confidence_level_min,confidence_level_max,comp_confidence_level,warning_source ,msg_type,
+        msg_id,notice_resource,front_alarm_pic_url,front_alarm_vedio_url,preset_id,camera_alarm_type,is_second_judge,second_judge_result,town_code,town_name,enlarge_flag,device_pitch,device_horizontal,is_second_identify,transparent_fields,
+        pitch_angle,hori_field_angle,vertical_field_angle,device_address
+        )
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (UUID_SHORT(),#{item.warningOrderId},#{item.taskId}, #{item.warningTypeId}, #{item.alarmTime}, #{item.tenantId},#{item.tenantName}, #{item.provinceCode}, #{item.provinceName}, #{item.cityCode},
+            #{item.cityName}, #{item.countyCode},#{item.countyName}, #{item.longitude},#{item.latitude}, #{item.alarmBody}, #{item.channelCode}, #{item.channelName}, #{item.deviceCode}, #{item.deviceName},
+            #{item.pan}, #{item.tilt}, #{item.zoom},#{item.address}, #{item.alarmCode},#{item.algorithmCode},#{item.emergencyLevel},#{item.tenantId},#{item.gridId},'',#{item.gridName}, #{item.alarmVideoUrl},
+            #{item.originalPictureUrl}, #{item.alarmPictureUrl},null,NOW(),NOW(),'0', #{item.importanceLevel}, #{item.intercept},#{item.prevAlarmTime},
+            #{item.thresh},#{item.nowThresh},#{item.alarmInterval},#{item.alarmIntervalType},#{item.algorithmTime},#{item.industryCode},#{item.appVerCode},#{item.alarmParam},#{item.alarmParamValue},#{item.extraField},#{item.horiAzimuthAngle},
+            #{item.confidenceLevel},#{item.confidenceLevelMin},#{item.confidenceLevelMax},#{item.compConfidenceLevel},#{item.warningSource},
+            #{item.msgType}
+            <choose>
+                <when test='item.extraInfo != null and item.extraInfo != ""'>
+                    ,#{item.extraInfo.msgId},#{item.extraInfo.noticeResource},#{item.extraInfo.frontAlarmPicUrl},#{item.extraInfo.frontAlarmVedioUrl},#{item.extraInfo.presetId}
+                </when>
+                <otherwise>
+                    ,null,null,null,null,null
+                </otherwise>
+            </choose>
+            ,#{item.cameraAlarmType},#{item.isSecondJudge},#{item.secondJudgeResult},#{item.townCode},#{item.townName},#{item.enlargeFlag},#{item.devicePitch},#{item.horiAzimuthAngle},#{item.isSecondIdentify},#{item.transparentFields}
+            ,#{item.pitchAngle},#{item.horiFieldAngle},#{item.verticalFieldAngle},#{item.deviceAddress}
+            )
+        </foreach>
+    </insert>
+</mapper>

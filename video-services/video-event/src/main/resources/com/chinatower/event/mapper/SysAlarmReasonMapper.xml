@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.SysAlarmReasonMapper">
+
+	<select id="listByCondition" resultType="com.chinatower.event.entity.vo.AlarmReasonVO">
+		select id, reason
+		from `sys_alarm_reason_rel`
+		where tenant_id = #{param.tenantId} and industry_code = #{param.industryCode} and type_value = #{param.typeValue}
+		order by create_time, id
+	</select>
+
+	<select id="queryAlarmReason" resultType="com.chinatower.event.entity.vo.AlarmReasonVO">
+		SELECT DISTINCT
+			reason
+		FROM
+			`sys_alarm_reason_rel`
+		WHERE
+			delete_flag = '0'
+			AND tenant_id = #{param.tenantId}
+			AND industry_code = #{param.industryCode}
+		<if test='param.typeValueList != null and param.typeValueList.size() > 0 '>
+			AND type_value IN
+			<foreach collection="param.typeValueList" item="item" index="index" open="(" separator="," close=") ">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<delete id="deleteByCondition">
+		delete
+		from `sys_alarm_reason_rel`
+		where
+		tenant_id = #{tenantId} and industry_code = #{industryCode} and type_value = #{typeValue}
+		and id in
+		<foreach collection ="deleteIdList" item="item" index="index" open="(" close=")" separator =",">
+			#{item}
+		</foreach>
+	</delete>
+
+	<insert id="insertBatch" parameterType="com.chinatower.event.dataobject.SysAlarmReasonRelDO">
+		insert into `sys_alarm_reason_rel`(type_value, reason, tenant_id, industry_code, app_ver_code,
+		creator, create_time, delete_flag)
+		values
+		<foreach collection ="list" item="item" index="index" separator =",">
+			(#{item.typeValue}, #{item.reason}, #{item.tenantId}, #{item.industryCode}, #{item.appVerCode},
+			#{item.creator}, #{item.createTime}, #{item.deleteFlag})
+		</foreach>
+	</insert>
+
+	<update id="updateByCondition" parameterType="com.chinatower.event.dataobject.SysAlarmReasonRelDO">
+		update `sys_alarm_reason_rel`
+		set reason = #{param.reason}, modifier = #{param.modifier}, update_time = #{param.updateTime}
+		where
+		tenant_id = #{param.tenantId} and industry_code = #{param.industryCode}
+		and type_value = #{param.typeValue} and id = #{param.id}
+	</update>
+
+	<select id="countByCondition" resultType="java.lang.Integer">
+		select count(*)
+		from `sys_alarm_reason_rel`
+		where
+		tenant_id = #{tenantId} and industry_code = #{industryCode} and type_value = #{typeValue}
+	</select>
+
+	<select id="countExistReasonName" resultType="java.lang.Integer">
+		select count(*)
+		from `sys_alarm_reason_rel`
+		where
+		tenant_id = #{tenantId} and industry_code = #{industryCode} and type_value = #{typeValue}
+		and reason in
+		<foreach collection ="reasonList" item="item" index="index" open="(" close=")" separator =",">
+			#{item}
+		</foreach>
+		<if test="excludeReasonIdList != null and excludeReasonIdList.size() > 0">
+			and id not in
+			<foreach collection ="excludeReasonIdList" item="item" index="index" open="(" close=")" separator =",">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+</mapper>

@@ -1,0 +1,1230 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.custom.mapper.CustomManageMapper">
+    <resultMap id="treeMap" type="com.chinatower.platform.project.custom.entity.TenantTreeResultVO">
+        <result column="provinceId" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <result column="proParentCode" property="parentCode" jdbcType="VARCHAR"/>
+        <collection  property="list" ofType="com.chinatower.platform.project.custom.entity.TenantTreeResultVO">
+            <result column="cityId" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <result column="cityParentCode" property="parentCode" jdbcType="VARCHAR"/>
+            <collection  property="list" ofType="com.chinatower.platform.project.custom.entity.TenantTreeResultVO">
+                <result column="tenantId" property="tenantId" jdbcType="VARCHAR"/>
+                <result column="tenantName" property="tenantName" jdbcType="VARCHAR"/>
+                <result column="tenantId" property="code" jdbcType="VARCHAR"/>
+                <result column="tenantName" property="name" jdbcType="VARCHAR"/>
+                <result column="tenantLevel" property="level" jdbcType="VARCHAR"/>
+                <result column="tenParentCode" property="parentCode" jdbcType="VARCHAR"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <resultMap id="algoTreeMap" type="com.chinatower.device.entity.vo.FunctionTypeVO">
+        <result column="function_type" property="functionType" jdbcType="VARCHAR"/>
+        <result column="function_type_name" property="functionTypeName" jdbcType="VARCHAR"/>
+        <collection  property="algorithmList" ofType="com.chinatower.platform.entity.device.AlgorithmVO">
+            <result column="algorithm_code" property="algorithmCode" jdbcType="VARCHAR"/>
+            <result column="algorithm_name" property="algorithmName" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <select id="getTenantTree" resultMap="treeMap"
+            parameterType="com.chinatower.platform.project.custom.entity.TenantTreeReqVO">
+        select * from (
+        SELECT DISTINCT
+        case when ten.province_id IS NULL OR ten.city_id IS NULL OR ten.city_id = '' OR ten.province_id = '' then NULL else ten.tenant_id end AS tenantId,
+        case when ten.province_id IS NULL OR ten.city_id IS NULL OR ten.city_id = '' OR ten.province_id = '' then NULL else ten.tenant_name end AS tenantName,
+        case when ten.province_id IS NULL OR ten.city_id IS NULL OR ten.city_id = '' OR ten.province_id = '' then '999999' else ten.province_id end AS provinceId,
+        case when ten.province_id IS NULL OR ten.city_id IS NULL OR ten.city_id = '' OR ten.province_id = '' then '未知' else pro.area_name end AS provinceName,
+        NULL AS proParentCode,
+        case when ten.province_id IS NULL OR ten.city_id IS NULL OR ten.city_id = '' OR ten.province_id = '' then ten.tenant_id else ten.city_id end AS cityId,
+        case when ten.province_id IS NULL OR ten.city_id IS NULL OR ten.city_id = '' OR ten.province_id = '' then ten.tenant_name else city.area_name end AS cityName,
+        '1' AS proLevel,
+        '2' AS cityLevel,
+        case when ten.province_id IS NULL OR ten.city_id IS NULL OR ten.city_id = '' OR ten.province_id = '' then NULL else '3' end AS tenantLevel,
+        case when ten.province_id IS NULL OR ten.city_id IS NULL OR ten.city_id = '' OR ten.province_id = '' then '999999'
+        WHEN city.area_parent_code IS NULL or city.area_parent_code = '' THEN pro.area_code
+        else city.area_parent_code end AS cityParentCode,
+        case when ten.province_id IS NULL OR ten.city_id IS NULL OR ten.city_id = '' OR ten.province_id = '' then NULL else ten.city_id end AS tenParentCode
+        FROM
+        sys_tenant_info ten
+        LEFT JOIN sys_area pro ON pro.area_code = ten.province_id
+        LEFT JOIN sys_area city ON city.area_code = ten.city_id
+        LEFT JOIN sys_user u ON u.tenant_id = ten.tenant_id and u.is_tenant_admin=1 and u.del_flag = '0'
+        WHERE
+        ten.del_flag = '0'
+        <if test='param.customerCode!= null and param.customerCode != "" '>
+            and ten.tenant_id = #{param.customerCode}
+        </if>
+        <if test="param.operationList!= null and param.operationList.size() > 0 ">
+            AND ten.is_operation in
+            <foreach collection="param.operationList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        <if test='param.tenantManager!= null and param.tenantManager != "" '>
+            and u.USER_NAME like concat('%',#{param.tenantManager},'%')
+        </if>
+        <if test='param.isOperation!= null and param.isOperation != "" '>
+            and ten.is_operation = #{param.isOperation}
+        </if>
+        ) a
+        order by a.provinceId
+    </select>
+    <select id="getOrderTenantInfo" resultType="com.chinatower.platform.project.custom.entity.TenantMangeResultVO" parameterType="com.chinatower.platform.project.custom.entity.TenantTreeReqVO">
+        SELECT
+        a.userId,a.alarmLocation,a.customerCode,a.customerName,a.tenantManager,
+        <if test='(operationList != null and operationList.size() > 0) or (operationModifier!= null and operationModifier !="")
+        or (operationModifierDateStart != null and operationModifierDateStart != "") or (operationModifierDateEnd != null and operationModifierDateEnd != "")'>
+            a.isOperation,
+            a.operationModifier,
+            a.operationModifierDate,
+        </if>
+        a.province_id,a.provinceName,a.city_id,a.cityName,a.isOpen,a.apiCreateTime,a.apiCreateBy,a.devNum,a.orderNum,a.validOrderNum,
+        a.openModifier,a.openModifierDate,
+        case when a.isOpen = '1' then '开启' else '未开启' end isOpenName,
+        max(a.cascadeStatus) cascadeStatus,
+        max(a.cascadeModifier) cascadeModifier,
+        max(a.cascadeModifierName) cascadeModifierName,
+        max(a.cascadeModifierDate) cascadeModifierDate,
+        a.login_type,
+        a.login_url
+        FROM
+        (
+        SELECT
+        u.user_id as userId,
+        tenant.tenant_id AS customerCode,
+        tenant.tenant_name AS customerName,
+        u.USER_NAME AS tenantManager,
+        <if test='(operationList != null and operationList.size() > 0) or (operationModifier!= null and operationModifier !="")
+        or (operationModifierDateStart != null and operationModifierDateStart != "") or (operationModifierDateEnd != null and operationModifierDateEnd != "")'>
+            IFNULL(stoc.is_operation,0) AS isOperation,
+            stoc.modifier as operationModifier,
+            DATE_FORMAT(stoc.update_time,'%Y-%m-%d %H:%i:%S') as operationModifierDate,
+        </if>
+        tenant.alarm_location as alarmLocation,
+        tenant.province_id,
+        area1.area_name AS provinceName,
+        tenant.city_id,
+        area2.area_name AS cityName,
+        IFNULL( register.is_open, '0' ) AS isOpen,
+        IFNULL( register.create_time, '' ) AS apiCreateTime,
+        IFNULL( register.create_by, '' ) AS apiCreateBy,
+        0 as devNum,
+        0 as orderNum,
+        0 as validOrderNum,
+        register.open_modifier as openModifier,
+        DATE_FORMAT(register.open_modifier_date,'%Y-%m-%d %H:%i:%S') as openModifierDate,
+        tenant.is_cascade as cascadeStatus,
+        tenant.cascade_modifier as cascadeModifier,
+        casu.nick_name as cascadeModifierName,
+        tenant.cascade_modifier_date as cascadeModifierDate,
+        tenant.login_type,
+        tenant.login_url
+        FROM
+        sys_tenant_info tenant
+        LEFT JOIN sys_area area1 ON tenant.province_id = area1.area_code
+        LEFT JOIN sys_area area2 ON tenant.city_id = area2.area_code
+        LEFT JOIN sys_auth_register_api register ON tenant.tenant_id = register.tenant_id
+        LEFT JOIN sys_user u ON u.tenant_id = tenant.tenant_id and u.is_tenant_admin=1 and u.del_flag = '0'
+        LEFT JOIN sys_user casu ON casu.user_name = tenant.cascade_modifier and casu.del_flag = '0'
+        <if test='(operationList != null and operationList.size() > 0) or (operationModifier!= null and operationModifier !="")
+        or (operationModifierDateStart != null and operationModifierDateStart != "") or (operationModifierDateEnd != null and operationModifierDateEnd != "")'>
+            left join sys_tenant_operation_config stoc on tenant.tenant_id = stoc.tenant_id
+        </if>
+        where tenant.del_flag = '0'
+        <if test="operationList!= null and operationList.size() > 0 ">
+            AND stoc.is_operation in
+            <foreach collection="operationList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+
+        <if test='locationCode != null and locationCode != "" '>
+            AND EXISTS (
+            SELECT 1 FROM vm_order_customer o
+            WHERE o.tenant_id = tenant.tenant_id
+            AND o.accept_node = #{locationCode})
+        </if>
+
+            ${dataScope}
+        <if test='(operationList != null and operationList.size() > 0) or (operationModifier!= null and operationModifier !="")
+        or (operationModifierDateStart != null and operationModifierDateStart != "") or (operationModifierDateEnd != null and operationModifierDateEnd != "")'>
+            group by tenant.tenant_id ,stoc.accept_node,stoc.industry_code,stoc.app_ver_code,stoc.is_operation
+        </if>
+        ) a
+        <where>
+            <if test='provinceId!= null and provinceId != "" '>
+                and a.province_id = #{provinceId}
+            </if>
+
+            <if test='cityId!= null and cityId != "" '>
+                and (a.city_id = #{cityId} or a.province_id = #{cityId})
+            </if>
+
+            <if test='tenantManager!= null and tenantManager != "" '>
+                and a.tenantManager like concat('%',#{tenantManager},'%')
+            </if>
+
+            <if test='customerCode!= null and customerCode != "" '>
+                and a.customerCode = #{customerCode}
+            </if>
+
+            <if test='customerStatus!= null and customerStatus != "" '>
+                and a.customerCode
+                <if test='customerStatus== "0"'>
+                    NOT
+                </if>
+                IN (
+                    SELECT DISTINCT
+                        oc.tenant_id
+                    FROM
+                        vm_order_customer oc
+                    WHERE
+                        oc.ord_status IN ('0', '1', '2')
+                    AND oc.delete_flag = '0'
+                )
+            </if>
+
+            <if test='isOpen!= null and isOpen != "" '>
+                and a.isOpen = #{isOpen}
+            </if>
+
+            <if test="operationFlag == true">
+                AND a.customerCode not in (
+                select distinct stoc.tenant_id  from sys_tenant_operation_config stoc where stoc.is_operation = '1'
+                )
+            </if>
+
+            <if test='openModifier!= null and openModifier != "" '>
+                and a.openModifier like concat('%',#{openModifier},'%')
+            </if>
+
+            <if test="openModifierDateStart != null and openModifierDateStart != ''"><!-- 开始时间检索 -->
+                AND a.openModifierDate &gt;= STR_TO_DATE(CONCAT(#{openModifierDateStart}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+
+            <if test="openModifierDateEnd != null and openModifierDateEnd != ''"><!-- 结束时间检索 -->
+                AND a.openModifierDate &lt;= STR_TO_DATE(CONCAT(#{openModifierDateEnd}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+
+            <if test='operationModifier!= null and operationModifier != "" '>
+                and a.operationModifier like concat('%',#{operationModifier},'%')
+            </if>
+
+            <if test="operationModifierDateStart != null and operationModifierDateStart != ''"><!-- 开始时间检索 -->
+                AND a.operationModifierDate &gt;= STR_TO_DATE(CONCAT(#{operationModifierDateStart}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+
+            <if test="operationModifierDateEnd != null and operationModifierDateEnd != ''"><!-- 结束时间检索 -->
+                AND a.operationModifierDate &lt;= STR_TO_DATE(CONCAT(#{operationModifierDateEnd}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+
+            <if test="tenantIds!= null and tenantIds.size() > 0 ">
+                AND a.customerCode in
+                <foreach collection="tenantIds" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                    #{labelIdItem}
+                </foreach>
+            </if>
+
+            <if test='cascadeStatus!= null and cascadeStatus != "" '>
+                and a.cascadeStatus = #{cascadeStatus}
+            </if>
+
+            <if test='cascadeModifier!= null and cascadeModifier != "" '>
+                and (a.cascadeModifier like concat('%',#{cascadeModifier},'%') or a.cascadeModifierName like concat('%',#{cascadeModifier},'%'))
+            </if>
+
+            <if test="cascadeModifierDateStart != null and cascadeModifierDateStart != ''"><!-- 开始时间检索 -->
+                AND a.cascadeModifierDate &gt;= STR_TO_DATE(#{cascadeModifierDateStart},'%Y-%m-%d %H:%i:%s %T')
+            </if>
+
+            <if test="cascadeModifierDateEnd != null and cascadeModifierDateEnd != ''"><!-- 结束时间检索 -->
+                AND a.cascadeModifierDate &lt;= STR_TO_DATE(#{cascadeModifierDateEnd},'%Y-%m-%d %H:%i:%s %T')
+            </if>
+            <if test='(operationList != null and operationList.size() > 0) or (operationModifier!= null and operationModifier !="")
+        or (operationModifierDateStart != null and operationModifierDateStart != "") or (operationModifierDateEnd != null and operationModifierDateEnd != "")'>
+                and a.customerCode in
+                (
+                SELECT DISTINCT
+                oc.tenant_id
+                FROM
+                vm_order_customer oc
+                WHERE
+                oc.ord_status IN ('0', '1', '2')
+                AND oc.delete_flag = '0'
+                )
+            </if>
+        </where>
+        group by a.customerCode
+        order by a.cascadeModifierDate desc,a.openModifierDate desc,a.userId DESC
+    </select>
+
+    <select id="selectTenantInfoList" resultType="com.chinatower.platform.project.custom.entity.TenantMangeResultVO" parameterType="com.chinatower.platform.project.custom.entity.TenantTreeReqVO">
+        SELECT
+        tenant.tenant_id AS customerCode,
+        tenant.tenant_name AS customerName
+        FROM
+        sys_tenant_info tenant
+        where tenant.del_flag = '0'
+        ${dataScope}
+        group by tenant.tenant_id
+        ORDER BY
+        <if test="tenantIdList != null and tenantIdList.size() > 0 ">
+            CASE
+            WHEN tenant.tenant_id IN
+            <foreach collection="tenantIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            THEN 0
+            ELSE 1
+            END,
+        </if>
+            tenant.update_time DESC, tenant.tenant_id
+    </select>
+
+    <select id="queryTenantIdListByPlatCode" resultType="java.lang.String">
+        select tenant_id
+        from sys_tenant_cascade_rel
+        where plat_code = #{platCode}
+    </select>
+
+    <select id="getDevNum" resultType="java.util.Map" parameterType="java.util.List">
+        SELECT
+        count( distinct device_code ) as "devNum",
+        tenant_id as "customerCode"
+        FROM
+        vm_order_devices
+        WHERE
+        delete_flag = '0'
+        and ord_status in ('0','1','2')
+        <if test="list!= null and list.size() > 0 ">
+            AND tenant_id in
+            <foreach collection="list" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        GROUP BY
+        tenant_id;
+    </select>
+
+    <select id="getOrderNum" resultType="java.util.Map" parameterType="java.util.List">
+        SELECT
+        count( tenant_id ) as "orderNum",
+        tenant_id as "customerCode"
+        FROM
+        vm_order_customer
+        WHERE 1=1
+        <if test="list!= null and list.size() > 0 ">
+            AND tenant_id in
+            <foreach collection="list" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        GROUP BY
+        tenant_id;
+    </select>
+
+
+    <select id="getValidOrderNum" resultType="java.util.Map" parameterType="java.util.List">
+        SELECT
+        count( tenant_id ) as "orderNum",
+        tenant_id as "customerCode"
+        FROM
+        vm_order_customer
+        WHERE
+        delete_flag = '0'
+        AND ord_status IN ('0', '1', '2')
+        <if test="list!= null and list.size() > 0 ">
+            AND tenant_id in
+            <foreach collection="list" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        GROUP BY
+        tenant_id;
+    </select>
+
+    <update id="updateTenantInfoBatch" parameterType="com.chinatower.system.api.model.UpdateTenantReqVO">
+        update sys_tenant_info set is_operation = #{isOperation},
+        operation_modifier_date = now(),operation_modifier = #{operationModifier}
+        where tenant_id IN
+        <foreach collection="customerCodeList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+            #{labelIdItem}
+        </foreach>
+    </update>
+
+    <update id="updateTenantOperationList" parameterType="java.util.List">
+        <foreach collection="list" item="tenantInfo" separator=";">
+            update sys_tenant_operation_config set delete_flag = 1,is_operation = 0,
+            update_time = now(),modifier = #{tenantInfo.operationModifier}
+            where tenant_id = #{tenantInfo.tenantId} and accept_node = #{tenantInfo.locationCode}
+            and industry_code = #{tenantInfo.industryCode} and app_ver_code = #{tenantInfo.appVerCode}
+        </foreach>
+    </update>
+
+    <!-- 结果映射 -->
+    <resultMap id="regionMap" type="com.chinatower.platform.project.custom.entity.RegionVO">
+        <result column="region_code" property="regionCode" jdbcType="VARCHAR" />
+        <result column="region_name" property="regionName" jdbcType="VARCHAR" />
+        <result column="region_level" property="regionLevel" jdbcType="VARCHAR" />
+        <result column="parent_code" property="parentCode" jdbcType="VARCHAR" />
+        <result column="creator" property="creator" jdbcType="VARCHAR" />
+        <result column="creator_date" property="creatorDate" jdbcType="DATE" />
+        <result column="modifier" property="modifier" jdbcType="VARCHAR" />
+        <result column="modifier_date" property="modifierDate" jdbcType="DATE" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="province_id" property="provinceId" jdbcType="VARCHAR" />
+        <result column="city_id" property="cityId" jdbcType="VARCHAR" />
+        <result column="county_id" property="countyId" jdbcType="VARCHAR" />
+        <result column="street_id" property="streetId" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <resultMap id="regionNewMap" type="com.chinatower.platform.project.custom.entity.RegionVO">
+        <result column="region_code" property="regionCode" jdbcType="VARCHAR" />
+        <result column="region_name" property="regionName" jdbcType="VARCHAR" />
+        <result column="region_level" property="regionLevel" jdbcType="VARCHAR" />
+        <result column="parent_code" property="parentCode" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <resultMap id="custOrganMap" type="com.chinatower.platform.project.custom.entity.CustOrganVO">
+        <result column="org_id" property="orgId" jdbcType="VARCHAR"/>
+        <result column="org_name" property="orgName" jdbcType="VARCHAR"/>
+        <result column="tenant_id" property="tenantId" jdbcType="VARCHAR"/>
+        <result column="org_source" property="orgSource" jdbcType="VARCHAR"/>
+        <result column="parent_org_id" property="parentOrgId" jdbcType="VARCHAR"/>
+        <result column="parent_area_id" property="parentAreaId" jdbcType="VARCHAR"/>
+        <result column="parentOrgName" property="parentOrgName" jdbcType="VARCHAR"/>
+        <result column="province_id" property="provinceId" jdbcType="VARCHAR"/>
+        <result column="city_id" property="cityId" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="county_id" property="countyId" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="street_id" property="streetId" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="org_desc" property="orgDesc" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="org_level" property="orgLevel" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="creator" property="creator" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="creator_date" property="creatorDate" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="modifier" property="modifier" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="modifier_date" property="modifierDate" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="delete_flag" property="deleteFlag" javaType="java.lang.Integer" jdbcType="VARCHAR"/>
+        <result column="flag" property="flag" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="org_type" property="orgType" javaType="java.lang.String" jdbcType="VARCHAR"/>
+        <result column="parentOrgLevel" property="parentOrgLevel" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap id="tenantMap" type="com.chinatower.platform.project.custom.entity.TenantVO">
+        <result column="tenant_id" property="tenantId" jdbcType="VARCHAR" />
+        <result column="tenant_name" property="tenantName" jdbcType="VARCHAR" />
+        <result column="client_id" property="clientId" jdbcType="VARCHAR" />
+        <result column="client_name" property="clientName" jdbcType="VARCHAR" />
+        <result column="industry_type" property="industryType" jdbcType="VARCHAR" />
+        <result column="link_man" property="linkMan" jdbcType="VARCHAR" />
+        <result column="link_phone" property="linkPhone" jdbcType="VARCHAR" />
+        <result column="tenant_manager" property="tenantManager" jdbcType="VARCHAR" />
+        <result column="start_time" property="startTime"  javaType="java.util.Date" jdbcType="TIMESTAMP" />
+        <result column="end_time" property="endTime"  javaType="java.util.Date" jdbcType="TIMESTAMP" />
+        <result column="province_id" property="provinceId" jdbcType="VARCHAR" />
+        <result column="city_id" property="cityId" jdbcType="VARCHAR" />
+        <result column="county_id" property="countyId" jdbcType="VARCHAR" />
+        <result column="street_id" property="streetId" jdbcType="VARCHAR" />
+        <result column="creator" property="creator"  javaType="java.lang.String" jdbcType="VARCHAR" />
+        <result column="creator_date" property="creatorDate"  jdbcType="VARCHAR" />
+        <result column="modifier" property="modifier"  javaType="java.lang.String" jdbcType="VARCHAR" />
+        <result column="modifier_date" property="modifierDate"  javaType="java.util.Date" jdbcType="TIMESTAMP" />
+        <result column="delete_flag" property="deleteFlag"  javaType="java.lang.Integer" jdbcType="VARCHAR" />
+        <result column="org_id" property="orgId"  javaType="java.lang.String" jdbcType="VARCHAR" />
+        <result column="industry_code" property="industryCode" jdbcType="VARCHAR" />
+        <result column="app_ver_code" property="appVerCode" jdbcType="VARCHAR" />
+
+    </resultMap>
+
+    <!-- 查询租户信息-->
+    <select id="queryTenantInfo" resultMap="tenantMap" parameterType="com.chinatower.platform.project.custom.entity.TenantVO">
+        SELECT
+        t.tenant_id,t.tenant_name
+        FROM
+        sys_tenant_info t
+        WHERE t.del_flag = '0'
+        ${param.dataScope}
+        <if test='param.keyword == null or param.keyword == "" '>
+        and t.tenant_id in (
+            SELECT DISTINCT
+            tenant_id customerCode
+            FROM
+            vm_order_customer
+            WHERE
+            (NOW() > valid_time AND invalid_time > NOW()
+            OR invalid_time IS NULL OR invalid_time = '')
+            AND ord_status IN ('0', '1', '2')
+            AND delete_flag = '0'
+        )
+        </if>
+        <if test='param.keyword!= null and param.keyword != "" '>
+            AND (t.tenant_id LIKE CONCAT(CONCAT('%',#{param.keyword},'%')) OR (t.tenant_name LIKE CONCAT(CONCAT('%',#{param.keyword},'%'))))
+        </if>
+        <if test="param.tenantList != null and param.tenantList.size() > 0 ">
+            AND t.tenant_id in
+            <foreach collection="param.tenantList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getAuthConfig" resultType="com.chinatower.platform.project.custom.entity.AuthRegisterApiVO" parameterType="com.chinatower.platform.project.custom.entity.AuthRegisterApiVO">
+        SELECT
+        reg.id,
+        reg.tenant_id as customerCode,
+        reg.tenant_name as customerName,
+        reg.app_key as appKey,
+        reg.secret_key as secretKey,
+        reg.is_open as isOpen
+        FROM
+        sys_auth_register_api reg
+        WHERE
+        1 = 1
+        <if test='customerCode!= null and customerCode != "" '>
+            and reg.tenant_id = #{customerCode}
+        </if>
+        <if test='isOpen!= null and isOpen != "" '>
+            and reg.is_open = #{isOpen}
+        </if>
+        limit 1
+    </select>
+
+    <select id="getAuthConfigFunc" resultType="com.chinatower.platform.project.custom.entity.AuthRegisterFuncApiVO" parameterType="com.chinatower.platform.project.custom.entity.AuthRegisterFuncApiVO">
+        SELECT
+        func.api_intf_code apiIntfCode,
+        func.api_intf_name apiIntfName,
+        func.api_intf_type as apiIntfType,
+        func.callback_url AS callbackUrl
+        FROM
+        sys_auth_register_func_api func
+        WHERE
+        func.delete_flag = '1'
+        and func.register_id =  #{registerId}
+        <if test='status!= null and status != "" '>
+            and func.status = #{status}
+        </if>
+    </select>
+
+    <select id="getApiAndFuncInfo" resultType="com.chinatower.platform.project.custom.entity.AuthRegisterFuncApiVO" parameterType="com.chinatower.platform.project.custom.entity.AuthRegisterFuncApiVO">
+        SELECT
+        t2.api_intf_code apiIntfCode,
+        t2.api_intf_name apiIntfName,
+        t2.api_intf_type as apiIntfType,
+        t2.callback_url AS callbackUrl,
+        t2.delete_flag AS deleteFlag,
+        t2.status AS status
+        FROM
+        sys_auth_register_api t1
+        left join sys_auth_register_func_api t2 on t1.id = t2.register_id
+        WHERE 1 = 1
+        <if test='registerId!= null and registerId != "" '>
+            and t2.register_id = #{registerId}
+        </if>
+        <if test='deleteFlag!= null '>
+            and t2.delete_flag = #{deleteFlag}
+        </if>
+        <if test='status!= null and status != "" '>
+            and t2.status = #{status}
+        </if>
+        <if test='customerCode!= null and customerCode != "" '>
+            and t1.tenant_id = #{customerCode}
+        </if>
+    </select>
+
+    <insert id="insertAuthRegister" parameterType="com.chinatower.platform.project.custom.entity.AuthRegisterApiVO">
+        INSERT INTO sys_auth_register_api
+        (id,tenant_id, tenant_name, app_key, secret_key, is_open,
+         create_time,  delete_flag,create_by,open_modifier,open_modifier_date )
+        VALUES
+        (#{id},#{customerCode}, #{customerName}, #{appKey}, #{secretKey}, #{isOpen},
+         now(), '1', #{createBy}, #{openModifier}, now() );
+    </insert>
+
+    <insert id="insertAuthRegisterFunc" >
+        insert into sys_auth_register_func_api (
+        register_id, callback_url, create_time,  delete_flag,api_intf_name,api_intf_code,api_intf_type
+        )
+        values
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            (
+            #{item.registerId},#{item.callbackUrl},now(),'1',#{item.apiIntfName},#{item.apiIntfCode},#{item.apiIntfType}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateAuthRegisterFuncStatus" parameterType="com.chinatower.platform.project.custom.entity.AuthRegisterFuncApiVO">
+        update sys_auth_register_func_api t1 ,sys_auth_register_api t2
+        <set>
+            <if test='status!= null and status != "" '>
+                t1.status = #{status},
+            </if>
+            <if test='deleteFlag!= null'>
+                t1.delete_flag = #{deleteFlag},
+            </if>
+        </set>
+
+        where t1.register_id = t2.id
+        <if test='registerId!= null and registerId != "" '>
+            and t1.register_id = #{registerId}
+        </if>
+        <if test='customerCode!= null and customerCode != "" '>
+            and t2.tenant_id = #{customerCode}
+        </if>
+        <if test='oldStatus!= null and oldStatus != "" '>
+            and t1.status = #{oldStatus}
+        </if>
+        <if test='oldDeleteFlag!= null'>
+            and t1.delete_flag = #{oldDeleteFlag}
+        </if>
+    </update>
+
+    <update id="updateAuthRegisterNew" parameterType="com.chinatower.platform.project.custom.entity.AuthRegisterApiVO">
+        update sys_auth_register_api set is_open = #{isOpen},open_modifier_date = now(),open_modifier = #{openModifier}
+        where 1=1
+        <if test='id!= null and id != "" '>
+            and id = #{id}
+        </if>
+        <if test='customerCode!= null and customerCode != "" '>
+            and tenant_id = #{customerCode}
+        </if>
+    </update>
+
+    <update id="updateAuthRegisterFunc" parameterType="java.util.Map">
+        update sys_auth_register_func_api set delete_flag = '0'
+        where register_id = #{id}
+    </update>
+
+    <select id="getEnumPaths" resultType="java.lang.String" parameterType="java.util.Map">
+        SELECT
+        REMARK
+        FROM
+        sys_dict_data
+        WHERE status = '0'
+        AND DICT_TYPE = #{enumTypeId}
+        <if test="list!= null and list.size() > 0 ">
+            AND dict_value in
+            <foreach collection="list" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getAuthRegister" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+            callback_url AS "callbackUrl"
+        FROM
+            sys_auth_register_api reg
+                LEFT JOIN sys_auth_register_func_api func ON reg.id = func.register_id
+        WHERE reg.is_open = '1'
+          AND reg.tenant_id = #{customerCode}
+          AND func.delete_flag = '1'
+          AND func.`type` = #{type}
+    </select>
+
+    <resultMap id="devMap" type="com.chinatower.platform.project.custom.entity.PushDevVO">
+        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+        <result column="dev_name" property="deviceName" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="category_code" property="categoryCode" jdbcType="VARCHAR"/>
+        <result column="dev_ex_info" property="devExInfo" jdbcType="VARCHAR"/>
+        <result column="county_id" property="regionCode" jdbcType="VARCHAR"/>
+        <result column="region_name" property="regionName" jdbcType="VARCHAR"/>
+        <result column="location" property="location" jdbcType="VARCHAR"/>
+        <result column="enable_snap" property="enableSnap" jdbcType="VARCHAR"/>
+        <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+        <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+        <result column="collect_type" property="collectType" jdbcType="VARCHAR"/>
+        <result column="height" property="height" jdbcType="INTEGER"/>
+        <collection  property="channels" ofType="com.chinatower.platform.project.custom.entity.PushChanVO">
+            <result column="channel_code" property="channelCode" jdbcType="VARCHAR"/>
+            <result column="channel_name" property="channelName" jdbcType="VARCHAR"/>
+            <result column="chnStatus" property="status" jdbcType="VARCHAR"/>
+            <result column="facade" property="facade" jdbcType="VARCHAR"/>
+            <result column="channel_type" property="channelType" jdbcType="VARCHAR"/>
+            <result column="stream_type" property="streamType" jdbcType="VARCHAR"/>
+        </collection >
+    </resultMap>
+
+
+    <insert id="insertLogs" parameterType="java.util.Map">
+        insert into sys_history_logs_api
+        (`type`,url,original_json,request_json,response_json,
+         create_time,expend_time,status,error, tenant_id)
+        VALUES
+        (#{type},#{url}, #{originalJson},#{requestJson},#{responseJson},
+         now(),#{expendTime},#{status},#{error},#{customerCode})
+    </insert>
+
+    <update id="updateTenantInfo" parameterType="java.util.Map">
+        update sys_tenant_info
+        <set>
+            <if test='isOperation!= null and isOperation != "" '>
+                is_operation = #{isOperation},
+            </if>
+            <if test='alarmLocation!= null and alarmLocation != "" '>
+                alarm_location = #{alarmLocation},
+            </if>
+            <if test='alarmLocation!= null and alarmLocation != "" '>
+                alarm_location = #{alarmLocation},
+            </if>
+        </set>
+        where tenant_id = #{customerCode}
+    </update>
+
+    <update id="updateTenantInfoNew" parameterType="com.chinatower.system.api.model.AlarmTypeReqVo">
+        update sys_tenant_info set is_operation = #{isOperation},operation_modifier_date = now(),operation_modifier = #{modifier}
+        where tenant_id = #{tenantId} and del_flag = 0
+    </update>
+
+    <update id="updateTenantOperation" parameterType="com.chinatower.system.api.model.AlarmTypeReqVo">
+        update sys_tenant_operation_config set delete_flag = 1,modifier = #{param.modifier},is_operation = 0
+        where tenant_id = #{param.tenantId}
+        and accept_node = #{param.acceptNode}
+        and industry_code = #{param.industryCode}
+        and app_ver_code = #{param.appVerCode}
+    </update>
+
+    <insert id="insertTenantOperation" parameterType="com.chinatower.system.api.model.AlarmTypeReqVo">
+       insert into sys_tenant_operation_config (
+       tenant_id,
+       operation_type,
+       alarm_source,
+       operation_alarm_type_str,
+       delete_flag,
+       modifier,
+       creator,
+       update_time,
+       is_operation,
+       accept_node,
+       industry_code,
+       app_ver_code,
+       operation_node,
+       operation_dept
+       )
+       values
+       <foreach collection="alarmTypeReqVoList" item="alarmTypeReqVo" index="index" separator="," open="" close="">
+           (
+           #{alarmTypeReqVo.tenantId},
+           #{alarmTypeReqVo.operationType},
+           #{alarmTypeReqVo.alarmSource},
+           #{alarmTypeReqVo.operationAlarmTypeStr},
+           #{alarmTypeReqVo.deleteFlag},
+           #{alarmTypeReqVo.modifier},
+           #{alarmTypeReqVo.modifier},
+           #{alarmTypeReqVo.updateTime},
+           #{alarmTypeReqVo.isOperation},
+           #{alarmTypeReqVo.acceptNode},
+           #{alarmTypeReqVo.industryCode},
+           #{alarmTypeReqVo.appVerCode},
+           #{alarmTypeReqVo.operationNode},
+           #{alarmTypeReqVo.operationDept}
+           )
+       </foreach>
+    </insert>
+
+    <select id="queryChildPlatformCode" resultType="java.lang.String">
+        select code_path
+        from `vm_platform_data_config`
+        where platform_code = #{locationCode} and delete_flag = 0
+    </select>
+
+    <select id="getParentLocationCodeInfo" resultType="com.chinatower.device.entity.vo.PlatformInfoVo">
+        select platform_code,platform_parent_code,platform_name
+        from vm_platform_data_config
+        where delete_flag = 0 and platform_code in
+        <foreach collection="locationCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryTenantById" resultMap="tenantMap" parameterType="com.chinatower.platform.project.custom.entity.TenantVO">
+        SELECT
+            a.tenant_id,
+            a.tenant_name,
+            b.user_name as tenant_manager
+        FROM
+            sys_tenant_info a left JOIN sys_user b on a.tenant_id=b.tenant_id and b.is_tenant_admin=1
+        WHERE
+            a.tenant_id = #{tenantId}
+          AND a.del_flag = '0'
+    </select>
+
+    <select id="queryCustOrderInfo" resultMap="custOrderInfoMap" parameterType="com.chinatower.platform.project.custom.entity.TenantOrderVO">
+        SELECT DISTINCT c.order_code,c.ord_status,c.order_time,c.subscriber_name as subscriber,c.valid_time,c.invalid_time,c.tenant_id as customer_code
+        FROM vm_order_customer c
+        WHERE c.tenant_id = #{custCode}
+        ORDER BY c.valid_time DESC
+    </select>
+
+    <resultMap id="custOrderInfoMap" type="com.chinatower.platform.project.custom.entity.CustomOrderInfoVO">
+        <result column="order_code" property="orderCode" jdbcType="VARCHAR"/>
+        <result column="ord_status" property="ordStatus" jdbcType="VARCHAR"/>
+        <result column="order_time" property="orderTime" jdbcType="VARCHAR"/>
+        <result column="subscriber" property="subscriber" jdbcType="VARCHAR"/>
+        <result column="valid_time" property="validTime" jdbcType="VARCHAR"/>
+        <result column="invalid_time" property="invalidTime" jdbcType="VARCHAR"/>
+        <collection property="packageData" ofType="com.chinatower.platform.project.custom.entity.CustomOrderPackageVO"
+                    javaType="java.util.ArrayList" select="packageData"
+                    column="{orderCode=order_code}">
+            <result column="id" property="packageId" jdbcType="VARCHAR"/>
+            <result column="package_order_code" property="packageOrderCode" jdbcType="VARCHAR"/>
+            <result column="package_code" property="packageCode" jdbcType="VARCHAR"/>
+            <result column="package_name" property="packageName" jdbcType="VARCHAR"/>
+            <result column="description" property="description" jdbcType="VARCHAR"/>
+            <result column="storage_time" property="storageTime" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="custOrderPackageMap" type="com.chinatower.platform.project.custom.entity.CustomOrderPackageVO">
+        <result column="package_id" property="packageId" jdbcType="VARCHAR"/>
+        <result column="package_order_code" property="packageOrderCode" jdbcType="VARCHAR"/>
+        <result column="package_code" property="packageCode" jdbcType="VARCHAR"/>
+        <result column="package_name" property="packageName" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="storage_time" property="storageTime" jdbcType="VARCHAR"/>
+        <collection property="appData" ofType="com.chinatower.platform.project.custom.entity.CustomOrderApplicationVO"
+                    javaType="java.util.ArrayList"
+                    select="queryAppData"
+                    column="{orderCode=package_order_code,packageCode=package_code}">
+        </collection>
+        <collection  property="algorithmData" ofType="com.chinatower.platform.project.custom.entity.CustomOrderAlgorithmsVO"
+                     javaType="java.util.ArrayList" select="queryalgorithmData"
+                     column="{orderCode=package_order_code,packageCode=package_code}">
+        </collection>
+        <collection  property="deviceData" ofType="com.chinatower.platform.project.custom.entity.CustomOrderDevicesVO"
+                     javaType="java.util.ArrayList" select="querydeviceData"
+                     column="{orderCode=package_order_code,packageCode=package_code}">
+        </collection>
+    </resultMap>
+
+    <select id="getApiIntfInfo" resultType="com.chinatower.platform.project.custom.entity.ApiIntfInfoVO" parameterType="com.chinatower.platform.project.custom.entity.ApiIntfInfoVO">
+        SELECT
+        api_intf_id as apiIntfId,
+        api_intf_name as apiIntfName,
+        api_intf_type as apiIntfType,
+        call_route as callRoute,
+        is_open as isOpen,
+        open_privilege as openPrivilege
+        FROM
+        api_intf_info
+        <where>
+            <if test="apiIntfType != null and apiIntfType != ''">
+                AND api_intf_type = #{apiIntfType}
+            </if>
+            <if test="isOpen != null and isOpen != ''">
+                AND is_open = #{isOpen}
+            </if>
+            <if test="openPrivilege != null and openPrivilege != ''">
+                AND open_privilege = #{openPrivilege}
+            </if>
+        </where>
+        ORDER BY api_intf_id asc
+
+    </select>
+
+    <select id="getOrderCustomerList" resultType="java.lang.String" parameterType="java.util.List">
+        SELECT DISTINCT
+        tenant_id customerCode
+        FROM
+        vm_order_customer
+        WHERE
+        ord_status IN ('0', '1', '2')
+        AND delete_flag = '0'
+        <if test="list!= null and list.size() > 0 ">
+            AND tenant_id in
+            <foreach collection="list" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="getAllAlgorithmInfoTree"  resultMap="algoTreeMap">
+            SELECT DISTINCT
+                f.function_type,
+                f.function_type_name,
+                f.sub_function_type,
+                f.sub_function_type_name,
+                f.function_code,
+                f.function_code_name,
+                fa.algorithm_code,
+                fa.algorithm_name
+            FROM
+                vm_algorithm_info_t fa
+            LEFT JOIN vm_function_type f ON fa.function_code = f.function_code
+            WHERE
+                fa.delete_flag = '0'
+            AND f.delete_flag = '0'
+    </select>
+
+    <select id="getTenantLocationRelList" resultType="com.chinatower.platform.project.custom.entity.TenantLocationRelVO">
+        select * from (
+            select o.tenant_id,t.tenant_name,o.`accept_node` as locationCode,c.`platform_name` as locationName,
+            o.industry_code,
+            <if test="param.isCenterNodeFlag == false">
+                d.industry_name,
+            </if>
+            o.app_ver_code,count(o.accept_node) as locationOrderNum, 0 as locationValidOrderNum,
+            0 as locationValidDevNum,
+            0 as isOperation,
+            '未开启' as isOperationName,
+            IFNULL(s.is_open,0) as thirdAlarmStatus,
+            case when s.is_open = 1 then '开启' else '未开启' end thirdAlarmStatusName,
+            IFNULL(s.modifier,'') as thirdAlarmModifier,
+            IFNULL(s.update_time,'') as thirdAlarmModifierDate,
+            c.general_url AS generalUrl,
+            c.program_url AS programUrl
+            from vm_order_customer o
+            left join `vm_platform_data_config` c on o.`accept_node` = c.`platform_code` and c.`delete_flag` = 0
+            <if test="param.isCenterNodeFlag == false">
+                left join sys_industry_conf d on d.industry_code = o.industry_code and d.accept_node = o.accept_node and d.delete_flag= '0'
+            </if>
+            left join sys_tenant_info t on t.tenant_id = o.tenant_id
+            left join sys_tenant_third_alarm_config s on o.tenant_id = s.tenant_id and o.accept_node = s.accept_node
+            and o.industry_code = s.industry_code and o.app_ver_code = s.app_ver_code and s.delete_flag = '0'
+            where o.delete_flag = 0
+            and o.tenant_id in
+            <foreach item="item" collection="param.tenantIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            <if test='param.currentLocationCode != null and param.currentLocationCode !=""'>
+                and o.accept_node = #{param.currentLocationCode}
+            </if>
+            <if test='param.orderFlag != null and param.orderFlag == "1"'>
+                and o.ord_status in ('0', '1', '2')
+            </if>
+            GROUP BY
+            o.tenant_id,locationCode,o.industry_code ,o.app_ver_code
+            order by o.tenant_id
+        ) a
+        <where>
+            <if test='param.tenantId != null and param.tenantId != ""'>
+                and (a.tenant_id like concat('%',#{param.tenantId},'%') or a.tenant_name like concat('%',#{param.tenantId},'%'))
+            </if>
+            <if test='param.locationCode != null and param.locationCode != ""'>
+                and (a.locationCode like concat('%',#{param.locationCode},'%') or a.locationName like concat('%',#{param.locationCode},'%'))
+            </if>
+            <if test='param.industryCode != null and param.industryCode != ""'>
+                and (a.industry_code like CONCAT('%',#{param.industryCode},'%') or a.industry_name like concat('%',#{param.industryCode},'%'))
+            </if>
+        </where>
+
+    </select>
+
+    <select id="getCenterIndustryInfo" resultType="com.chinatower.platform.project.custom.entity.TenantLocationRelVO">
+        select
+        s.accept_node as locationCode,
+        s.industry_code,
+        s.industry_name
+        from sys_industry_conf s
+        where s.industry_code in
+        <foreach collection="list" item="code" open="(" close=")" separator="," index="index">
+            #{code}
+        </foreach>
+        and s.delete_flag = '0'
+    </select>
+
+    <select id="getLocationIndustryInfo" resultType="com.chinatower.platform.project.custom.entity.TenantLocationRelVO">
+        select
+        s.accept_node as locationCode,
+        s.industry_code,
+        s.industry_name
+        from sys_localization_industry_conf s
+        where s.industry_code in
+        <foreach collection="list" item="code" open="(" close=")" separator="," index="index">
+            #{code}
+        </foreach>
+        and s.delete_flag = '0'
+    </select>
+
+    <select id="getCustomerValidOrderNum" resultType="com.chinatower.platform.project.custom.entity.TenantLocationRelVO">
+        select o.tenant_id, o.`accept_node` as locationCode,o.industry_code as industryCode,
+        o.app_ver_code as appVerCode
+        from vm_order_customer o
+        where o.delete_flag = 0 and o.ord_status in ('0', '1', '2')
+        and o.tenant_id = #{param.tenantId} and o.accept_node = #{param.acceptNode} and o.industry_code = #{param.industryCode}
+        and o.app_ver_code = #{param.appVerCode}
+    </select>
+
+    <select id="getLocationValidOrderNum" resultType="java.util.Map" parameterType="java.util.List">
+        select o.tenant_id as "customerCode", o.`accept_node` as "locationCode",c.`platform_name` as "locationName",o.industry_code as "industryCode",
+        o.app_ver_code as "appVerCode",count(o.accept_node) as "locationValidOrderNum"
+        from vm_order_customer o
+        inner join `vm_platform_data_config` c on o.`accept_node` = c.`platform_code`
+        where o.delete_flag = 0 and c.`delete_flag` = 0 and o.ord_status in ('0', '1', '2')
+        and o.tenant_id in
+        <foreach item="item" collection="tenantIdList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        GROUP BY
+        o.tenant_id,locationCode,o.industry_code ,o.app_ver_code;
+    </select>
+
+    <select id="getLocationValidDevNum" resultType="java.util.Map" parameterType="java.util.List">
+        SELECT
+        count( distinct device_code ) as "locationValidDevNum",
+        tenant_id as "customerCode",
+        accept_node as "locationCode",
+        industry_code as "industryCode",
+        app_ver_code as "appVerCode"
+        FROM
+        vm_order_devices
+        WHERE
+        delete_flag = '0'
+        and ord_status in ('0','1','2')
+        and tenant_id in
+        <foreach item="item" collection="tenantIdList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        GROUP BY
+        tenant_id,accept_node ,industry_code ,app_ver_code;
+    </select>
+
+    <select id="getOperationInfo" resultType="com.chinatower.platform.project.custom.entity.TenantLocationRelVO">
+        select
+        stoc.tenant_id,
+        stoc.accept_node as locationCode,
+        stoc.is_operation,
+        case when stoc.is_operation = '0' then '未开启' else '开启' end isOperationName,
+        stoc.industry_code,
+        stoc.app_ver_code,
+        stoc.delete_flag,
+        stoc.update_time as operationModifierDate,
+        stoc.modifier as operationModifier
+       from sys_tenant_operation_config stoc
+       where stoc.tenant_id in
+        <foreach item="item" collection="tenantIdList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+       GROUP by stoc.tenant_id,stoc.accept_node,stoc.industry_code ,stoc.app_ver_code,stoc.delete_flag;
+    </select>
+
+    <insert id="insertOperationPushRecordBatch" parameterType="com.chinatower.platform.project.custom.entity.OperationPushRecordVO">
+        insert into sys_tenant_operation_push_record (accept_node, tenant_id, industry_code, app_ver_code, push_time, push_status,
+        push_fail_reason, creator, create_time, modifier, update_time, delete_flag) values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.acceptNode}, #{item.tenantId}, #{item.industryCode}, #{item.appVerCode}, #{item.pushTime},#{item.pushStatus},
+            #{item.pushFailReason}, #{item.creator}, #{item.createTime}, #{item.modifier}, #{item.updateTime},#{item.deleteFlag})
+        </foreach>
+    </insert>
+
+    <select id="queryOperationPushRecordList" resultType="com.chinatower.platform.project.custom.entity.OperationPushRelVO">
+        select
+        s.accept_node,
+        c.platform_name as acceptNodeName,
+        s.push_status,
+        s.tenant_id,
+        s.industry_code,
+        s.app_ver_code
+        from sys_tenant_operation_push_record s
+        left join vm_platform_data_config c on c.platform_code = s.accept_node
+        where s.delete_flag = 0 and c.delete_flag = 0
+        <if test='param.tenantId != null and param.tenantId != ""'>
+            and s.tenant_id = #{param.tenantId}
+        </if>
+        <if test='param.industryCode != null and param.industryCode != ""'>
+            and s.industry_code = #{param.industryCode}
+        </if>
+        <if test='param.appVerCode != null and param.appVerCode != ""'>
+            and s.app_ver_code = #{param.appVerCode}
+        </if>
+        <if test='param.parentLocationCodeList != null and param.parentLocationCodeList.size() > 0'>
+            and s.accept_node in
+            <foreach collection="param.parentLocationCodeList" item="parentLocationCode" separator="," open="(" close=")">
+                #{parentLocationCode}
+            </foreach>
+        </if>
+    </select>
+
+    <update id="updateOperationPushRecordBatch" parameterType="com.chinatower.platform.project.custom.entity.OperationPushRecordVO">
+        <foreach collection="list" item="item" separator=";">
+            update
+            sys_tenant_operation_push_record s
+            set
+            s.push_time = #{item.pushTime},s.push_status = #{item.pushStatus},s.push_fail_reason = #{item.pushFailReason},
+            s.modifier = #{item.modifier},s.update_time = #{item.updateTime}
+            where
+            s.accept_node = #{item.acceptNode}
+            and s.tenant_id = #{item.tenantId}
+            and s.industry_code = #{item.industryCode}
+            and s.app_ver_code = #{item.appVerCode}
+            and s.delete_flag = 0
+        </foreach>
+    </update>
+
+    <select id="queryOperationInfoList" resultType="com.chinatower.system.api.model.AlarmTypeReqVo">
+        select
+        s.operation_node,
+        s.alarm_source,
+        s.operation_type,
+        s.operation_alarm_type_str,
+        s.operation_dept
+        from sys_tenant_operation_config s
+        where s.delete_flag = 0
+        and s.tenant_id = #{param.tenantId}
+        and s.accept_node = #{param.locationCode}
+        and s.industry_code = #{param.industryCode}
+        and s.app_ver_code = #{param.appVerCode}
+    </select>
+
+    <select id="queryThirdAlarmInfo" resultType="com.chinatower.platform.project.custom.entity.ThirdAlarmInfoVO">
+        select
+        s.third_alarm_name,
+        s.app_key,
+        s.secret_key,
+        s.remark,
+        s.is_open
+        from sys_tenant_third_alarm_config s
+        where s.delete_flag = 0
+        and s.tenant_id = #{param.tenantId}
+        and s.accept_node = #{param.acceptNode}
+        and s.industry_code = #{param.industryCode}
+        and s.app_ver_code = #{param.appVerCode}
+    </select>
+
+    <update id="updateThirdAlarmInfo" parameterType="com.chinatower.platform.project.custom.entity.ThirdAlarmInfoVO">
+        update
+        sys_tenant_third_alarm_config s
+        set
+        s.third_alarm_name = #{param.thirdAlarmName},
+        s.remark = #{param.remark},
+        s.is_open = #{param.isOpen},
+        s.modifier = #{param.modifier},
+        s.update_time = #{param.updateTime}
+        where
+        s.tenant_id = #{param.tenantId}
+        and s.accept_node = #{param.acceptNode}
+        and s.industry_code = #{param.industryCode}
+        and s.app_ver_code = #{param.appVerCode}
+    </update>
+
+    <update id="closeThirdAlarm" parameterType="com.chinatower.platform.project.custom.entity.ThirdAlarmInfoVO">
+        update
+        sys_tenant_third_alarm_config s
+        set
+        s.is_open = #{param.isOpen},
+        s.modifier = #{param.modifier},
+        s.update_time = #{param.updateTime}
+        where
+        s.tenant_id = #{param.tenantId}
+        and s.accept_node = #{param.acceptNode}
+        and s.industry_code = #{param.industryCode}
+        and s.app_ver_code = #{param.appVerCode}
+    </update>
+
+    <insert id="insertThirdAlarmInfo" parameterType="com.chinatower.platform.project.custom.entity.ThirdAlarmInfoVO">
+        insert into
+        sys_tenant_third_alarm_config
+        (
+        third_alarm_name,
+        app_key,
+        secret_key,
+        remark,
+        is_open,
+        tenant_id,
+        accept_node,
+        industry_code,
+        app_ver_code,
+        delete_flag,
+        creator,
+        create_time,
+        modifier,
+        update_time
+        )
+        values
+        (
+        #{param.thirdAlarmName},
+        #{param.appKey},
+        #{param.secretKey},
+        #{param.remark},
+        #{param.isOpen},
+        #{param.tenantId},
+        #{param.acceptNode},
+        #{param.industryCode},
+        #{param.appVerCode},
+        '0',
+        #{param.creator},
+        #{param.createTime},
+        #{param.modifier},
+        #{param.updateTime}
+        )
+    </insert>
+
+    <delete id="deleteTenantMapConfigByCondition">
+        delete from sys_tenant_map_config
+        where tenant_id = #{param.tenantId} and industry_code = #{param.industryCode} and app_ver_code = #{param.appVerCode}
+        and accept_node = #{param.acceptNode} and map_type = #{param.mapType}
+    </delete>
+
+    <insert id="saveTenantMapConfig" parameterType="com.chinatower.platform.project.custom.entity.TenantMapConfigVO">
+        insert into sys_tenant_map_config  (`map_type`, `max_zoom`, `min_zoom`, `map_url`, `sort`, `tenant_id`, `industry_code`, `app_ver_code`,
+        `accept_node`, `creator`, `delete_flag`, `create_time`) values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.mapType}, #{item.maxZoom}, #{item.minZoom}, #{item.mapUrl}, #{item.sort}, #{item.tenantId}, #{item.industryCode},
+            #{item.appVerCode}, #{item.acceptNode}, #{item.creator}, #{item.deleteFlag}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <select id="queryTenantMapConfigInfo" resultType="com.chinatower.platform.project.custom.entity.TenantMapConfigVO">
+        select *
+        from sys_tenant_map_config
+        where tenant_id = #{param.tenantId} and industry_code = #{param.industryCode} and app_ver_code = #{param.appVerCode}
+        and accept_node = #{param.acceptNode}
+        <if test='param.mapType != null and param.mapType != ""'>
+            and map_type = #{param.mapType}
+        </if>
+    </select>
+
+    <update id="updateLoginTypeAndUrlByTenantId">
+        UPDATE sys_tenant_info
+        set
+            login_type = #{loginType},
+            login_url = #{loginUrl},
+            update_by = #{modifier},
+            update_time = #{modifierDate}
+        WHERE
+        tenant_id = #{tenantId}
+        AND del_flag = 0
+    </update>
+
+    <select id="selectSysTenantInfoByTenantId" resultType="com.chinatower.platform.project.custom.entity.TenantMangeResultVO">
+        SELECT
+        id,
+        tenant_id,
+        tenant_name,
+        tenant_desc,
+        trade_info,
+        del_flag,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        province_id,
+        city_id,
+        dept_id,
+        county_id,
+        is_operation,
+        is_cascade,
+        alarm_location,
+        status,
+        operation_alarm_type_str,
+        operation_modifier,
+        operation_modifier_date,
+        cascade_modifier,
+        cascade_modifier_name,
+        cascade_modifier_date,
+        login_type,
+        login_url
+        FROM
+        sys_tenant_info
+        WHERE
+        tenant_id = #{tenantId}
+        AND del_flag = 0
+    </select>
+</mapper>

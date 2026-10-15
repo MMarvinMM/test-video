@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IVmFlowLinkIndustryConfigMapper">
+
+    <select id="queryFlowLinkIndustryConfig" parameterType="com.chinatower.event.entity.dto.AlarmFlowConfigModel" resultType="com.chinatower.event.entity.dto.FlowModel">
+        select
+        fll.cur_link as linkId,
+        fll.cur_link as curLink,
+        fll.pre_link as preLink,
+        fll.next_link as nextLink,
+        fll.link_type as linkType,
+        '2' as userType,
+        fla.role_id as roleId,
+        fla.msg_notify_type as msgNotifyType,
+        fla.leader_flag as leaderFlag,
+        fla.sign_flag as signFlag,
+        fla.rollback_flag as rollbackFlag,
+        (select link_name from vm_flow_link_config where link_id = fla.link_id) as linkName,
+        ft.flow_name as flowName,
+        fla.time_limit as timeLimit,
+        fla.id as flowLinkId,
+        ft.template_id as flowId,
+        fll.real_link_type as realLinkType,
+        fll.template_id templateId,
+        '0' as turnFlag
+        from vm_flow_link_industry_config as fla
+        INNER JOIN vm_flow_template_link as fll on fla.link_id = fll.cur_link
+        left join vm_flow_template as ft on fll.template_id = ft.template_id
+        where  fla.status = '1'
+        <if test="id != null and id != ''">
+            and  fll.template_id = #{id}
+        </if>
+        <if test="linkId != null and linkId != ''">
+            and fla.link_id = #{linkId}
+        </if>
+        <if test="industryCode == null">
+            AND fla.app_ver_code is null AND fla.industry_code is null
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND fla.industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND fla.app_ver_code = #{appVerCode}
+        </if>
+        <if test="linkList != null and linkList.size() > 0 ">
+            and fla.link_id in
+            <foreach collection="linkList" item="curLink" index="index" open="(" close=")" separator=",">
+                #{curLink}
+            </foreach>
+        </if>
+        GROUP BY fll.template_id,fll.cur_link
+    </select>
+
+    <select id="queryFlowLinkByFlowId"  parameterType="com.chinatower.event.entity.dto.AlarmFlowConfigModel" resultType="com.chinatower.event.entity.dto.FlowModel">
+        select
+        fll.cur_link as linkId,
+        fll.cur_link as curLink,
+        fll.pre_link as preLink,
+        fll.next_link as nextLink,
+        fll.link_type as linkType,
+        '2' as userType,
+        fla.role_id as roleId,
+        fla.msg_notify_type as msgNotifyType,
+        fla.leader_flag as leaderFlag,
+        fla.sign_flag as signFlag,
+        fla.rollback_flag as rollbackFlag,
+        (select link_name from vm_flow_link_config where link_id = fla.link_id) as linkName,
+        ft.flow_name as flowName,
+        fla.time_limit as timeLimit,
+        fla.id as flowLinkId,
+        ft.id as  flowId,
+        fll.cur_link as realLinkType,
+        fll.template_id templateId,
+        '0' as turnFlag
+        from vm_flow_link_industry_config as fla
+        INNER JOIN vm_flow_template_link as fll on fla.link_id = fll.cur_link
+        left join vm_alarm_flow_config as ft on fll.template_id = ft.template_id
+        where  fla.status = '1' and fla.delete_flag='0'
+        <if test="id != null and id != ''">
+            and  ft.id = #{id}
+        </if>
+        <if test="linkId != null and linkId != ''">
+            and fla.link_id = #{linkId}
+        </if>
+        <if test="industryCode == null">
+            AND fla.app_ver_code is null AND fla.industry_code is null
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND fla.industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND fla.app_ver_code = #{appVerCode}
+        </if>
+        <if test="linkList != null and linkList.size() > 0 ">
+            and fla.link_id in
+            <foreach collection="linkList" item="curLink" index="index" open="(" close=")" separator=",">
+                #{curLink}
+            </foreach>
+        </if>
+    </select>
+
+</mapper>

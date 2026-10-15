@@ -1,0 +1,8 @@
+1、xxlJob配置定时任务
+执行器：视联定时任务
+任务描述：更新组织管理区域定时任务
+Cron：0 0/10 * * * ?
+JobHandler：dealDeptStreetHandler
+负责人：刘效廷
+
+

@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.artags.mapper.ArTagsInfoMapper">
+    <insert id="addMark">
+        INSERT INTO vm_ar_tags_user_rel
+            (user_id, tag_id)
+        VALUES (#{userId}, #{tagId})
+    </insert>
+    <insert id="addMarks">
+        INSERT INTO vm_ar_tags_user_rel
+            (user_id, tag_id)
+        VALUES
+        <foreach collection="tagIds" item="tagId" separator=",">
+            (#{userId}, #{tagId})
+        </foreach>
+    </insert>
+    <insert id="add" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO vm_ar_tags_info
+            (
+            <if test="null != arViewId and '' != arViewId">ar_view_id,</if>
+            <if test="null != tagsType and '' != tagsType">tags_type,</if>
+            <if test="null != tagsPosition and '' != tagsPosition">tags_position,</if>
+            <if test="null != tagsName and '' != tagsName">tags_name,</if>
+            <if test="null != tagsDesc and '' != tagsDesc">tags_desc,</if>
+            <if test="null != deviceCode and '' != deviceCode">device_code,</if>
+            <if test="null != channelCode and '' != channelCode">channel_code,</if>
+            <if test="null != coordinate and '' != coordinate">coordinate,</if>
+            <if test="null != resolutionx and '' != resolutionx">resolutionx,</if>
+            <if test="null != resolutiony and '' != resolutiony">resolutiony,</if>
+            <if test="null != tenantId and '' != tenantId">tenant_id,</if>
+            <if test="null != industryCode and '' != industryCode">industry_code,</if>
+            <if test="null != appVerCode and '' != appVerCode">app_ver_code,</if>
+            <if test="null != presetId and '' != presetId">preset_id,</if>
+            <if test="null != tagPosType and '' != tagPosType">tag_pos_type,</if>
+            <if test="null != regionPoints and '' != regionPoints">region_points,</if>
+            <if test="null != extraJson">extra_json,</if>
+            <if test="null != linkType and '' != linkType">link_type,</if>
+            <if test="null != longitude and '' != longitude">longitude,</if>
+            <if test="null != latitude and '' != latitude">latitude,</if>
+            <if test="null != tagClass and '' != tagClass">tag_class,</if>
+            <if test="null != labelIconId and '' != labelIconId">label_icon_id,</if>
+            <if test="null != labelIconType and '' != labelIconType">label_icon_type,</if>
+            <if test="null != videoFileString">video_file,</if>
+            create_time,creator,delete_flag
+             )
+
+        VALUES
+            (
+            <if test="null != arViewId and '' != arViewId">#{arViewId},</if>
+            <if test="null != tagsType and '' != tagsType">#{tagsType},</if>
+            <if test="null != tagsPosition and '' != tagsPosition">#{tagsPosition},</if>
+            <if test="null != tagsName and '' != tagsName">#{tagsName},</if>
+            <if test="null != tagsDesc and '' != tagsDesc">#{tagsDesc},</if>
+            <if test="null != deviceCode and '' != deviceCode">#{deviceCode},</if>
+            <if test="null != channelCode and '' != channelCode">#{channelCode},</if>
+            <if test="null != coordinate and '' != coordinate">#{coordinate},</if>
+            <if test="null != resolutionx and '' != resolutionx">#{resolutionx},</if>
+            <if test="null != resolutiony and '' != resolutiony">#{resolutiony},</if>
+            <if test="null != tenantId and '' != tenantId">#{tenantId},</if>
+            <if test="null != industryCode and '' != industryCode">#{industryCode},</if>
+            <if test="null != appVerCode and '' != appVerCode">#{appVerCode},</if>
+            <if test="null != presetId and '' != presetId">#{presetId},</if>
+            <if test="null != tagPosType and '' != tagPosType">#{tagPosType},</if>
+            <if test="null != regionPoints and '' != regionPoints">#{regionPoints},</if>
+            <if test="null != extraJson">#{extraJson, typeHandler=com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler},</if>
+            <if test="null != linkType and '' != linkType">#{linkType},</if>
+            <if test="null != longitude and '' != longitude">#{longitude},</if>
+            <if test="null != latitude and '' != latitude">#{latitude},</if>
+            <if test="null != tagClass and '' != tagClass">#{tagClass},</if>
+            <if test="null != labelIconId and '' != labelIconId">#{labelIconId},</if>
+            <if test="null != labelIconType and '' != labelIconType">#{labelIconType},</if>
+            <if test="null != videoFileString"> #{videoFileString},</if>
+            #{createTime},#{creator},0
+            )
+    </insert>
+
+    <insert id="batchAddLabelIcon">
+        INSERT INTO vm_ar_label_icon_gallery (
+        label_icon_id,
+        label_icon_name,
+        label_icon_url,
+        create_time,
+        creator,
+        tenant_id,
+        industry_code,
+        app_ver_code
+        ) VALUES
+        <foreach collection="arLabelIconGalleryList" item="item" separator=",">
+            (
+            <trim suffixOverrides=",">
+                <if test="item.labelIconId != null">#{item.labelIconId},</if>
+                <if test="item.labelIconName != null and item.labelIconName != ''">#{item.labelIconName},</if>
+                <if test="item.labelIconUrl != null and item.labelIconUrl != ''">#{item.labelIconUrl},</if>
+                now(),
+                <if test="creator != null and creator != ''">#{creator},</if>
+                <if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+                <if test="industryCode != null and industryCode != ''">#{industryCode},</if>
+                <if test="appVerCode != null and appVerCode != ''">#{appVerCode}</if>
+            </trim>
+            )
+        </foreach>
+    </insert>
+    <insert id="addMapTags">
+        INSERT INTO vm_ar_tags_tree_user_rel
+        (user_id, coll_obj_code,coll_obj_type)
+        VALUES
+        <foreach collection="deviceCodes" item="deviceCode" separator=",">
+            (#{userId}, #{deviceCode},#{collObjType})
+        </foreach>
+    </insert>
+
+    <update id="updateArTagsInfo">
+        UPDATE vm_ar_tags_info
+        <set>
+            <if test="null != tagsPosition and '' != tagsPosition">tags_position = #{tagsPosition},</if>
+            <if test="null != tagsName and '' != tagsName">tags_name = #{tagsName},</if>
+            <if test="null != tagsDesc and '' != tagsDesc">tags_desc = #{tagsDesc},</if>
+            <if test="null != resolutionx and '' != resolutionx">resolutionx = #{resolutionx},</if>
+            <if test="null != resolutiony and '' != resolutiony">resolutiony = #{resolutiony},</if>
+            <if test="null != channelCode and '' != channelCode">channel_code = #{channelCode},</if>
+            <if test="null != coordinate and '' != coordinate">coordinate = #{coordinate},</if>
+            <if test="null != deviceCode and '' != deviceCode">device_code = #{deviceCode},</if>
+            <if test="null != tagPosType and '' != tagPosType">tag_pos_type = #{tagPosType},</if>
+            <if test="null != regionPoints and '' != regionPoints">region_points = #{regionPoints},</if>
+            <if test="null != extraJson">extra_json = #{extraJson, typeHandler=com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler},</if>
+            <if test="null != linkType and '' != linkType">link_type = #{linkType},</if>
+            <if test="null != labelIconUrl">label_icon_url = #{labelIconUrl},</if>
+            <if test="null != longitude and '' != longitude">longitude = #{longitude},</if>
+            <if test="null != latitude and '' != latitude">latitude = #{latitude},</if>
+            <if test="null != labelIconId">label_icon_id = #{labelIconId},</if>
+            <if test="null != labelIconType">label_icon_type = #{labelIconType},</if>
+            <if test="null != videoFileString">video_file = #{videoFileString},</if>
+            preset_id = #{presetId},
+            modifier = #{modifier},update_time = #{updateTime}
+        </set>
+        where id = #{id}
+    </update>
+    <delete id="delMark">
+        DELETE
+        FROM vm_ar_tags_user_rel
+        WHERE user_id = #{userId}
+          AND tag_id = #{tagId}
+    </delete>
+    <delete id="deleteMarks">
+        DELETE
+        FROM vm_ar_tags_user_rel
+        WHERE tag_id = #{tagId}
+    </delete>
+    <delete id="delMarks">
+        DELETE
+        FROM vm_ar_tags_user_rel
+        WHERE user_id = #{userId}
+          AND tag_id IN
+        <foreach collection="tagIds" item="tagId" separator="," open="(" close=")">
+            #{tagId}
+        </foreach>
+    </delete>
+
+    <select id="countMark" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM vm_ar_tags_user_rel
+        WHERE user_id = #{userId}
+          AND tag_id = #{tagId}
+    </select>
+
+    <select id="listMark" resultType="java.lang.String">
+        SELECT tag_id AS "tagId"
+        FROM vm_ar_tags_user_rel
+        WHERE user_id = #{userId}
+    </select>
+    <select id="getArDeviceInfo" resultType="com.chinatower.video.modules.artags.dataobject.ArDeviceInfo">
+        SELECT
+            DISTINCT
+            device_code,
+            device_name AS "devName",
+            longitude,
+            latitude
+        FROM
+            vm_device_info_t
+        WHERE
+            delete_flag = '0'
+        AND device_code IN
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getArChannelInfo" resultType="com.chinatower.video.modules.artags.dataobject.ArChannelInfo">
+        SELECT
+            DISTINCT
+            device_code,
+            channel_code,
+            channel_name,
+            facade
+        FROM
+        vm_channel_info_t
+        WHERE
+            delete_flag = '0'
+        AND device_code IN
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getDeviceRegion" resultType="com.chinatower.industry.dto.DeviceIndDTO">
+        SELECT
+        device_code,
+        province_id as "provinceCode",
+        city_id as "cityCode",
+        county_id as "countyCode"
+        FROM
+        vm_device_info_t
+        WHERE
+        delete_flag = '0'
+        AND device_code IN
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getIotDeviceRegion" resultType="com.chinatower.industry.dto.DeviceIndDTO">
+        SELECT
+        device_code,
+        province_id as "provinceCode",
+        city_id as "cityCode",
+        county_id as "countyCode"
+        FROM
+        vm_iot_device_t
+        WHERE
+        delete_flag = '0'
+        AND device_code IN
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    
+    <select id="getHornDeviceRegion" resultType="com.chinatower.industry.dto.DeviceIndDTO">
+        SELECT
+        device_code,
+        province_code as "provinceCode",
+        city_code as "cityCode",
+        county_code as "countyCode"
+        FROM
+        vm_horn_device_info_t
+        WHERE
+        delete_flag = '0'
+        AND device_code IN
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getUavDeviceRegion" resultType="com.chinatower.industry.dto.DeviceIndDTO">
+        SELECT
+        device_code,
+        province_code as "provinceCode",
+        city_code as "cityCode",
+        county_code as "countyCode"
+        FROM
+        vm_uav_device_info_t
+        WHERE
+        delete_flag = '0'
+        AND device_code IN
+        <foreach collection="deviceCodeList" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+	<resultMap id="listTreeResultMap" type="com.chinatower.video.modules.artags.dataobject.ArTagTree">
+        <id column="pTypeId" property="id"/>
+        <result column="pTypeId" property="tagsType"/>
+        <result column="pTypeName" property="typeName"/>
+        <result column="parent_id" property="parentId"/>
+        <collection property="children" ofType="com.chinatower.video.modules.artags.dataobject.ArTagTree">
+            <id column="typeId" property="id"/>
+            <result column="typeId" property="tagsType"/>
+            <result column="type_name" property="typeName"/>
+            <result column="parent_id" property="parentId"/>
+            <collection property="children" ofType="com.chinatower.video.modules.artags.dataobject.ArTagTree">
+                <id column="id" property="id"/>
+                <result column="ar_view_id" property="arViewId"/>
+                <result column="type_id" property="tagsType"/>
+                <result column="tags_position" property="tagsPosition"/>
+                <result column="tags_type" property="tagsType"/>
+                <result column="tags_name" property="tagsName"/>
+                <result column="tags_desc" property="tagsDesc"/>
+                <result column="device_code" property="deviceCode"/>
+                <result column="channel_code" property="channelCode"/>
+                <result column="coordinate" property="coordinate"/>
+                <result column="resolutionx" property="resolutionx"/>
+                <result column="resolutiony" property="resolutiony"/>
+                <result column="delete_flag" property="deleteFlag"/>
+                <result column="creator" property="creator"/>
+                <result column="create_time" property="createTime"/>
+                <result column="modifier" property="modifier"/>
+                <result column="update_time" property="updateTime"/>
+                <result column="tenant_id" property="tenantId"/>
+                <result column="app_ver_code" property="appVerCode"/>
+                <result column="industry_code" property="industryCode"/>
+                <result column="preset_id" property="presetId"/>
+                <result column="markFlag" property="markFlag"/>
+                <result column="longitude" property="longitude"/>
+                <result column="latitude" property="latitude"/>
+                <result column="label_icon_url" property="labelIconUrl"/>
+                <result column="label_icon_id" property="labelIconId"/>
+                <result column="label_icon_type" property="labelIconType"/>
+            </collection>
+        </collection>
+
+    </resultMap>
+
+	<select id="listTree" resultMap="listTreeResultMap">
+        SELECT
+            tp.id pTypeId, tp.type_name pTypeName, tp.parent_id,
+            t.id typeId,t.type_name,t.parent_id,
+            a.id,a.ar_view_id,a.tags_type,a.tags_position,a.tags_name,a.tags_desc,a.device_code,a.channel_code,a.coordinate,
+        a.resolutionx,a.resolutiony,a.delete_flag,a.creator,a.create_time,a.modifier,a.update_time,a.tenant_id,a.app_ver_code,
+        a.industry_code,a.longitude,a.latitude,a.preset_id,case when IFNULL(b.tag_id,0) = 0 then 0 else 1 end markFlag
+        from  vm_business_dict_type t LEFT JOIN vm_ar_tags_info a ON t.id = a.tags_type
+        left join  vm_business_dict_type tp ON t.parent_id = tp.id
+        left join vm_ar_tags_user_rel b on a.id = b.tag_id and b.user_id = #{userName}
+        where a.delete_flag = 0
+        <if test="arViewId != null and arViewId !=''">
+            AND a.ar_view_id = #{arViewId}
+        </if>
+        <if test="channelCode != null and channelCode !=''">
+            AND a.channel_code = #{channelCode}
+        </if>
+        <if test='tagsType != null'>
+        and a.tags_type = #{tagsType}
+        </if>
+        <if test='tagsName != null and tagsName != ""'>
+        and a.tags_name like CONCAT('%', #{tagsName}, '%')
+        </if>
+        <if test="isTowerView == 0">
+            AND tenant_id = #{tenantId}
+            AND industry_code = #{industryCode}
+        </if>
+        <if test="isTowerView == 1">
+            and t.id not in (390,391,392,393,394,395)
+            and a.tag_class = '101'
+        </if>
+        <if test="tagClass != null and tagClass !=''">
+            AND a.tag_class = #{tagClass}
+        </if>
+        ORDER BY tp.id ASC,t.id ASC,
+	    CASE WHEN SUBSTRING(a.tags_name, 1, 1) REGEXP '[一-龥]'
+           THEN firstPinyin(a.tags_name) ELSE SUBSTRING(a.tags_name, 1, 1)
+        END
+
+	</select>
+    <select id="pageList" resultType="com.chinatower.video.modules.artags.dataobject.ArTagsInfo">
+        SELECT
+        id,
+        ar_view_id,
+        tags_type,
+        tags_position,
+        tags_name,
+        tags_desc,
+        device_code,
+        channel_code,
+        coordinate,
+        resolutionx,
+        resolutiony,
+        delete_flag,
+        creator,
+        create_time,
+        modifier,
+        update_time,
+        tenant_id,
+        app_ver_code,
+        industry_code,
+        preset_id
+        FROM vm_ar_tags_info
+        WHERE ar_view_id = #{arViewId}
+        <if test="channelCode != null and channelCode !=''">
+            AND channel_code = #{channelCode}
+        </if>
+        <if test="tagsType != null and tagsType !=''">
+            AND tags_type = #{tagsType}
+        </if>
+        <if test="tagsName != null and tagsName != ''">
+            AND tags_name LIKE concat('%',#{tagsName},'%')
+        </if>
+        <if test="isTowerView == 0">
+            AND tenant_id = #{tenantId}
+            AND industry_code = #{industryCode}
+        </if>
+
+    </select>
+    <select id="arTagsTypeTree" parameterType="java.lang.Integer" resultType="com.chinatower.video.modules.artags.dataobject.BusinessDictType">
+        SELECT id, type_name typeName, parent_id parentId
+        FROM vm_business_dict_type
+        where
+            dict_type = #{dictType}
+    </select>
+
+
+    <resultMap id="listMap" type="com.chinatower.video.modules.artags.dataobject.ArTagsInfo">
+        <id column="id" property="id"/>
+        <result column="ar_view_id" property="arViewId"/>
+        <result column="tags_type" property="tagsType"/>
+        <result column="tags_position" property="tagsPosition"/>
+        <result column="tags_name" property="tagsName"/>
+        <result column="tags_desc" property="tagsDesc"/>
+        <result column="device_code" property="deviceCode"/>
+        <result column="channel_code" property="channelCode"/>
+        <result column="coordinate" property="coordinate"/>
+        <result column="resolutionx" property="resolutionx"/>
+        <result column="resolutiony" property="resolutiony"/>
+        <result column="delete_flag" property="deleteFlag"/>
+        <result column="creator" property="creator"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modifier" property="modifier"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="app_ver_code" property="appVerCode"/>
+        <result column="industry_code" property="industryCode"/>
+        <result column="preset_id" property="presetId"/>
+        <result column="tag_pos_type" property="tagPosType"/>
+        <result column="region_points" property="regionPoints"/>
+        <result column="extra_json" property="extraJson" jdbcType="OTHER" typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler"/>
+        <result column="link_type" property="linkType"/>
+        <result column="markFlag" property="markFlag"/>
+        <result column="label_icon_url" property="labelIconUrl"/>
+        <result column="latitude" property="latitude"/>
+        <result column="longitude" property="longitude"/>
+        <result column="tag_class" property="tagClass"/>
+        <result column="label_icon_id" property="labelIconId"/>
+        <result column="label_icon_type" property="labelIconType"/>
+        <result column="video_file" property="videoFileString"/>
+    </resultMap>
+
+    <select id="queryAll" resultMap="listMap">
+        SELECT
+            t1.id,
+            t1.ar_view_id,
+            t1.tags_type,
+            t1.tags_position,
+            t1.tags_name,
+            t1.tags_desc,
+            t1.device_code,
+            t1.channel_code,
+            t1.coordinate,
+            t1.resolutionx,
+            t1.resolutiony,
+            t1.delete_flag,
+            t1.creator,
+            t1.create_time,
+            t1.modifier,
+            t1.update_time,
+            t1.tenant_id,
+            t1.app_ver_code,
+            t1.industry_code,
+            t1.preset_id,
+            t1.tag_pos_type,
+            t1.region_points,
+            t1.extra_json ,
+            t1.link_type ,
+            t1.label_icon_type,
+            t1.label_icon_id,
+            ig.label_icon_url,
+            t1.longitude,
+            t1.latitude,
+            t1.tag_class,
+            t1.video_file,
+            case when IFNULL(t2.id,0) = 0 then '0' else '1' end markFlag
+        FROM vm_ar_tags_info t1
+            left join vm_ar_tags_user_rel t2 on t1.id = t2.tag_id AND t2.user_id = #{userName}
+            left join vm_ar_label_icon_gallery ig on t1.label_icon_Id = ig.label_icon_id
+        WHERE t1.delete_flag = 0
+        <if test="arViewId != null and arViewId != ''">
+            AND t1.ar_view_id = #{arViewId}
+        </if>
+        <if test="id != null and id != ''">
+            AND t1.id= #{id}
+        </if>
+        <if test="channelCode != null and channelCode != ''">
+            AND t1.channel_code = #{channelCode}
+        </if>
+        <if test="tagsType != null and tagsType != ''">
+            AND t1.tags_type = #{tagsType}
+        </if>
+        <if test="tagsName != null and tagsName != ''">
+            AND t1.tags_name like CONCAT('%', #{tagsName}, '%')
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND t1.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND t1.industry_code = #{industryCode}
+        </if>
+        <if test="tagClass != null and tagClass !=''">
+            AND t1.tag_class = #{tagClass}
+        </if>
+        <if test="isTowerView == 1">
+            and t1.tags_type not in (390,391,392,393,394,395)
+            and t1.tag_class = '101'
+        </if>
+        <if test="tagIdList != null and tagIdList.size() > 0">
+            AND t1.id IN
+            <foreach item="item" index="index" collection="tagIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="getLabelIconList"
+            resultType="com.chinatower.video.modules.artags.dataobject.ArLabelIconGallery">
+        SELECT
+        id,
+        label_icon_id,
+        label_icon_name,
+        label_icon_url,
+        delete_flag,
+        create_time,
+        creator,
+        tenant_id,
+        industry_code,
+        app_ver_code
+        FROM
+        vm_ar_label_icon_gallery
+        <where>
+            delete_flag = 0
+            <if test="labelIconName != null and labelIconName != ''">
+                AND label_icon_name LIKE CONCAT('%', #{labelIconName}, '%')
+            </if>
+            <if test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </if>
+            <if test="industryCode != null and industryCode != ''">
+                AND industry_code = #{industryCode}
+            </if>
+            <if test="appVerCode != null and appVerCode != ''">
+                AND app_ver_code = #{appVerCode}
+            </if>
+        </where>
+        ORDER BY create_time DESC , label_icon_name desc
+    </select>
+
+    <select id="checkLabelIcon" resultType="java.lang.Integer">
+        SELECT count(1) FROM vm_ar_tags_info WHERE delete_flag = '0' and label_icon_id = #{labelIconId}
+    </select>
+
+    <select id="listMapTags" resultType="java.lang.String">
+        SELECT coll_obj_code
+        FROM vm_ar_tags_tree_user_rel
+        WHERE user_id = #{userId}
+    </select>
+
+    <update id="delLabelIcon">
+        update vm_ar_label_icon_gallery set delete_flag = '1' where label_icon_id = #{labelIconId}
+    </update>
+
+    <delete id="delMapTags">
+        DELETE
+        FROM vm_ar_tags_tree_user_rel
+        WHERE user_id = #{userId}
+        AND coll_obj_code IN
+        <foreach collection="deviceCodes" item="deviceCode" separator="," open="(" close=")">
+            #{deviceCode}
+        </foreach>
+        AND coll_obj_type = #{collObjType}
+    </delete>
+    <select id="queryTagLocation" resultType="com.chinatower.video.modules.artags.dataobject.TagLocationVO">
+        SELECT DISTINCT
+        dev.device_code,
+        ( CASE WHEN length( IFNULL( tdr.device_name, '' )) = 0 THEN dev.device_name ELSE tdr.device_name END ) AS deviceName,
+        chan.channel_code,
+        (case when length(IFNULL(tdr.channel_name, '')) = 0 then chan.channel_name else tdr.channel_name end ) AS channelName,
+        dev.latitude,
+        dev.longitude,
+        dev.location,
+        dev.visual_radius,
+        ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(dev.longitude,dev.latitude)) * 111195 AS distance
+        FROM
+            vm_device_info_t dev
+                LEFT JOIN vm_order_devices t1 ON dev.device_code = t1.device_code
+                LEFT JOIN vm_channel_info_t chan ON dev.device_code = chan.device_code
+                LEFT JOIN vm_tenant_device_channel_rel_t tdr ON tdr.device_code = dev.device_code
+                AND tdr.tenant_id = t1.tenant_id
+                AND tdr.industry_code = t1.industry_code
+                AND tdr.channel_code = chan.channel_code
+        WHERE
+            chan.delete_flag = '0'
+          AND t1.delete_flag = '0'
+          AND dev.delete_flag = '0'
+          AND t1.ord_status IN ( 0, 1, 2 )
+          AND dev.visual_radius is not null
+          AND dev.visual_radius >= ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(dev.longitude,dev.latitude)) * 111195
+        ${dataScope}
+        ORDER BY distance
+    </select>
+</mapper>

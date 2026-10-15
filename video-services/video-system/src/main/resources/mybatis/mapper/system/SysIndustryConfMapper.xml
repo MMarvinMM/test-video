@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysIndustryConfMapper">
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysIndustryConf" id="SysIndustryConfResult">
+        <id property="industryId" column="industry_id"/>
+        <result property="industryCode" column="industry_code"/>
+        <result property="industryName" column="industry_name"/>
+        <result property="industryDesc" column="industry_desc"/>
+        <result property="creator" column="creator"/>
+        <result property="modifier" column="modifier"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="status" column="status"/>
+        <result property="imgUrl" column="img_url"/>
+    </resultMap>
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysIndustryVerConfDTO" id="SysIndustryVerConfResult">
+        <id property="id" column="id"/>
+        <result property="industryCode" column="industry_code"/>
+        <result property="appVerCode" column="app_ver_code"/>
+        <result property="appVerName" column="app_ver_name"/>
+        <result property="appVerDesc" column="app_ver_desc"/>
+        <result property="creator" column="creator"/>
+        <result property="modifier" column="modifier"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <resultMap type="com.chinatower.platform.entity.even.SysIndustryViewRel" id="SysIndustryViewRelResult">
+        <id property="industryViewId" column="id"/>
+        <result property="industryId" column="industry_id"/>
+        <result property="industryCode" column="industry_code"/>
+        <result property="viewList" column="view_list"/>
+        <result property="appVerCode" column="app_ver_code"/>
+        <result property="appVerName" column="app_ver_name"/>
+        <result property="appVerDesc" column="app_ver_desc"/>
+        <result property="imgUrl" column="img_url"/>
+        <result property="creator" column="creator"/>
+        <result property="modifier" column="modifier"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="status" column="status"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <resultMap id="allByUserPcMap" type="com.chinatower.system.api.model.IndustryTypeDto">
+        <result column="industryTypeId" property="industryTypeId" jdbcType="VARCHAR"/>
+        <result column="industryTypeName" property="industryTypeName" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.system.api.model.IndustryConfDto">
+            <result column="apiIntfConfigType" property="apiIntfConfigType" jdbcType="VARCHAR"/>
+            <result column="appKey" property="appKey" jdbcType="VARCHAR"/>
+            <result column="appVerCode" property="appVerCode" jdbcType="VARCHAR"/>
+            <result column="imgUrl" property="imgUrl" jdbcType="VARCHAR"/>
+            <result column="industryCode" property="industryCode" jdbcType="VARCHAR"/>
+            <result column="industryDesc" property="industryDesc" jdbcType="VARCHAR"/>
+            <result column="industryName" property="industryName" jdbcType="VARCHAR"/>
+            <result column="industryTypeId" property="industryTypeId" jdbcType="VARCHAR"/>
+            <result column="industryTypeName" property="industryTypeName" jdbcType="VARCHAR"/>
+            <result column="loginDisplayImgUrl" property="loginDisplayImgUrl" jdbcType="VARCHAR"/>
+            <result column="mobileAppIconUrl" property="mobileAppIconUrl" jdbcType="VARCHAR"/>
+            <result column="orderStatus" property="orderStatus" jdbcType="INTEGER"/>
+            <result column="productBriefInfo" property="productBriefInfo" jdbcType="VARCHAR"/>
+            <result column="productSeq" property="productSeq" jdbcType="INTEGER"/>
+            <result column="secretKey" property="secretKey" jdbcType="VARCHAR"/>
+            <result column="status" property="status" jdbcType="VARCHAR"/>
+            <result column="tenantId" property="tenantId" jdbcType="VARCHAR"/>
+            <result column="tenantName" property="tenantName" jdbcType="VARCHAR"/>
+            <result column="username" property="username" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectIndustryByUserId" parameterType="String" resultType="com.chinatower.platform.project.system.domain.vo.IndustrySelectVO">
+        SELECT
+            DISTINCT
+            i.industry_code industryCode,
+            i.app_ver_code appVerCode,
+            c.industry_name industryName,
+            vc.app_ver_name appVerName
+        FROM
+            sys_industry_auth i
+                inner JOIN sys_role_industry_auth ru ON i.auth_id = ru.auth_id
+                LEFT JOIN sys_role s ON s.ROLE_ID = ru.ROLE_ID
+                LEFT JOIN sys_user_role su ON s.ROLE_ID = su.ROLE_ID
+                LEFT JOIN sys_industry_conf c ON i.industry_code = c.industry_code and c.delete_flag = 0
+                LEFT JOIN sys_industry_ver_conf vc ON vc.APP_VER_CODE = i.APP_VER_CODE
+                AND vc.industry_code = i.industry_code AND c.accept_node = vc.accept_node
+        WHERE
+            user_id = #{userId}
+          and c.accept_node = #{platformCode}
+    </select>
+
+    <sql id="selectIndustryConfVo">
+        select industry_id,industry_code,img_url,industry_name,industry_desc,create_time,update_time,status
+        from sys_industry_conf
+    </sql>
+
+    <select id="selectIndustryConf" parameterType="com.chinatower.platform.entity.admin.SysIndustryConf"   resultMap="SysIndustryConfResult" >
+        <include refid="selectIndustryConfVo"/>
+        where delete_flag = 0 AND status='1' and accept_node = #{acceptNode}
+    </select>
+
+    <!--<sql id="selectIndustryVerConfVo">
+        select id,industry_code,app_ver_code,app_ver_name,app_ver_desc,creator,modifier,create_time,update_time,status
+        from sys_industry_ver_conf
+    </sql>
+
+    <select id="selectIndustryVerConf" parameterType="String"   resultMap="SysIndustryVerConfResult" >
+        <include refid="selectIndustryVerConfVo"/>
+        where status='1' and industry_code=#{industryCode}
+    </select>-->
+
+    <sql id="selectIndustryViewRelVo">
+        select industry_view_id,
+               industry_code,
+               app_ver_code  from sys_industry_view_rel
+    </sql>
+
+    <select id="selectIndustryViewRel" parameterType="String"   resultMap="SysIndustryViewRelResult" >
+        <include refid="selectIndustryViewRelVo"/>
+        where  industry_code = #{industryCode}
+    </select>
+
+    <select id="selectAllIndustryViewRel"   resultMap="SysIndustryViewRelResult" >
+        <include refid="selectIndustryViewRelVo"/>
+    </select>
+    <select id="allByUser" resultType="com.chinatower.system.api.model.IndustryConfDto">
+        SELECT d.INDUSTRY_CODE          industryCode,
+               ic.industry_name         industryName,
+               ic.industry_desc         industryDesc,
+               ic.STATUS,
+               ic.img_url               imgUrl,
+               ic.api_intf_config_type  apiIntfConfigType,
+               ic.app_key               appKey,
+               ic.secret_key            secretKey,
+               ic.mobile_app_icon_url   mobileAppIconUrl,
+               ic.login_display_img_url loginDisplayImgUrl,
+               ic.product_brief_info    productBriefInfo,
+               ic.product_seq           productSeq,
+               0                        orderStatus,
+               d.APP_VER_CODE           appVerCode,
+               d.tenant_id              tenantId,
+               d.tenant_name            tenantName
+        FROM sys_dept d
+                 LEFT JOIN sys_industry_conf ic ON d.INDUSTRY_CODE = ic.industry_code
+        WHERE FIND_IN_SET(
+                d.DEPT_ID,
+                (SELECT u.dept_id
+                 FROM sys_user u
+                 WHERE u.user_name = #{username}
+                   AND u.del_flag = '0'
+                    LIMIT 1))
+          AND d.del_flag = '0'
+          AND ic.STATUS = 1
+          and ic.accept_node = #{platformCode}
+          AND ic.delete_flag = 0
+
+    </select>
+
+    <select id="allByUserPc" resultMap="allByUserPcMap">
+        SELECT d.INDUSTRY_CODE          industryCode,
+               ic.industry_desc         industryDesc,
+               ic.STATUS,
+               ic.img_url               imgUrl,
+               ic.api_intf_config_type  apiIntfConfigType,
+               ic.app_key               appKey,
+               ic.secret_key            secretKey,
+               ic.mobile_app_icon_url   mobileAppIconUrl,
+               ic.login_display_img_url loginDisplayImgUrl,
+               ic.product_brief_info    productBriefInfo,
+               0                        orderStatus,
+               d.APP_VER_CODE           appVerCode,
+               d.tenant_id              tenantId,
+               d.tenant_name            tenantName,
+               IFNULL(ic.industry_type_code, '999999')   industryTypeId,
+               IFNULL(dict.DICT_LABEL,'其他')  industryTypeName,
+               IFNULL(dict.DICT_SORT, 999999) sort,
+               CASE WHEN SUBSTRING(IFNULL(dict.DICT_LABEL,'其他'), 1, 1) REGEXP '[一-龥]'
+                   THEN firstPinyin(IFNULL(dict.DICT_LABEL,'其他'))
+                    ELSE SUBSTRING(IFNULL(dict.DICT_LABEL,'其他'), 1, 1)
+                   END AS type_name_ord,
+               ic.industry_name         industryName,
+               ic.product_seq           productSeq,
+               CASE WHEN SUBSTRING(ic.industry_name, 1, 1) REGEXP '[一-龥]'
+                   THEN firstPinyin(ic.industry_name)
+                    ELSE SUBSTRING(ic.industry_name, 1, 1)
+                   END AS industry_name_ord
+        FROM sys_dept d
+                 LEFT JOIN sys_industry_conf ic ON d.INDUSTRY_CODE = ic.industry_code
+                 LEFT JOIN sys_dict_data dict ON dict.DICT_TYPE = 'common_industry_type' AND dict.STATUS = '0' AND ic.industry_type_code = dict.DICT_VALUE
+        WHERE FIND_IN_SET(
+                d.DEPT_ID,
+                (SELECT u.dept_id
+                 FROM sys_user u
+                 WHERE u.user_name = #{username}
+                   AND u.del_flag = '0'
+                    LIMIT 1))
+          AND d.del_flag = '0'
+          AND ic.STATUS = 1
+          and ic.accept_node = #{platformCode}
+          AND ic.delete_flag = 0
+        order by sort,
+                 IF('type_name_ord' RLIKE '^[a-z]', 1, 2),
+                 type_name_ord,
+                 ic.product_seq,
+                 IF('industry_name_ord' RLIKE '^[a-z]', 1, 2),
+                 industry_name_ord;
+    </select>
+
+    <select id="detailByIndustryCode" resultType="com.chinatower.system.api.model.IndustryConfDto">
+        SELECT industry_code         industryCode,
+               industry_name         industryName,
+               industry_desc         industryDesc,
+               status,
+               img_url,
+               api_intf_config_type  apiIntfConfigType,
+               app_key               appKey,
+               secret_key            secretKey,
+               mobile_app_icon_url   mobileAppIconUrl,
+               login_display_img_url loginDisplayImgUrl,
+               product_brief_info    productBriefInfo,
+               product_seq           productSeq
+        FROM sys_industry_conf
+        WHERE delete_flag = 0 AND industry_code = #{industryCode}  AND status = 1 AND accept_node = #{platformCode}
+    </select>
+    <select id="findUsernameByTenantId" resultType="java.lang.String">
+        SELECT USER_NAME
+        FROM sys_user
+        where is_tenant_admin = 1
+          and DEL_FLAG = '0'
+          AND tenant_id = #{tenantId}
+            LIMIT 1
+    </select>
+    <select id="queryIndustryByKeyWord"
+            resultType="com.chinatower.platform.project.system.domain.vo.IndustrySelectVO">
+        SELECT
+        DISTINCT
+        c.industry_code industryCode,
+        c.industry_name industryName
+        FROM
+        sys_industry_conf c
+        LEFT JOIN sys_industry_ver_conf vc ON vc.industry_code = c.industry_code and vc.accept_node = c.accept_node
+        WHERE
+        c.STATUS = 1
+        AND c.delete_flag = 0
+        AND vc.STATUS = 1
+        AND vc.delete_flag = 0 and c.accept_node = #{acceptNode}
+        <if test="keyword != null and keyword != '' ">
+            AND (c.industry_code  like concat('%',#{keyword},'%') or c.industry_name  like concat('%',#{keyword},'%'))
+        </if>
+        ORDER BY
+        c.industry_code
+    </select>
+    <select id="queryAppVerCodeByKeyWord"
+            resultType="com.chinatower.platform.project.system.domain.vo.IndustrySelectVO">
+        SELECT
+        DISTINCT
+        vc.app_ver_code appVerCode,
+        vc.app_ver_name appVerName
+        FROM
+        sys_industry_ver_conf vc
+        WHERE
+        vc.STATUS = 1
+        AND vc.delete_flag = 0 and vc.accept_node = #{acceptNode}
+        <if test="industryCode != null and industryCode != ''">
+            AND vc.industry_code = #{industryCode}
+        </if>
+        <if test="keyword != null and keyword != '' ">
+            AND (vc.app_ver_code  like concat('%',#{keyword},'%') or vc.app_ver_name  like concat('%',#{keyword},'%'))
+        </if>
+        ORDER BY
+        vc.app_ver_code
+    </select>
+    <select id="initIndustryByKeyWord"
+            resultType="com.chinatower.platform.project.system.domain.vo.IndustrySelectVO">
+        SELECT
+        DISTINCT
+        c.industry_code industryCode,
+        c.industry_name industryName
+        FROM
+        sys_industry_conf c
+        WHERE
+        c.STATUS = 1
+        AND c.delete_flag = 0
+        AND c.accept_node = #{acceptNode}
+        AND c.industry_code != '999999'
+        <if test="keyword != null and keyword != '' ">
+            AND (c.industry_code  like concat('%',#{keyword},'%') or c.industry_name  like concat('%',#{keyword},'%'))
+        </if>
+        ORDER BY
+        c.industry_code
+    </select>
+    <select id="allByUserCount" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM sys_dept d
+                 LEFT JOIN sys_industry_conf ic ON d.INDUSTRY_CODE = ic.industry_code
+                 LEFT JOIN sys_dict_data dict ON dict.DICT_TYPE = 'common_industry_type' AND dict.STATUS = '0' AND ic.industry_type_code = dict.DICT_VALUE
+        WHERE FIND_IN_SET(
+                d.DEPT_ID,
+                (SELECT u.dept_id
+                 FROM sys_user u
+                 WHERE u.user_name = #{username}
+                   AND u.del_flag = '0'
+                    LIMIT 1))
+          AND d.del_flag = '0'
+          AND ic.STATUS = 1
+          and ic.accept_node = #{platformCode}
+          AND ic.delete_flag = 0
+    </select>
+
+    <select id="queryAssociateDemoAccountDeptRelList" parameterType="com.chinatower.platform.project.system.domain.vo.AssociateDemoAccountVO" resultType="com.chinatower.platform.project.system.domain.vo.AssociateDemoAccountVO">
+        SELECT
+        t1.associate_id,
+        t1.dept_id
+        FROM
+        sys_associate_demo_account_dept_rel_t t1
+        WHERE
+        t1.delete_flag = 0
+        <if test="associateId != null and associateId != '' ">
+            AND t1.associate_id = #{associateId}
+        </if>
+        <if test="deptId != null and deptId != '' ">
+            AND t1.dept_id = #{deptId}
+        </if>
+    </select>
+
+
+
+    <select id="queryAssociateDemoAccountUserRelList" parameterType="com.chinatower.platform.project.system.domain.vo.AssociateDemoAccountVO" resultType="com.chinatower.platform.project.system.domain.vo.AssociateDemoAccountVO">
+        SELECT
+        t1.associate_id,
+        t1.user_id
+        FROM
+        sys_associate_demo_account_user_rel_t t1
+        WHERE
+        t1.delete_flag = 0
+        <if test="associateId != null and associateId != '' ">
+            AND t1.associate_id = #{associateId}
+        </if>
+        <if test="userId != null and userId != '' ">
+            AND t1.user_id = #{userId}
+        </if>
+    </select>
+
+    <select id="getAssociateDemoAccountInfo" parameterType="com.chinatower.platform.project.system.domain.vo.AssociateDemoAccountVO" resultType="java.lang.String">
+        SELECT
+        tenant_id
+        FROM
+        sys_associate_demo_account_t
+        WHERE
+        delete_flag = 0
+        <if test="id != null and id != ''">
+            AND id = #{id}
+        </if>
+    </select>
+</mapper>

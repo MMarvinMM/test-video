@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.licensePlateLibrary.mapper.CheckpointVehicleLicensePlateMapper">
+    <insert id="insertVehicleLicensePlate">
+        INSERT INTO `vm_checkpoint_vehicle_license_plate_t` ( `black_or_white`, `vehicle_number`, `vehicle_type`,
+                                                              `valid_period_vo`,`valid_period`, `load_weight`, `province_code`,
+                                                             `city_code`, `county_code`, `img_url`, `creator`,
+                                                             `create_time`, `delete_flag`, `tenant_id`, `industry_code`,
+                                                             `app_ver_code`)
+        VALUES ( #{blackOrWhite}, #{vehicleNumber}, #{vehicleType},#{validPeriodVO}, #{validPeriod}, #{loadWeight},
+                #{provinceCode},
+                #{cityCode}, #{countyCode}, #{imgUrl}, #{creator}, #{createTime}, 0, #{tenantId}, #{industryCode},
+                #{appVerCode});
+    </insert>
+
+    <update id="updateVehicleLicensePlate">
+        UPDATE `vm_checkpoint_vehicle_license_plate_t`
+        SET `vehicle_number` = #{vehicleNumber},
+            `vehicle_type`   = #{vehicleType},
+            `valid_period_vo`   = #{validPeriodVO},
+            `valid_period`   = #{validPeriod},
+            `load_weight`    = #{loadWeight},
+            `province_code`  = #{provinceCode},
+            `city_code`      = #{cityCode},
+            `county_code`    = #{countyCode},
+            `img_url`        = #{imgUrl},
+            `modifier`       = #{modifier},
+            `update_time`    = #{updateTime}
+        WHERE `id` = #{id};
+    </update>
+
+    <delete id="deleteVehicleLicensePlate">
+        UPDATE `vm_checkpoint_vehicle_license_plate_t`
+        SET `delete_flag` = 1,
+            `modifier`    = #{modifier},
+            `update_time` = #{updateTime}
+        WHERE `id` = #{id}
+    </delete>
+
+    <delete id="deleteGiveLicenseRelByVehicleNumber">
+        delete from vm_algorithm_give_license_rel_t where vehicle_number = #{vehicleNumber} and black_or_white = #{blackOrWhite}
+    </delete>
+
+    <select id="checkVehicleLicensePlate" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM `vm_checkpoint_vehicle_license_plate_t`
+        where delete_flag = 0
+        AND black_or_white = #{blackOrWhite}
+        AND tenant_id = #{tenantId}
+        AND vehicle_number = #{vehicleNumber}
+        AND industry_code = #{industryCode}
+        <if test='id != null and id != ""'>
+            and id != #{id}
+        </if>
+    </select>
+
+    <select id="getVehicleLicensePlateDetail"
+            resultType="com.chinatower.bdm.api.entity.CheckpointVehicleLicensePlate">
+        SELECT
+            vlp.id AS id,
+            vlp.black_or_white AS blackOrWhite,
+            vlp.vehicle_number AS vehicleNumber,
+            cvt.vehicle_name AS vehicleName,
+            vlp.valid_period_vo AS validPeriodVO,
+            vlp.valid_period AS validPeriod,
+            vlp.load_weight AS loadWeight,
+            vlp.province_code AS provinceCode,
+            vlp.city_code AS cityCode,
+            vlp.county_code AS countyCode,
+            CONCAT( IFNULL( a.AREA_NAME, '' ), IFNULL( b.AREA_NAME, '' ), IFNULL( c.AREA_NAME, '' ) ) AS administrativeArea,
+            vlp.img_url AS imgUrl
+        FROM
+            vm_checkpoint_vehicle_license_plate_t vlp
+                LEFT JOIN vm_checkpoint_vehicle_type_t cvt ON vlp.vehicle_type = cvt.vehicle_type
+                AND cvt.delete_flag = 0
+                LEFT JOIN sys_area a ON a.AREA_CODE = vlp.province_code
+                LEFT JOIN sys_area b ON b.AREA_CODE = vlp.city_code
+                LEFT JOIN sys_area c ON c.AREA_CODE = vlp.county_code
+        WHERE
+            vlp.id = #{id}
+          AND vlp.delete_flag = 0
+    </select>
+
+    <select id="listVehicleLicensePlateByCondition"
+            resultType="com.chinatower.bdm.api.entity.CheckpointVehicleLicensePlate">
+        SELECT
+            a.id,
+            a.valid_period_vo,
+            a.tenant_id,
+            b.tenant_name as tenantName,
+            c.industry_name,
+            a.app_ver_code,
+            a.vehicle_number,
+            a.valid_period,
+            d.vehicle_name as vehicleName,
+            a.load_weight,
+            a.creator,
+            a.modifier,
+            a.create_time,
+            a.update_time,
+            a.city_code,
+            a.province_code,
+            a.county_code,
+            a.vehicle_type,
+            a.img_url,
+            CONCAT(IFNULL(e.area_name, ''),IFNULL(f.area_name, ''),IFNULL(g.area_name, '')) AS administrativeArea
+        FROM
+            vm_checkpoint_vehicle_license_plate_t a
+            LEFT JOIN sys_tenant_info b ON a.tenant_id = b.tenant_id
+            LEFT JOIN sys_industry_conf c on a.industry_code = c.industry_code and c.delete_flag = 0
+            LEFT JOIN vm_checkpoint_vehicle_type_t d on a.vehicle_type = d.vehicle_type and d.delete_flag = 0
+            LEFT JOIN sys_area e ON a.province_code = e.area_code AND e.status = 0
+            LEFT JOIN sys_area f ON a.city_code = f.area_code AND f.status = 0
+            LEFT JOIN sys_area g ON a.county_code = g.area_code AND g.status = 0
+        <where>
+            a.delete_flag =0
+            and c.accept_node = #{platformCode}
+            <if test="blackOrWhite != null  and blackOrWhite != ''">AND a.black_or_white = #{blackOrWhite}</if>
+            <if test="tenantId != null  and tenantId != ''"> AND a.tenant_id = #{tenantId}</if>
+            <if test="industryCode != null  and industryCode != ''"> AND a.industry_code = #{industryCode}</if>
+            <if test="vehicleNumber != null  and vehicleNumber != ''"> AND a.vehicle_number like concat('%',#{vehicleNumber},'%') </if>
+            <if test="vehicleType != null  and vehicleType != ''"> AND a.vehicle_type = #{vehicleType}</if>
+            <if test="creator != null  and creator != ''"> AND a.creator like concat('%',#{creator},'%')</if>
+            <if test="createTimeStart != null and createTimeStart != ''">
+                <![CDATA[and DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i:%s') >= DATE_FORMAT(#{createTimeStart}, '%Y-%m-%d %H:%i:%s')]]>
+            </if>
+            <if test="createTimeEnd != null and createTimeEnd != ''">
+                <![CDATA[and DATE_FORMAT(a.create_time, '%Y-%m-%d %H:%i:%s') <= DATE_FORMAT(#{createTimeEnd}, '%Y-%m-%d %H:%i:%s')]]>
+            </if>
+            <if test="modifier != null  and modifier != ''"> AND a.modifier like concat('%',#{modifier},'%')</if>
+            <if test="updateTimeStart != null and updateTimeStart != ''">
+                <![CDATA[and DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i:%s') >= DATE_FORMAT(#{updateTimeStart}, '%Y-%m-%d %H:%i:%s')]]>
+            </if>
+            <if test="updateTimeEnd != null and updateTimeEnd != ''">
+                <![CDATA[and DATE_FORMAT(a.update_time, '%Y-%m-%d %H:%i:%s') <= DATE_FORMAT(#{updateTimeEnd}, '%Y-%m-%d %H:%i:%s')]]>
+            </if>
+        </where>
+        <choose>
+            <when test="sort eq 'asc' and sortName eq 'createTime'">
+                ORDER BY  a.create_time ASC
+            </when>
+            <when test="sort eq 'asc' and sortName eq 'updateTime'">
+                ORDER BY a.update_time ASC
+            </when>
+            <when test="sort eq 'desc' and sortName eq 'createTime'">
+                ORDER BY a.create_time DESC
+            </when>
+            <when test="sort eq 'desc' and sortName eq 'updateTime'">
+                ORDER BY a.update_time DESC
+            </when>
+        </choose>
+    </select>
+</mapper>

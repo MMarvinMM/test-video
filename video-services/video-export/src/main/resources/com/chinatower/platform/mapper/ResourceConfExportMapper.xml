@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.ResourceConfExportMapper">
+
+  <resultMap id="BaseResultMapnNew" type="com.chinatower.bdm.api.entity.ResourceVO">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="resource_id" jdbcType="VARCHAR" property="resourceId" />
+    <result column="resource_name" jdbcType="VARCHAR" property="resourceName" />
+    <result column="resource_type_id" jdbcType="VARCHAR" property="resourceTypeId" />
+    <result column="order_num" jdbcType="DECIMAL" property="orderNum" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="delete_flag" jdbcType="INTEGER" property="deleteFlag" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_by" jdbcType="VARCHAR" property="updateBy" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+    <result column="tenant_name" jdbcType="VARCHAR" property="tenantName" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="longitude" jdbcType="VARCHAR" property="longitude" />
+    <result column="latitude" jdbcType="VARCHAR" property="latitude" />
+    <result column="elevation" jdbcType="VARCHAR" property="elevation" />
+    <result column="addr" jdbcType="VARCHAR" property="addr" />
+    <result column="province_name" jdbcType="VARCHAR" property="provinceName" />
+    <result column="city_name" jdbcType="VARCHAR" property="cityName" />
+    <result column="resource_type_name" jdbcType="VARCHAR" property="resourceTypeName" />
+    <result column="industry_code" jdbcType="VARCHAR" property="industryCode" />
+    <result column="app_ver_code" jdbcType="VARCHAR" property="appVerCode" />
+    <result column="resource_property" jdbcType="VARCHAR" property="resourceProperty" />
+    <result column="admin" jdbcType="VARCHAR" property="admin" />
+    <result column="tel" jdbcType="VARCHAR" property="tel" />
+  </resultMap>
+
+  <sql id="Base_Column_List" >
+    id, resource_id, resource_name, resource_type_id, order_num, `status`, delete_flag,
+    creator, create_time, modifier, update_time, tenant_id, remark, longitude,
+    latitude, elevation, addr,industry_code,app_ver_code
+  </sql>
+
+
+  <!--获取资源顶级列表-->
+  <select id="selectResourceExportList" parameterType="com.chinatower.bdm.api.entity.ResourceConf" resultMap="BaseResultMapnNew">
+    select
+      DISTINCT
+      <if test=" latitude != null and latitude != '' and longitude != null and longitude != ''">
+        CAST(ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(d.longitude,d.latitude))*111195 as DECIMAL(65,2))  as distance,
+      </if>
+      d.id,
+      d.resource_id,
+      d.resource_name,
+      d.resource_type_id,
+      z.resource_type_name,
+      d.order_num,
+      d.`status`,
+      d.delete_flag,
+      d.creator,
+      d.create_time,
+      d.modifier,
+      d.update_time,
+      d.tenant_id,
+      s.tenant_name,
+      d.remark,
+      CASE
+      WHEN d.resource_property = '1' THEN
+      d.longitude
+      WHEN d.resource_property = '2' THEN
+      ''
+      WHEN d.resource_property = '3' THEN
+      ''
+      END as longitude,
+      CASE
+      WHEN d.resource_property = '1' THEN
+      d.latitude
+      WHEN d.resource_property = '2' THEN
+      ''
+      WHEN d.resource_property = '3' THEN
+      ''
+      END as latitude,
+      d.elevation,
+      d.addr,
+      d.industry_code,
+      d.app_ver_code,
+      CASE
+      WHEN d.resource_property = '1' THEN
+      '点资源'
+      WHEN d.resource_property = '2' THEN
+      '线资源'
+      WHEN d.resource_property = '3' THEN
+      '面资源'
+      END as resource_property,
+      a.area_name as province_name,
+      b.area_name as city_name,
+      z.icon,
+      d.admin,
+      d.tel
+    from
+      resource_conf d left join resource_type z on d.resource_type_id=z.resource_type_id and d.tenant_id = z.tenant_id and d.industry_code = z.industry_code
+      left join sys_tenant_info s on d.tenant_id = s.tenant_id
+      left join sys_area a on a.area_code=s.province_id
+      left join sys_area b on b.area_code=s.city_id
+    where
+      d.delete_flag = 0 and z.delete_flag = 0
+      <if test="resourceName != null and resourceName != ''">
+        AND d.resource_name like CONCAT(CONCAT('%',#{resourceName}),'%')
+      </if>
+      <if test="resourceTypeName != null and resourceTypeName != ''">
+        AND z.resource_type_name like CONCAT(CONCAT('%',#{resourceTypeName}),'%')
+      </if>
+      <if test="typeLevelUrl != null and typeLevelUrl != ''">
+        AND z.type_level_url like CONCAT(CONCAT('%',#{typeLevelUrl}),'%')
+      </if>
+      <if test="longitudeParam != null and longitudeParam != ''">
+        AND d.longitude = #{longitudeParam}
+      </if>
+      <if test="latitudeParam != null and latitudeParam != ''">
+        AND d.latitude = #{latitudeParam}
+      </if>
+      <if test="elevation != null and elevation != ''">
+        AND d.elevation = #{elevation}
+      </if>
+      <if test="tenantName != null and tenantName != ''">
+        AND s.tenant_name like CONCAT(CONCAT('%',#{tenantName}),'%')
+      </if>
+      <if test="tenantId != null and tenantId != ''">
+        AND d.tenant_id = #{tenantId}
+      </if>
+      <if test="industryCode != null and industryCode != ''">
+          AND d.industry_code = #{industryCode}
+      </if>
+      <if test="appVerCode != null and appVerCode != ''">
+        AND d.app_ver_code = #{appVerCode}
+      </if>
+      <if test="resourceProperty != null and resourceProperty != ''">
+        AND d.resource_property = #{resourceProperty}
+      </if>
+      <if test="radius != null and radius != '' and latitude != null and latitude != '' and longitude != null and longitude != ''">
+        and ST_DISTANCE(POINT(#{longitude},#{latitude}),POINT(d.longitude,d.latitude))*111195  <![CDATA[<=]]> #{radius}
+      </if>
+      <if test="resourceTypeList != null and resourceTypeList.size() > 0 ">
+        AND d.resource_type_id IN
+        <foreach collection="resourceTypeList" item="item" index="index" open="(" close=")" separator=",">
+          #{item}
+        </foreach>
+      </if>
+      <!-- 数据范围过滤 -->
+      <choose>
+        <when test="prop != null and prop != '' and order != null and order != '' ">
+          <if test='prop == "resourceTypeName"'>
+            ORDER BY CONVERT(z.resource_type_name USING GBK)
+            <if test='order == "desc"'>
+              desc
+            </if>
+          </if>
+          <if test='prop == "elevation"'>
+            order by d.elevation + 0
+            <if test='order == "desc"'>
+              desc
+            </if>
+          </if>
+        </when>
+
+        <otherwise>
+          order by d.update_time desc
+        </otherwise>
+      </choose>
+  </select>
+</mapper>

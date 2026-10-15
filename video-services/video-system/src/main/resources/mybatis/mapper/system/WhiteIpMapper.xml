@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.WhiteIpMapper">
+
+    <insert id="insertIps">
+        INSERT INTO vm_white_ip (ip_start, ip_end, user_id, delete_flag, create_time, creator)
+        VALUES
+        <foreach collection="list" item="item" separator="," >
+            (#{item.ipStart}, #{item.ipEnd}, #{item.userId}, 0, now(), #{item.creator})
+        </foreach>
+    </insert>
+    <update id="updateIps" parameterType="java.util.ArrayList">
+        <foreach collection="list" item="whiteIp" open="" separator=";" close="">
+            UPDATE vm_white_ip
+            <set>
+                <if test="whiteIp.ipStart != null and whiteIp.ipStart != ''">ip_start = #{whiteIp.ipStart},</if>
+                <if test="whiteIp.ipEnd != null and whiteIp.ipEnd != ''">ip_end = #{whiteIp.ipEnd},</if>
+                <if test="whiteIp.deleteFlag != null and whiteIp.deleteFlag != ''">delete_flag = #{whiteIp.deleteFlag},</if>
+                update_time = now(),
+                modifier = #{whiteIp.modifier}
+            </set>
+            WHERE id = #{whiteIp.id}
+        </foreach>
+    </update>
+    <select id="selectIps" resultType="com.chinatower.platform.project.system.domain.WhiteIp">
+        SELECT
+            id,
+            ip_start,
+            ip_end,
+            user_id,
+            delete_flag,
+            create_time,
+            creator,
+            update_time,
+            modifier
+        FROM
+            vm_white_ip
+        WHERE
+            user_id = #{userId}
+        AND
+            delete_flag = 0
+        ORDER BY
+            create_time ASC
+    </select>
+</mapper>

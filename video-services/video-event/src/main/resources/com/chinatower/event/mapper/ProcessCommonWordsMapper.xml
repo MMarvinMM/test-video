@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.ProcessCommonWordsMapper">
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        words_id, init_words_flag, content, tenant_id, industry_code
+    </sql>
+
+    <select id="getProcessCommonWords"  resultType="com.chinatower.event.entity.dto.ProcessCommonWordsDTO" >
+        SELECT <include refid="Base_Column_List" />
+        FROM vm_process_common_words_t
+        WHERE
+        (industry_code = #{industryCode} AND tenant_id = #{tenantId})
+        OR (industry_code IS NULL AND tenant_id IS NULL)
+    </select>
+
+    <insert id="addProcessCommonWordsBatch" parameterType="com.chinatower.event.entity.dto.ProcessCommonWordsDTO">
+        INSERT INTO vm_process_common_words_t
+        (USER_ID, init_words_flag, content, create_time, update_time, tenant_id, industry_code)
+        VALUES
+        <foreach collection ="list" item="item" index="index" separator =",">
+            (#{item.userId}, #{item.initWordsFlag}, #{item.content}, NOW(), NOW(), #{item.tenantId}, #{item.industryCode})
+        </foreach>
+    </insert>
+
+</mapper>

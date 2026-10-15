@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.LayerTypeMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.bdm.modules.layer.domain.LayerType" >
+        <result column="id" property="id" />
+        <result column="type_name" property="typeName" />
+        <result column="creator" property="creator" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier" property="modifier" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="app_ver_code" property="appVerCode" />
+        <result column="category" property="category" />
+        <result column="area_ref" property="areaRef" />
+        <result column="tbbh_ref" property="tbbhRef" />
+        <result column="abbreviation" property="abbreviation" />
+        <result column="super_type_name" property="superTypeName" />
+        <result column="initial_type_name" property="initialTypeName" />
+        <result column="unique_field_code" property="uniqueFieldCode" />
+        <result column="covered_field_code" property="coveredFieldCode" />
+        <result column="covered_label" property="coveredLabel" />
+        <result column="not_covered_label" property="notCoveredLabel" />
+        <result column="add_other_field_values_flag" property="addOtherFieldValuesFlag" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+                id,
+                type_name,
+                abbreviation,
+                creator,
+                create_time,
+                modifier,
+                update_time,
+                delete_flag,
+                tenant_id,
+                industry_code,
+                app_ver_code,
+                category,
+                area_ref,
+                tbbh_ref,
+                super_type_name,
+                initial_type_name,
+                unique_field_code,
+                covered_field_code,
+                covered_label,
+                not_covered_label,
+                add_other_field_values_flag
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from sys_layer_type
+        where
+            delete_flag = 0
+            and id = #{id}
+    </select>
+
+    <select id="selectByLayerTypeSimple" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from sys_layer_type
+        where
+        delete_flag = 0
+        and abbreviation = #{abbreviation}
+    </select>
+
+
+    <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into `sys_layer_type`(`id`,`type_name`,`creator`,`create_time`,`modifier`,`update_time`,`delete_flag`,`tenant_id`,`industry_code`,`app_ver_code`,`category`,abbreviation,add_other_field_values_flag,super_type_name,initial_type_name,not_covered_label,covered_label,covered_field_code,unique_field_code,area_ref,label,tbbh_ref)
+        values
+        (#{id},#{typeName},#{creator},#{createTime},#{modifier},#{updateTime},#{deleteFlag},#{tenantId},#{industryCode},#{appVerCode},#{category},#{abbreviation},#{addOtherFieldValuesFlag},#{superTypeName},#{initialTypeName},#{notCoveredLabel},#{coveredLabel},#{coveredFieldCode},#{uniqueFieldCode},#{areaRef},#{label},#{tbbhRef})
+    </insert>
+
+    <delete id="deleteById" >
+        update sys_layer_type set delete_flag = 1
+        WHERE id = #{id}
+    </delete>
+
+    <update id="updateById" parameterType="com.chinatower.bdm.modules.layer.domain.LayerType">
+        UPDATE sys_layer_type
+        <set>
+            <if test="null != item.typeName and '' != item.typeName">type_name = #{item.typeName},</if>
+            <if test="null != item.creator and '' != item.creator">creator = #{item.creator},</if>
+            <if test="null != item.createTime">create_time = #{item.createTime},</if>
+            <if test="null != item.modifier and '' != item.modifier">modifier = #{item.modifier},</if>
+            <if test="null != item.updateTime">update_time = #{item.updateTime},</if>
+            <if test="null != item.deleteFlag">delete_flag = #{item.deleteFlag},</if>
+            <if test="null != item.tenantId and '' != item.tenantId">tenant_id = #{item.tenantId},</if>
+            <if test="null != item.industryCode and '' != item.industryCode">industry_code = #{item.industryCode},</if>
+            <if test="null != item.appVerCode and '' != item.appVerCode">app_ver_code = #{item.appVerCode},</if>
+            <if test="null != item.category and '' != item.category">category = #{item.category}</if>
+            <if test="null != item.abbreviation and '' != item.abbreviation">abbreviation = #{item.abbreviation}</if>
+            <if test="null != item.addOtherFieldValuesFlag and '' != item.addOtherFieldValuesFlag">add_other_field_values_flag = #{item.addOtherFieldValuesFlag}</if>
+            <if test="null != item.superTypeName and '' != item.superTypeName">super_type_name = #{item.superTypeName}</if>
+            <if test="null != item.initialTypeName and '' != item.initialTypeName">initial_type_name = #{item.initialTypeName}</if>
+            <if test="null != item.notCoveredLabel and '' != item.notCoveredLabel">not_covered_label = #{item.notCoveredLabel}</if>
+            <if test="null != item.coveredLabel and '' != item.coveredLabel">covered_label = #{item.coveredLabel}</if>
+            <if test="null != item.coveredFieldCode and '' != item.coveredFieldCode">covered_field_code = #{item.coveredFieldCode}</if>
+            <if test="null != item.uniqueFieldCode and '' != item.uniqueFieldCode">unique_field_code = #{item.uniqueFieldCode}</if>
+            <if test="null != item.areaRef and '' != item.areaRef">area_ref = #{item.areaRef}</if>
+            <if test="null != item.label">label = #{item.label}</if>
+            <if test="null != item.tbbhRef and '' != item.tbbhRef">tbbh_ref = #{item.tbbhRef}</if>
+            <if test="null != item.initSql and '' != item.initSql">init_sql = #{item.initSql}</if>
+        </set>
+        WHERE id = #{item.id}
+    </update>
+
+
+    <select id="selectList" resultMap="BaseResultMap" parameterType="com.chinatower.bdm.modules.layer.domain.LayerType">
+        select  <include refid="Base_Column_List" />
+        from (SELECT<include refid="Base_Column_List"/>
+            FROM sys_layer_type
+            where
+            delete_flag = 0
+            and category = 0
+            and industry_code = '999999'
+            <include refid="listAll"></include>
+            union all
+            SELECT <include refid="Base_Column_List" />
+            FROM sys_layer_type
+            where
+            delete_flag = 0
+            and category = 1
+            <if test="null != tenantId and '' != tenantId">
+                and tenant_id = #{tenantId}
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                and industry_code = #{industryCode}
+            </if>
+            <include refid="listAll"></include>
+        ) t
+        order by t.category asc, t.create_time desc
+    </select>
+    <sql id="listAll">
+        <if test="null != appVerCode and '' != appVerCode">and app_ver_code = #{appVerCode}</if>
+        <if test="null != typeName and '' != typeName">and type_name like concat('%',#{typeName},'%')</if>
+    </sql>
+
+    <select id="selectListByCondition" resultType="com.chinatower.common.core.dto.bdm.LayerTypeListVO">
+        select  <include refid="Base_Column_List" />
+        from (SELECT<include refid="Base_Column_List"/>
+            FROM sys_layer_type
+            where
+            delete_flag = 0
+            and category = 0
+            and industry_code = '999999'
+            <include refid="listSysLayerType"></include>
+            union all
+            SELECT <include refid="Base_Column_List" />
+            FROM sys_layer_type
+            where
+            delete_flag = 0
+            and category = 1
+            <if test="null != tenantId and '' != tenantId">
+                and tenant_id = #{tenantId}
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                and industry_code = #{industryCode}
+            </if>
+            <include refid="listSysLayerType"></include>
+        ) t
+        <if test="dto.orderByColumn != null and dto.orderByColumn != ''">
+            order by t.${orderBy}
+        </if>
+        <if test="dto.orderByColumn == null or dto.orderByColumn == ''">
+            order by t.create_time desc
+        </if>
+    </select>
+    <sql id="listSysLayerType">
+        <if test="null != dto.typeName and '' != dto.typeName">
+            and type_name like concat('%',#{dto.typeName},'%')
+        </if>
+        <if test="null != dto.creator and '' != dto.creator">
+            and creator like concat('%',#{dto.creator},'%')
+        </if>
+        <if test="null != dto.modifier and '' != dto.modifier">
+            and modifier like concat('%',#{dto.modifier},'%')
+        </if>
+        <if test="dto.createBeginTime != null and dto.createBeginTime != ''">
+            and create_time between #{dto.createBeginTime} and #{dto.createEndTime}
+        </if>
+        <if test="dto.updateBeginTime != null and dto.updateBeginTime != ''">
+            and update_time between #{dto.updateBeginTime} and #{dto.updateEndTime}
+        </if>
+    </sql>
+
+    <insert id="saveBatch" parameterType="com.chinatower.bdm.modules.layer.domain.LayerType">
+        insert into `sys_layer_type`(`id`,`type_name`,`creator`,`create_time`,`modifier`,`update_time`,`delete_flag`,`tenant_id`,`industry_code`,`app_ver_code`,`category`,abbreviation,add_other_field_values_flag,super_type_name,initial_type_name,not_covered_label,covered_label,covered_field_code,unique_field_code,area_ref,label,tbbh_ref)
+        values
+        <foreach collection="list" item="layerType" separator=",">
+            (#{layerType.id},#{layerType.typeName},#{layerType.creator},#{layerType.createTime},#{layerType.modifier},#{layerType.updateTime},#{layerType.deleteFlag},#{layerType.tenantId},#{layerType.industryCode},#{layerType.appVerCode},#{layerType.category},#{layerType.abbreviation},#{layerType.addOtherFieldValuesFlag},#{layerType.superTypeName},#{layerType.initialTypeName},#{layerType.notCoveredLabel},#{layerType.coveredLabel},#{layerType.coveredFieldCode},#{layerType.uniqueFieldCode},#{layerType.areaRef},#{layerType.label},#{layerType.tbbhRef})
+        </foreach>
+    </insert>
+
+    <delete id="deleteBatchIds">
+        update sys_layer_type set delete_flag = 1
+        where
+        id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <delete id="createTypetableback">
+        create table ${typetableback} as select * from sys_layer_type;
+    </delete>
+    <delete id="createTypefieldstableback">
+        create table ${typefieldstableback} as select * from sys_layer_type_fields;
+    </delete>
+
+    <insert id="insertAbbreviation">
+        <foreach collection="abbs" item="abb" separator=";">
+            update sys_layer_type set
+            add_other_field_values_flag = 1,-- 是否记录未填写的字段
+            super_type_name = null,-- 父类类型名称
+            initial_type_name = null,-- 祖类类型名称
+            not_covered_label = null,-- 未覆盖显示的标签名（套盒）
+            covered_label = null,-- 覆盖显示的标签名（套盒）
+            covered_field_code = null,-- 覆盖分类字段code（套盒）
+            unique_field_code = 'bsm',-- 唯一值的字段名（套盒）
+            area_ref = null,-- 业务面积字段名
+            label = 'bsm',-- 属性显示名称（套盒）
+            tbbh_ref = 'bsm'-- 指定图斑编号的替代字段
+            where abbreviation = #{abb};
+            -- 1	标识码	BSM	character varying		50		>0	O	支持模糊查询
+            INSERT INTO sys_layer_type_fields
+            (id, abbreviation, code, name, remark, type, chart_length, not_null_flag, filter_type, filter_index, identify_index, result_index, delete_flag) VALUES (
+            UUID(),-- id
+            #{abb},-- abbreviation 图层类型简称
+            'bsm',-- code 字段代码
+            '标识码',-- name 字段显示名称
+            '标识码字段信息，值来自于“地块编号”字段',-- remark 备注，说明
+            3,-- type 类型 1:int 2:double 3:varchart 4:timestamp
+            50,-- chart_length 字符类型长度
+            1,  -- not_null_flag 是否是不能为空的字段（0 代表 false，也就可以为空; 1 代表 true，不能为空)'
+            0,  -- filter_type 筛选类型（0文本，1下拉，默认：2空）
+            1,  -- filter_index 属性查询功能的顺序号（默认为0，起始为1）
+            1,-- identify_index 识别功能的顺序号
+            1,-- result_index 结果列表的顺序号
+            0-- delete_flag 删除状态（0 代表 false，未删除; 1 代表 true，已删除)
+            );
+            -- 2	要素代码	ysdm	character varying		20			O	支持模糊查询
+            INSERT INTO sys_layer_type_fields
+            (id, abbreviation, code, name, remark, type, chart_length, not_null_flag, filter_type, filter_index, identify_index, result_index, delete_flag) VALUES (
+            UUID(),-- id
+            #{abb},-- abbreviation 图层类型简称
+            'ysdm',-- code 字段代码
+            '要素代码',-- name 字段显示名称
+            '要素代码字段信息',-- remark 备注，说明
+            3,-- type 类型 1:int 2:double 3:varchart 4:timestamp
+            20,-- chart_length 字符类型长度
+            0,  -- not_null_flag 是否是不能为空的字段（0 代表 false，也就可以为空; 1 代表 true，不能为空)'
+            0,  -- filter_type 筛选类型（0文本，1下拉，默认：2空）
+            2,  -- filter_index 属性查询功能的顺序号（默认为0，起始为1）
+            0,-- identify_index 识别功能的顺序号
+            2,-- result_index 结果列表的顺序号
+            0-- delete_flag 删除状态（0 代表 false，未删除; 1 代表 true，已删除)
+            );
+            -- 3	行政区代码	xzqdm	character varying		50			O	支持模糊查询
+            INSERT INTO sys_layer_type_fields
+            (id, abbreviation, code, name, remark, type, chart_length, not_null_flag, filter_type, filter_index, identify_index, result_index, delete_flag) VALUES (
+            UUID(),-- id
+            '%s',-- abbreviation 图层类型简称
+            'xzqdm',-- code 字段代码
+            '行政区代码',-- name 字段显示名称
+            '行政区代码字段信息',-- remark 备注，说明
+            3,-- type 类型 1:int 2:double 3:varchart 4:timestamp
+            50,-- chart_length 字符类型长度
+            0,  -- not_null_flag 是否是不能为空的字段（0 代表 false，也就可以为空; 1 代表 true，不能为空)'
+            0,  -- filter_type 筛选类型（0文本，1下拉，默认：2空）
+            3,  -- filter_index 属性查询功能的顺序号（默认为0，起始为1）
+            0,-- identify_index 识别功能的顺序号
+            3,-- result_index 结果列表的顺序号
+            0-- delete_flag 删除状态（0 代表 false，未删除; 1 代表 true，已删除)
+            );
+            -- 4	属性json字符串	properties	text					M
+            INSERT INTO sys_layer_type_fields
+            (id, abbreviation, code, name, remark, type, chart_length, not_null_flag, filter_type, filter_index, identify_index, result_index, delete_flag) VALUES (
+            UUID(),-- id
+            #{abb},-- abbreviation 图层类型简称
+            'properties',-- code 字段代码
+            '属性json字符串',-- name 字段显示名称
+            '属性json字符串字段信息，固有字段，不支持类型编辑，列举出来仅为结果列表排序使用',-- remark 备注，说明
+            0,-- type 类型 1:int 2:double 3:varchart 4:timestamp
+            0,-- chart_length 字符类型长度
+            0,  -- not_null_flag 是否是不能为空的字段（0 代表 false，也就可以为空; 1 代表 true，不能为空)'
+            0,  -- filter_type 筛选类型（0文本，1下拉，默认：2空）
+            0,  -- filter_index 属性查询功能的顺序号（默认为0，起始为1）
+            0,-- identify_index 识别功能的顺序号
+            4,-- result_index 结果列表的顺序号
+            0-- delete_flag 删除状态（0 代表 false，未删除; 1 代表 true，已删除)
+            );
+        </foreach>
+    </insert>
+
+    <update id="updateBatchById">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE sys_layer_type
+            <set>
+                <if test="null != item.typeName and '' != item.typeName">type_name = #{item.typeName},</if>
+                <if test="null != item.creator and '' != item.creator">creator = #{item.creator},</if>
+                <if test="null != item.createTime">create_time = #{item.createTime},</if>
+                <if test="null != item.modifier and '' != item.modifier">modifier = #{item.modifier},</if>
+                <if test="null != item.updateTime">update_time = #{item.updateTime},</if>
+                <if test="null != item.deleteFlag">delete_flag = #{item.deleteFlag},</if>
+                <if test="null != item.tenantId and '' != item.tenantId">tenant_id = #{item.tenantId},</if>
+                <if test="null != item.industryCode and '' != item.industryCode">industry_code = #{item.industryCode},</if>
+                <if test="null != item.appVerCode and '' != item.appVerCode">app_ver_code = #{item.appVerCode},</if>
+                <if test="null != item.category and '' != item.category">category = #{item.category},</if>
+                <if test="null != item.abbreviation and '' != item.abbreviation">abbreviation = #{item.abbreviation},</if>
+                <if test="null != item.addOtherFieldValuesFlag and '' != item.addOtherFieldValuesFlag">add_other_field_values_flag = #{item.addOtherFieldValuesFlag},</if>
+                <if test="null != item.superTypeName and '' != item.superTypeName">super_type_name = #{item.superTypeName},</if>
+                <if test="null != item.initialTypeName and '' != item.initialTypeName">initial_type_name = #{item.initialTypeName},</if>
+                <if test="null != item.notCoveredLabel and '' != item.notCoveredLabel">not_covered_label = #{item.notCoveredLabel},</if>
+                <if test="null != item.coveredLabel and '' != item.coveredLabel">covered_label = #{item.coveredLabel},</if>
+                <if test="null != item.coveredFieldCode and '' != item.coveredFieldCode">covered_field_code = #{item.coveredFieldCode},</if>
+                <if test="null != item.uniqueFieldCode and '' != item.uniqueFieldCode">unique_field_code = #{item.uniqueFieldCode},</if>
+                <if test="null != item.areaRef and '' != item.areaRef">area_ref = #{item.areaRef},</if>
+                <if test="null != item.label">label = #{item.label},</if>
+                <if test="null != item.tbbhRef and '' != item.tbbhRef">tbbh_ref = #{item.tbbhRef},</if>
+                <if test="null != item.initSql and '' != item.initSql">init_sql = #{item.initSql},</if>
+            </set>
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+    <select id="selectByIds" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_layer_type
+        where
+        delete_flag = 0
+        and id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectCount" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM sys_layer_type
+        where
+        delete_flag = 0
+        and (industry_code = '999999' or ( tenant_id = #{tenantId} and industry_code = #{industryCode}))
+        and type_name in
+        <foreach item="item"  collection="typeNames" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getListByAbbreviation" resultType="com.chinatower.bdm.modules.layer.domain.LayerType">
+        SELECT
+            abbreviation
+        FROM sys_layer_type
+        where
+        <foreach item="item" collection="list" open="(" separator="or" close=")">
+            abbreviation like concat(#{item.abbreviation},'%')
+        </foreach>
+    </select>
+    <select id="getListByLayerTypeName" resultType="com.chinatower.bdm.modules.layer.domain.LayerType">
+        SELECT
+        tenant_id,
+        industry_code,
+        type_name
+        FROM sys_layer_type
+        where
+            tenant_id = #{item.tenantId}
+            AND industry_code = #{item.industryCode}
+            and type_name REGEXP concat('^',#{item.typeName},'\\d*')
+        order by create_time desc
+        limit 1
+    </select>
+
+    <select id="selectByAbbreviation" resultType="com.chinatower.bdm.modules.layer.domain.LayerType">
+        SELECT
+        <include refid="Base_Column_List"></include>
+        FROM sys_layer_type
+        where
+        delete_flag = 0
+        and abbreviation = #{abbreviation}
+        <if test="null != tenantId and '' != tenantId">and tenant_id = #{tenantId}</if>
+        <if test="null != industryCode and '' != industryCode">and industry_code = #{industryCode}</if>
+        limit 1
+    </select>
+
+    <select id="getLayerTypeFields" resultType="com.chinatower.platform.entity.gis.SysGisFieldsDTO">
+        select
+            f.abbreviation,
+            LOWER(f.code) code,
+            f.name,
+            f.remark,
+            f.type,
+            f.chart_length,
+            f.not_null_flag,
+            f.filter_type,
+            f.filter_index,
+            f.result_index,
+            f.identify_index
+        from sys_layer_type_fields f
+        where f.abbreviation = #{abbreviation}
+        and f.delete_flag = 0
+    </select>
+    <select id="selectAbbreviationSql" resultType="java.lang.String">
+        SELECT DISTINCT abbreviation
+        FROM
+            sys_layer_type
+        WHERE
+            abbreviation NOT IN ('xztb' , 'yjjbnt', 'stbhhx', 'jsydgzq', 'tdbp', 'slzy')
+            OR abbreviation IS NOT NULL
+        ORDER BY abbreviation;
+    </select>
+</mapper>

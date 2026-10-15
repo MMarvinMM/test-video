@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.DeviceDiyTreeMapper">
+
+
+    <insert id="saveDiy" parameterType="com.chinatower.device.entity.vo.DeviceDiyTreeVO">
+        INSERT INTO vm_device_diy_tree_t (tree_id, tree_name, template_type, creator, create_time, tenant_id, industry_code, app_ver_code) values
+        (#{treeId},  #{treeName},  #{templateType}, #{creator}, now(), #{tenantId}, #{industryCode}, #{appVerCode} )
+    </insert>
+
+    <insert id="saveDiyNode" parameterType="com.chinatower.device.entity.vo.DeviceDiyTreeNodeVO">
+        INSERT INTO vm_device_diy_tree_node_t (tree_id, node_type, node_code, node_value, node_level, parent_node_code, device_code, channel_code, creator, create_time, tenant_id, industry_code, app_ver_code) values
+        <foreach collection="nodeList"  item="item" separator=",">
+            (#{treeId},  #{item.nodeType},  #{item.nodeCode}, #{item.nodeValue}, #{item.nodeLevel}, #{item.parentNodeCode}, #{item.deviceCode}, #{item.channelCode}, #{creator}, now(), #{tenantId}, #{industryCode}, #{appVerCode} )
+        </foreach>
+    </insert>
+
+    <select id="getList" parameterType="com.chinatower.device.entity.vo.DeviceDiyTreeVO"
+            resultType="com.chinatower.device.entity.vo.DeviceDiyTreeVO">
+        SELECT
+            id,
+            tree_id,
+            tree_name,
+            template_type,
+            tree_status,
+            creator,
+            modifier,
+            create_time,
+            update_time,
+            tenant_id,
+            industry_code,
+            app_ver_code
+        FROM
+            vm_device_diy_tree_t
+        WHERE delete_flag = '0'
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          <if test="treeStatus != null and treeStatus != ''">
+              AND tree_status = #{treeStatus}
+          </if>
+          ORDER BY create_time desc
+    </select>
+
+    <select id="getOriginalDiyTree" resultType="com.chinatower.device.entity.vo.DeviceDiyTreeResultVO">
+        SELECT
+            DISTINCT
+            t.node_type,
+            t.node_code as code,
+            ( CASE WHEN length( IFNULL( t1.device_name, '' )) = 0 THEN t.node_value ELSE t1.device_name END ) as name,
+            t.node_level as level,
+            t.parent_node_code as parentCode,
+            t.device_code,
+            case when t.node_type = '2' then t.node_value else null end as device_name,
+            ( CASE WHEN length( IFNULL( t1.device_name, '' )) = 0 THEN t.node_value ELSE t1.device_name END ) deviceAlias
+        FROM
+            vm_device_diy_tree_node_t t
+            LEFT JOIN vm_tenant_device_channel_rel_t t1 ON t1.device_code = t.device_code AND t1.channel_code = t.channel_code
+            AND t1.delete_flag = '0'
+            AND t1.tenant_id = t.tenant_id
+            AND t1.industry_code = t.industry_code
+        WHERE
+            t.delete_flag = '0'
+          AND t.node_type in ('1','2')
+          AND t.tree_id = #{treeId}
+          AND t.tenant_id = #{tenantId}
+          AND t.industry_code = #{industryCode}
+    </select>
+
+    <select id="getAllDiyTree" resultType="com.chinatower.device.entity.vo.DeviceDiyTreeResultVO">
+        SELECT
+            t.id,
+            t.node_type,
+            t.node_code as code,
+            t.node_value as name,
+            t.node_level as level,
+            t.parent_node_code as parentCode,
+            m.device_code,
+            m.device_name,
+            ch.channel_code,
+            ch.channel_name,
+            ch.channel_status AS STATUS,
+            m.longitude,
+            m.latitude,
+            ch.facade,
+            m.category_code,
+            m.site_code,
+            m.device_status,
+            ( CASE WHEN IFNULL( dc.user_device_coll_id, 0 ) = 0 THEN '0' ELSE '1' END ) isMonitor,
+            m.image_url
+        FROM
+            vm_device_diy_tree_node_t t
+                LEFT JOIN vm_channel_info_t ch ON ch.channel_code = t.channel_code and t.device_code = ch.device_code
+                LEFT JOIN vm_device_info_t m ON t.device_code = m.device_code
+                 LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code AND dct.coll_obj_type = '5' AND dct.user_id = #{userId}
+                LEFT JOIN vm_user_device_collection_t dc ON dc.coll_obj_code = ch.channel_code AND dc.coll_obj_type = '6' AND dc.user_id = #{userId}
+        WHERE t.delete_flag = '0'
+          AND t.tree_id = #{treeId}
+          AND t.tenant_id = #{tenantId}
+          AND t.industry_code = #{industryCode}
+    </select>
+
+    <select id="getDiyTree" resultType="com.chinatower.device.entity.vo.DeviceDiyTreeResultVO">
+        SELECT
+        DISTINCT
+        t.id,
+        t.node_type,
+        t.node_code as code,
+        t.node_value as name,
+        t.node_level as level,
+        t.parent_node_code as parentCode,
+        m.device_code,
+        m.device_name,
+        ch.channel_code,
+        ch.channel_name,
+        ch.channel_status AS STATUS,
+        m.longitude,
+        m.latitude,
+        ch.facade,
+        m.category_code,
+        m.site_code,
+        m.device_status,
+        ( CASE WHEN IFNULL( dc.user_device_coll_id, 0 ) = 0 THEN '0' ELSE '1' END ) isMonitor,
+        m.image_url
+        FROM
+        vm_device_diy_tree_node_t t
+        LEFT JOIN vm_channel_info_t ch ON ch.channel_code = t.channel_code and t.device_code = ch.device_code
+        LEFT JOIN vm_device_info_t m ON t.device_code = m.device_code
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code AND dct.coll_obj_type = '5' AND dct.user_id = #{userId}
+        LEFT JOIN vm_user_device_collection_t dc ON dc.coll_obj_code = ch.channel_code AND dc.coll_obj_type = '6' AND dc.user_id = #{userId}
+        LEFT JOIN vm_order_devices ord ON t.device_code = ord.device_code AND t.tenant_id = ord.tenant_id AND t.industry_code = ord.industry_code
+        WHERE t.delete_flag = '0'
+        AND ord.ord_status IN ( 0, 1, 2 )
+        AND ord.delete_flag = '0'
+        AND t.tree_id = #{treeId}
+        ${dataScope}
+        <if test='categoryCodeList != null and categoryCodeList.size() > 0'>
+            AND m.category_code in
+            <foreach collection="categoryCodeList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="statusList != null and statusList.size()>0 ">
+            AND ch.channel_status in
+            <foreach collection="statusList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='isMonitorFlag != null and isMonitorFlag != "" and isMonitorFlag == "0" '>
+            AND dc.user_device_coll_id IS NOT NULL
+        </if>
+    </select>
+
+    <update id="updateDiy" parameterType="com.chinatower.device.entity.vo.DeviceDiyTreeVO">
+        update vm_device_diy_tree_t
+        <set>
+            <if test="treeName != null and treeName != ''">tree_name = #{treeName},</if>
+            <if test="templateType != null and templateType != ''">template_type = #{templateType},</if>
+            <if test="treeStatus != null and treeStatus != ''">tree_status = #{treeStatus},</if>
+            <if test="modifier != null and modifier != ''">modifier = #{modifier},</if>
+            update_time = now()
+        </set>
+        where tree_id = #{treeId}
+    </update>
+    <delete id="delDiy" parameterType="com.chinatower.device.entity.vo.DeviceDiyTreeVO">
+        delete from vm_device_diy_tree_t where tree_id = #{treeId}
+    </delete>
+    <delete id="delDiyNode" parameterType="com.chinatower.device.entity.vo.DeviceDiyTreeVO">
+        delete from vm_device_diy_tree_node_t where tree_id = #{treeId}
+    </delete>
+    <select id="getOne" parameterType="com.chinatower.device.entity.vo.DeviceDiyTreeVO"
+            resultType="com.chinatower.device.entity.vo.DeviceDiyTreeVO">
+        SELECT
+            id,
+            tree_id,
+            tree_name,
+            template_type,
+            tree_status,
+            creator,
+            modifier,
+            create_time,
+            update_time,
+            tenant_id,
+            industry_code,
+            app_ver_code
+        FROM
+            vm_device_diy_tree_t
+        WHERE tree_id = #{treeId}
+    </select>
+
+    <select id="getAlias" parameterType="com.chinatower.device.entity.vo.DeviceDiyTreeResultVO"
+            resultType="com.chinatower.device.entity.vo.DeviceDiyTreeResultVO">
+        SELECT
+            device_code,
+            device_name,
+            channel_code,
+            channel_name
+        FROM
+            vm_tenant_device_channel_rel_t
+        WHERE
+            delete_flag = 0
+          AND device_code IN
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item.deviceCode}
+            </foreach>
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+    </select>
+</mapper>

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.manage.mapper.OpenIntfMangeMapper">
+
+
+	<select id="queryOpenApiPlatformInfo"  resultType="com.chinatower.manage.dataobject.open.OpenManageInfoVO">
+			select
+			       info.api_intf_id as openIntfId,
+			       info.api_intf_name as openIntfName,
+			       info.api_intf_code as openIntfCode
+			from api_intf_info info
+		where 1 = 1
+		<if test="model.tenantId != null and model.tenantId != ''">
+			and info.api_intf_code in (SELECT
+			b.api_intf_code
+			FROM
+			sys_auth_register_api a
+			LEFT JOIN sys_auth_register_func_api b
+			ON a.id = b.register_id
+			WHERE a.tenant_id = #{model.tenantId}
+			AND b.delete_flag = '1')
+		</if>
+			order by api_intf_code
+	</select>
+
+	<select id="queryOpenSdkPlatformInfo"  resultType="com.chinatower.manage.dataobject.open.OpenManageInfoVO">
+		select
+			info.sdk_intf_id as openIntfId,
+			info.sdk_intf_name as openIntfName,
+			info.sdk_intf_code as openIntfCode
+		from sdk_manage_info info
+		order by sdk_intf_code
+	</select>
+
+
+	<select id="getOpenApiManageInfo"  resultType="com.chinatower.manage.dataobject.open.OpenManageInfoVO">
+		select
+			info.api_intf_id as openIntfId,
+			info.api_intf_name as openIntfName,
+			info.api_intf_code as openIntfCode,
+		    info.call_route,
+		    info.is_open,
+			info.api_intf_type,
+			info.open_privilege,
+		    info.creator,
+		    info.create_time,
+		    info.modifier,
+			info.update_time
+		from api_intf_info info
+		<where>
+			<if test="openIntfId != null and openIntfId != '' ">
+				info.api_intf_id = #{openIntfId}
+ 			</if>
+		</where>
+	</select>
+
+	<select id="getOpenSdkManageInfo"  resultType="com.chinatower.manage.dataobject.open.OpenManageInfoVO">
+		select
+		info.sdk_intf_id as openIntfId,
+		info.sdk_intf_name as openIntfName,
+		info.sdk_intf_code as openIntfCode,
+		info.call_route,
+		info.creator,
+		info.create_time,
+		info.modifier,
+		info.update_time
+		from sdk_manage_info info
+		<where>
+			<if test="openIntfId != null and openIntfId != '' ">
+				info.sdk_intf_id = #{openIntfId}
+			</if>
+		</where>
+	</select>
+
+
+	<select id="qryOpenApiIntfExtendInfo"   resultType="com.chinatower.manage.dataobject.open.OpenIntfInfoVO">
+		select
+		info.intf_id as intfId,
+		info.api_intf_id as openIntfId,
+		info.request_url as requestUrl,
+		info.request_type as requestType,
+		info.consumer as consumer,
+		info.server as provider,
+		info.server_code as serviceCode,
+		info.server_name as serviceName,
+		info.request_example as requestExample,
+		info.response_example as responseExample,
+		info.intf_describe as serviceDesc,
+		info.create_staff as createStaff ,
+		info.create_time as createTime,
+		info.update_staff as updateStaff,
+		info.update_time as updateTime
+		from api_intf_extend_info info
+		<where>
+			<if test="openIntfId != null and openIntfId != '' ">
+				info.api_intf_id = #{openIntfId}
+			</if>
+		</where>
+	</select>
+
+
+	<select id="qryOpenSdkIntfExtendInfo"   resultType="com.chinatower.manage.dataobject.open.OpenIntfInfoVO">
+		select
+		info.sdk_intf_id as openIntfId,
+		info.request_url as requestUrl,
+		info.request_type as requestType,
+		info.consumer as consumer,
+		info.provider as provider,
+		info.service_code as serviceCode,
+		info.service_name as serviceName,
+		info.request_example as requestExample,
+		info.response_example as responseExample,
+		info.service_desc as serviceDesc
+		from SDK_INTF_INFO info
+		<where>
+			<if test="openIntfId != null and openIntfId != '' ">
+				info.sdk_intf_id = #{openIntfId}
+			</if>
+		</where>
+	</select>
+
+	<select id="queryOpenSdkIntfReqInfoListBySdkIntfId"   resultType="com.chinatower.manage.dataobject.open.OpenIntfReqInfoVO">
+		select
+		info.sdk_intf_id as openIntfId,
+		info.field_desc as fieldDesc,
+		info.field_name as fieldName,
+		info.field_type as fieldType,
+		info.field_remark as fieldRemark,
+		info.content_example as contentExample,
+		info.required as required,
+		info.sort as sort,
+		info.type as type
+		from SDK_INTF_REQ_INFO info
+		<where>
+			<if test="openIntfId != null and openIntfId != ''">
+				info.sdk_intf_id = #{openIntfId}
+			</if>
+		</where>
+	</select>
+
+
+	<select id="selectOpenApiIntfIdByApiIntfId"   resultType="com.chinatower.manage.dataobject.open.OpenIntfReqInfoVO">
+		select
+		info.param_id as paramId,
+		info.api_intf_id as openIntfId,
+		info.param_describe as fieldDesc,
+		info.paran_name as fieldName,
+		info.param_type as fieldType,
+		info.content_example as contentExample,
+		info.param_explain as fieldRemark,
+		info.is_null as required,
+		info.sort as sort,
+		info.request_param_type as type
+		from api_request_param info
+		<where>
+			<if test="openIntfId != null and openIntfId != ''">
+				info.api_intf_id = #{openIntfId}
+			</if>
+		</where>
+	</select>
+
+</mapper>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.event.mapper.SysAlarmTagsTypeRelMapper">
+
+
+    <select id="getTagsByAlarmType" resultType="com.chinatower.event.entity.dto.AlarmTagsTypeRelDTO">
+        select tag.tag_id, tag.tag_name,
+        rel.id, rel.alarm_type_id, rel.type_value,
+        if(rel.alarm_type_id is null,0,1) is_rel
+        from sys_alarm_tags tag
+        left join sys_alarm_tags_type_rel rel
+        on tag.tag_id = rel.tag_id
+        <if test="alarmTypeId != null">
+            and rel.type_value = #{alarmTypeId}
+        </if>
+        <if test="list != null">
+            and rel.type_value in
+            <foreach collection="list" item="alarmTypeId" open="(" close=")" separator=",">
+                #{alarmTypeId}
+            </foreach>
+        </if>
+        and exists (SELECT 1 from sys_alarm_type sat where sat.type_value=rel.type_value)
+        and rel.delete_flag = '0'
+        where tag.delete_flag = '0'
+        and tag.tenant_id = #{tenantId}
+        <if test="industryCode != null and industryCode != ''">
+            and tag.industry_code = #{industryCode}
+        </if>
+        order by tag.create_time
+    </select>
+
+    <select id="selectRelateTagInfoByAlarmType" resultType="com.chinatower.event.entity.vo.AlarmTypeTagInfoVO">
+        select tag.tag_id, tag.tag_name, sat.type_value, sat.type_name
+        from sys_alarm_tags_type_rel rel
+        inner join sys_alarm_type sat on sat.type_value = rel.type_value
+        inner join sys_alarm_tags tag on tag.tag_id = rel.tag_id
+        where tag.delete_flag = '0' and rel.delete_flag = '0' and sat.delete_flag = '0'
+        and tag.tenant_id = #{tenantId}
+        and tag.industry_code = #{industryCode}
+        and rel.type_value in
+        <foreach collection="typeValueList" item="item" open="(" close=")" separator="," >
+            #{item}
+        </foreach>
+        ${dataScope}
+        order by tag.create_time, tag.tag_id
+    </select>
+
+    <select id="selectTagInfoByTenant" resultType="com.chinatower.event.entity.vo.AlarmTypeTagInfoVO">
+        select tag_id, tag_name
+        from sys_alarm_tags
+        where delete_flag = '0' and tenant_id = #{tenantId} and industry_code = #{industryCode}
+        order by create_time, tag_id
+    </select>
+
+    <delete id="deleteTagsTypeRel" >
+        DELETE FROM sys_alarm_tags_type_rel t
+        WHERE t.delete_flag = '0'
+        and t.tenant_id = #{tenantId}
+        and t.alarm_type_id = #{alarmTypeId}
+        <if test="industryCode != null and industryCode != ''">
+            and exists (SELECT 1 from sys_alarm_tags a where a.tag_id = t.tag_id and a.tenant_id = t.tenant_id and a.industry_code = #{industryCode} )
+        </if>
+    </delete>
+
+    <delete id="deleteTagsTypeRelBatch" >
+        DELETE FROM sys_alarm_tags_type_rel t
+        WHERE t.delete_flag = '0'
+        and t.tenant_id = #{tenantId}
+        and t.alarm_type_id in
+        <foreach collection="list" item="alarmTypeId" open="(" separator="," close=")">
+            #{alarmTypeId}
+        </foreach>
+        <if test="industryCode != null and industryCode != ''">
+            and exists (SELECT 1 from sys_alarm_tags a where a.tag_id = t.tag_id and a.tenant_id = t.tenant_id and a.industry_code = #{industryCode} )
+        </if>
+    </delete>
+
+</mapper>

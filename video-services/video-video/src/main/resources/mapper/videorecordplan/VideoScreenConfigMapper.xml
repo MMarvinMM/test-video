@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.videorecordplan.mapper.VideoScreenConfigMapper">
+    <insert id="addVideoScreenConfigChannel">
+        INSERT INTO vm_video_screen_config_channel
+        (screen_config_id, device_code, channel_code, creator, create_time, delete_flag) values
+        <foreach collection="deviceList" item="item" index="index" separator=",">
+            (#{id},#{item.deviceCode},#{item.channelCode},#{creator},NOW(),0)
+        </foreach>
+    </insert>
+
+
+    <insert id="insertRecommendInfoDetail">
+        INSERT INTO sys_open_platform_screen_recommend_detail
+        (screen_id, recommend_id, sort,priority_setting,creator,create_time,delete_flag) VALUES
+        <foreach collection="selfRecommendList" item="item" index="index" separator=",">
+            (#{item.screenId},#{recommendId},#{item.sort},#{prioritySetting},#{creator},NOW(),0)
+        </foreach>
+    </insert>
+    <delete id="delVideoScreenConfigChannel">
+        delete from vm_video_screen_config_channel where screen_config_id = #{id}
+    </delete>
+
+    <select id="queryScreenConfig"  resultType="com.chinatower.video.api.entity.VideoScreenConfigVO"
+            parameterType="com.chinatower.video.api.entity.VideoScreenConfigVO">
+        SELECT id,user_id,screen_num,tenant_id,industry_code,app_ver_code,creator,modifier,is_watermark,
+        watermark_content_type,watermark_density,watermark_font_size,watermark_transparency,
+        IFNULL(video_amplification, 1) AS "videoAmplification", IFNULL(video_assembly_amplification, 1) AS "videoAssemblyAmplification"
+        , IFNULL(automatic_enlarged_images, 1) AS "automaticEnlargedImages",video_init_url,video_loading,video_preloader,video_preloader_num,video_preloader_model
+        FROM vm_video_screen_config
+        WHERE delete_flag = 0
+        <if test='userId != null and userId != "" '>
+            AND user_id= #{userId}
+        </if>
+        <if test='tenantId != null and tenantId != "" '>
+            AND tenant_id= #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != "" '>
+            AND industry_code= #{industryCode}
+        </if>
+        <if test='isTower != null and isTower != "" and isTower == "1" '>
+            AND tenant_id IS NULL AND industry_code IS NULL
+        </if>
+        ORDER BY create_time DESC
+    </select>
+    <select id="queryScreenConfigLast" resultType="com.chinatower.video.api.entity.VideoScreenConfigVO">
+        SELECT id,user_id,screen_num,tenant_id,industry_code,app_ver_code,creator,modifier,is_watermark,
+        watermark_content_type,watermark_density,watermark_font_size,watermark_transparency,
+        IFNULL(video_amplification, 1) AS "videoAmplification", IFNULL(video_assembly_amplification, 1) AS "videoAssemblyAmplification"
+        , IFNULL(automatic_enlarged_images, 1) AS "automaticEnlargedImages"
+        FROM vm_video_screen_config
+        WHERE delete_flag = 0
+            AND user_id= #{userId}
+            AND tenant_id= #{tenantId}
+            AND industry_code= #{industryCode}
+        ORDER BY create_time DESC LIMIT 1
+    </select>
+    <select id="queryScreenConfigChannel"
+            resultType="com.chinatower.video.modules.videorecordplan.dto.VideoScreenConfigChannelVO">
+        select t1.device_code,t1.channel_code,t1.screen_config_id,t2.device_name,t3.channel_name from vm_video_screen_config_channel t1
+        left join vm_device_info_t t2 on t1.device_code = t2.device_code
+        left join vm_channel_info_t t3 on t1.channel_code = t3.channel_code
+       where screen_config_id = #{id}
+    </select>
+
+    <!--更新大屏设置信息表-->
+    <update id="updateScreenConfig" parameterType="com.chinatower.video.modules.videorecordplan.dataobject.VideoScreenConfigDO">
+        update vm_video_screen_config
+        set screen_num             = #{screenNum},
+            modifier               = #{modifier},
+            update_time            = #{updateTime},
+            is_watermark           = #{isWatermark},
+            watermark_content_type = #{watermarkContentType},
+            watermark_density      = #{watermarkDensity},
+            watermark_font_size    = #{watermarkFontSize},
+            watermark_transparency = #{watermarkTransparency},
+            video_init_url         = #{videoInitUrl},
+            video_preloader = #{videoPreloader}
+            <if test="videoAmplification != null">
+                ,video_amplification = #{videoAmplification}
+            </if>
+            <if test="videoAssemblyAmplification != null">
+                ,video_assembly_amplification = #{videoAssemblyAmplification}
+            </if>
+            <if test="automaticEnlargedImages != null">
+               ,automatic_enlarged_images = #{automaticEnlargedImages}
+            </if>
+            <if test="videoLoading != null">
+                ,video_loading = #{videoLoading}
+            </if>
+            ,video_preloader_num = #{videoPreloaderNum}
+            ,video_preloader_model = #{videoPreloaderModel}
+        where id = #{id}
+    </update>
+
+    <update id="updateVideoInitUrl" parameterType="com.chinatower.video.modules.videorecordplan.dataobject.VideoScreenConfigDO">
+        update vm_video_screen_config
+        set
+            modifier = #{modifier},
+            update_time = #{updateTime},
+            video_init_url = #{videoInitUrl}
+        where tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+    </update>
+
+</mapper>

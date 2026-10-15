@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.algorithm.mapper.FunctionTypeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.algorithm.dataobject.FunctionTypeDO">
+        <id column="id" property="id"/>
+        <result column="function_type" property="functionType"/>
+        <result column="function_type_name" property="functionTypeName"/>
+        <result column="sub_function_type" property="subFunctionType"/>
+        <result column="sub_function_type_name" property="subFunctionTypeName"/>
+        <result column="function_code" property="functionCode"/>
+        <result column="function_code_name" property="functionCodeName"/>
+        <result column="function_detail" property="functionDetail"/>
+        <result column="icon_code" property="iconCode"/>
+        <result column="icon_url" property="iconUrl"/>
+        <result column="icon_colour" property="iconColour"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+        <result column="url" property="url"/>
+        <result column="delete_flag" property="deleteFlag"/>
+        <result column="status" property="status"/>
+        <result column="des_image_url" property="desImageUrl"/>
+        <result column="des_video_url" property="desVideoUrl"/>
+        <result column="function_label" property="functionLabel"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id
+        , function_type, function_type_name, sub_function_type, sub_function_type_name, function_code, function_code_name, function_detail, icon_code, icon_url, icon_colour, create_date, update_date, url, delete_flag, status, des_image_url, des_video_url, function_label
+    </sql>
+    <select id="getAlgorithmByTenantId" resultType="com.chinatower.device.entity.vo.FunctionTypeVO">
+        SELECT DISTINCT f.id,
+                        f.function_type,
+                        f.function_type_name,
+                        f.sub_function_type,
+                        f.sub_function_type_name,
+                        f.function_code,
+                        f.function_code_name,
+                        f.function_detail,
+                        f.icon_code,
+                        f.icon_colour,
+                        f.url,
+                        f.des_image_url,
+                        f.function_label
+        FROM vm_function_type f
+                 left join vm_algorithm_info_t fa ON fa.function_code = f.function_code and fa.app_scenarios = 1
+                 LEFT JOIN vm_order_algorithms oa ON oa.algorithm_code = fa.algorithm_code
+        where oa.delete_flag = '0'
+          and f.delete_flag = '0'
+          and fa.delete_flag = '0'
+          and oa.tenant_id = #{tenantId}
+        <if test='industryCode != null and industryCode != ""'>
+            and oa.industry_code = #{industryCode}
+        </if>
+        <if test='appVerCode != null and appVerCode != ""'>
+            and oa.app_ver_code = #{appVerCode}
+        </if>
+          and oa.ord_status in (0,1,2)
+    </select>
+    <select id="getAlgorithm" resultType="com.chinatower.device.entity.vo.FunctionTypeVO">
+        SELECT id,
+               function_type,
+               function_type_name,
+               sub_function_type,
+               sub_function_type_name,
+               function_code,
+               function_code_name,
+               function_detail,
+               icon_code,
+               icon_colour,
+               url,
+               des_image_url,
+               function_label
+        FROM vm_function_type
+        WHERE function_code NOT IN (
+            SELECT fa.function_code
+            FROM vm_algorithm_info_t fa
+            LEFT JOIN vm_order_algorithms oa ON fa.algorithm_code = oa.algorithm_code
+            WHERE oa.delete_flag = '0' and fa.app_scenarios = 1
+            and fa.delete_flag = '0'
+            and oa.tenant_id = #{tenantId}
+            and oa.ord_status in (0,1,2)
+            <if test='industryCode != null and industryCode != ""'>
+                and oa.industry_code = #{industryCode}
+            </if>
+            <if test='appVerCode != null and appVerCode != ""'>
+                and oa.app_ver_code = #{appVerCode}
+            </if>
+            ) and delete_flag = '0'
+    </select>
+
+    <select id="getFunctionDetail" resultType="com.chinatower.device.entity.vo.FunctionTypeVO">
+        SELECT DISTINCT f.id,f.function_type,f.function_type_name,f.sub_function_type,f.sub_function_type_name,f.function_code,
+                        f.function_code_name,f.function_detail,f.icon_code,f.icon_colour,f.url,f.des_image_url,f.des_video_url
+        FROM vm_function_type f
+                 left join vm_algorithm_info_t fa ON fa.function_code = f.function_code
+                 LEFT JOIN vm_order_algorithms oa ON oa.algorithm_code = fa.algorithm_code
+        WHERE f.id = #{id}
+    </select>
+
+</mapper>

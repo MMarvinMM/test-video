@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.chinatower.video.modules.arButton.mapper.ButtonAttachMapper">
+
+    <sql id="BASE_COLUMN">
+        id,
+        button_id,
+        attach_path,
+        create_time,
+        update_time,
+        creator,
+        modifier,
+        delete_flag,
+        attach_type,
+        file_name
+    </sql>
+
+    <!-- 插入按钮附件信息 -->
+    <insert id="insert" parameterType="com.chinatower.video.modules.arButton.entity.ArButtonAttachInfo">
+        INSERT INTO vm_ar_button_attch (button_id, attach_path, create_time, update_time, creator, modifier, delete_flag, attach_type, file_name)
+        VALUES (#{buttonId}, #{attachPath}, #{createTime}, #{updateTime}, #{creator}, #{modifier}, #{deleteFlag}, #{attachType}, #{fileName})
+    </insert>
+    <insert id="batchInsert">
+        INSERT INTO vm_ar_button_attch (button_id, attach_path, create_time, update_time, creator, modifier, delete_flag, attach_type, file_name)
+        VALUES
+        <foreach collection="list" item="item" separator="," >
+            (#{item.buttonId}, #{item.attachPath}, now(), #{item.updateTime}, #{item.creator}, #{item.modifier}, #{item.deleteFlag}, #{item.attachType}, #{item.fileName})
+        </foreach>
+
+    </insert>
+    <update id="updateButtonAttachByButtonId">
+        UPDATE vm_ar_button_attch
+        <set>
+            <if test="deleteFlag != null"> delete_flag = #{deleteFlag},</if>
+            update_time = now(),
+            modifier = #{modifier}
+        </set>
+        <where>
+            button_id = #{buttonId}
+        </where>
+    </update>
+    <update id="batchLogicDelete">
+        UPDATE vm_ar_button_attch
+        SET
+            delete_flag = 1,
+            update_time = now(),
+            modifier = #{modifier}
+        WHERE
+            id IN
+        <foreach collection="deleteIds" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <!-- 根据ID查询按钮附件信息 -->
+    <select id="selectById" parameterType="int" resultType="com.chinatower.video.modules.arButton.entity.ArButtonAttachInfo">
+        SELECT <include refid="BASE_COLUMN" /> FROM vm_ar_button_attch WHERE id = #{id}
+    </select>
+
+    <!-- 根据所有查询条件查询按钮附件信息 -->
+    <select id="selectByCondition" parameterType="com.chinatower.video.modules.arButton.entity.ArButtonAttachInfo"
+            resultType="com.chinatower.video.modules.arButton.entity.ArButtonAttachInfo">
+        SELECT
+            <include refid="BASE_COLUMN" />
+        FROM vm_ar_button_attch
+        WHERE 1 = 1
+        <if test="buttonId != null">AND button_id = #{buttonId}</if>
+        <if test="attachPath != null">AND attach_path = #{attachPath}</if>
+        <if test="createTime != null">AND create_time = #{createTime}</if>
+        <if test="updateTime != null">AND update_time = #{updateTime}</if>
+        <if test="creator != null">AND creator = #{creator}</if>
+        <if test="modifier != null">AND modifier = #{modifier}</if>
+        <if test="deleteFlag != null">AND delete_flag = #{deleteFlag}</if>
+    </select>
+    <select id="selectCountByCondition" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM vm_ar_button_attch
+        WHERE 1 = 1
+        <if test="buttonId != null">AND button_id = #{buttonId}</if>
+        <if test="attachPath != null">AND attach_path = #{attachPath}</if>
+        <if test="createTime != null">AND create_time = #{createTime}</if>
+        <if test="updateTime != null">AND update_time = #{updateTime}</if>
+        <if test="creator != null">AND creator = #{creator}</if>
+        <if test="modifier != null">AND modifier = #{modifier}</if>
+        <if test="deleteFlag != null">AND delete_flag = #{deleteFlag}</if>
+    </select>
+
+</mapper>

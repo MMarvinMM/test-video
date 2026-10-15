@@ -1,0 +1,1062 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysDeptMapper">
+
+	<sql id="selectDeptVo">
+ 		select DISTINCT d.TENANT_ID as tenantId,   d.TENANT_TOWER_DEPT_ID as tenantTowerDeptId, d.TENANT_NAME as tenantName, d.id, d.dept_id, d.parent_id,d.parent_name, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time, d.dept_level,d.bussness_unit, d.update_time,
+        CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN d.dept_id ELSE d.parent_id END province,
+        CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN NULL ELSE d.dept_id END city,d.remark,d.MDM_ORG_CODE as mdmOrgCode
+        from sys_dept d
+        where d.del_flag = '0'
+    </sql>
+
+	<select id="selectDeptList" parameterType="com.chinatower.platform.entity.admin.SysDept"
+		resultType="com.chinatower.platform.entity.admin.SysDept">
+        <include refid="selectDeptVo"/>
+		AND d.tenant_id is null
+		<if test="tenantId != null and tenantId != ''">
+			AND (d.tenant_id like CONCAT(CONCAT('%',#{tenantId}),'%') or d.tenant_name like CONCAT(CONCAT('%',#{tenantName}),'%'))
+		</if>
+        <if test="parentId != null and parentId != ''">
+			AND d.parent_id = #{parentId}
+		</if>
+		<if test="deptName != null and deptName != ''">
+			AND d.dept_name like CONCAT(CONCAT('%',#{deptName}),'%')
+		</if>
+		<if test="status != null and status != ''">
+			AND d.status = #{status}
+		</if>
+		<!-- 数据范围过滤 -->
+		<if test="dataScope != null and dataScope != ''">
+			${dataScope}
+		</if>
+		order by d.parent_id ASC, d.dept_id ASC, d.order_num ASC
+    </select>
+
+	<select id="selectTowerDeptByLevel" resultType="com.chinatower.platform.entity.admin.SysDept">
+		SELECT * from sys_dept WHERE del_flag = '0'  and  industry_code='999999'
+		<if test="level == 1">
+			 and DEPT_LEVEL <![CDATA[<]]> 4
+		</if>
+		<if test="level == 2">
+			and PARENT_ID=#{deptId}
+		</if>
+		<if test="level == 3">
+			and  DEPT_ID=#{deptId}
+		</if>
+		order by DEPT_ID DESC
+	</select>
+	<select id="selectTenantChildDept" resultType="com.chinatower.platform.entity.admin.SysDept">
+		SELECT * from sys_dept WHERE del_flag = '0' and DEPT_ID like concat(#{deptId},'%')
+	</select>
+	<select id="selectTanentDataScop" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="java.lang.String">
+		SELECT
+			srdr.data_scope
+		FROM
+			sys_user u
+		LEFT JOIN sys_user_role ur ON ur.user_id = u.USER_ID
+		LEFT JOIN sys_role_data_rel srdr ON srdr.role_id = ur.role_id
+		WHERE
+			u.USER_ID = #{userId}
+			AND srdr.industry_code = #{industryCode}
+			AND srdr.app_ver_code = #{appVerCode}
+		GROUP BY srdr.data_scope
+	</select>
+	<select id="selectAllTanentDept" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="com.chinatower.platform.entity.admin.SysDept">
+		SELECT * from sys_dept d where DEL_FLAG=0 and TENANT_ID=#{tenantId} AND d.INDUSTRY_CODE = #{industryCode} AND d.app_ver_code = #{appVerCode}
+	</select>
+
+	<select id="selectCustomTanentDept" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="com.chinatower.platform.entity.admin.SysDept">
+		SELECT DISTINCT d.* from sys_dept d
+		LEFT JOIN sys_role_dept rd ON d.DEPT_ID=rd.DEPT_ID
+		LEFT JOIN sys_user_role r ON r.ROLE_ID = rd.ROLE_ID
+		WHERE d.DEL_FLAG = 0 AND d.INDUSTRY_CODE = #{industryCode}  AND r.user_id = #{userId}
+	</select>
+
+	<select id="selectTenantOwnerDept" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="com.chinatower.platform.entity.admin.SysDept">
+		SELECT * from sys_dept WHERE DEL_FLAG=0 and  INDUSTRY_CODE=#{industryCode} and DEPT_ID IN
+		<foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</select>
+
+
+
+	<select id="selectTenantDeptList" parameterType="com.chinatower.platform.entity.admin.SysDept"
+			resultType="com.chinatower.platform.entity.admin.SysDept">
+		select DISTINCT d.TENANT_ID as tenantId,   d.TENANT_TOWER_DEPT_ID as tenantTowerDeptId, d.TENANT_NAME as tenantName, d.dept_id, d.parent_id,d.parent_name, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time, d.dept_level,d.bussness_unit, d.update_time,
+		CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN d.dept_id ELSE d.parent_id END province,
+		CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN NULL ELSE d.dept_id END city,d.remark,d.MDM_ORG_CODE as mdmOrgCode
+			from sys_dept d
+		where d.del_flag = '0'
+		<if test="status != null and status !=''">
+			and `status` = #{status}
+		</if>
+		AND d.tenant_id = #{tenantId}
+		<!-- 数据范围过滤 -->
+		<if test="dataScope != null and dataScope != ''">
+			${dataScope}
+		</if>
+		order by d.create_time desc, d.update_time desc
+	</select>
+
+    <select id="selectDeptListByRoleId" parameterType="String" resultType="Integer">
+		select d.dept_id, d.parent_id
+		from sys_dept d left join sys_role_dept rd on d.dept_id = rd.dept_id
+        where rd.role_id = #{roleId} and d.del_flag = '0'
+        	and d.dept_id not in (select d.parent_id from sys_dept d inner join sys_role_dept rd on d.dept_id = rd.dept_id and rd.role_id = #{roleId} and dept_level=3)
+		order by d.parent_id, d.order_num
+	</select>
+
+	<select id="selectTennatListByRoleId" parameterType="String" resultType="String">
+		select d.dept_id, d.parent_id
+		from sys_dept d left join sys_tenant_info s on d.tenant_id = s.tenant_id
+		left join sys_role_dept rd on d.dept_id = rd.dept_id
+        where rd.role_id = #{roleId} and d.del_flag = '0'
+        	and d.dept_id not in (select d.parent_id from sys_dept d inner join sys_role_dept rd on d.dept_id = rd.dept_id and rd.role_id = #{roleId})
+		order by d.parent_id, d.order_num
+	</select>
+
+    <select id="selectDeptById" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysDept">
+		<include refid="selectDeptVo"/>
+		and d.dept_id = #{deptId}
+		<if test="industryCode != null and industryCode != ''">
+			and d.INDUSTRY_CODE = #{industryCode}
+		</if>
+	</select>
+
+	<select id="selectDeptOnlyById" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysDept">
+		select * from sys_dept d where d.dept_id = #{deptId} and d.del_flag = '0'
+	</select>
+
+	<select id="selectDeptByIds"  resultType="String">
+		select d.dept_name from sys_dept d where d.del_flag = '0' and d.dept_id in
+		<foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+		 #{item}
+		</foreach>
+	</select>
+
+	<select id="selectDeptsByIds"  resultType="com.chinatower.platform.entity.admin.SysDept">
+		select distinct d.dept_id,d.dept_name from sys_dept d where d.del_flag = '0' and d.dept_id in
+		<foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+			#{item}
+		</foreach>
+	</select>
+
+
+	<select id="selectDeptByIdAndIndustryCode" resultType="com.chinatower.platform.entity.admin.SysDept">
+		SELECT
+			*
+		FROM
+			sys_dept d
+		WHERE
+			d.del_flag = '0' and FIND_IN_SET(d.DEPT_ID,#{deptIds}) AND d.INDUSTRY_CODE = #{industryCode} AND d.APP_VER_CODE = #{appVerCode}
+	</select>
+
+    <select id="checkDeptExistUser" parameterType="String" resultType="int">
+		select count(1) from sys_user where del_flag = '0' and FIND_IN_SET(#{deptId},dept_id)
+	</select>
+
+	<select id="hasChildByDeptId" parameterType="String" resultType="int">
+		select count(1) from sys_dept where del_flag = '0' and parent_id = #{deptId}
+	</select>
+
+    <select id="checkIsRelation" resultType="int">
+		select count(1) from sys_dept
+		where del_flag = '0'
+		and dept_id = #{deptId}
+		and INSTR(ANCESTORS, #{parentId})>0
+	</select>
+
+	<select id="selectChildrenDeptById" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysDept">
+		select * from sys_dept where del_flag = '0' and INSTR(ANCESTORS, #{deptId})>0
+	</select>
+
+	<select id="checkDeptNameUnique" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="java.lang.Long">
+	    select count(*) from sys_dept d
+		where d.dept_name=#{deptName} and d.parent_id = #{parentId} and  d.del_flag = '0'
+		<if test="deptId != null and deptId != ''">
+			and d.dept_id != #{deptId}
+		</if>
+	</select>
+
+    <insert id="insertDept" parameterType="com.chinatower.platform.entity.admin.SysDept" useGeneratedKeys="true" keyProperty="id">
+ 		insert into sys_dept(
+ 			<if test="deptId != null and deptId != ''">dept_id,</if>
+ 			<if test="parentId != null and parentId != ''">parent_id,</if>
+ 			<if test="deptName != null and deptName != ''">dept_name,</if>
+ 			<if test="ancestors != null and ancestors != ''">ancestors,</if>
+ 			<if test="orderNum != null and orderNum != ''">order_num,</if>
+ 			<if test="leader != null and leader != ''">leader,</if>
+ 			<if test="phone != null and phone != ''">phone,</if>
+ 			<if test="email != null and email != ''">email,</if>
+ 			<if test="status != null">status,</if>
+ 			<if test="createBy != null and createBy != ''">create_by,</if>
+ 			<if test="deptLevel != null and deptLevel != ''">dept_level,</if>
+			<if test="tenantId != null and tenantId != ''">tenant_id,</if>
+			<if test="tenantTowerDeptId != null and tenantTowerDeptId != ''">tenant_tower_dept_id,</if>
+			<if test="tenantName != null and tenantName != ''">tenant_name,</if>
+			<if test="remark != null and remark != ''">remark,</if>
+			<if test="appVerCode != null and appVerCode != ''">app_ver_code,</if>
+		<if test="industryCode != null and industryCode != ''">industry_code,</if>
+		<if test="mdmOrgCode != null and mdmOrgCode != ''">MDM_ORG_CODE,</if>
+ 			create_time
+ 		)values(
+ 			<if test="deptId != null and deptId != ''">#{deptId},</if>
+ 			<if test="parentId != null and parentId != ''">#{parentId},</if>
+ 			<if test="deptName != null and deptName != ''">#{deptName},</if>
+ 			<if test="ancestors != null and ancestors != ''">#{ancestors},</if>
+ 			<if test="orderNum != null and orderNum != ''">#{orderNum},</if>
+ 			<if test="leader != null and leader != ''">#{leader},</if>
+ 			<if test="phone != null and phone != ''">#{phone},</if>
+ 			<if test="email != null and email != ''">#{email},</if>
+ 			<if test="status != null">#{status},</if>
+ 			<if test="createBy != null and createBy != ''">#{createBy},</if>
+ 			<if test="deptLevel != null and deptLevel != ''">#{deptLevel},</if>
+			<if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+			<if test="tenantTowerDeptId != null and tenantTowerDeptId != ''">#{tenantTowerDeptId},</if>
+			<if test="tenantName != null and tenantName != ''">#{tenantName},</if>
+			<if test="remark != null and remark != ''">#{remark},</if>
+			<if test="appVerCode != null and appVerCode != ''">#{appVerCode},</if>
+		<if test="industryCode != null and industryCode != ''">#{industryCode},</if>
+		<if test="mdmOrgCode != null and mdmOrgCode != ''">#{mdmOrgCode},</if>
+ 			#{createTime}
+ 		)
+	</insert>
+
+	<select id="countNormalDept" parameterType="String" resultType="Integer">
+		select count(1) from sys_dept a where a.PARENT_ID = #{parentId} and a.STATUS = '1'
+	</select>
+
+	<update id="updateDept" parameterType="com.chinatower.platform.entity.admin.SysDept">
+ 		update sys_dept
+ 		<set>
+ 			<if test="parentId != null and parentId != ''">parent_id = #{parentId},</if>
+ 			<if test="deptName != null and deptName != ''">dept_name = #{deptName},</if>
+ 			<if test="ancestors != null and ancestors != ''">ancestors = #{ancestors},</if>
+ 			<if test="orderNum != null and orderNum != ''">order_num = #{orderNum},</if>
+ 			<if test="leader != null">leader = #{leader},</if>
+ 			<if test="phone != null">phone = #{phone},</if>
+ 			<if test="email != null">email = #{email},</if>
+ 			<if test="status != null and status != ''">status = #{status},</if>
+			<if test="deptLevel != null and deptLevel != ''">dept_level = #{deptLevel},</if>
+ 			<if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+			<if test="tenantId != null and tenantId != ''">tenant_id = #{tenantId},</if>
+			<if test="tenantTowerDeptId != null and tenantTowerDeptId != ''">tenant_tower_dept_id = #{tenantTowerDeptId},</if>
+			<if test="tenantName != null and tenantName != ''">tenant_name = #{tenantName},</if>
+			<if test="remark != null">REMARK = #{remark},</if>
+			<if test="appVerCode != null and appVerCode != ''">app_ver_code = #{appVerCode},</if>
+			<if test="industryCode != null and industryCode != ''">industry_code = #{industryCode},</if>
+			<if test="mdmOrgCode != null and mdmOrgCode != ''">MDM_ORG_CODE = #{mdmOrgCode},</if>
+ 			update_time = #{updateTime}
+ 		</set>
+ 		where dept_id = #{deptId}
+	</update>
+
+	<update id="updateByTenantId" parameterType="com.chinatower.platform.entity.admin.SysDept">
+		update sys_dept
+		<set>
+			<if test="status != null and status != ''">status = #{status},</if>
+			<if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+			<if test="tenantName != null and tenantName != ''">tenant_name = #{tenantName},</if>
+			update_time = #{updateTime}
+		</set>
+		where tenant_id = #{tenantId}
+	</update>
+
+	<update id="updateDeptChildren" parameterType="java.util.List">
+	    update sys_dept set ancestors =
+	    <foreach collection="depts" item="item" index="index"
+	        separator=" " open="case dept_id" close="end">
+	        when #{item.deptId} then #{item.ancestors}
+	    </foreach>
+	    where dept_id in
+	    <foreach collection="depts" item="item" index="index"
+	        separator="," open="(" close=")">
+	        #{item.deptId}
+	    </foreach>
+	</update>
+
+	 <update id="updateDeptStatus" parameterType="com.chinatower.platform.entity.admin.SysDept">
+ 	    update sys_dept
+ 	    <set>
+ 	        <if test="status != null and status != ''">status = #{status},</if>
+ 	        <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+ 	        update_time = #{updateTime}
+        </set>
+		 where ID = #{id}
+	 </update>
+
+	<delete id="deleteDeptById" parameterType="String">
+		update sys_dept set del_flag = '2' where dept_id = #{deptId}
+	</delete>
+
+	<select id="selectALLDeptListByDeptId" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysDept">
+		<include refid="selectDeptVo"/>
+		and exists (
+		with recursive t1(dept_id, parent_id) as (
+		select t0.dept_id, t0.parent_id
+		from sys_dept t0
+		where t0.dept_id = #{deptId}
+		union all
+		select t2.dept_id, t2.parent_id
+		from sys_dept t2,
+		t1
+		where t2.parent_id = t1.dept_id
+		)
+		select 1 from t1 where t1.dept_id = d.DEPT_ID
+		)
+		order by d.parent_id ASC, d.dept_id ASC, d.order_num ASC
+	</select>
+	<!--获取部门及子部门数据 铁塔部门及租户部门 李峥-->
+	<select id="selectChildrenByDeptId" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="com.chinatower.platform.entity.admin.SysDept">
+		<include refid="selectDeptVo"/>
+		<if test="status != null and status != ''">and status = #{status}</if>
+		<if test="tenantId == null or tenantId == ''">and d.tenant_id is null	and d.tenant_tower_dept_id is null</if>
+		<if test="tenantId != null and tenantId != ''">and d.tenant_id = #{tenantId}</if>
+		<if test="deptId != null and deptId != ''">and (dept_id = #{deptId} OR INSTR(ANCESTORS, #{deptId})>0)</if>
+		order by d.parent_id ASC, d.dept_id ASC, d.order_num ASC
+	</select>
+	<!--根据主键获取部门信息 李峥-->
+	<select id="selectById" parameterType="Long" resultType="com.chinatower.platform.entity.admin.SysDept">
+		<include refid="selectDeptVo"/>
+		<if test="id != null">and id = #{id}</if>
+
+	</select>
+
+	<select id="selectTenantTop" parameterType="com.chinatower.platform.entity.admin.SysDept"
+			resultType="com.chinatower.platform.entity.admin.SysDept">
+		select  s.tenant_name, d.TENANT_ID as tenantId,   d.TENANT_TOWER_DEPT_ID as tenantTowerDeptId,  d.id, d.dept_id, d.parent_id,d.parent_name, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time, d.dept_level,d.bussness_unit,d.MDM_ORG_CODE as mdmOrgCode,d.industry_code as industryCode,
+		CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN d.dept_id ELSE d.parent_id END province,
+		CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN NULL ELSE d.dept_id END city,d.app_ver_code
+		from sys_dept d
+		left join sys_tenant_info s on d.tenant_id = s.tenant_id
+		where d.del_flag = '0' AND d.status = '0'
+		AND d.TENANT_ID is not null AND s.del_flag = '0'
+		<if test="parentId != null and parentId != ''">
+			AND d.parent_id = #{parentId}
+		</if>
+		<if test="deptName != null and deptName != ''">
+			AND d.dept_name like CONCAT(CONCAT('%',#{deptName}),'%')
+		</if>
+		<if test="tenantId != null and tenantId != ''">
+			AND d.tenant_id = #{tenantId}
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			AND d.industry_code = #{industryCode}
+		</if>
+		<if test="tenantTowerDeptId != null and tenantTowerDeptId != ''">
+			AND d.tenant_tower_dept_id = #{tenantTowerDeptId}
+		</if>
+		<if test="tenantName != null and tenantName != ''">
+			AND s.tenant_name like CONCAT(CONCAT('%',#{tenantName}),'%')
+		</if>
+		<!-- 数据范围过滤 -->
+		<if test="dataScope != null and dataScope != ''">
+			${dataScope}
+		</if>
+		order by d.parent_id ASC, d.dept_id ASC, d.order_num ASC
+	</select>
+
+
+	<select id="selectDeptAndUserTree" parameterType="com.chinatower.platform.entity.admin.SysDept"
+			resultType="com.chinatower.platform.entity.admin.SysDept">
+		SELECT
+			d.tenant_id AS tenantId,
+			d.id,
+			d.dept_id,
+			d.dept_name,
+			d.parent_id,
+			d.parent_name,
+			d.MDM_ORG_CODE as mdmOrgCode,
+		    d.industry_code as industryCode,
+			u.user_id AS userId,
+			u.user_name AS leader,
+			u.nick_name AS nickName,
+			u.phonenumber AS phone,
+			u.sex AS sex
+		FROM
+			sys_dept d
+		LEFT JOIN (
+		WITH RECURSIVE cte AS (
+		SELECT 1 AS n
+		UNION ALL
+		SELECT n + 1
+		FROM cte
+		WHERE n <![CDATA[<]]> 50
+		)
+		SELECT
+		u_inner.user_id,
+		u_inner.user_name,
+		u_inner.nick_name,
+		u_inner.phonenumber,
+		u_inner.sex,
+		SUBSTRING_INDEX(SUBSTRING_INDEX(u_inner.DEPT_ID, ',', n), ',', -1) AS split_dept_id
+		FROM sys_user u_inner
+		JOIN cte ON cte.n <![CDATA[<=]]> (
+		LENGTH(u_inner.DEPT_ID) - LENGTH(REPLACE(u_inner.DEPT_ID, ',', '')) + 1
+		)
+		WHERE u_inner.DEL_FLAG = '0'
+		) u_split ON d.dept_id = u_split.split_dept_id
+		LEFT JOIN sys_user u ON u_split.user_id = u.user_id
+		WHERE
+		d.del_flag = '0'
+			AND d.tenant_id = #{tenantId}
+			AND d.dept_id like concat(#{deptId}, '%')
+			<if test="industryCode != null and industryCode != ''">
+				and d.INDUSTRY_CODE = #{industryCode}
+			</if>
+			<if test="appVerCode != null and appVerCode != ''">
+				and d.APP_VER_CODE = #{appVerCode}
+			</if>
+			<if test="roleId != null ">
+				AND u.user_id in (select ur.user_id from sys_user_role ur where ur.role_id = #{roleId})
+			</if>
+			ORDER BY
+			d.parent_id ASC,
+			d.dept_id ASC,
+			d.order_num ASC
+	</select>
+
+
+	<select id="selectByParentId" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysDept">
+		<include refid="selectDeptVo"/>
+		and d.PARENT_ID = #{parentId}
+	</select>
+
+
+	<select id="selectTenantTop2Video" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="com.chinatower.platform.entity.admin.SysDept">
+		select  s.tenant_name, d.TENANT_ID as tenantId,   d.TENANT_TOWER_DEPT_ID as tenantTowerDeptId,  d.id, d.dept_id, d.parent_id,d.parent_name, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time, d.dept_level,d.bussness_unit,
+		CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN d.dept_id ELSE d.parent_id END province,
+		CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN NULL ELSE d.dept_id END city,d.app_ver_code,
+		d.MDM_ORG_CODE as mdmOrgCode,d.industry_code as industryCode
+		from sys_dept d
+		left join sys_tenant_info s on d.tenant_id = s.tenant_id
+		where d.del_flag = '0'
+		AND d.TENANT_ID is not null
+		<if test="parentId != null and parentId != ''">
+			AND d.parent_id = #{parentId}
+		</if>
+		<if test="deptName != null and deptName != ''">
+			AND d.dept_name like CONCAT(CONCAT('%',#{deptName}),'%')
+		</if>
+		<if test="status != null and status != ''">
+			AND d.status = #{status}
+		</if>
+		<if test="tenantId != null and tenantId != ''">
+			AND d.tenant_id = #{tenantId}
+		</if>
+		<if test="tenantTowerDeptId != null and tenantTowerDeptId != ''">
+			AND d.tenant_tower_dept_id = #{tenantTowerDeptId}
+		</if>
+		<if test="tenantName != null and tenantName != ''">
+			AND s.tenant_name like CONCAT(CONCAT('%',#{tenantName}),'%')
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			AND d.industry_code = #{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			AND d.app_ver_code = #{appVerCode}
+		</if>
+		<!-- 数据范围过滤 -->
+		<if test="dataScope != null and dataScope != ''">
+			${dataScope}
+		</if>
+		order by d.parent_id ASC, d.dept_id ASC, d.order_num ASC
+	</select>
+	<select id="getTreeselectByTenantId" parameterType="com.chinatower.platform.project.system.domain.dto.TreeselectBytenantIdDTO" resultType="com.chinatower.platform.entity.admin.SysDept">
+		SELECT
+		DISTINCT d.id,
+		d.tenant_id AS tenantId,
+		d.dept_id,
+		d.dept_name,
+		d.parent_id,
+		d.parent_name,
+		d.MDM_ORG_CODE as mdmOrgCode,
+		d.industry_code as industryCode,
+		u.user_id AS userId,
+		u.user_name AS leader,
+		u.nick_name AS nickName,
+		u.phonenumber AS phone,
+		u.sex AS sex,
+		u.avatar AS avatar
+		FROM
+		sys_dept d
+		LEFT JOIN (
+		WITH RECURSIVE cte AS (
+		SELECT 1 AS n
+		UNION ALL
+		SELECT n + 1
+		FROM cte
+		WHERE n <![CDATA[<]]> 50
+		)
+		SELECT
+		u_inner.user_id,
+		SUBSTRING_INDEX(SUBSTRING_INDEX(u_inner.DEPT_ID, ',', n), ',', -1) AS split_dept_id
+		FROM sys_user u_inner
+		JOIN cte ON cte.n <![CDATA[<=]]> (
+		LENGTH(u_inner.DEPT_ID) - LENGTH(REPLACE(u_inner.DEPT_ID, ',', '')) + 1
+		)
+		WHERE u_inner.DEL_FLAG = '0'
+		) u_split ON d.dept_id = u_split.split_dept_id
+		LEFT JOIN sys_user u ON u_split.user_id = u.user_id
+		<if test='status != null and status != ""'>
+			and u.status = #{status}
+		</if>
+		WHERE
+			d.del_flag = '0' AND d.tenant_id = #{tenantId} and d.INDUSTRY_CODE=#{industryCode}
+
+	</select>
+
+	<select id="selectTreeselectByTenantId" parameterType="com.chinatower.platform.project.system.domain.dto.TreeselectBytenantIdDTO" resultType="com.chinatower.platform.entity.admin.SysDept">
+		SELECT
+			 d.id,
+			 d.tenant_id AS tenantId,
+			 d.dept_id,
+			 d.dept_name,
+			 d.parent_id,
+			 d.parent_name,
+			 d.MDM_ORG_CODE as mdmOrgCode,
+			 d.industry_code as industryCode
+		FROM
+			sys_dept d
+		WHERE
+			d.del_flag = '0' AND d.tenant_id = #{tenantId} and d.INDUSTRY_CODE=#{industryCode}
+	</select>
+
+	<select id="selectDeptAreaOnlyById" parameterType="String" resultType="com.chinatower.system.api.model.SysDeptAreaVO">
+		select d.dept_id as id,a.area_name as areaName,d.tenant_id AS tenantId,a.area_parent_code as pid, d.DEPT_LEVEL as deptLevel,a.area_level as areaLevel from sys_dept d left join sys_area a on d.dept_id = a.area_code where d.dept_id = #{deptId} and d.del_flag = '0'
+	</select>
+
+	<select id="selectDeptAndAreaByLevel" resultType="com.chinatower.system.api.model.SysDeptAreaVO">
+		SELECT d.dept_id as id,a.area_name as areaName,d.tenant_id AS tenantId,a.area_parent_code as pid,d.DEPT_LEVEL as deptLevel,a.area_level as areaLevel from sys_dept d inner join sys_area a on d.dept_id = a.area_code
+		 WHERE d.del_flag = '0'  and  d.industry_code='999999'
+		<if test="level == 1">
+			and d.DEPT_LEVEL <![CDATA[<]]> 4
+		</if>
+		<if test="level == 2">
+			and d.PARENT_ID=#{deptId}
+		</if>
+		<if test="level == 3">
+			and  d.DEPT_ID=#{deptId}
+		</if>
+		order by d.DEPT_ID DESC
+	</select>
+
+
+	<select id="selectAreaByDeptManage" resultType="com.chinatower.system.api.model.SysDeptAreaVO">
+
+			SELECT DISTINCT a1.AREA_CODE AS id,a1.area_name AS areaName,a1.AREA_PARENT_CODE AS pid
+			FROM sys_area a1
+			WHERE <![CDATA[a1.area_level<=4]]> AND a1.area_parent_code IN
+				<foreach collection="deptAreaCodes" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			UNION ALL
+			SELECT DISTINCT a1.AREA_CODE AS id,a1.area_name AS areaName,a1.AREA_PARENT_CODE AS pid
+			FROM sys_area a1
+			WHERE <![CDATA[a1.area_level<=4]]> AND a1.area_code IN
+				<foreach collection="deptAreaCodes" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+			UNION ALL
+			SELECT a2.AREA_CODE AS id,a2.area_name AS areaName,a2.AREA_PARENT_CODE AS pid
+			FROM sys_area a1
+			LEFT JOIN sys_area a2 ON a1.AREA_PARENT_CODE = a2.AREA_CODE
+			WHERE <![CDATA[a1.area_level<=4]]> AND a1.area_code IN
+			<foreach collection="deptAreaCodes" item="item" open="(" separator="," close=")">
+					#{item}
+				</foreach>
+
+	</select>
+
+	<select id="selectDeptAreaCodeByProvince" resultType="java.lang.String">
+		SELECT DISTINCT city_area_code  FROM sys_area_dept_manage WHERE province_dept_code=#{deptAreaCode}
+	</select>
+
+	<select id="selectDeptAreaCodeByCity" resultType="java.lang.String">
+		SELECT DISTINCT city_area_code  FROM sys_area_dept_manage WHERE city_dept_code=#{deptAreaCode}
+	</select>
+
+	<select id="selectDirectCityAreaCodeByProvince" resultType="java.lang.String">
+		SELECT DISTINCT COUNTY_AREA_CODE  FROM sys_area_dept_manage WHERE province_dept_code=#{deptAreaCode}
+	</select>
+
+	<select id="selectDirectCityAreaCodeByCity" resultType="java.lang.String">
+		SELECT DISTINCT COUNTY_AREA_CODE  FROM sys_area_dept_manage WHERE city_dept_code=#{deptAreaCode}
+	</select>
+
+
+	<select id="selectDeptAreaCodeByCounty" resultType="java.lang.String">
+		SELECT county_area_code  FROM sys_area_dept_manage WHERE MANAGE_CODE=#{deptAreaCode}
+	</select>
+
+	<select id="selectAreaByDeptAndLevel" resultType="com.chinatower.system.api.model.SysDeptAreaVO">
+		SELECT DISTINCT
+		    sa.AREA_CODE AS id,sa.area_name AS areaName,sa.AREA_PARENT_CODE AS pid
+		FROM sys_area_manage_rel samr, sys_area sa
+		WHERE
+			samr.area_code = sa.AREA_CODE
+			AND sa.DEL_FLAG = '0'
+			AND samr.dept_code = #{deptId}
+		<if test="deptLevel != null and deptLevel == 2">
+			UNION ALL
+			SELECT DISTINCT sa.AREA_CODE AS id,sa.area_name AS areaName,sa.AREA_PARENT_CODE AS pid
+			FROM sys_area_manage_rel samr, sys_area sa
+			WHERE samr.area_code = sa.AREA_PARENT_CODE and samr.dept_code = #{deptId} AND sa.DEL_FLAG = '0' and sa.AREA_LEVEL = '3'
+			UNION ALL
+			SELECT DISTINCT sa.AREA_CODE AS id,sa.area_name AS areaName,sa.AREA_PARENT_CODE AS pid
+			FROM (
+			    SELECT DISTINCT sa.AREA_CODE AS id,sa.area_name AS areaName,sa.AREA_PARENT_CODE AS pid
+			    FROM sys_area_manage_rel samr, sys_area sa
+			    WHERE samr.area_code = sa.AREA_PARENT_CODE and samr.dept_code = #{deptId} AND sa.DEL_FLAG = '0' and sa.AREA_LEVEL = '3'
+			    ) samr, sys_area sa
+			where sa.AREA_PARENT_CODE = samr.id  AND sa.DEL_FLAG = '0' AND sa.AREA_LEVEL = '4'
+		</if>
+		<if test="deptLevel != null and deptLevel == 3">
+			UNION ALL
+			SELECT DISTINCT sa.AREA_CODE AS id,sa.area_name AS areaName,sa.AREA_PARENT_CODE AS pid
+			FROM sys_area_manage_rel samr, sys_area sa
+			WHERE sa.AREA_PARENT_CODE = samr.area_code and samr.dept_code = #{deptId} AND sa.DEL_FLAG = '0' AND sa.AREA_LEVEL = '4'
+		</if>
+	</select>
+
+	<select id="selectTenantUserList" resultType="com.chinatower.platform.project.system.domain.dto.JPushUserDataDTO">
+		SELECT
+		d.industry_code as industryCode,
+		u.user_id AS userId
+		FROM
+		sys_dept d
+		LEFT JOIN (
+		WITH RECURSIVE cte AS (
+		SELECT 1 AS n
+		UNION ALL
+		SELECT n + 1
+		FROM cte
+		WHERE n <![CDATA[<]]> 50
+		)
+		SELECT
+		u_inner.user_id,
+		SUBSTRING_INDEX(SUBSTRING_INDEX(u_inner.DEPT_ID, ',', n), ',', -1) AS split_dept_id
+		FROM sys_user u_inner
+		JOIN cte ON cte.n <![CDATA[<=]]> (
+		LENGTH(u_inner.DEPT_ID) - LENGTH(REPLACE(u_inner.DEPT_ID, ',', '')) + 1
+		)
+		WHERE u_inner.DEL_FLAG = '0'
+		) u_split ON d.dept_id = u_split.split_dept_id
+		LEFT JOIN sys_user u ON u_split.user_id = u.user_id
+		WHERE
+		d.del_flag = '0'
+		  AND d.tenant_id = #{tenantId}
+		  and d.INDUSTRY_CODE= #{industryCode}
+		  and u.user_id is not null
+	</select>
+
+	<select id="selectTenantUserListCount" resultType="java.lang.Integer">
+		SELECT
+			count(DISTINCT u.user_id)
+		FROM
+			sys_dept d
+				LEFT JOIN (
+				WITH RECURSIVE cte AS (
+					SELECT 1 AS n
+					UNION ALL
+					SELECT n + 1
+					FROM cte
+					WHERE n <![CDATA[<]]> 50
+				)
+				SELECT
+					u_inner.user_id,
+					SUBSTRING_INDEX(SUBSTRING_INDEX(u_inner.DEPT_ID, ',', n), ',', -1) AS split_dept_id
+				FROM sys_user u_inner
+						 JOIN cte ON cte.n <![CDATA[<=]]> (
+					LENGTH(u_inner.DEPT_ID) - LENGTH(REPLACE(u_inner.DEPT_ID, ',', '')) + 1
+					)
+				WHERE u_inner.DEL_FLAG = '0'
+			) u_split ON d.dept_id = u_split.split_dept_id
+				LEFT JOIN sys_user u ON u_split.user_id = u.user_id
+		WHERE
+			d.del_flag = '0'
+		  AND d.tenant_id = #{tenantId}
+		  and d.INDUSTRY_CODE= #{industryCode}
+		  and u.user_id is not null
+	</select>
+
+	<insert id="insertOrganAlarmTypeBatch" parameterType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		INSERT INTO vm_organ_alarm_type_rel_t
+		(tenant_id, dept_id,warning_source, type_value, create_by, create_time, delete_flag, industry_code, app_ver_code) VALUES
+		<foreach collection="list" item="item" index="index" separator=",">
+			(#{item.tenantId},#{item.deptId},#{item.warningSource},#{item.typeValue},#{item.creator},NOW(),
+			'0',#{item.industryCode},#{item.appVerCode})
+		</foreach>
+	</insert>
+
+	<delete id="delOrganAlarmTypeBatch" parameterType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		delete from vm_organ_alarm_type_rel_t
+		where
+		1 = 1
+		AND (
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			type_value = #{item.typeValue}
+			<if test="item.tenantId != null and item.tenantId != ''">
+				AND tenant_id = #{item.tenantId}
+			</if>
+			<if test="item.industryCode != null and item.industryCode != ''">
+				AND industry_code = #{item.industryCode}
+			</if>
+			<if test="item.appVerCode != null and item.appVerCode != ''">
+				AND app_ver_code = #{item.appVerCode}
+			</if>
+			<if test="item.warningSource != null and item.warningSource != ''">
+				AND warning_source = #{item.warningSource}
+			</if>
+		</foreach>
+		)
+	</delete>
+
+
+	<select id="selectAllDeptList" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		select distinct dept_id,tenant_id,industry_code,app_ver_code from sys_dept
+		where del_flag = '0' and tenant_id is not null and tenant_id != ''  and industry_code is not null and industry_code != ''
+	</select>
+
+	<select id="devByTenantIdCount" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO" parameterType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		SELECT
+			tenant_id,
+			industry_code,
+			COUNT(*) num
+		FROM
+			vm_order_devices
+		WHERE
+			ord_status IN (0, 1, 2)
+		  AND delete_flag = 0
+		  AND (
+				<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+					tenant_id = #{item.tenantId} AND industry_code = #{item.industryCode}
+				</foreach>
+		      )
+		GROUP BY
+			tenant_id,
+			industry_code
+	</select>
+
+	<select id="uavByTenantIdCount" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO" parameterType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		SELECT
+		tenant_id,
+		industry_code,
+		COUNT(*) num
+		FROM
+		vm_order_uav_devices
+		WHERE
+		ord_status IN (0, 1, 2)
+		AND delete_flag = 0
+		AND (
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			tenant_id = #{item.tenantId} AND industry_code = #{item.industryCode}
+		</foreach>
+		)
+		GROUP BY
+		tenant_id,
+		industry_code
+	</select>
+
+	<select id="iotDevByTenantIdCount" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO" >
+		SELECT
+		tenant_id,
+		industry_code,
+		COUNT(*) num
+		FROM
+		vm_order_sensor_devices
+		WHERE
+		ord_status IN (0, 1, 2)
+		AND delete_flag = 0
+		AND category_code = #{categoryCode}
+		AND (
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			tenant_id = #{item.tenantId} AND industry_code = #{item.industryCode}
+		</foreach>
+		)
+		GROUP BY
+		tenant_id,
+		industry_code
+	</select>
+
+	<select id="findAlarmTypeByOrder" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO"
+			parameterType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		SELECT
+		DISTINCT
+		voa.tenant_id,
+		voa.industry_code,
+		voa.app_ver_code,
+		sat.type_value AS typeValue,
+		'1' as warningSource
+		FROM
+		vm_order_algorithms voa
+		inner join vm_algorithm_info_t ai on voa.algorithm_code = ai.algorithm_code
+		inner join vm_algorithm_alarm aa on ai.algo_min_type_code = aa.algo_min_type
+		inner join sys_alarm_type sat ON aa.alarm_type = sat.type_value
+		left join sys_dict_data dict on sat.alarm_source = dict.DICT_VALUE and dict.DICT_TYPE = 'warning_source_common'
+		WHERE sat.delete_flag = 0
+		and sat.alarm_source = '1'
+		and ai.delete_flag = 0
+		and aa.delete_flag = 0
+		and voa.delete_flag = 0
+		and sat.alarm_source = '1'
+		and voa.ord_status in (0, 1, 2)
+		AND (
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			voa.tenant_id = #{item.tenantId} AND voa.industry_code = #{item.industryCode}
+		</foreach>
+		)
+	</select>
+
+
+	<select id="findAlarmTypeBySourceTower" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO"
+			parameterType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		SELECT DISTINCT
+		'' AS tenant_id,
+		'' AS industry_code,
+		'' AS app_ver_code,
+		sat.type_value AS typeValue,
+		sat.alarm_source as warningSource
+		FROM sys_alarm_type sat
+		WHERE sat.delete_flag = 0
+		AND(
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			 sat.tenant_id is null and sat.industry_code is null
+		</foreach>
+		)
+	</select>
+
+	<select id="findAlarmTypeBySourceTenant" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO"
+			parameterType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		SELECT DISTINCT
+		sat.tenant_id,
+		sat.industry_code,
+		sat.app_ver_code,
+		sat.type_value AS typeValue,
+		sat.alarm_source as warningSource
+		FROM sys_alarm_type sat
+		WHERE sat.delete_flag = 0
+		AND(
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			sat.tenant_id = #{item.tenantId} and sat.industry_code = #{item.industryCode} and sat.alarm_source in
+			<foreach collection="item.alarmSources" item="alarmSource" open="(" separator="," close=")">
+				#{alarmSource}
+			</foreach>
+		</foreach>
+		)
+	</select>
+
+	<select id="getThirdPartyAlarmTypes" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		SELECT
+		t.tenant_id,
+		t.industry_code,
+		t.app_ver_code,
+		'11' AS warningSource,
+		t.alarm_type AS 'typeValue'
+		FROM
+		vm_third_party_alarm t
+		WHERE
+		t.delete_flag = 0
+		AND (
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			t.tenant_id = #{item.tenantId} AND t.industry_code = #{item.industryCode}
+		</foreach>
+		)
+	</select>
+
+
+
+	<select id="getAlarmTypeList" resultType="com.chinatower.platform.project.custom.entity.AlarmTypeSyncDataVO">
+		SELECT
+		tenant_id,
+		industry_code,
+		app_ver_code,
+		type_value,
+		alarm_source
+		FROM
+		sys_alarm_type
+		WHERE
+		delete_flag = 0
+		AND (
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			type_value = #{item.typeValue}
+			<if test="item.tenantId != null and item.tenantId != ''">
+				AND tenant_id = #{item.tenantId}
+			</if>
+			<if test="item.industryCode != null and item.industryCode != ''">
+				AND industry_code = #{item.industryCode}
+			</if>
+			<if test="item.appVerCode != null and item.appVerCode != ''">
+				AND app_ver_code = #{item.appVerCode}
+			</if>
+			<if test="item.alarmSource != null and item.alarmSource != ''">
+				AND alarm_source = #{item.alarmSource}
+			</if>
+		</foreach>
+		)
+	</select>
+
+
+	<select id="selectOrganList" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		select distinct dept_id,tenant_id,industry_code,app_ver_code from sys_dept
+		where del_flag = 0 and tenant_id is not null and tenant_id != '' and industry_code is not null and industry_code != ''
+		<if test="list != null and list.size() > 0">
+			AND (
+			<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+				1 = 1
+				<if test="item.tenantId != null and item.tenantId != ''">
+					AND tenant_id = #{item.tenantId}
+				</if>
+				<if test="item.industryCode != null and item.industryCode != ''">
+					AND industry_code = #{item.industryCode}
+				</if>
+				<if test="item.appVerCode != null and item.appVerCode != ''">
+					AND app_ver_code = #{item.appVerCode}
+				</if>
+			</foreach>
+			)
+		</if>
+	</select>
+
+
+
+	<select id="getThirdPartyAlarmTypeList" resultType="com.chinatower.platform.project.custom.entity.ThirdPartyAlarmTypeSyncDataVO">
+		SELECT
+		tenant_id,
+		industry_code,
+		app_ver_code,
+		alarm_type
+		FROM
+		vm_third_party_alarm
+		WHERE
+		delete_flag = 0
+		AND (
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			alarm_type = #{item.alarmType}
+			<if test="item.tenantId != null and item.tenantId != ''">
+				AND tenant_id = #{item.tenantId}
+			</if>
+			<if test="item.industryCode != null and item.industryCode != ''">
+				AND industry_code = #{item.industryCode}
+			</if>
+			<if test="item.appVerCode != null and item.appVerCode != ''">
+				AND app_ver_code = #{item.appVerCode}
+			</if>
+		</foreach>
+		)
+	</select>
+
+
+
+	<select id="getOrganAlarmTypeList" resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+		SELECT
+		tenant_id,
+		industry_code,
+		app_ver_code,
+		type_value,
+		warning_source
+		FROM
+		vm_organ_alarm_type_rel_t
+		WHERE
+		delete_flag = 0
+		AND (
+		<foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+			type_value = #{item.typeValue}
+			<if test="item.tenantId != null and item.tenantId != ''">
+				AND tenant_id = #{item.tenantId}
+			</if>
+			<if test="item.industryCode != null and item.industryCode != ''">
+				AND industry_code = #{item.industryCode}
+			</if>
+			<if test="item.appVerCode != null and item.appVerCode != ''">
+				AND app_ver_code = #{item.appVerCode}
+			</if>
+			<if test="item.warningSource != null and item.warningSource != ''">
+				AND warning_source = #{item.warningSource}
+			</if>
+		</foreach>
+		)
+	</select>
+
+
+	<select id="getOrganListByAlarmType" resultType="java.lang.String">
+		SELECT
+		distinct dept_id
+		FROM
+		vm_organ_alarm_type_rel_t
+		WHERE
+		delete_flag = 0
+		AND tenant_id = #{tenantId}
+		AND industry_code = #{industryCode}
+		AND warning_source = #{warningSource}
+		AND type_value = #{typeValue}
+		AND (
+		dept_id in
+		<foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+			#{item}
+		</foreach>
+		)
+	</select>
+	<select id="getDeptIdList" resultType="java.lang.String">
+		SELECT DEPT_ID
+		FROM `sys_dept`
+		WHERE `TENANT_ID` = #{tenantId}
+		  AND `APP_VER_CODE` = #{appVerCode}
+		  AND `INDUSTRY_CODE` = #{industryCode}
+		  AND `DEL_FLAG` = '0'
+	</select>
+
+	<select id="getTenantByTowerDeptId" resultType="java.lang.String">
+		SELECT
+		c.tenant_id
+		FROM
+		vm_order_customer c
+		WHERE
+		c.business_org
+		<foreach collection="deptIds"  item="item" index="index" open="in (" close=")" separator=",">
+			#{item}
+		</foreach>
+		UNION
+
+		SELECT
+		c.tenant_id
+		FROM
+		vm_order_customer_his c
+		WHERE
+		c.business_org
+		<foreach collection="deptIds"  item="item" index="index" open="in (" close=")" separator=",">
+			#{item}
+		</foreach>
+	</select>
+	<select id="getDeptByCurrentDeptId" resultType="java.lang.String">
+		SELECT dept_id deptId from sys_dept WHERE del_flag = '0'
+		<if test="deptLevelInt == 2">
+			and (PARENT_ID=#{deptId} or DEPT_ID=#{deptId})
+		</if>
+		<if test="deptLevelInt >= 3">
+			and  DEPT_ID=#{deptId}
+		</if>
+	</select>
+
+    <select id="selectByDeptId" resultType="com.chinatower.platform.project.system.domain.dto.SysDeptHisMongoDTO">
+        SELECT
+            `ID`, `DEPT_ID`, `DEPT_NAME`, `PARENT_ID`, `PARENT_NAME`,
+            `ANCESTORS`, `ORDER_NUM`, `LEADER`, `PHONE`, `EMAIL`,
+            `STATUS`, `DEL_FLAG`, `CREATE_BY`, `CREATE_TIME`, `UPDATE_BY`,
+            `UPDATE_TIME`, `DEPT_LEVEL`, `BUSSNESS_UNIT`, `MDM_ORG_CODE`,
+            `TENANT_ID`, `TENANT_TOWER_DEPT_ID`, `TENANT_NAME`,
+            `REMARK`, `APP_VER_CODE`, `INDUSTRY_CODE`
+        FROM sys_dept
+        WHERE DEPT_ID=#{deptId}
+    </select>
+
+    <delete id="physicalDeleteByDeptId">
+        DELETE FROM sys_dept
+        WHERE DEPT_ID=#{deptId}
+    </delete>
+
+</mapper>

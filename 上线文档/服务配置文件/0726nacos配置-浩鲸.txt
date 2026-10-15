@@ -1,0 +1,119 @@
+nacos配置文件修改：
+1、video-order增加组件服务调用地址：
+component:
+  weather:
+    api:
+      url: http://10.46.17.61:18091/v7/
+
+2、video-bdm增加数字人大模型调用地址：
+queryAnswer:
+  api:
+    url: http://10.46.10.38:8008/
+    tenantId: 110000-perception
+    appCode: 110000-perception
+
+
+nacos更改k8s：
+一、video-chinatower-view-manage服务：
+数据存储增加配置项：
+配置项1：
+挂载路径：
+/app/bootstrap-prod.yml
+子路径：
+public.yml
+
+配置项2：
+挂载路径：
+/app/application-prod.yml
+子路径：
+ttview-manage.yml
+
+生命周期增加启动命令：
+
+删除：
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=aKMriWY7
+--spring.cloud.nacos.discovery.server-addr=10.19.30.175:8848
+--spring.cloud.nacos.config.server-addr=10.19.30.175:8848
+更改：
+--spring.profiles.active=pro 更改为 --spring.profiles.active=prod
+新增：
+--spring.application.name=ttview-manage
+
+###################
+二、video-manage服务：
+数据存储增加配置项：
+配置项1：
+挂载路径：
+/app/bootstrap-prod.yml
+子路径：
+public.yml
+配置项2：
+
+挂载路径：
+/app/application-prod.yml
+子路径：
+video-manage.yml
+
+生命周期增加启动命令：
+删除：
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=aKMriWY7
+--spring.cloud.nacos.discovery.server-addr=10.19.30.175:8848
+--spring.cloud.nacos.config.server-addr=10.19.30.175:8848
+更改：
+--spring.profiles.active=pro 更改为 --spring.profiles.active=prod
+新增：
+--spring.application.name=video-manage
+
+###################
+三、video-export服务：
+数据存储增加配置项：
+配置项1：
+挂载路径：
+/app/bootstrap-prod.yml
+子路径：
+public.yml
+
+配置项2：
+挂载路径：
+/app/application-prod.yml
+子路径：
+video-export.yml
+
+生命周期增加启动命令：
+删除：
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=aKMriWY7
+--spring.cloud.nacos.discovery.server-addr=10.19.30.175:8848
+--spring.cloud.nacos.config.server-addr=10.19.30.175:8848
+更改：
+--spring.profiles.active=pro 更改为 --spring.profiles.active=prod
+新增：
+--spring.application.name=video-export
+
+###################
+四、video-order服务：
+数据存储增加配置项：
+配置项1：
+挂载路径：
+/app/bootstrap-prod.yml
+子路径：
+public.yml
+
+配置项2：
+挂载路径：
+/app/application-prod.yml
+子路径：
+video-order.yml
+
+生命周期增加启动命令：
+删除：
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=aKMriWY7
+--spring.cloud.nacos.discovery.server-addr=10.19.30.175:8848
+--spring.cloud.nacos.config.server-addr=10.19.30.175:8848
+更改：
+--spring.profiles.active=pro 更改为 --spring.profiles.active=prod
+新增：
+--spring.application.name=video-order

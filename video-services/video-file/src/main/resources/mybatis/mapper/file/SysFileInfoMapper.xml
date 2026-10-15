@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.file.mapper.SysFileInfoMapper">
+
+    <sql id="selectConfigVo">
+        select config_id, config_name, config_key, config_value, config_type, creator, create_time, modifier, update_time, remark
+		from sys_config
+    </sql>
+
+    <sql id="selectNoticeVo">
+        SELECT
+        DISTINCT a.notice_id,
+            a.notice_title,
+            a.notice_type,
+            a.notice_content,
+            a.STATUS,
+            a.publish_time,
+            a.receive_end,
+            a.valid_time,
+            a.invalid_time,
+            a.if_all_receive,
+            a.receive_depts,
+            a.receive_roles,
+            a.receive_users,
+            CONVERT
+            ( a.notice_banner, CHAR ) notice_banner,
+            a.remark,
+            a.create_by,
+            a.create_time,
+            a.update_by,
+            a.update_time,
+            a.dept_id,
+            a.tenant_id,
+            b.tenant_name,
+            a.industry_code,
+            ic.industry_name,
+            a.app_ver_code,
+            ivc.app_ver_name
+        FROM
+            sys_notice a
+        LEFT JOIN sys_tenant_info b ON a.tenant_id = b.id
+        LEFT JOIN sys_industry_conf ic ON a.industry_code = ic.industry_code
+        LEFT JOIN sys_industry_ver_conf ivc ON ivc.app_ver_code = a.app_ver_code AND ivc.industry_code = a.industry_code
+    </sql>
+
+    <resultMap type="com.chinatower.file.domain.SysConfig" id="SysConfigResult">
+        <id     property="configId"      column="config_id"      />
+        <result property="configName"    column="config_name"    />
+        <result property="configKey"     column="config_key"     />
+        <result property="configValue"   column="config_value"   />
+        <result property="configType"    column="config_type"    />
+        <result property="creator"      column="creator"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="modifier"      column="modifier"      />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+
+    <select id="selectConfig" parameterType="com.chinatower.file.domain.SysConfig" resultMap="SysConfigResult">
+        <include refid="selectConfigVo"/>
+        <where>
+            <if test="configId !=null">
+                and config_id = #{configId}
+            </if>
+            <if test="configKey !=null and configKey != ''">
+                and config_key = #{configKey}
+            </if>
+        </where>
+    </select>
+
+    <select id="getCenterColonyCode" resultType="java.lang.String">
+        select platform_code from vm_platform_data_config where delete_flag = 0 and platform_level = 0 limit 1
+    </select>
+
+    <select id="getAllDownPlatformCode" resultType="java.lang.String">
+        SELECT platform_code platformCode from vm_platform_data_config where delete_flag = '0' and platform_code != '10000000001'
+    </select>
+
+    <select id="getSeqByNameList" resultType="java.lang.String" >
+        SELECT GETSEQ(#{name}) AS SEQ_ID
+        <foreach collection="list" item="key" index="index">
+            <if test="index != 0">
+                union all   SELECT GETSEQ(#{name}) AS SEQ_ID
+            </if>
+        </foreach>
+    </select>
+
+</mapper>

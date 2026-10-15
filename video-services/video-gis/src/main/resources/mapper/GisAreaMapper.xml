@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.GisAreaMapper">
+
+
+
+    <select id="statisticDkmj" resultType="java.lang.String">
+          SELECT CAST(sum(${areaField}) as DECIMAL(18,2))
+        FROM ${tableName}
+        <if test="featureIDs != null and featureIDs.size > 0">
+        WHERE
+        <foreach collection="featureIDs" item="item" index="index" open="BSM IN (" close=")" separator=",">
+            #{item}
+        </foreach>
+        </if>
+    </select>
+
+    <select id="statisticGdxzmj" resultType="java.lang.String">
+        SELECT sum(tt.mj) FROM
+        <foreach collection="layerNames" item="item" index="index" open="(" close=") as tt" separator="UNION ALL">
+            SELECT CAST(sum(tbmj) as DECIMAL(18,2)) as mj
+            FROM ${item}
+            WHERE dlmc in ('水田','水浇地','旱地') or dlbm in ('0101','0102','0103')
+        </foreach>
+    </select>
+
+</mapper>

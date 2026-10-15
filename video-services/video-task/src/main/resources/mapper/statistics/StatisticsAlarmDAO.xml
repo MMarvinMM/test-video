@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.statistics.dao.StatisticsAlarmDAO">
+
+    <insert id="addJudgeAlarm" parameterType="java.util.List">
+        INSERT INTO vm_statistics_algorithm_judge_alarm(province_id,city_id,county_id,warning_type_id,algorithm_code,warning_source,device_code,
+        total_alarm_num,not_open_alarm_num,serial_alarm_num,parallel_alarm_num,total_judge_num,not_open_judge_num,
+        serial_judge_num,parallel_judge_num,total_real_alarm_num,not_open_real_alarm_num,serial_real_alarm_num,
+        parallel_real_alarm_num,total_false_alarm_num,not_open_false_alarm_num,serial_false_alarm_num,
+        parallel_false_alarm_num,year,month,day,create_date,update_date,tenant_id,tenant_name,colony_code,colony_name,algorithm_name,province_name,city_name,warning_type_name,product_name,function_code_name) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.provinceId} ,#{item.cityId} ,#{item.countyId} ,#{item.warningTypeId} ,#{item.algorithmCode},#{item.warningSource},#{item.deviceCode},
+            #{item.totalAlarmNum}, #{item.notOpenAlarmNum}, #{item.serialAlarmNum}, #{item.parallelAlarmNum},
+            #{item.totalJudgeNum}, #{item.notOpenJudgeNum}, #{item.serialJudgeNum} ,#{item.parallelJudgeNum} ,
+            #{item.totalRealAlarmNum}, #{item.notOpenRealAlarmNum}, #{item.serialRealAlarmNum},
+            #{item.parallelRealAlarmNum},#{item.totalFalseAlarmNum}, #{item.notOpenFalseAlarmNum},
+            #{item.serialFalseAlarmNum}, #{item.parallelFalseAlarmNum}, YEAR(DATE_SUB(NOW(), INTERVAL 1 DAY)),
+            MONTH (DATE_SUB(NOW(), INTERVAL 1 DAY)), DAY (DATE_SUB(NOW(), INTERVAL 1 DAY)),
+            DATE_SUB(NOW(), INTERVAL 1 DAY), NOW(), #{item.tenantId}, #{item.tenantName}, #{item.colonyCode}, #{item.colonyName}, #{item.algorithmName}, #{item.provinceName}, #{item.cityName}, #{item.warningTypeName}, #{item.productName}, #{item.functionCodeName})
+        </foreach>
+    </insert>
+
+    <delete id="delJudgeAlarm">
+        DELETE FROM vm_statistics_algorithm_judge_alarm WHERE DATE_FORMAT(create_date ,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 DAY) ,'%Y-%m-%d')
+    </delete>
+    <select id="getAlarmNumList"  parameterType="com.chinatower.analysis.api.entity.DateVO"
+            resultType="com.chinatower.analysis.api.entity.AlarmOrderJudgeVO">
+        SELECT aa.province_code AS provinceId,
+        aa.city_code AS cityId,
+        aa.county_code AS countyId,
+        aa.tenant_id AS tenantId,
+        aa.tenant_name AS tenantName,
+        aa.device_code,
+        aa.warning_source,
+        aa.algorithm_code,
+        jt.sub_type AS warning_type_id,
+        SUM( IF (DATE_FORMAT(aa.alarm_time ,'%Y-%m-%d') = #{handleDate} and (aa.judge_type ='0' or aa.judge_type IS NULL),1,0)) AS not_open_alarm_num,
+        SUM(IF (DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate} and (aa.judge_type ='0' or aa.judge_type IS NULL),1,0))  as not_open_judge_num,
+        SUM( IF (DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate} and (aa.judge_type ='0' or aa.judge_type IS NULL)  and aa.judge_result in ('1','2') , 1, 0)) AS not_open_real_alarm_num,
+        SUM( IF (DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate} and (aa.judge_type ='0' or aa.judge_type IS NULL) and aa.judge_result = '0', 1, 0)) AS not_open_false_alarm_num
+        FROM ${tableName} aa
+        LEFT JOIN JSON_TABLE(
+            IF(aa.sub_scenes IS NULL OR JSON_TYPE(aa.sub_scenes)='NULL' OR JSON_LENGTH(aa.sub_scenes)=0,
+               JSON_ARRAY(aa.warning_type_id),
+               aa.sub_scenes),
+            '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+        ) jt ON TRUE
+        WHERE aa.delete_flag = '0'
+        AND (DATE_FORMAT(aa.alarm_time ,'%Y-%m-%d') = #{handleDate}
+        or
+        DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate}
+        )
+        and warning_source IN ('1','12')
+        AND aa.algorithm_code IS NOT NULL AND aa.algorithm_code !='' AND aa.algorithm_code !='null'
+        GROUP BY aa.province_code,aa.city_code,aa.county_code,aa.warning_source,aa.device_code,aa.algorithm_code,jt.sub_type,aa.tenant_id,aa.tenant_name
+    </select>
+    <!-- 运营表优先 sub_scenes；空则 JOIN 月表；仍空回退 aa.warning_type_id（场景行由 Service 剔除） -->
+    <select id="getOperateNumList" parameterType="com.chinatower.analysis.api.entity.DateVO"
+            resultType="com.chinatower.analysis.api.entity.AlarmOrderJudgeVO">
+        SELECT aa.province_id ,
+        aa.city_id,
+        aa.county_id ,
+        aa.tenant_id,
+        aa.tenant_name,
+        aa.device_code,
+        aa.warning_source,
+        aa.algorithm_code,
+        jt.sub_type AS warning_type_id,
+        SUM(IF (DATE_FORMAT(aa.alarm_time ,'%Y-%m-%d') = #{handleDate} and aa.operate_type = '1',1,0)) AS serial_alarm_num,
+        SUM(IF (DATE_FORMAT(aa.alarm_time ,'%Y-%m-%d') = #{handleDate} and aa.operate_type = '2',1,0)) AS parallel_alarm_num,
+        SUM(IF (DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate} and aa.operate_type = '1',1,0)) as serial_judge_num,
+        SUM(IF (DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate} and aa.operate_type = '2',1,0)) as parallel_judge_num,
+        SUM(IF (DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate} and aa.operate_type = '1' and aa.judge_result = '1',1,0)) as serial_real_alarm_num,
+        SUM(IF (DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate} and aa.operate_type = '2' and aa.judge_result in ('1','2'),1,0)) as parallel_real_alarm_num,
+        SUM(IF (DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate} and aa.operate_type = '1' and aa.judge_result = '0',1,0)) as serial_false_alarm_num,
+        SUM(IF (DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate} and aa.operate_type = '2' and aa.judge_result = '0',1,0)) as parallel_false_alarm_num
+        FROM vm_alarm_operate_t aa
+        LEFT JOIN ${tableName} ord ON aa.warning_order_id = ord.warning_order_id
+        LEFT JOIN JSON_TABLE(
+            IF(aa.sub_scenes IS NOT NULL AND JSON_TYPE(aa.sub_scenes)!='NULL' AND JSON_LENGTH(aa.sub_scenes)>0,
+               aa.sub_scenes,
+               IF(ord.sub_scenes IS NULL OR JSON_TYPE(ord.sub_scenes)='NULL' OR JSON_LENGTH(ord.sub_scenes)=0,
+                  JSON_ARRAY(aa.warning_type_id),
+                  ord.sub_scenes)),
+            '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+        ) jt ON TRUE
+        WHERE aa.delete_flag = '0'
+          and aa.warning_source IN ('1','12')
+        AND ( DATE_FORMAT(aa.alarm_time ,'%Y-%m-%d') = #{handleDate}
+        or
+        DATE_FORMAT(aa.judge_time ,'%Y-%m-%d') = #{handleDate}
+        )
+        AND aa.algorithm_code IS NOT NULL AND aa.algorithm_code !='' AND aa.algorithm_code !='null'
+        GROUP BY aa.province_id,aa.city_id,aa.county_id, aa.warning_source, aa.device_code,aa.algorithm_code,jt.sub_type,aa.tenant_id,aa.tenant_name
+    </select>
+
+
+    <select id="getAlarmNumListParam"  parameterType="com.chinatower.analysis.api.entity.DateVO"
+            resultType="com.chinatower.analysis.api.entity.AlarmOrderJudgeVO">
+        SELECT
+        	provinceId,
+        	cityId,
+        	countyId,
+        	tenantId,
+        	tenantName,
+        	device_code,
+        	warning_source,
+        	algorithm_code,
+        	warning_type_id,
+        	sum( not_open_alarm_num ) AS not_open_alarm_num,
+        	sum( not_open_judge_num ) AS not_open_judge_num,
+        	sum( not_open_real_alarm_num ) AS not_open_real_alarm_num,
+        	sum( not_open_false_alarm_num ) AS not_open_false_alarm_num,
+        	dateTime,
+            yearStr,
+            monthStr,
+            dayStr
+        FROM
+        	(
+        SELECT
+        	aa.province_code AS provinceId,
+        	aa.city_code AS cityId,
+        	aa.county_code AS countyId,
+        	aa.tenant_id AS tenantId,
+        	aa.tenant_name AS tenantName,
+        	aa.device_code,
+        	aa.warning_source,
+        	aa.algorithm_code,
+        	jt.sub_type AS warning_type_id,
+        	SUM( IF ( aa.judge_type = '0' or  aa.judge_type IS NULL , 1, 0 ) ) AS not_open_alarm_num,
+        	'0' AS not_open_judge_num,
+        	'0' AS not_open_real_alarm_num,
+        	'0' AS not_open_false_alarm_num,
+        	DATE_FORMAT( aa.alarm_time, '%Y-%m-%d' ) AS dateTime,
+            year(aa.alarm_time) yearStr,
+            month(aa.alarm_time) monthStr,
+            day(aa.alarm_time) dayStr
+        FROM ${tableName} aa
+        LEFT JOIN JSON_TABLE(
+            IF(aa.sub_scenes IS NULL OR JSON_TYPE(aa.sub_scenes)='NULL' OR JSON_LENGTH(aa.sub_scenes)=0,
+               JSON_ARRAY(aa.warning_type_id),
+               aa.sub_scenes),
+            '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+        ) jt ON TRUE
+        WHERE
+        	aa.delete_flag = '0'
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT( aa.alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT( aa.alarm_time, '%Y-%m' ) = #{handleDate}
+            </otherwise>
+        </choose>
+             and warning_source IN ('1','12')
+        	AND aa.algorithm_code IS NOT NULL AND aa.algorithm_code != '' AND aa.algorithm_code != 'null'
+        GROUP BY
+        	aa.province_code,
+        	aa.city_code,
+        	aa.county_code,
+        	aa.warning_source,
+        	aa.device_code,
+        	aa.algorithm_code,
+        	jt.sub_type,
+        	aa.tenant_id,
+        	aa.tenant_name,
+        	dateTime
+        UNION ALL
+        SELECT
+        	aa.province_code AS provinceId,
+        	aa.city_code AS cityId,
+        	aa.county_code AS countyId,
+        	aa.tenant_id AS tenantId,
+        	aa.tenant_name AS tenantName,
+        	aa.device_code,
+        	aa.warning_source,
+        	aa.algorithm_code,
+        	jt.sub_type AS warning_type_id,
+        	'0' AS not_open_alarm_num,
+        	SUM( IF ( aa.judge_type = '0' or  aa.judge_type IS NULL, 1, 0 ) ) AS not_open_judge_num,
+        	SUM( IF ( (aa.judge_type = '0' or  aa.judge_type IS NULL) AND aa.judge_result IN ( '1', '2' ), 1, 0 ) ) AS not_open_real_alarm_num,
+        	SUM( IF ( (aa.judge_type = '0' or  aa.judge_type IS NULL) AND aa.judge_result = '0', 1, 0 ) ) AS not_open_false_alarm_num,
+        	DATE_FORMAT( aa.judge_time, '%Y-%m-%d' ) AS dateTime,
+            year(aa.judge_time) yearStr,
+            month(aa.judge_time) monthStr,
+            day(aa.judge_time) dayStr
+        FROM ${tableName} aa
+        LEFT JOIN JSON_TABLE(
+            IF(aa.sub_scenes IS NULL OR JSON_TYPE(aa.sub_scenes)='NULL' OR JSON_LENGTH(aa.sub_scenes)=0,
+               JSON_ARRAY(aa.warning_type_id),
+               aa.sub_scenes),
+            '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+        ) jt ON TRUE
+        WHERE
+        	aa.delete_flag = '0'
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT( aa.judge_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT( aa.judge_time, '%Y-%m' ) = #{handleDate}
+            </otherwise>
+        </choose>
+              and warning_source IN ('1','12')
+        	AND aa.algorithm_code IS NOT NULL AND aa.algorithm_code != '' AND aa.algorithm_code != 'null'
+        GROUP BY
+        	aa.province_code,
+        	aa.city_code,
+        	aa.county_code,
+        	aa.warning_source,
+        	aa.device_code,
+        	aa.algorithm_code,
+        	jt.sub_type,
+        	aa.tenant_id,
+        	aa.tenant_name,
+        	dateTime
+        	) a
+        GROUP BY
+        	provinceId,
+        	cityId,
+        	countyId,
+        	tenantId,
+        	tenantName,
+        	device_code,
+        	warning_source,
+        	algorithm_code,
+        	warning_type_id,
+        	dateTime
+    </select>
+    <select id="getOperateNumListParam" parameterType="com.chinatower.analysis.api.entity.DateVO"
+            resultType="com.chinatower.analysis.api.entity.AlarmOrderJudgeVO">
+        select
+        province_id ,
+        city_id,
+        county_id ,
+        tenant_id,
+        tenant_name,
+        device_code,
+        warning_source,
+        algorithm_code,
+        warning_type_id,
+        dateTime,
+        yearStr,
+        monthStr,
+        dayStr,
+        SUM(serial_alarm_num) serial_alarm_num,
+        SUM(parallel_alarm_num) parallel_alarm_num,
+        SUM(serial_judge_num) serial_judge_num,
+        SUM(parallel_judge_num) parallel_judge_num,
+        SUM(serial_real_alarm_num) serial_real_alarm_num,
+        SUM(parallel_real_alarm_num) parallel_real_alarm_num,
+        SUM(serial_false_alarm_num) serial_false_alarm_num,
+        SUM(parallel_false_alarm_num) parallel_false_alarm_num
+        from (
+            SELECT aa.province_id ,
+            aa.city_id,
+            aa.county_id ,
+            aa.tenant_id,
+            aa.tenant_name,
+            aa.device_code,
+            aa.warning_source,
+            aa.algorithm_code,
+            jt.sub_type AS warning_type_id,
+            DATE_FORMAT( aa.alarm_time, '%Y-%m-%d' ) AS dateTime,
+            year(aa.alarm_time) yearStr,
+            month(aa.alarm_time) monthStr,
+            day(aa.alarm_time) dayStr,
+            SUM(IF (aa.operate_type = '1',1,0)) AS serial_alarm_num,
+            SUM(IF (aa.operate_type = '2',1,0)) AS parallel_alarm_num,
+            '0' as serial_judge_num,
+            '0' as parallel_judge_num,
+            '0' as serial_real_alarm_num,
+            '0' as parallel_real_alarm_num,
+            '0' as serial_false_alarm_num,
+            '0' as parallel_false_alarm_num
+            FROM vm_alarm_operate_t aa
+            LEFT JOIN ${tableName} ord ON aa.warning_order_id = ord.warning_order_id
+            LEFT JOIN JSON_TABLE(
+                IF(aa.sub_scenes IS NOT NULL AND JSON_TYPE(aa.sub_scenes)!='NULL' AND JSON_LENGTH(aa.sub_scenes)>0,
+                   aa.sub_scenes,
+                   IF(ord.sub_scenes IS NULL OR JSON_TYPE(ord.sub_scenes)='NULL' OR JSON_LENGTH(ord.sub_scenes)=0,
+                      JSON_ARRAY(aa.warning_type_id),
+                      ord.sub_scenes)),
+                '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+            ) jt ON TRUE
+            WHERE aa.delete_flag = '0'
+              and aa.warning_source IN ('1','12')
+            <choose>
+                <when test="day != null and day != ''">
+                    and DATE_FORMAT( aa.alarm_time, '%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT( aa.alarm_time, '%Y-%m' ) = #{handleDate}
+                </otherwise>
+            </choose>
+            AND aa.algorithm_code IS NOT NULL AND aa.algorithm_code !='' AND aa.algorithm_code !='null'
+            GROUP BY aa.province_id,aa.city_id,aa.county_id, aa.warning_source, aa.device_code,aa.algorithm_code,jt.sub_type,aa.tenant_id,aa.tenant_name,dateTime
+            union all
+            SELECT aa.province_id ,
+            aa.city_id,
+            aa.county_id ,
+            aa.tenant_id,
+            aa.tenant_name,
+            aa.device_code,
+            aa.warning_source,
+            aa.algorithm_code,
+            jt.sub_type AS warning_type_id,
+            DATE_FORMAT( aa.judge_time, '%Y-%m-%d' ) AS dateTime,
+            year(aa.judge_time) yearStr,
+            month(aa.judge_time) monthStr,
+            day(aa.judge_time) dayStr,
+            '0' AS serial_alarm_num,
+            '0' AS parallel_alarm_num,
+            SUM(IF (aa.operate_type = '1',1,0)) as serial_judge_num,
+            SUM(IF (aa.operate_type = '2',1,0)) as parallel_judge_num,
+            SUM(IF (aa.operate_type = '1' and aa.judge_result = '1',1,0)) as serial_real_alarm_num,
+            SUM(IF (aa.operate_type = '2' and aa.judge_result in ('1','2'),1,0)) as parallel_real_alarm_num,
+            SUM(IF (aa.operate_type = '1' and aa.judge_result = '0',1,0)) as serial_false_alarm_num,
+            SUM(IF (aa.operate_type = '2' and aa.judge_result = '0',1,0)) as parallel_false_alarm_num
+            FROM vm_alarm_operate_t aa
+            LEFT JOIN ${tableName} ord ON aa.warning_order_id = ord.warning_order_id
+            LEFT JOIN JSON_TABLE(
+                IF(aa.sub_scenes IS NOT NULL AND JSON_TYPE(aa.sub_scenes)!='NULL' AND JSON_LENGTH(aa.sub_scenes)>0,
+                   aa.sub_scenes,
+                   IF(ord.sub_scenes IS NULL OR JSON_TYPE(ord.sub_scenes)='NULL' OR JSON_LENGTH(ord.sub_scenes)=0,
+                      JSON_ARRAY(aa.warning_type_id),
+                      ord.sub_scenes)),
+                '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+            ) jt ON TRUE
+            WHERE aa.delete_flag = '0'
+            and aa.warning_source IN ('1','12')
+            <choose>
+                <when test="day != null and day != ''">
+                    and DATE_FORMAT( aa.judge_time, '%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT( aa.judge_time, '%Y-%m' ) = #{handleDate}
+                </otherwise>
+            </choose>
+            AND aa.algorithm_code IS NOT NULL AND aa.algorithm_code !='' AND aa.algorithm_code !='null'
+            GROUP BY aa.province_id,aa.city_id,aa.county_id, aa.warning_source, aa.device_code,aa.algorithm_code,jt.sub_type,aa.tenant_id,aa.tenant_name,dateTime
+        ) a
+       group by province_id ,city_id,county_id ,tenant_id,tenant_name,device_code,warning_source,algorithm_code,warning_type_id,dateTime
+    </select>
+    <insert id="addJudgeAlarmParam" parameterType="java.util.List">
+        INSERT INTO vm_statistics_algorithm_judge_alarm(province_id,city_id,county_id,warning_type_id,algorithm_code,warning_source,device_code,
+        total_alarm_num,not_open_alarm_num,serial_alarm_num,parallel_alarm_num,total_judge_num,not_open_judge_num,
+        serial_judge_num,parallel_judge_num,total_real_alarm_num,not_open_real_alarm_num,serial_real_alarm_num,
+        parallel_real_alarm_num,total_false_alarm_num,not_open_false_alarm_num,serial_false_alarm_num,
+        parallel_false_alarm_num,year,month,day,create_date,update_date,tenant_id,tenant_name,colony_code,colony_name,algorithm_name,province_name,city_name,warning_type_name,product_name,function_code_name) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.provinceId} ,#{item.cityId} ,#{item.countyId} ,#{item.warningTypeId} ,#{item.algorithmCode},#{item.warningSource},#{item.deviceCode},
+            #{item.totalAlarmNum}, #{item.notOpenAlarmNum}, #{item.serialAlarmNum}, #{item.parallelAlarmNum},
+            #{item.totalJudgeNum}, #{item.notOpenJudgeNum}, #{item.serialJudgeNum} ,#{item.parallelJudgeNum} ,
+            #{item.totalRealAlarmNum}, #{item.notOpenRealAlarmNum}, #{item.serialRealAlarmNum},
+            #{item.parallelRealAlarmNum},#{item.totalFalseAlarmNum}, #{item.notOpenFalseAlarmNum},
+            #{item.serialFalseAlarmNum}, #{item.parallelFalseAlarmNum}, #{item.yearStr},
+            #{item.monthStr}, #{item.dayStr},
+            concat(#{item.dateTime}, ' 12:00:00'), NOW(), #{item.tenantId}, #{item.tenantName}, #{item.colonyCode}, #{item.colonyName}, #{item.algorithmName}, #{item.provinceName}, #{item.cityName}, #{item.warningTypeName}, #{item.productName}, #{item.functionCodeName})
+        </foreach>
+    </insert>
+    <!-- 有参重跑：按日/月整表清理，勿按 colony 过滤（否则下级属地历史场景行删不掉） -->
+    <delete id="delJudgeAlarmParam">
+        DELETE FROM vm_statistics_algorithm_judge_alarm
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    and DATE_FORMAT( create_date, '%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    and DATE_FORMAT( create_date, '%Y-%m' ) = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+
+    <select id="getPlatformCodeList" resultType="java.util.Map">
+
+        SELECT
+        platform_code,platform_name
+        FROM
+        vm_platform_data_config
+        WHERE
+        delete_flag = 0
+        and platform_parent_code in
+        <foreach collection="platformCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+
+    </select>
+
+    <select id="getPlatformNameByCode" resultType="java.lang.String">
+
+        SELECT
+        platform_name
+        FROM
+        vm_platform_data_config
+        WHERE
+        delete_flag = 0
+        and platform_code =#{platformCode}
+    </select>
+
+
+</mapper>

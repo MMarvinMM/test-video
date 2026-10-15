@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.LayerModeMapper">
+
+    <select id="getLayerMode" resultType="java.lang.String">
+        select habit_value from sys_user_video_habit where user_habit_key = #{id} limit 1
+    </select>
+
+    <insert id="insertLayerMode" >
+        INSERT INTO sys_user_video_habit(`user_habit_key`,`habit_value`) values (#{id},#{value})
+    </insert>
+
+    <insert id="updateLayerMode" >
+        update sys_user_video_habit set habit_value = #{value} where user_habit_key = #{id}
+    </insert>
+
+    <select id="selectLayerMode" resultType="java.lang.Integer">
+        select count(1) from  sys_user_video_habit  where user_habit_key = #{id}
+    </select>
+</mapper>

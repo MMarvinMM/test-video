@@ -1,0 +1,8 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.video.api.factory.VideoPlayerFallbackFactory,\
+  com.chinatower.video.api.factory.VideoControlFallbackFactory,\
+  com.chinatower.video.api.factory.VideoQueryFallbackFactory,\
+  com.chinatower.video.api.factory.GuardFallbackFactory,\
+  com.chinatower.video.api.factory.VideoPatrolPlanFallbackFactory,\
+  com.chinatower.video.api.factory.VideoPresetFallbackFactory,\
+  com.chinatower.video.api.factory.VideoRecordPlanFallbackFactory

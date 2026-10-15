@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.WarningOrderForTradeMapper">
+
+    <select id="getWarningOrderLayer" parameterType="com.chinatower.event.entity.dto.WarningOrderLayerDTO"
+            resultType="com.chinatower.event.entity.vo.WarningOrderListVO">
+        select  dataTable.warning_order_id as warningOrderId,dataTable.warning_source,dataTable.warning_type_id,dataTable.alarm_time,dataTable.tenant_id,dataTable.tenant_name,dataTable.longitude,
+        dataTable.latitude,dataTable.alarm_body,dataTable.remark,dataTable.description,dataTable.address,dataTable.process_id,dataTable.process_name,dataTable.emergency_level,dataTable.order_status,
+        dataTable.flow_node_time,dataTable.find_name,dataTable.find_mobile,dataTable.file_img_url_src as imgUrl,dataTable.file_img_url_src,dataTable.file_img_url_icon fileImgUrlIcon,dataTable.video_url videoUrl,
+        dataTable.create_time as createDate,dataTable.time_limit,dataTable.grid_name,
+        dataTable.modifier_date as checkTime,dataTable.duplicate_order_id,dataTable.group_id,
+        dataTable.province_code as provinceId,
+        dataTable.province_name as provinceName,
+        dataTable.city_code as cityId,
+        dataTable.city_name as cityName,
+        dataTable.county_code as countyId,
+        dataTable.county_name as countyName,
+        IFNULL(dataTable.grid_id,'') as gridId,
+        dataTable.device_name AS deviceName,
+        dataTable.channel_name AS channelName,
+        dataTable.device_code as deviceCode,
+        dataTable.channel_code as channelCode,
+        dataTable.enable_acceptance_mode as enableAcceptanceMode,
+        dataTable.judge_result as judgeResult,
+        dataTable.importance_level AS importanceLevel,
+        <if test="param.radius != null and param.radius != '' and param.latitude != null and param.latitude != '' and param.longitude != null and param.longitude != ''">
+            ST_Distance_Sphere(
+            ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+            ST_GeomFromText(CONCAT('POINT(',dataTable.longitude,' ',dataTable.latitude,')'))
+            ) as distance,
+        </if>
+        dataTable.flow_id,
+        dataTable.link_id,
+        case when (dataTable.process_id like CONCAT(CONCAT('%', #{param.userId, jdbcType=VARCHAR}), '%')) then 1 else 0 end  ifEdit
+        from ${param.tableName} as dataTable
+        where dataTable.delete_flag = '0'
+        AND dataTable.longitude !='' AND dataTable.longitude IS NOT NULL AND dataTable.latitude !='' AND dataTable.latitude IS NOT NULL
+        ${param.dataScope}
+        <!--<if test='param.longitude != null and param.longitude !=""'>
+            AND dataTable.longitude = #{param.longitude,jdbcType=CHAR}
+        </if>
+        <if test='param.latitude != null and param.latitude !=""'>
+            AND dataTable.latitude = #{param.latitude,jdbcType=CHAR}
+        </if>-->
+        <if test="param.warningSourceList != null and param.warningSourceList.size()>0 ">
+            and dataTable.warning_source in
+            <foreach collection="param.warningSourceList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.orderStatusList != null and param.orderStatusList.size()>0 ">
+            and (dataTable.order_status in
+            <foreach collection="param.orderStatusList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            <if test="param.enableAcceptanceMode != null and param.enableAcceptanceMode != '' ">
+                or dataTable.enable_acceptance_mode = #{param.enableAcceptanceMode}
+            </if>
+            <if test="param.enableAcceptanceMode == null or param.enableAcceptanceMode == '' ">
+                and dataTable.enable_acceptance_mode != '1'
+            </if>
+            )
+        </if>
+        <!-- 方案 G V2.0：告警类型 ∧ 下游任务 -->
+        <include refid="com.chinatower.event.mapper.WarningOrderMapper.warningTypeIdFilter">
+            <property name="alias" value="dataTable"/>
+        </include>
+        <include refid="com.chinatower.event.mapper.WarningOrderMapper.subScenesOnlyFilter">
+            <property name="alias" value="dataTable"/>
+        </include>
+        <if test='param.keyword != null and param.keyword != ""'>
+            AND (dataTable.warning_order_id like concat('%',#{param.keyword,jdbcType=VARCHAR},'%') OR dataTable.alarm_body like concat('%',#{param.keyword,jdbcType=VARCHAR},'%'))
+        </if>
+        <if test="param.alarmTimeStart != null">
+            and dataTable.alarm_time &gt;= #{param.alarmTimeStart}
+        </if>
+        <if test="param.alarmTimeEnd != null">
+            and dataTable.alarm_time &lt;= #{param.alarmTimeEnd}
+        </if>
+        <if test='param.tenantId != null and param.tenantId !=""'>
+            AND dataTable.tenant_id = #{param.tenantId}
+        </if>
+        <!--<if test='param.appVerCode != null and param.appVerCode !=""'>
+            and dataTable.app_ver_code = #{param.appVerCode}
+        </if>-->
+        <if test='param.industryCode != null and param.industryCode != "" '>
+            AND dataTable.industry_code = #{param.industryCode}
+        </if>
+        <if test='param.provinceId!= null and param.provinceId != "" '>
+            AND dataTable.province_code = #{param.provinceId}
+        </if>
+        <if test="param.gridId != null and param.gridId != '' ">
+            and dataTable.grid_id = #{param.gridId}
+        </if>
+        <if test='param.cityId!= null and param.cityId != "" '>
+            AND dataTable.city_code = #{param.cityId}
+        </if>
+        <if test='param.countyId!= null and param.countyId != "" '>
+            AND dataTable.county_code = #{param.countyId}
+        </if>
+        <if test="param.radius != null and param.radius != '' and param.latitude != null and param.latitude != '' and param.longitude != null and param.longitude != ''">
+            and ST_Distance_Sphere(
+            ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+            ST_GeomFromText(CONCAT('POINT(',dataTable.longitude,' ',dataTable.latitude,')'))
+            ) <![CDATA[<=]]> #{param.radius}
+        </if>
+        order by dataTable.alarm_time desc
+        <if test='param.limitCount > 0'>
+            limit #{param.limitCount}
+        </if>
+
+    </select>
+
+    <update id="updateWarningOrderForTrade"
+            parameterType="com.chinatower.event.entity.dto.WarningOrderDTO">
+        update ${tableName}
+        <set>
+            modifier_date = now(),
+            <if test='warningTypeId != null and warningTypeId != ""'>
+                warning_type_id = #{warningTypeId,jdbcType=VARCHAR},
+            </if>
+            <if test='provinceCode != null and provinceCode != ""'>
+                province_code = #{provinceCode,jdbcType=VARCHAR},
+            </if>
+            <if test='cityCode != null and cityCode != ""'>
+                city_code = #{cityCode,jdbcType=VARCHAR},
+            </if>
+            <if test='countyCode != null and countyCode != ""'>
+                county_code = #{countyCode,jdbcType=VARCHAR},
+            </if>
+            <if test='provinceName != null and provinceName != ""'>
+                province_name = #{provinceName,jdbcType=VARCHAR},
+            </if>
+            <if test='cityName != null and cityName != ""'>
+                city_name = #{cityName,jdbcType=VARCHAR},
+            </if>
+            <if test='countyName != null and countyName != ""'>
+                county_name = #{countyName,jdbcType=VARCHAR},
+            </if>
+            <if test='longitude != null and longitude != ""'>
+                longitude = #{longitude,jdbcType=VARCHAR},
+            </if>
+            <if test='latitude != null and latitude != ""'>
+                latitude = #{latitude,jdbcType=VARCHAR},
+            </if>
+            <if test='address != null and address != ""'>
+                address = #{address,jdbcType=VARCHAR},
+            </if>
+            <if test='linkId != null and linkId != ""'>
+                link_id = #{linkId,jdbcType=VARCHAR},
+            </if>
+            <if test='linkName != null and linkName != ""'>
+                link_name = #{linkName,jdbcType=VARCHAR},
+            </if>
+            <if test='emergencyLevel != null and emergencyLevel != ""'>
+                emergency_level = #{emergencyLevel,jdbcType=VARCHAR},
+            </if>
+            <if test='importanceLevel != null and importanceLevel != ""'>
+                importance_level = #{importanceLevel,jdbcType=VARCHAR},
+            </if>
+            <if test='alarmParam != null and alarmParam != ""'>
+                alarm_param = #{alarmParam,jdbcType=VARCHAR},
+            </if>
+            <if test='alarmParamValue != null and alarmParamValue !=""'>
+                alarm_param_value = #{alarmParamValue,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where warning_order_id = #{warningOrderId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="warningOrderInfoRel" parameterType="com.chinatower.event.entity.dto.WarningOrderRelDTO"
+            resultType="com.chinatower.event.entity.vo.OrderInfoVO">
+        SELECT a.alarm_body AS alarmBody,
+        a.warning_order_id AS warningOrderId,
+        a.warning_type_id AS warningTypeId,
+        a.warning_source AS warningSource,
+        IF(a.alarm_time IS NULL,'',DATE_FORMAT(a.alarm_time,'%Y-%m-%d %H:%i:%s')) as alarmTime,
+        a.province_code AS provinceId,
+        a.city_code AS cityId,
+        a.county_code AS countyId,
+        a.province_name as provinceName,
+        a.city_name as cityName,
+        a.county_name as countyName,
+        a.address,
+        a.longitude,
+        a.latitude,
+        a.emergency_level AS emergencyLevel,
+        a.importance_level AS importanceLevel,
+        a.tenant_id AS tenantId,
+        a.device_code AS deviceCode,
+        a.channel_code AS channelCode,
+        a.channel_name as channelName,
+        a.device_name as deviceName,
+        a.alarm_code AS alarmCode,
+        a.tenant_name AS tenantName,
+        a.order_status AS orderStatus,
+        a.find_name AS findName,
+        a.find_mobile AS findMobile,
+        CONCAT(SUBSTRING(a.find_mobile,1,3),'****',SUBSTRING(a.find_mobile,8)) AS encryptionMobilePhone,
+        a.description,
+        a.remark,
+        a.voice,
+        IFNULL(a.video_url,'') as videoUrl,
+        IFNULL(a.file_img_url_src,'') as fileImgUrlSrc,
+        IFNULL(a.file_img_url_icon,'') as fileImgUrlIcon,
+        IFNULL(a.grid_id,'') as gridId,
+        IFNULL(a.grid_name,'') as gridName,
+        a.judge_result as judgeResult,
+        if(a.flow_template is null,1,locate('2',a.flow_template)) as ifSend,
+        a.duplicate_order_id duplicateOrderId,
+        a.flow_id as flowId,
+        a.link_id as linkId,
+        a.alarm_param as alarmParam,
+        a.alarm_param_value as alarmParamValue,
+        a.extra_field as extraField,
+        a.app_ver_code as appVerCode,
+        a.hori_azimuth_angle as horiAzimuthAngle,
+        IFNULL(a.confidence_level,'') as confidenceLevel,
+        IFNULL(a.front_alarm_pic_url,'') as frontAlarmPicUrl,
+        IFNULL(a.front_alarm_vedio_url,'') as frontAlarmVedioUrl,
+        IFNULL(a.comp_confidence_level,'') as compConfidenceLevel,
+        a.confidence_level_min confidenceLevelMin,
+        a.notice_resource noticeResource,
+        a.msg_type msgType,
+        a.task_id AS taskId,
+        a.preset_id as presetId,
+        a.device_pitch as devicePitch,
+        a.device_horizontal as deviceHorizontal,
+        a.real_link_type realLinkType
+        FROM ${param.tableName} a
+        WHERE a.duplicate_order_id = #{param.duplicateOrderId,jdbcType=VARCHAR}
+        <if test="param.alarmTimeStart != null">
+            and a.alarm_time &gt;= #{param.alarmTimeStart}
+        </if>
+        <if test="param.alarmTimeEnd != null">
+            and a.alarm_time &lt;= #{param.alarmTimeEnd}
+        </if>
+        <if test='param.keyword != null and param.keyword != ""'>
+            AND (a.warning_order_id like concat('%',#{param.keyword,jdbcType=VARCHAR},'%') OR a.alarm_body like concat('%',#{param.keyword,jdbcType=VARCHAR},'%'))
+        </if>
+        ${param.dataScope}
+        <choose>
+            <when test="param.sortName == 'alarmTime'">
+                order by a.alarm_time
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="param.sortName == 'importanceLevel'">
+                order by a.importance_level
+                <if test="param.sort == 'desc'">
+                    desc,a.alarm_time desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc,a.alarm_time desc
+                </if>
+            </when>
+            <otherwise>
+                order by a.alarm_time desc
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

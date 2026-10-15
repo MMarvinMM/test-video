@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.JudgeStatisticsDAO">
+
+
+    <select id="getJudgeSentTimeMinute" resultType="com.chinatower.analysis.api.entity.JudgeStatisticsVO">
+        select DISTINCT c.link_id linkId,a.tenant_id,
+        a.alarm_type as alarmTypeId,
+        case WHEN c.msg_notify_company='2' then IFNULL(c.msg_notify_limit,24)*60
+        else IFNULL(c.msg_notify_limit,30) end msg_notify_limit
+        ,IFNULL(c.msg_notify_company,1) as msg_notify_company,
+        c.msg_send_time_interval,
+        a.industry_code,
+        a.app_ver_code,
+        c.notify_admin_flag as 'notifyManager',
+        c.user_type,
+        c.data_filter_permiss AS 'dataFilterPermiss',
+                        c.time_limit_push AS 'timeLimePush',
+        (select GROUP_CONCAT(d.user_id) from vm_flow_link_user d where d.attr_id=c.id and d.grid_sign ='0') AS 'userIds',
+        (select GROUP_CONCAT(d.user_id) from vm_flow_link_user d where d.attr_id=c.id and d.grid_sign ='1') AS 'gridUserIds',
+        (select group_concat(DISTINCT(role_id)) from vm_flow_link_role as flr WHERE flr.link_id = c.link_id and
+                            flr.attr_id = c.id and flr.grid_sign ='0') AS 'roleIds',
+        (select group_concat(DISTINCT(role_id)) from vm_flow_link_role as flr WHERE flr.link_id = c.link_id and
+                            flr.attr_id = c.id and flr.grid_sign ='1') AS 'gridRoleIds'
+        from vm_flow_template_alarm_type a
+        LEFT JOIN vm_alarm_flow_config b on b.id=a.alarm_flow_id
+        LEFT JOIN vm_flow_link_attr c on b.id=c.alarm_flow_id
+        where c.msg_notify_type like CONCAT('%','2','%') and c.real_link_type='1' and c.delete_flag='0'
+          and a.delete_flag='0' and a.warning_source NOT IN ('2', '3') and c.time_push_type='1'
+        GROUP BY a.tenant_id,a.alarm_type,c.link_id
+    </select>
+    <select id="getDefaultJudgeSentTimeMinute" resultType="com.chinatower.analysis.api.entity.JudgeStatisticsVO">
+        select DISTINCT b.link_id linkId,a.industry_code,
+        a.app_ver_code,
+        a.warning_source,
+        b.data_filter_permiss AS 'dataFilterPermiss',
+        case WHEN b.msg_notify_company='2' then IFNULL(b.msg_notify_limit,24)*60
+        else IFNULL(b.msg_notify_limit,30) end msg_notify_limit
+        ,IFNULL(b.msg_notify_company,1) as msg_notify_company,
+        b.notify_admin_flag as 'notifyManager',
+        '2' as user_type,
+        b.role_id as role_users,
+        b.role_id as 'roleIds',
+        b.time_limit_push AS 'timeLimePush',
+        b.grid_sign_role as 'gridRoleIds'
+        from vm_flow_template_industry a
+        LEFT JOIN vm_flow_link_industry_config b on b.industry_code=a.industry_code and a.app_ver_code=b.app_ver_code
+        where a.delete_flag='0' and a.`status`='1' and b.msg_notify_type like CONCAT('%','2','%')
+        and b.delete_flag='0' and b.link_id='1' and time_push_type ='1'
+    </select>
+    <select id="getJudgeAlarmTypeList"  parameterType="com.chinatower.analysis.api.entity.DateVO"
+            resultType="com.chinatower.analysis.api.entity.JudgeStatisticsVO">
+        SELECT DISTINCT
+            link_id AS 'linkId',
+        tenant_id,
+        warning_type_id AS 'alarmTypeId',
+        industry_code,
+        app_ver_code,
+        grid_id AS 'gridId'
+        FROM
+        ${tableName}
+        WHERE
+        delete_flag = '0'
+        AND order_status = '1'
+        <![CDATA[
+        AND DATE_FORMAT( alarm_time, '%Y-%m-%d' ) <= DATE_FORMAT( now(), '%Y-%m-%d' )
+        ]]>
+        GROUP BY
+        tenant_id,
+        warning_type_id,
+        industry_code,
+        app_ver_code,
+        link_id,
+        grid_id
+    </select>
+
+    <select id="getJudgeList" parameterType="com.chinatower.analysis.api.entity.DateVO"
+            resultType="com.chinatower.analysis.api.entity.JudgeStatisticsVO">
+        SELECT link_id linkId,tenant_id, warning_type_id AS alarmTypeId, device_code,'' as region_code,
+        warning_source, industry_code, app_ver_code, count(1) AS judgeNum,grid_id gridId,
+               if(DATE_FORMAT( alarm_time, '%Y-%m-%d') =DATE_FORMAT( now(), '%Y-%m-%d' ),'1','0') flag
+        FROM ${tableName} WHERE delete_flag = '0' AND order_status = '1' and find_in_set(warning_source,'1,2,3,4,8,10')
+        <![CDATA[
+         AND DATE_FORMAT( alarm_time, '%Y-%m-%d' ) <= DATE_FORMAT( now(), '%Y-%m-%d' )
+         ]]>
+        <if test="alarmTypeClassList != null and alarmTypeClassList.size() > 0 ">
+            AND(
+            <trim  suffixOverrides="or" >
+                <foreach collection="alarmTypeClassList" item="item" index="index" open="" close="" separator="or">
+                    (tenant_id = #{item.tenantId} AND warning_type_id = #{item.alarmTypeId})
+                </foreach>
+            </trim>
+            )
+        </if>
+        GROUP BY tenant_id, warning_type_id, warning_source, industry_code, app_ver_code, device_code,link_id,gridId,flag
+        union all
+        SELECT link_id AS 'linkId',tenant_id, warning_type_id AS 'alarmTypeId', '' as device_code,county_code as region_code,
+        warning_source, industry_code, app_ver_code, count(1) AS 'judgeNum',grid_id AS 'gridId',
+        if(DATE_FORMAT( alarm_time, '%Y-%m-%d') =DATE_FORMAT( now(), '%Y-%m-%d' ),'1','0') flag
+        FROM ${tableName} WHERE delete_flag = '0' AND order_status = '1' and warning_source ='9'
+        <![CDATA[
+         AND DATE_FORMAT( alarm_time, '%Y-%m-%d' ) <= DATE_FORMAT( now(), '%Y-%m-%d' )
+         ]]>
+        <if test="alarmTypeClassList != null and alarmTypeClassList.size() > 0 ">
+            AND(
+            <trim  suffixOverrides="or" >
+                <foreach collection="alarmTypeClassList" item="item" index="index" open="" close="" separator="or">
+                    (tenant_id = #{item.tenantId} AND warning_type_id = #{item.alarmTypeId})
+                </foreach>
+            </trim>
+            )
+        </if>
+        GROUP BY tenant_id, warning_type_id, warning_source, industry_code, app_ver_code, county_code,link_id,gridId,flag
+    </select>
+    <select id="getUserByTenantId" parameterType="com.chinatower.analysis.api.entity.JudgeStatisticsVO"
+            resultType="com.chinatower.platform.modules.alarm.entity.JudgeUserInfoVO">
+        SELECT DISTINCT
+        a.user_id,
+        a.DEPT_ID as org_id,
+        a.PHONENUMBER as mobile_phone,
+        a.tenant_id,
+        min(rel.role_id) as 'roleId'
+        FROM sys_user a LEFT JOIN sys_user_role rel ON a.user_id = rel.user_id
+        WHERE a.del_flag = '0'
+        AND a.tenant_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item.tenantId}
+        </foreach>
+        and rel.role_id in ('2','4')
+        GROUP BY a.user_id
+    </select>
+    <select id="getParentOrgId"  parameterType="com.chinatower.platform.modules.alarm.entity.JudgeOrganVO"
+            resultType="com.chinatower.platform.modules.alarm.entity.JudgeOrganVO">
+        SELECT t2.user_id,
+        GROUP_CONCAT( t1.DEPT_ID) as 'parentOrgIdStr'
+        FROM sys_user t2
+        LEFT JOIN sys_dept t1 ON t1.tenant_id = t2.tenant_id
+        WHERE t2.DEL_FLAG = '0'
+        <if test="idList != null and idList.size() > 0 ">
+            AND(
+            <foreach collection="idList" item="item" index="index" open="" close="" separator="or">
+                (t2.user_id = #{item.userId} AND t1.dept_id IN
+                <foreach collection="item.orgIdList" item="item1" index="index" open="(" close=")" separator=",">
+                    #{item1}
+                </foreach>
+                )
+            </foreach>
+            )
+        </if>
+        GROUP BY
+        t2.user_id
+    </select>
+    <select id="getDeviceList" parameterType="com.chinatower.platform.modules.alarm.entity.JudgeOrganVO"
+            resultType="com.chinatower.platform.modules.alarm.entity.JudgeUserInfoVO">
+        SELECT
+        t1.user_id,
+        GROUP_CONCAT( DISTINCT t2.device_code ) as 'deviceCodeStr'
+        FROM
+        sys_user t1
+        LEFT JOIN vm_organ_device_rel_t t2 ON t1.tenant_id = t2.tenant_id
+        WHERE
+        t2.delete_flag = '0'
+        <if test="organResultList != null and organResultList.size() > 0 ">
+            AND(
+            <foreach collection="organResultList" item="item" index="index" open="" close="" separator="or">
+                (t1.user_id = #{item.userId} AND t2.dept_id  LIKE concat(#{item.parentOrgId}, '%' ))
+            </foreach>
+            )
+        </if>
+        GROUP BY
+        t1.user_id
+    </select>
+
+    <select id="getAlarmTypeList" resultType="com.chinatower.analysis.api.entity.JudgeStatisticsVO">
+        select DISTINCT type_name as alarmTypeName ,type_value as alarmTypeId from sys_alarm_type where delete_flag = '0'
+    </select>
+
+    <select id="getUserByTypeUser" resultType="com.chinatower.platform.modules.alarm.entity.JudgeUserInfoVO">
+        SELECT DISTINCT
+        a.user_id,
+        a.DEPT_ID as org_id,
+        a.PHONENUMBER as mobile_phone,
+        a.tenant_id,
+        case when min(rel.role_id)='2' then '2' else '4' end as 'roleId',
+        GROUP_CONCAT(DISTINCT rel.role_id) as 'roles',
+        dept.industry_code,
+        dept.app_ver_code
+        FROM (select su.user_id,su.DEPT_ID,su.PHONENUMBER,su.tenant_id,su.del_flag from sys_user su where su.user_type='2' and su.is_tenant_admin='0' and su.STATUS = '0') a
+        LEFT JOIN sys_user_role rel ON a.user_id = rel.user_id
+        left join sys_dept dept on a.dept_id = dept.dept_id
+        WHERE a.del_flag = '0'
+        AND (
+        <if test="userLists != null and userLists.size() > 0 ">
+            a.user_id in
+            <foreach collection="userLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="userLists != null and userLists.size() > 0 and roleLists != null and roleLists.size() > 0">
+            or
+        </if>
+        <if test="roleLists != null and roleLists.size() > 0 ">
+            (
+            <foreach collection="roleLists" item="item" index="index" open="(" close=")" separator="or">
+                (a.tenant_id=#{item.tenant_id} and  find_in_set(rel.role_id,#{item.role_users}) and dept.industry_code=#{item.industry_code} and dept.app_ver_code=#{item.app_ver_code} )
+            </foreach> )
+        </if>
+        )
+        GROUP BY a.user_id
+        union all
+        SELECT DISTINCT
+        a.user_id,
+        a.DEPT_ID as org_id,
+        a.PHONENUMBER as mobile_phone,
+        a.tenant_id,
+        '1' as 'roleId',
+        GROUP_CONCAT(DISTINCT rel.role_id) as 'roles',
+        '' as industry_code,
+        '' as app_ver_code
+        FROM (select su.user_id,su.DEPT_ID,su.PHONENUMBER,su.tenant_id,su.del_flag from sys_user su where su.user_type='2' and su.is_tenant_admin='1' and su.STATUS = '0') a
+        LEFT JOIN sys_user_role rel ON a.user_id = rel.user_id
+        WHERE a.del_flag = '0'
+        AND (
+        <if test="userLists != null and userLists.size() > 0 ">
+            a.user_id in
+            <foreach collection="userLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="userLists != null and userLists.size() > 0 and roleLists != null and roleLists.size() > 0">
+            or
+        </if>
+        <if test="roleLists != null and roleLists.size() > 0 ">
+            (
+            <foreach collection="roleLists" item="item" index="index" open="(" close=")" separator="or">
+                (a.tenant_id=#{item.tenant_id} and  find_in_set(rel.role_id,#{item.role_users})  )
+            </foreach>  )
+        </if>
+        )
+        GROUP BY a.user_id
+    </select>
+    <select id="getRoleDataScopeByUserId"
+            resultType="com.chinatower.platform.modules.alarm.entity.UserDataScopeVO">
+        select u.user_id,u.dept_id,u.tenant_id,dr.industry_code ,dr.app_ver_code , dr.data_scope ,case when dr.data_scope ='2' then GROUP_CONCAT(rd.dept_id) else null end as custom_depts
+        from sys_user u
+        left join sys_user_role ur on u.user_id = ur.user_id
+        left join sys_role r on ur.role_id = r.role_id
+        left join sys_role_data_rel dr on dr.role_id=r.role_id
+        left join sys_role_dept rd on rd.role_id = r.role_id
+        where u.del_flag='0' and dr.data_scope is not null
+        <if test="userList != null and userList.size() > 0 ">
+            AND(
+            <foreach collection="userList" item="item" index="index" open="" close="" separator="or">
+                (u.user_id = #{item.userId} and dr.industry_code=#{item.industryCode} and dr.app_ver_code=#{item.appVerCode} )
+            </foreach>
+            )
+        </if>
+        group by u.user_id,dr.data_scope
+    </select>
+    <select id="getDataScope" resultType="com.chinatower.platform.modules.alarm.entity.DeptDataScopeVO">
+        select t.userId,GROUP_CONCAT(t.deviceCodeStr) as 'deviceCodeStr',GROUP_CONCAT(t.regionCodeStr) as 'regionCodeStr'
+        from (
+        <foreach collection="userData" item="item" index="index" open="" close="" separator="union all">
+            select #{item.userId} as 'userId',GROUP_CONCAT(distinct device_code) as 'deviceCodeStr',null as 'regionCodeStr' from vm_organ_device_rel_t
+            WHERE delete_flag = '0' and industry_code = #{item.industryCode} and app_ver_code = #{item.appVerCode} and tenant_id = #{item.tenantId}
+            <if test="item.dataScope == '2'.toString()">
+                and FIND_IN_SET(dept_id,#{item.customDepts})
+            </if>
+            <if test="item.dataScope == '3'.toString()">
+                and dept_id = #{item.deptId}
+            </if>
+            <if test="item.dataScope == '4'.toString()">
+                and dept_id like concat(#{item.deptId},"%")
+            </if>
+            and device_type in ('1','3','4','8','10')
+            union all
+            select #{item.userId} as 'userId',null as 'deviceCodeStr' ,GROUP_CONCAT(distinct county_code) as 'regionCodeStr' from vm_organ_street_rel_t
+            where industry_code = #{item.industryCode} and APP_VER_CODE = #{item.appVerCode} and tenant_id = #{item.tenantId}
+            <if test="item.dataScope == '2'.toString()">
+                and FIND_IN_SET(dept_id,#{item.customDepts})
+            </if>
+            <if test="item.dataScope == '3'.toString()">
+                and dept_id = #{item.deptId}
+            </if>
+            <if test="item.dataScope == '4'.toString()">
+                and dept_id like concat(#{item.deptId},"%")
+            </if>
+            and category_code='9'
+        </foreach>
+        ) t group by t.userId
+    </select>
+    <select id="getSendMsgSwitch" resultType="java.lang.String">
+        select status as 'switchFlag' from sys_dict_type  where status = '0' and dict_type = 'judge_send_msg_switch' limit 1
+    </select>
+    <delete id="deleteHistoryList" parameterType="java.lang.String">
+        delete from vm_sms_send_statistics_t where send_date &lt; #{date}
+    </delete>
+
+    <select id="getGridUserByGridIdList" resultType="com.chinatower.platform.modules.alarm.entity.JudgeGridInfoVO">
+        SELECT grid_id AS 'gridId', GROUP_CONCAT(b.user_id) AS 'gridUsers'
+        FROM
+            bm_gridkeeper a
+                LEFT JOIN sys_user b ON a.staff_id = b.user_id
+                LEFT JOIN bm_grid_keeper_ref d ON a.keeper_id = d.keeper_id and d.delete_flag = '0'
+        WHERE a.delete_flag = '0'
+        <if test="gridList != null and gridList.size() > 0 ">
+            and d.grid_id  in
+            <foreach collection="gridList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getSmsSendStatistics" resultType="com.chinatower.platform.modules.alarm.entity.SmsSendStatisticsDto" parameterType="com.chinatower.platform.modules.alarm.entity.SmsSendStatisticsDto">
+        SELECT user_id AS 'userId',send_date AS 'sendDate',send_count AS 'sendCount' from vm_sms_send_statistics_t
+        WHERE send_date = #{sendDate}
+        <if test="userList != null and userList.size() > 0 ">
+            and user_id in
+            <foreach collection="userList" item="user" index="index" open="(" close=")" separator=",">
+                #{user}
+            </foreach>
+        </if>
+    </select>
+    <select id="getDeviceInfoByOrderIds" resultType="com.chinatower.event.entity.dto.OverdueRemindDto">
+
+        SELECT
+            warning_order_id AS 'warningOrderId',
+            device_code AS 'deviceCode',
+            device_name AS 'device_name',
+            warning_source AS 'warningSource'
+        FROM
+            ${tableName}
+        WHERE
+        warning_source in ('1','3','4') and
+            warning_order_id IN
+        <foreach collection="orderIds" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+
+    </select>
+
+    <insert id="insertSmsSendStatistics" parameterType="java.util.List">
+        insert into vm_sms_send_statistics_t (
+        user_id,
+        send_date,
+        send_count
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.userId},
+            #{item.sendDate},
+            #{item.sendCount}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateSmsSendStatistics" parameterType="java.util.List">
+        <foreach collection="list" item="sms" index="index" separator=";">
+            update vm_sms_send_statistics_t set send_count =#{sms.sendCount}
+            where send_date = #{sms.sendDate} and user_id=#{sms.userId}
+        </foreach>
+    </update>
+
+    <update id="createNewTable" parameterType="java.lang.String">
+        CREATE TABLE IF NOT EXISTS ${tableNewName} LIKE ${tableOldName}
+    </update>
+
+</mapper>

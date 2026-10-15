@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.player.dao.VideoPlayerDAO">
+
+    <resultMap id="playerTimesMap" type="com.chinatower.video.modules.player.entity.PlayerTimesVO">
+        <result column="start_time" property="startTime" jdbcType="VARCHAR"/>
+        <result column="end_time" property="endTime" jdbcType="VARCHAR"/>
+    </resultMap>
+    <select id="queryRecordPlanStorageTime" resultType="java.lang.String"
+            parameterType="com.chinatower.video.api.entity.ChannelStorageTimeReq">
+        SELECT
+        p.storage_time
+        FROM
+        vm_order_package p INNER JOIN vm_order_devices d ON p.package_code = d.package_code
+        AND p.order_code = d.order_code AND p.tenant_id = d.tenant_id
+        LEFT JOIN vm_channel_info_t t on t.device_code = d.device_code
+        WHERE
+        p.delete_flag = '0'
+        AND d.delete_flag = '0'
+        AND d.order_code = #{orderCode}
+        AND d.device_code = #{deviceCode}
+        AND t.channel_code = #{channelCode}
+    </select>
+    <select id="queryVideoPlanMatch" resultMap="playerTimesMap">
+      SELECT
+       distinct t2.start_time,t2.end_time
+        FROM
+            vm_channel_video_plan_t t1
+            LEFT JOIN vm_plan_time_section_t t2 ON t1.record_plan_id = t2.record_plan_id
+        WHERE
+            t1.delete_flag = 0
+            AND t2.delete_flag = 0
+            AND t1.device_code = #{deviceCode} and t1.channel_code= #{channelCode}
+            AND t1.industry_code = #{industryCode}
+            AND t1.tenant_id = #{customerCode} and t2.day_of_week = #{weekDay}
+    </select>
+
+    <select id="queryVideoPlanHisMatch" resultMap="playerTimesMap">
+        select distinct start_time,end_time
+        from vm_channel_video_plan_his_t t1
+        where  t1.device_code = #{deviceCode}
+        and t1.channel_code= #{channelCode}
+        AND t1.tenant_id = #{customerCode}
+        and t1.data_time = #{dateTmp}
+        and t1.industry_code =  #{industryCode}
+    </select>
+    <select id="selectChannelStatus" resultType="java.lang.String">
+      select t.channel_status from vm_channel_info_t t
+      where t.channel_code= #{channelCode}
+            and t.device_code= #{deviceCode}
+    </select>
+    <select id="queryChannelInit" resultType="com.chinatower.video.api.entity.SnapShotSimpleRes">
+      SELECT
+        t1.channel_id AS uuid,
+        t1.device_code,
+        t2.device_name,
+        t1.channel_code,
+        t1.channel_name,
+        t1.channel_status AS `status`
+    FROM
+        vm_channel_info_t t1 left join
+        vm_device_info_t t2 on t1.device_code = t2.device_code
+    WHERE
+        t1.delete_flag = '0' and t2.delete_flag = '0'
+    </select>
+</mapper>

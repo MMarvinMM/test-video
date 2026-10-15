@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.AlarmTypeClassMapper">
+    <resultMap id="BaseResultMap" type="com.chinatower.common.core.dto.AlarmTypeClass">
+        <id column="typeClassId" jdbcType="VARCHAR" property="typeClassId" />
+        <result column="alarmTypeName" jdbcType="VARCHAR" property="alarmTypeName" />
+        <result column="state" jdbcType="CHAR" property="state" />
+        <result column="alarmTypeCount" jdbcType="INTEGER" property="alarmTypeCount" />
+        <result column="icon" jdbcType="VARCHAR" property="icon" />
+        <result column="remarks" jdbcType="VARCHAR" property="remarks" />
+        <result column="createTime" jdbcType="DATE" property="createTime" />
+        <result column="deleteFlag" jdbcType="VARCHAR" property="deleteFlag" />
+        <result column="noticeMode" jdbcType="VARCHAR" property="noticeMode" />
+        <result column="notificationLink" jdbcType="VARCHAR" property="notificationLink" />
+        <result column="notifyManager" jdbcType="VARCHAR" property="notifyManager" />
+    </resultMap>
+  <sql id="Base_Column_List">
+    type_class_id AS typeClassId, alarm_type_name AS alarmTypeName,icon,remarks,
+    state, alarm_type_count AS alarmTypeCount, DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s')  AS createTime,
+    notice_mode AS noticeMode,
+    create_by AS createBy,delete_flag AS deleteFlag,
+    notification_link AS notificationLink,
+    notify_manager AS notifyManager
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from sys_alarm_type_class
+    where type_class_id = #{typeClassId,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from sys_alarm_type_class
+    where type_class_id = #{typeClassId,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.chinatower.common.core.dto.AlarmTypeClass">
+    insert into sys_alarm_type_class
+    (type_class_id, alarm_type_name, state, alarm_type_count, icon, remarks, source, tenantor,
+     create_by, notice_mode, create_time, delete_flag, alarm_type_id, notification_link, notify_manager)
+    values
+      <foreach collection="list" item="item" index="index" separator=",">
+        (
+            #{item.typeClassId,jdbcType=VARCHAR},
+            #{item.alarmTypeName,jdbcType=VARCHAR},
+            #{item.state,jdbcType=CHAR},
+            #{item.alarmTypeCount,jdbcType=INTEGER},
+            #{item.icon,jdbcType=VARCHAR},
+            #{item.remarks,jdbcType=VARCHAR},
+            #{item.source,jdbcType=CHAR},
+            #{item.tenantor,jdbcType=CHAR},
+            #{item.createBy,jdbcType=CHAR},
+            #{item.noticeMode,jdbcType=VARCHAR},
+            now(),
+            #{item.deleteFlag,jdbcType=VARCHAR},
+            #{item.alarmTypeId,jdbcType=VARCHAR},
+            #{item.notificationLink,jdbcType=VARCHAR},
+            #{item.notifyManager,jdbcType=VARCHAR}
+        )
+      </foreach>
+  </insert>
+  <insert id="insertSelective" parameterType="com.chinatower.common.core.dto.AlarmTypeClass">
+    insert into sys_alarm_type_class
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="typeClassId != null">
+        type_class_id,
+      </if>
+      <if test="alarmTypeName != null">
+        alarm_type_name,
+      </if>
+      <if test="state != null">
+        state,
+      </if>
+      <if test="alarmTypeCount != null">
+        alarm_type_count,
+      </if>
+      <if test="icon != null">
+        icon,
+      </if>
+      <if test="remarks != null">
+        remarks,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="deleteFlag != null">
+        delete_flag,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="typeClassId != null">
+        #{typeClassId,jdbcType=VARCHAR},
+      </if>
+      <if test="alarmTypeName != null">
+        #{alarmTypeName,jdbcType=VARCHAR},
+      </if>
+      <if test="state != null">
+        #{state,jdbcType=CHAR},
+      </if>
+      <if test="alarmTypeCount != null">
+        #{alarmTypeCount,jdbcType=INTEGER},
+      </if>
+      <if test="icon != null">
+        #{icon,jdbcType=VARCHAR},
+      </if>
+      <if test="remarks != null">
+        #{remarks,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="deleteFlag != null">
+        #{deleteFlag,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.chinatower.common.core.dto.AlarmTypeClass">
+    update sys_alarm_type_class
+    <set>
+        <if test="alarmTypeName != null">
+            alarm_type_name = #{alarmTypeName,jdbcType=VARCHAR},
+        </if>
+        <if test="state != null">
+            state = #{state,jdbcType=CHAR},
+        </if>
+        <if test="icon != null">
+            icon = #{icon,jdbcType=CHAR},
+        </if>
+        <if test="alarmTypeCount != null">
+            alarm_type_count = #{alarmTypeCount,jdbcType=INTEGER},
+        </if>
+        <if test="noticeMode != null">
+            notice_mode = #{noticeMode,jdbcType=INTEGER},
+        </if>
+        <if test="source != null">
+            source = #{source,jdbcType=CHAR},
+        </if>
+        <if test="createTime != null">
+            create_time = #{createTime,jdbcType=TIMESTAMP},
+        </if>
+        <if test="deleteFlag != null">
+            delete_flag = #{deleteFlag,jdbcType=VARCHAR},
+        </if>
+        <if test="notifyManager != null">
+            notify_manager = #{notifyManager,jdbcType=VARCHAR},
+        </if>
+        <if test="notificationLink != null">
+            notification_link = #{notificationLink,jdbcType=VARCHAR},
+        </if>
+    </set>
+    where type_class_id = #{typeClassId,jdbcType=VARCHAR}
+    </update>
+  <update id="updateByPrimaryKey" parameterType="com.chinatower.common.core.dto.AlarmTypeClass">
+    update sys_alarm_type_class
+    set alarm_type_name = #{alarmTypeName,jdbcType=VARCHAR},
+      state = #{state,jdbcType=CHAR},
+      icon = #{icon,jdbcType=CHAR},
+      alarm_type_count = #{alarmTypeCount,jdbcType=INTEGER},
+      remarks = #{remarks,jdbcType=VARCHAR},
+      source = #{source,jdbcType=CHAR},
+      delete_flag = #{deleteFlag,jdbcType=VARCHAR}
+    where type_class_id = #{typeClassId,jdbcType=VARCHAR}
+  </update>
+
+    <select id="findOrderAlarmListByTenant" resultType="com.chinatower.common.core.dto.AlarmTypeClass" parameterType="com.chinatower.common.core.dto.AlarmTypeClass">
+        SELECT DISTINCT
+            c.type_class_id AS typeClassId,
+            c.alarm_type_id AS AlarmTypeId,
+            c.tenantor AS tenantId,
+            t.user_account AS createBy,
+            CASE WHEN state = '0' THEN '正常' WHEN state = '1' THEN '禁用' ELSE '' END AS stateShow
+        FROM sys_alarm_type_class c
+        INNER JOIN vm_userinfo_t t ON t.tenant_id = c.tenantor AND t.delete_flag = '0'
+        WHERE c.delete_flag = '0'
+        AND c.alarm_type_id IS NOT NULL
+        <if test="body.tenantId != null and body.tenantId != ''">
+            AND c.tenantor = #{body.tenantId}
+        </if>
+        <choose>
+            <when test='body.orgLevel!= null and body.orgLevel != ""'>
+                <if test="body.tenantList!= null and body.tenantList.size() > 0 ">
+                    and c.tenantor in
+                    <foreach collection="body.tenantList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                        #{labelIdItem}
+                    </foreach>
+                </if>
+            </when>
+        </choose>
+    </select>
+
+  <select id="getCount" resultType="Integer" parameterType="com.chinatower.common.core.dto.AlarmTypeClass">
+    select count(1) from sys_alarm_type_class WHERE delete_flag = '0' AND alarm_type_name = #{body.alarmTypeName} AND tenantor = #{body.tenantor}
+    <if test="body.typeClassId != null and body.typeClassId != ''">
+      AND type_class_id != #{body.typeClassId}
+    </if>
+
+  </select>
+
+  <delete id="deleteByTypeClassId" parameterType="java.lang.String" >
+    delete from sys_alarm_type_class
+    where type_class_id = #{alarmTypeClassId,jdbcType=VARCHAR}
+  </delete>
+
+  <delete id="deleteByZero" parameterType="java.lang.String" >
+    DELETE c.* FROM sys_alarm_type_class c
+    WHERE (select count(1) from sys_alarm_type s where s.delete_flag = '0' AND s.alarm_type_class_id = c.type_class_id ) = 0
+  </delete>
+
+    <delete id="deletes" parameterType="java.util.List">
+        delete from sys_alarm_type_class
+        where type_class_id in
+        <foreach collection="ids" item="ids" index="index" open="(" close=")" separator=",">
+            #{ids}
+        </foreach>
+    </delete>
+    <delete id="deleteTypes" parameterType="java.util.List">
+        delete from sys_alarm_type
+        where alarm_type_class_id in
+        <foreach collection="ids" item="ids" index="index" open="(" close=")" separator=",">
+            #{ids}
+        </foreach>
+    </delete>
+    <delete id="deleteTimes" parameterType="java.util.List">
+        delete from sys_alarm_class_time
+        where alarm_type_class_id in
+        <foreach collection="ids" item="ids" index="index" open="(" close=")" separator=",">
+            #{ids}
+        </foreach>
+    </delete>
+    <delete id="deleteParam" parameterType="java.util.List">
+        delete from sys_alarm_class_param
+        where alarm_type_class_id in
+        <foreach collection="ids" item="ids" index="index" open="(" close=")" separator=",">
+            #{ids}
+        </foreach>
+    </delete>
+
+    <insert id="insertAlarmTypeClass"  parameterType="com.chinatower.common.core.dto.AlarmTypeClass">
+        insert into sys_alarm_type_class (type_class_id, alarm_type_name,
+        state, icon,tenantor,create_by,
+        create_time, delete_flag,alarm_type_id)
+        values
+        (
+        #{typeClassId,jdbcType=VARCHAR},
+        #{alarmTypeName,jdbcType=VARCHAR},
+        '0',
+        #{icon,jdbcType=VARCHAR},
+        #{tenantor,jdbcType=CHAR},
+        #{createBy,jdbcType=CHAR},
+        now(),
+        '0',
+        #{alarmTypeId,jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <insert id="insertAlarmTypeClassAndNoticeMod"  parameterType="com.chinatower.common.core.dto.AlarmTypeClass">
+        insert into sys_alarm_type_class (type_class_id, alarm_type_name,
+        state, icon,tenantor,create_by,
+        create_time, delete_flag,alarm_type_id,notification_link,notify_manager)
+        values
+        (
+        #{typeClassId,jdbcType=VARCHAR},
+        #{alarmTypeName,jdbcType=VARCHAR},
+        '0',
+        #{icon,jdbcType=VARCHAR},
+        #{tenantor,jdbcType=CHAR},
+        #{createBy,jdbcType=CHAR},
+        now(),
+        '0',
+        #{alarmTypeId,jdbcType=VARCHAR},
+        #{notificationLink,jdbcType=VARCHAR},
+        #{notifyManager,jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <select id="findAlarmTypeClassIdExist" resultType="java.lang.String" parameterType="com.chinatower.common.core.dto.AlarmTypeClass">
+        SELECT type_class_id FROM sys_alarm_type_class WHERE alarm_type_id = #{alarmTypeId} AND tenantor = #{tenantId} ORDER BY create_time DESC
+    </select>
+</mapper>

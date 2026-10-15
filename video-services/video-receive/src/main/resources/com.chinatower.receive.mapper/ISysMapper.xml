@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.ISysMapper">
+
+	<sql id="selectDeptVo">
+		select sy.user_id as userId,sy.user_name as nickName,d.TENANT_ID as tenantId,   d.TENANT_TOWER_DEPT_ID as tenantTowerDeptId, d.TENANT_NAME as tenantName, d.id, d.dept_id, d.parent_id,d.parent_name, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time, d.dept_level,d.bussness_unit, d.update_time,
+			   CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN d.dept_id ELSE d.parent_id END province,
+			   CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN NULL ELSE d.dept_id END city
+		from sys_dept d left join sys_user sy on sy.DEPT_ID=d.DEPT_ID and sy.tenant_id = d.TENANT_ID left join sys_user_role sur on sy.USER_ID = sur.user_id
+		where d.del_flag = '0'
+	</sql>
+
+	<resultMap id="usersMap" type="com.chinatower.receive.vo.entity.UsersVO">
+		<result column="user_id" property="userId" jdbcType="VARCHAR"/>
+		<result column="user_account" property="userAccount" jdbcType="VARCHAR"/>
+		<result column="user_name" property="userName" jdbcType="VARCHAR"/>
+		<result column="org_id" property="orgId" jdbcType="VARCHAR"/>
+		<result column="age" property="age" jdbcType="VARCHAR"/>
+		<result column="sex" property="sex" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="email" property="email" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="mobile_phone" property="mobilePhone" jdbcType="VARCHAR"/>
+		<result column="encryption_mobile_phone" property="encryptionMobilePhone" jdbcType="VARCHAR"/>
+		<result column="phone" property="phone" jdbcType="VARCHAR"/>
+		<result column="encryption_phone" property="encryptionPhone" jdbcType="VARCHAR"/>
+		<result column="source" property="source" jdbcType="VARCHAR"/>
+		<result column="tenant_id" property="tenantId" jdbcType="VARCHAR"/>
+		<result column="manipulate_level" property="manipulateLevel" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="remark" property="remark" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="creator" property="creator" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="creator_date" property="creatorDate" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
+		<result column="modifier" property="modifier" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="modifier_date" property="modifierDate" javaType="java.util.Date" jdbcType="TIMESTAMP"/>
+		<result column="delete_flag" property="deleteFlag" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="org_name" property="orgName" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="user_level" property="userLevel" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="province_id" property="provinceId" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="city_id" property="cityId" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="tenant_name" property="tenantName" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="province_name" property="provinceName" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="city_name" property="cityName" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="is_first" property="isFirst" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="grid_id" property="gridId" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="grid_name" property="gridName" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="tower_user_source" property="towerUserSource" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="sex_name" property="sexName" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="tower_user_source_name" property="towerUserSourceName" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="parentOrgId" property="parentOrgId" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="parentOrgLevel" property="parentOrgLevel" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="oriOrgId" property="oriOrgId" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="show_create_date" property="showCreateDate"  jdbcType="VARCHAR"/>
+		<result column="map_model" property="mapModel" javaType="java.lang.String" jdbcType="VARCHAR"/>
+		<result column="tree_choose" property="treeChoose" javaType="java.lang.String" jdbcType="VARCHAR"/>
+	</resultMap>
+
+	<select id="getTenantRootDept" resultType="com.chinatower.platform.entity.admin.SysDept">
+		select dept_id as deptId, dept_name as deptName from sys_dept where tenant_id = #{tenantId} and parent_id = '000000' and del_flag = '0' and status = '0'
+	</select>
+
+	<select id="queryUserInfoByRoleId" resultType="com.chinatower.event.entity.dto.SysInfo">
+		select su.user_id as userId, su.user_name as userName, su.dept_id as deptId, su.nick_name as nickName
+		from sys_user_role as sur
+		inner join sys_user su on sur.user_id = su.user_id
+		<!--where su.tenant_id = #{tenantId} and sur.role_id in-->
+		where sur.role_id in
+		<foreach collection="roleList" item="roleId" index="index" open="(" close=")" separator=",">
+			#{roleId}
+		</foreach>
+		<if test="orgList != null and orgList.size() > 0">
+			and su.dept_id in
+			<foreach collection="orgList" item="orgId" index="index" open="(" close=")" separator=",">
+				#{orgId}
+			</foreach>
+		</if>
+		<if test='tenantId != null and tenantId != ""'>
+			and su.tenant_id = #{tenantId}
+		</if>
+	</select>
+
+	<select id="queryTenantList" parameterType="java.util.List" resultType="com.chinatower.platform.entity.admin.SysTenantInfo">
+		select tenant_id as tenantId, tenant_name as tenantName
+		from sys_tenant_info where tenant_id in
+		<foreach collection="list" item="tenantId" index="index" open="(" close=")" separator=",">
+			#{tenantId}
+		</foreach>
+	</select>
+
+	<select id="queryDepts" parameterType="java.util.List" resultType="com.chinatower.platform.entity.admin.SysDept">
+		select dept_id as deptId, dept_name as deptName
+		from sys_dept where dept_id in
+		<foreach collection="list" item="deptId" index="index" open="(" close=")" separator=",">
+			#{deptId}
+		</foreach>
+	</select>
+
+	<select id="queryUser" resultMap="usersMap" parameterType="com.chinatower.receive.vo.entity.UsersVO">
+		SELECT ui.user_id,ui.USER_NAME userAccount,ui.user_name,ui.DEPT_ID AS orgId,'' age,ui.sex,ui.email,ui.PHONENUMBER mobilePhone,
+		CONCAT(SUBSTRING(ui.PHONENUMBER,1,3),'****',SUBSTRING(ui.PHONENUMBER,8)) AS encryption_mobile_phone,ui.TELEPHONE phone,ui.source,
+		ui.tenant_id,'1' manipulate_level,ui.remark,ui.CREATE_BY creator,ui.CREATE_TIME creator_date,ui.UPDATE_BY modifier,
+		ui.UPDATE_TIME modifier_date,ui.DEL_FLAG delete_flag,ui.GRADE user_level,ui.province_id,ui.city_id,'' county_id,
+		'0' is_first,ui.CREATE_TIME show_create_date,
+		og.DEPT_NAME org_name ,te.tenant_name,
+		t1.AREA_NAME province_name,
+		t2.AREA_NAME city_name,
+		ui.tower_user_source tower_user_source,
+		'1' map_model,'' tree_choose
+		FROM sys_user ui
+		LEFT JOIN sys_dept og ON ui.DEPT_ID=og.DEPT_ID
+		LEFT JOIN sys_tenant_info te ON ui.tenant_id=te.tenant_id
+		LEFT JOIN sys_area t1 ON te.province_id = t1.AREA_CODE
+		LEFT JOIN sys_area t2 ON te.city_id = t2.AREA_CODE
+		WHERE 1=1
+		<if test='userAccount!= null and userAccount != "" and userAccount != "0" and userAccountFlag != "0"'>
+			AND ui.USER_NAME LIKE "%"#{userAccount}"%"
+		</if>
+		<if test='userAccountFlag == "0"'>
+			AND ui.USER_NAME = #{userAccount}
+		</if>
+		<if test='userName!= null and userName != "" and userName != "0"'>
+			AND ui.NICK_NAME LIKE "%"#{userName}"%"
+		</if>
+		<if test='mobilePhone!= null and mobilePhone != "" and mobilePhone != "0"'>
+			AND ui.PHONENUMBER = #{mobilePhone}
+		</if>
+		<if test='userId!= null and userId != "" and userId != "0"'>
+			AND ui.user_id = #{userId}
+		</if>
+		<if test='tenantId!= null and tenantId != "" and tenantId != "0"'>
+			AND ui.tenant_id = #{tenantId}
+		</if>
+		<if test='deleteFlag!= null and deleteFlag != ""'>
+			AND ui.DEL_FLAG = #{deleteFlag}
+		</if>
+		<if test='source!= null and source != "" '>
+			AND ui.source = #{source}
+		</if>
+		<if test='orgName!= null and orgName != "" and orgName != "0"'>
+			AND og.DEPT_NAME = #{orgName}
+		</if>
+		<if test='orgId!= null and orgId != "" '>
+			AND og.DEPT_ID = #{orgId}
+		</if>
+		<if test='tenantName!= null and tenantName != ""'>
+			AND te.tenant_name LIKE CONCAT('%',#{tenantName},'%')
+		</if>
+
+		<if test='customerCode!= null and customerCode != "" and customerCode != "0"'>
+			AND ui.tenant_id = #{customerCode}
+		</if>
+
+
+		<if test='provinceId != null and provinceId != "" '>
+			AND te.province_id = #{provinceId}
+		</if>
+		<if test='cityId != null and cityId != "" '>
+			AND te.city_id = #{cityId}
+		</if>
+
+		<!--<if test='roleId!= null and roleId != "" '>-->
+		<!--AND ro.role_id = #{roleId}-->
+		<!--</if>-->
+		<if test='roleId!= null and roleId != "" '>
+			AND ui.user_id in (select user_id from sys_user_role where role_id = #{roleId})
+		</if>
+
+		<if test='tenantkeyword != null and tenantkeyword != "" '>
+			AND ui.tenant_id = #{tenantkeyword}
+		</if>
+
+		<if test="tenantList != null and tenantList.size() > 0 ">
+			AND ui.tenant_id in
+			<foreach collection="tenantList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+				#{labelIdItem}
+			</foreach>
+		</if>
+		<if test="userAccountList != null and userAccountList.size() > 0 ">
+			AND ui.USER_NAME in
+			<foreach collection="userAccountList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+				#{labelIdItem}
+			</foreach>
+		</if>
+
+
+		<if test="deleteFlagList != null and deleteFlagList.size() > 0 ">
+			AND ui.DEL_FLAG in
+			<foreach collection="deleteFlagList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+				#{labelIdItem}
+			</foreach>
+		</if>
+
+		<if test='startDate != null and startDate != "" '>
+			AND ui.CREATE_TIME >= #{startDate}
+		</if>
+
+		<if test='endDate != null and endDate != "" '>
+			AND ui.CREATE_TIME <![CDATA[<=]]> #{endDate}
+		</if>
+
+		ORDER BY ui.CREATE_TIME DESC
+
+	</select>
+
+	<select id="queryTenantInfoList" resultType="com.chinatower.platform.entity.admin.SysTenantInfo">
+		select tenant_id as tenantId, tenant_name as tenantName
+		from sys_tenant_info
+		<where>
+			<if test='tenantId != null and tenantId != ""'>
+				tenant_id like concat('%',#{tenantId},'%')
+			</if>
+			<if test='tenantName != null and tenantName != ""'>
+				or tenant_name like concat('%',#{tenantName},'%')
+			</if>
+		</where>
+	</select>
+
+    <select id="queryVerCodeByIndustry" resultType="com.chinatower.platform.entity.admin.SysTenantTrade">
+		select
+	   	tenant_id,industry_code,app_ver_code
+		from sys_tenant_trade
+		where  tenant_id = #{tenantId}
+		AND industry_code in
+		<foreach collection="tradeArray" item="labelIdItem" index="index" open="(" close=")" separator=",">
+			#{labelIdItem}
+		</foreach>
+		<if test='appVerCode != null and appVerCode != ""'>
+			and app_ver_code = #{appVerCode}
+		</if>
+	</select>
+
+    <select id="queryTenantRoles" resultType="com.chinatower.event.entity.dto.SysInfo">
+        select distinct sr.role_id as roleId, sr.role_name as roleName
+        from sys_role as sr
+        left join sys_tenant_info as ten on sr.tenant_id = ten.tenant_id
+    </select>
+
+	<select id="queryUserListInfo" resultType="com.chinatower.platform.entity.admin.UserInfoDto">
+		select USER_ID userId,USER_NAME userName,DEPT_ID deptId,NICK_NAME nickName,PHONENUMBER phonenumber,AVATAR avatar,STATUS status from sys_user u
+		where u.DEL_FLAG ='0' and u.user_id in
+	<foreach collection="userIdList" item="userId" index="index" open="(" close=")" separator=",">
+		#{userId}
+	</foreach>
+	</select>
+
+	<select id="queryUserListInfoByUserNameList" resultType="com.chinatower.platform.entity.admin.UserInfoDto">
+		select USER_ID userId,USER_NAME userName,NICK_NAME nickName,PHONENUMBER phonenumber,AVATAR avatar,STATUS status from sys_user u
+		where u.DEL_FLAG ='0' and u.user_name in
+		<foreach collection="userNameList" item="userName" index="index" open="(" close=")" separator=",">
+			#{userName}
+		</foreach>
+	</select>
+
+	<select id="getDeptParentId" resultType="java.lang.String">
+		select PARENT_ID
+		from sys_dept where dept_id in
+		<foreach collection="list" item="deptId" index="index" open="(" close=")" separator=",">
+			#{deptId}
+		</foreach>
+		order by DEPT_LEVEL;
+	</select>
+
+	<select id="queryDeptId" resultType="java.lang.String">
+		select dept_id
+		from sys_dept where tenant_id = #{tenantId}
+		order by DEPT_LEVEL;
+	</select>
+
+	<select id="queryDeptIdNew" parameterType="com.chinatower.event.entity.dto.FlowLinkAttrModel" resultType="java.lang.String">
+		select dept_id
+		from sys_dept where STATUS='0' and DEL_FLAG='0'
+		${dataScope}
+		order by DEPT_LEVEL;
+	</select>
+
+	<select id="queryOrderInfoDeptId" parameterType="com.chinatower.event.entity.dto.usertree.OrderInfoUserTreeReq" resultType="java.lang.String">
+		select dept_id
+		from sys_dept where STATUS='0' and DEL_FLAG='0'
+		<if test="param.tenantId != null and param.tenantId != ''">
+			and tenant_id = #{param.tenantId}
+		</if>
+		<if test="param.industryCode != null and param.industryCode != ''">
+			and industry_code = #{param.industryCode}
+		</if>
+		order by DEPT_LEVEL;
+	</select>
+
+	<select id="selectTenantName" parameterType="java.lang.String" resultType="java.lang.String">
+		select a.tenant_name from sys_tenant_info a where a.tenant_id = #{tenantId}
+	</select>
+
+
+	<select id="queryUserById" resultType="java.lang.String">
+		select USER_NAME
+		from sys_user where user_id = #{userId}
+	</select>
+
+
+	<select id="getSysAreaListByCodes" resultType="com.chinatower.platform.entity.admin.SysArea">
+		SELECT ID,AREA_CODE,AREA_NAME,AREA_LEVEL,AREA_PARENT_CODE,AREA_PARENT_NAME,`STATUS`,LATITUDE,LONGITUDE
+		FROM sys_area WHERE AREA_CODE IN
+		<foreach collection="areaCodes" item="areaCode" open="(" close=")" separator=",">
+			#{areaCode}
+		</foreach>
+	</select>
+
+	<select id="getByIndustryCode" parameterType="java.lang.String" resultType="com.chinatower.platform.entity.admin.SysIndustryConf">
+		select industry_id, industry_code, industry_name, industry_desc, create_time, update_time, status, creator, modifier from sys_industry_conf
+		where industry_code = #{industryCode}
+		<if test='localNode != null and localNode != ""'>
+			and	accept_node =#{localNode}
+		</if>
+		   and delete_flag = 0 limit 1
+	</select>
+
+	<select id="selectUserByDeptId" resultType="com.chinatower.platform.entity.admin.SysUser">
+		SELECT * from sys_user WHERE del_flag = '0' and DEPT_ID like concat(#{deptId},"%")
+	</select>
+
+	<select id="selectUserOnlyByUserName" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysUser">
+		select * from sys_user u
+		where u.del_flag = '0' AND u.user_name = #{userName}
+	</select>
+
+	<select id="selectUserOnlyByUserId" resultType="com.chinatower.platform.entity.admin.SysUser">
+		select * from sys_user u
+		where u.del_flag = '0' AND u.user_id = #{userId}
+	</select>
+
+	<select id="selectEnforcementInfoByUserId" resultType="java.util.Map" parameterType="String">
+	  select u.user_id, u.user_name, u.user_type, u.nick_name, u.tenant_id as tenantId, i.enforcement, i.adopt ,i.login , i.create_by, i.create_time,i.update_by, i.update_time
+        from sys_user u
+		    left join sys_enforcement_info i ON i.user_id = u.user_id
+        where u.del_flag = '0'
+		and  u.user_id = #{userId}
+    </select>
+
+	<select id="selectAlarmTypeLevelAll" resultType="com.chinatower.receive.vo.entity.AlarmTypeLevelVO">
+		SELECT
+			t.tenant_id,
+			t.industry_code,
+			t.type_value,
+			IFNULL( t.alarm_level, '1' ) AS alarmLevel
+		FROM
+			sys_alarm_type_level t
+		WHERE
+			t.delete_flag = 0
+	</select>
+</mapper>

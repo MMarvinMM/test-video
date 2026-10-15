@@ -1,0 +1,725 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.airline.mapper.AirLineMapper">
+    <!-- 插入新记录 -->
+    <insert id="addAirLine" parameterType="com.chinatower.device.entity.dto.AirEditDto">
+        INSERT INTO vm_air_line_t (flight_route_id, device_code, flight_route_name, kmz_file_name,
+                                   kmz_storage_path, type, area_infos, tenant_id, industry_code,
+                                   create_time, create_user, update_user,
+                                   access_node, accept_node, extra_field, warning_type_id, app_ver_code,
+                                   kmz_access_path, uav_Allowed, snapshot_Id,flight_main_type,uav_code,is_expand_watermark,air_mileage
+                                    , start_nest_code,end_nest_code,frog_leap,uav_model_code)
+        VALUES (#{flightRouteId}, #{deviceCode}, #{flightRouteName}, #{fileName},
+                #{storagePath}, #{type}, #{areaInfos}, #{tenantId}, #{industryCode},
+                NOW(), #{createUser}, #{updateUser},
+                #{accessNode}, #{acceptNode}, #{kmzJson}, #{warningTypeIds}, #{appVerCode}, #{fileAccessPath},
+                #{uavAllowed}, #{snapshotId},#{flightMainType},#{uavCode},#{isExpandWatermark},#{airMileage},#{startNestCode},#{endNestCode},#{frogLeap},#{uavModelCode})
+    </insert>
+    <update id="editAirLine" parameterType="com.chinatower.device.entity.dto.AirEditDto">
+        UPDATE vm_air_line_t
+        SET device_code       = #{deviceCode},
+            flight_route_name = #{flightRouteName},
+            kmz_file_name     = #{fileName},
+            kmz_storage_path  = #{storagePath},
+            type              = #{type},
+            area_infos        = #{areaInfos},
+            tenant_id         = #{tenantId},
+            industry_code     = #{industryCode},
+            update_time       = NOW(),
+            update_user       = #{updateUser},
+            access_node       = #{accessNode},
+            accept_node       = #{acceptNode},
+            extra_field       = #{kmzJson},
+            kmz_access_path   = #{fileAccessPath},
+            uav_Allowed       = #{uavAllowed},
+            snapshot_Id       = #{snapshotId},
+            warning_type_id   = #{warningTypeIds},
+            is_expand_watermark = #{isExpandWatermark},
+            air_mileage = #{airMileage}
+        WHERE flight_route_id = #{flightRouteId}
+    </update>
+
+    <update id="editAirLineName" parameterType="com.chinatower.device.entity.dto.AirEditDto">
+        UPDATE vm_air_line_t
+        SET flight_route_name = #{flightRouteName}
+        WHERE flight_route_id = #{flightRouteId}
+    </update>
+    <update id="delPointInfo">
+        update vm_air_line_point_info
+        set delete_flag = 1
+        where flight_route_id = #{id}
+    </update>
+
+    <select id="getAirLineInfo" parameterType="com.chinatower.device.entity.dto.AirEditDto"
+            resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT flight_route_id   AS flightRouteId,
+               flight_route_name AS flightRouteName,
+               kmz_storage_path  AS kmzUrl,
+               kmz_file_name     AS kmzFileName,
+               type              AS type,
+               t.device_code     AS deviceCode,
+               t.update_time     AS modifiedTime,
+               warning_type_id   AS warningTypeId,
+               extra_field       AS kmzJson,
+               t.access_node     AS accessNode,
+               ct.longitude      as uavNestLongitude,
+               ct.latitude       as uavNestLatitude,
+               dt.longitude      as uavLongitude,
+               dt.latitude       as uavLatitude,
+               t.uav_Allowed     AS uavAllowed,
+               snapshot_Id       AS snapshotId,
+               kmz_access_path   AS kmzAccessUrl,
+               t.industry_Code   AS industryCode,
+               t.is_expand_watermark AS isExpandWatermark,
+               t.air_mileage AS airMileage,
+                t.start_nest_code as startNestCode,
+                t.end_nest_code as endNestCode,
+                t.frog_leap as frogLeap,
+                t.uav_model_code as uavModelCode
+        FROM vm_air_line_t t
+                 LEFT JOIN vm_uav_nest_device_info ct ON ct.device_code = t.device_code
+                 LEFT JOIN vm_uav_device_info_t dt ON dt.device_code = t.device_code
+        WHERE flight_route_id = #{flightRouteId}
+    </select>
+
+    <select id="queryAirLineInfoByFlightRouteId" parameterType="com.chinatower.device.entity.dto.AirEditDto"
+            resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT flight_route_id   AS flightRouteId,
+               flight_route_name AS flightRouteName,
+               kmz_storage_path  AS kmzUrl,
+               kmz_file_name     AS kmzFileName,
+               type              AS type,
+               t.device_code     AS deviceCode,
+               t.update_time     AS modifiedTime,
+               warning_type_id   AS warningTypeId,
+               extra_field       AS kmzJson,
+               t.create_user    AS createUser,
+               t.access_node     AS accessNode,
+               ct.longitude      as uavNestLongitude,
+               ct.latitude       as uavNestLatitude,
+               dt.longitude      as uavLongitude,
+               dt.latitude       as uavLatitude,
+               t.uav_Allowed     AS uavAllowed,
+               snapshot_Id       AS snapshotId,
+               kmz_access_path   AS kmzAccessUrl,
+               t.industry_Code   AS industryCode,
+               t.tenant_id       AS tenantId
+        FROM vm_air_line_t t
+                 LEFT JOIN vm_uav_nest_device_info ct ON ct.device_code = t.device_code
+                 LEFT JOIN vm_uav_device_info_t dt ON dt.device_code = t.device_code
+        WHERE flight_route_id = #{flightRouteId}
+    </select>
+
+    <select id="getAirLineList" parameterType="com.chinatower.device.entity.dto.AirEditDto"
+            resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT t.flight_route_id as flightRouteId,
+        flight_route_name as flightRouteName,
+        kmz_storage_path as kmzUrl,
+        type as type,
+        t.device_code as deviceCode,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then dt.device_name else rel.device_name end ) as deviceName,
+        t.update_time as modifiedTime,
+        warning_type_id as warningTypeId,
+        CASE
+        WHEN col.collect_id IS NOT NULL THEN 0
+        ELSE 1
+        END as colStatus,
+        kmz_file_name as kmzFileName,
+        kmz_access_path as kmzAccessUrl,
+        t.create_time as createTime,
+        (case when length(IFNULL(relnest.device_name, '')) = 0 then dtl.device_name else relnest.device_name end ) as uavNestName,
+        t.create_user as createUser,
+        t.update_user as updateUser,
+        t.update_time as updateTime,
+        t.access_node as accessNode,
+        t.is_expand_watermark AS isExpandWatermark,
+        t.air_mileage AS airMileage,
+        t.start_nest_code as startNestCode,
+        t.end_nest_code as endNestCode,
+        t.frog_leap as frogLeap,
+        t.uav_model_code as uavModelCode
+        FROM vm_air_line_t t
+        LEFT JOIN vm_uav_nest_device_info dtl ON dtl.device_code = t.start_nest_code
+        LEFT JOIN vm_uav_device_info_t dt ON t.start_nest_code = dt.uav_nest_code
+        LEFT JOIN vm_air_line_col_t col ON t.flight_route_id = col.collect_id AND col.user_id = #{userId} and status = 0
+        LEFT JOIN vm_tenant_device_common_rel_t relnest ON relnest.device_code = dtl.device_code
+        and relnest.tenant_id = #{tenantId}
+        and relnest.industry_code = #{industryCode}
+        and relnest.delete_flag = '0'
+        and relnest.device_type = 4
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = dt.device_code
+        and rel.tenant_id = #{tenantId}
+        and rel.industry_code = #{industryCode}
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+
+        where t.delete_flag = 0 and t.flight_main_type = 0
+ 		and
+        (
+        t.device_code in (select device_code from vm_order_uav_nest_devices where tenant_id = t.tenant_id and industry_code = t.industry_code and ord_status in (0,1,2) )
+        )
+        <if test="flightRouteName != null and flightRouteName != ''">
+            and flight_route_name like CONCAT(CONCAT('%', #{flightRouteName}),'%')
+        </if>
+        <if test="types != null and types != ''">
+            and t.type in
+            <foreach item="item" index="index" collection="types.split(',')" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceCodes != null and deviceCodes != ''">
+            and t.device_code in
+            <foreach item="item" index="index" collection="deviceCodes.split(',')" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="createBeginTime != null and createBeginTime != ''">
+            AND DATE_FORMAT(t.create_time,'%Y-%m-%d') >= #{createBeginTime}
+        </if>
+        <if test="createEndTime != null and createEndTime != ''">
+            AND DATE_FORMAT(t.create_time,'%Y-%m-%d') <![CDATA[<=]]> #{createEndTime}
+        </if>
+        <if test="deviceCode != null">
+            and device_code = #{deviceCode}
+        </if>
+        ${dataScope}
+        order by t.create_time desc
+    </select>
+
+    <select id="getAirLinesList" parameterType="com.chinatower.device.entity.dto.AirEditDto"
+            resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT
+            t.flight_route_id as flightRouteId,
+            t.flight_route_name as flightRouteName,
+            t.uav_code as uavCode,
+            t.device_code as deviceCode,
+            t.access_node as accessNode
+        FROM vm_air_line_t t
+        where t.delete_flag = 0 and t.flight_main_type = 0
+        <if test="deviceCode != null and deviceCode != ''">
+            and t.device_code =  #{deviceCode}
+        </if>
+            ${dataScope}
+        ORDER BY t.create_time DESC
+    </select>
+
+
+    <insert id="addAirLineCollect" parameterType="com.chinatower.device.entity.dto.AirEditDto">
+        INSERT INTO vm_air_line_col_t (user_id, create_time, create_user, status,
+                                       collect_id, col_type,industry_Code)
+        VALUES (#{userId}, now(), #{airEditDto.createUser}, 0,
+                #{airEditDto.flightRouteId}, 1, #{industryCode})
+    </insert>
+    <select id="queryAirLineCollectList" parameterType="com.chinatower.device.entity.dto.AirEditDto"
+            resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT t.flight_route_id as flightRouteId,
+        flight_route_name as flightRouteName,
+        kmz_storage_path as kmzUrl,
+        type as type,
+        t.device_code as deviceCode,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then dt.device_name else rel.device_name end ) as deviceName,
+        t.update_time as modifiedTime,
+        warning_type_id as warningTypeId,
+        extra_field as kmzJson,
+        ct.status as colStatus,
+        kmz_file_name as kmzFileName,
+        kmz_access_path as kmzAccessUrl,
+        (case when length(IFNULL(relnest.device_name, '')) = 0 then dtl.device_name else relnest.device_name end ) as uavNestName,
+        t.access_node as accessNode
+        FROM vm_air_line_t t
+        LEFT JOIN vm_uav_device_info_t dt ON t.start_nest_code = dt.uav_nest_code
+        LEFT JOIN vm_uav_nest_device_info dtl ON dtl.device_code = t.start_nest_code
+        left join vm_air_line_col_t ct on ct.collect_id = t.flight_route_id
+        left JOIN vm_tenant_device_common_rel_t relnest ON relnest.device_code = dtl.device_code
+        and relnest.tenant_id = #{airEditDto.tenantId}
+        and relnest.industry_code = #{airEditDto.industryCode}
+        and relnest.delete_flag = '0'
+        and relnest.device_type = 4
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = dt.device_code
+        and rel.tenant_id = #{airEditDto.tenantId}
+        and rel.industry_code = #{airEditDto.industryCode}
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        where ct.user_Id = #{userId} and t.flight_main_type = 0 and t.delete_flag = 0
+        and ct.col_type = 1
+        and ct.status = 0
+        <if test="airEditDto.flightRouteName != null and airEditDto.flightRouteName != ''">
+            and flight_route_name like CONCAT(CONCAT('%', #{airEditDto.flightRouteName}),'%')
+        </if>
+        <if test="airEditDto.type != null and airEditDto.type != ''">
+            and t.type = #{airEditDto.type}
+        </if>
+        <if test="airEditDto.deviceCode != null and airEditDto.deviceCode != ''">
+            and t.device_code = #{airEditDto.deviceCode}
+        </if>
+        <if test="airEditDto.createBeginTime != null and airEditDto.createBeginTime != ''">
+            AND DATE_FORMAT(t.create_time,'%Y-%m-%d %H:%i:%s') >= #{airEditDto.createBeginTime}
+        </if>
+        <if test="airEditDto.createEndTime != null and airEditDto.createEndTime != ''">
+            AND DATE_FORMAT(t.create_time,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]> #{airEditDto.createEndTime}
+        </if>
+        <if test="airEditDto.deviceCodes != null and airEditDto.deviceCodes != ''">
+            and t.device_code in
+            <foreach item="item" index="index" collection="airEditDto.deviceCodes.split(',')" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ${airEditDto.dataScope}
+        order by t.create_time desc
+    </select>
+    <update id="deleteAirLineCollect" parameterType="com.chinatower.device.entity.dto.AirEditDto">
+        update vm_air_line_col_t
+        set status = 1
+        where user_Id = #{userId}
+          and collect_id = #{airEditDto.flightRouteId}
+          and status = 0
+    </update>
+    <update id="delAirLine">
+        update vm_air_line_t
+        set delete_flag = 1
+        where flight_route_id = #{flightRouteId}
+    </update>
+    <select id="checkAirLineName" resultType="int">
+        select count(*)
+        from vm_air_line_t t
+        where flight_route_name = #{flightRouteName}
+        and delete_flag = 0
+        <if test="flightRouteId!='' and flightRouteId!=null">
+            and flight_route_id != #{flightRouteId}
+        </if>
+        ${dataScope}
+    </select>
+
+    <select id="getMediumStatusByFlightRouteId" resultType="int">
+        SELECT count(1)
+        FROM vm_air_task_t
+        WHERE plan_id IN (SELECT plan_id FROM vm_air_plan_t WHERE flight_route_id = #{flightRouteId})
+          AND medium_status != '0'
+    </select>
+    <select id="queryDefultAirLineName" parameterType="com.chinatower.device.entity.dto.AirEditDto" resultType="String">
+        SELECT CAST(
+                       CASE
+                           WHEN COUNT(*) = 0 THEN '1'
+                           ELSE CAST(COUNT(*) + 1 AS CHAR)
+                           END AS UNSIGNED
+                   ) AS NAME
+        FROM vm_air_line_t t
+        WHERE type = #{type}
+            ${dataScope}
+    </select>
+    <select id="checkAirLineBind" parameterType="com.chinatower.device.entity.dto.AirEditDto" resultType="String">
+        select pt.plan_name
+        from vm_air_line_t lt
+                 left join vm_air_plan_t pt on pt.flight_route_id = lt.flight_route_id
+        where lt.flight_route_id = #{flightRouteId}
+          and pt.delete_flag = 0
+    </select>
+    <select id="queryUavInfo" resultType="String">
+        SELECT GROUP_CONCAT(device_name) AS combined_device_names
+        FROM (SELECT device_name
+              FROM vm_uav_nest_device_info
+              WHERE device_code = #{deviceCode}
+              UNION
+              SELECT device_name
+              FROM vm_uav_device_info_t
+              WHERE device_code = #{deviceCode} and delete_flag = 0) AS combined_devices;
+    </select>
+    <select id="checkAirLineBindIsEdit" parameterType="com.chinatower.device.entity.dto.AirEditDto" resultType="String">
+        SELECT pt.plan_name
+        FROM vm_air_line_t lt
+                 LEFT JOIN vm_air_plan_t pt ON pt.flight_route_id = lt.flight_route_id
+                 LEFT JOIN vm_air_task_t t ON t.plan_id = pt.plan_id
+        WHERE lt.flight_route_id = #{flightRouteId}
+          and t.task_status = 3
+          AND pt.delete_flag = 0
+    </select>
+
+    <select id="getAirAlgorithm"  parameterType="com.chinatower.device.entity.dto.AirEditDto" resultType="com.chinatower.device.entity.dto.SyncAlgorithmsReq">
+        SELECT
+            warning_type_id algorithmCode,task_id taskId
+        FROM
+            vm_air_algorithm_t
+        WHERE
+            delete_flag = '0'
+        <if test="algorithmType!='' and algorithmType!=null">
+          AND algorithm_type = #{algorithmType}
+        </if>
+        <if test="status!='' and status!=null">
+          AND STATUS = '0'
+        </if>
+        <if test="flightRouteId!='' and flightRouteId!=null">
+          AND flight_route_id = #{flightRouteId}
+        </if>
+    </select>
+
+    <update id="delAirAlgorithm" parameterType="com.chinatower.device.entity.dto.AirLineOperateDto">
+        update vm_air_algorithm_t
+        set delete_flag = '1',update_time =now(),update_user = #{param.updateUser},status = '1'
+        <where>
+        <if test="param.taskIdList!= null and param.taskIdList.size() > 0 ">
+              task_id in
+            <foreach collection="param.taskIdList" item="taskId" index="index" open="(" close=")" separator=",">
+                #{taskId}
+            </foreach>
+        </if>
+        <if test="param.flightRouteId != null and param.flightRouteId != '' ">
+            and flight_route_id =#{param.flightRouteId}
+        </if>
+        <if test="param.algorithmType != null and param.algorithmType != '' ">
+            and algorithm_type = #{param.algorithmType}
+        </if>
+        </where>
+    </update>
+
+    <update id="delAirAlgorithmByType" parameterType="com.chinatower.device.entity.dto.AirLineOperateDto">
+        update vm_air_algorithm_t
+        set delete_flag = '1',update_time =now(),update_user = #{param.updateUser}
+        <where>
+            algorithm_type = '2'
+            <if test="param.taskIdList!= null and param.taskIdList.size() > 0 ">
+                and task_id in
+                <foreach collection="param.taskIdList" item="taskId" index="index" open="(" close=")" separator=",">
+                    #{taskId}
+                </foreach>
+            </if>
+            <if test="param.flightRouteId != null and param.flightRouteId != '' ">
+                and flight_route_id =#{param.flightRouteId}
+            </if>
+        </where>
+    </update>
+
+
+    <update id="updateAirAlgorithm" parameterType="com.chinatower.device.entity.dto.AirLineOperateDto">
+        update vm_air_algorithm_t
+        set update_time =now(),update_user = #{param.updateUser},recovery_flag = '1',status = '1'
+        where
+        algorithm_type = '1'
+        <if test="param.taskIdList!= null and param.taskIdList.size() > 0 ">
+            and task_id in
+            <foreach collection="param.taskIdList" item="taskId" index="index" open="(" close=")" separator=",">
+                #{taskId}
+            </foreach>
+        </if>
+
+    </update>
+
+    <select id="queryAirLineAlgorithm" parameterType="com.chinatower.device.entity.dto.AirEditDto" resultType="com.chinatower.airline.dto.response.AirLineAlgorithms">
+        SELECT t2.algorithm_name as algorithmName,t1.warning_type_id as algorithmCode
+        from vm_air_algorithm_t t1
+                 LEFT JOIN vm_algorithm_info_t t2 ON t1.warning_type_id = t2.algorithm_code
+        where t1.delete_flag = '0' and flight_route_id = #{flightRouteId} and t1.status = '0'
+    </select>
+
+    <select id="queryFlightRoutes" parameterType="com.chinatower.device.entity.dto.AirTaskOperateReq" resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT flight_route_id   AS flightRouteId,t.device_code AS deviceCode
+        FROM vm_air_line_t t
+        LEFT JOIN vm_uav_nest_device_info ct ON ct.device_code = t.device_code
+        LEFT JOIN vm_uav_device_info_t dt ON dt.uav_nest_code = t.device_code
+        WHERE t.uav_Code in
+            <foreach collection="deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                 #{deviceCode}
+            </foreach>
+            and t.tenant_Id = #{tenantId} and industry_Code = #{industryCode} and t.flight_main_type = 0 and t.delete_flag = 0
+    </select>
+
+    <select id="getUavCodeByDeviceCode" parameterType="java.lang.String" resultType="java.lang.String">
+        select device_code from
+            vm_uav_device_info_t
+        where (uav_nest_code = #{deviceCode}) and delete_flag = 0
+    </select>
+
+    <select id="getAirLineByDeviceCodes" parameterType="com.chinatower.device.entity.dto.AirEditDto" resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT t.flight_route_id as flightRouteId,
+        flight_route_name as flightRouteName,
+        kmz_storage_path as kmzUrl,
+        type as type,
+        t.device_code as deviceCode,
+        dt.id,
+        dt.device_code as uavCode,
+        t.update_time as modifiedTime,
+        warning_type_id as warningTypeId,
+        kmz_file_name as kmzFileName,
+        kmz_access_path as kmzAccessUrl,
+        t.create_time as createTime,
+        dtl.device_code as uavNestCode,
+        dtl.altitude as uavNestAltitude,
+        t.create_user as createUser,
+        t.update_user as updateUser,
+        t.update_time as updateTime,
+        t.access_node as accessNode
+        FROM vm_air_line_t t
+        LEFT JOIN vm_uav_nest_device_info dtl ON dtl.device_code = t.device_code
+        LEFT JOIN vm_uav_device_info_t dt ON dt.uav_nest_code = dtl.device_code
+        where t.delete_flag = 0 and t.flight_main_type = 0
+        and t.start_nest_code in
+        <foreach collection="param.uavCodes" item="deviceCode" index="index" open="(" close=")" separator=",">
+            #{deviceCode}
+        </foreach>
+        ${param.dataScope}
+        order by t.create_time desc
+    </select>
+
+    <select id="getDeviceCodeByTenantId" resultType="com.chinatower.airline.dto.request.AirUavInfo">
+        select t.device_code as uavCode,
+               (case when length(IFNULL(rel.device_name, '')) = 0 then a.device_name else rel.device_name end ) as uavName,
+               b.device_code as uavNestCode,
+               (case when length(IFNULL(nrel.device_name, '')) = 0 then b.device_name else nrel.device_name end ) as uavNestName
+        from vm_order_uav_nest_devices t
+        left join vm_uav_nest_device_info b on t.device_code = b.device_code
+        left join vm_uav_device_info_t a on b.device_code = a.uav_nest_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = a.device_code
+            and rel.tenant_id = t.tenant_id
+            and rel.industry_code = t.industry_code
+            and rel.delete_flag = '0'
+            and rel.device_type = 1
+            left join vm_tenant_device_common_rel_t nrel on nrel.device_code = b.device_code
+            and nrel.industry_code = t.industry_code
+            and nrel.tenant_id = t.tenant_id
+            and nrel.delete_flag = '0'
+            and nrel.device_type = 4
+        where t.delete_flag = 0
+          and b.delete_flag = 0
+          and t.ord_status in (0,1,2)
+            ${dataScope}
+    </select>
+
+    <select id="queryUserIdByTenantId" resultType="String">
+        select user_id as userId from sys_user
+        where tenant_id = #{tenantId} and DEL_FLAG = 0
+    </select>
+
+    <insert id="addAirPhotoCompare" parameterType="java.util.List">
+        INSERT INTO `vm_air_line_compare_photo_t` (
+        `flight_route_id`,
+        `longitude`,
+        `latitude`,
+        `algorithm_code`,
+        `compareStrategy`,
+        `execution_start_Date`,
+        `execution_end_Date`,
+        `compareDate`,
+        `create_time`,
+        `create_user`,
+        `DELETE_FLAG`
+        ) VALUES
+        <foreach collection="tasks" item="task" separator=",">
+            (
+            #{task.flightRouteId},
+            #{task.lng},
+            #{task.lat},
+            #{task.algorithmCode},
+            #{task.compareStrategy},
+            #{task.executionStartDate},
+            #{task.executionEndDate},
+            #{task.compareDate},
+            NOW(),
+            #{task.userId},
+            '0'
+            )
+        </foreach>
+    </insert>
+    <insert id="addAirPointInfo">
+        INSERT INTO vm_air_line_point_info (
+        flight_route_id,
+        longitude,
+        latitude,
+        algorithm_code,
+        create_time,
+        create_user,
+        delete_flag
+        )
+        VALUES
+        <foreach collection="pointAlarmCodesList" item="item" separator=",">
+            (
+            #{flightRouteId},
+            #{item.longitude},
+            #{item.latitude},
+            #{item.algorithmCodeStr},
+            NOW(),
+            #{item.createUser},
+            '0'
+            )
+        </foreach>
+    </insert>
+
+    <update id="delAirPhotoCompare">
+        update vm_air_line_compare_photo_t set DELETE_FLAG = 1 where flight_route_Id = #{id};
+    </update>
+
+    <select id="queryUavCamera" resultType="com.chinatower.airline.dto.request.UavCamera">
+        select c.sensor_size as sensorSize,cm.manufacturer_code as maufacturerCode
+        from vm_uav_camera_lens_param  c
+                 left join vm_uav_camera_model_t cm on cm.model_code = c.camera_model_code
+        where camera_model_code = #{carmeCode}
+          and lens_name = "广角" and c.delete_flag = 0
+            limit 1
+    </select>
+    <select id="getAirLineInfoByTaskId" resultType="com.chinatower.device.entity.vo.AirLineVo"
+            parameterType="com.chinatower.device.entity.dto.AirEditDto">
+        SELECT t.flight_route_id   AS flightRouteId,
+               t.flight_route_name AS flightRouteName,
+               t.kmz_storage_path  AS kmzUrl,
+               t.kmz_file_name     AS kmzFileName,
+               t.type              AS type,
+               t.device_code     AS deviceCode,
+               t.update_time     AS modifiedTime,
+               t.warning_type_id   AS warningTypeId,
+               t.extra_field       AS kmzJson,
+               t.access_node     AS accessNode,
+               ct.longitude      as uavNestLongitude,
+               ct.latitude       as uavNestLatitude,
+               dt.longitude      as uavLongitude,
+               dt.latitude       as uavLatitude,
+               t.uav_Allowed     AS uavAllowed,
+               t.snapshot_Id       AS snapshotId,
+               t.kmz_access_path   AS kmzAccessUrl,
+               t.industry_Code   AS industryCode,
+               t.is_expand_watermark AS isExpandWatermark,
+               t.air_mileage AS airMileage
+        FROM vm_air_task_t tt
+                 LEFT JOIN vm_air_line_t t on tt.flight_route_id = t.flight_route_id
+                 LEFT JOIN vm_uav_nest_device_info ct ON ct.device_code = t.device_code
+                 LEFT JOIN vm_uav_device_info_t dt ON dt.device_code = t.device_code
+        WHERE tt.plan_task_id = #{taskRecordId}
+    </select>
+
+    <select id="queryAirLineByTaskId" resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT
+            l.flight_route_id   AS flightRouteId,
+            l.flight_route_name AS flightRouteName,
+            l.kmz_storage_path  AS kmzUrl,
+            l.kmz_file_name     AS kmzFileName,
+            l.kmz_access_path   AS kmzAccessUrl,
+            l.type              AS type,
+            l.device_code       AS deviceCode,
+            l.update_time       AS modifiedTime,
+            l.warning_type_id   AS warningTypeId,
+            l.extra_field       AS kmzJson,
+            l.access_node       AS accessNode,
+            l.industry_Code     AS industryCode,
+            l.uav_Allowed       AS uavAllowed,
+            l.snapshot_Id       AS snapshotId,
+            l.is_expand_watermark AS isExpandWatermark,
+            l.air_mileage       AS airMileage
+        FROM vm_air_task_t t
+                 INNER JOIN vm_air_line_t l ON t.flight_route_id = l.flight_route_id
+        WHERE t.plan_task_id = #{taskId}
+        LIMIT 1
+    </select>
+
+    <select id="getDeviceInfo" resultType="com.chinatower.airline.dto.request.AirUavInfo">
+        select manufacturer_code as uavNestType,model_code as uavNestTypeCode,longitude as uavNestLongitude, latitude as uavNestLatitude
+        from vm_uav_nest_device_info
+        where device_code = #{deviceCode} and delete_flag = 0
+        limit 1
+    </select>
+
+    <select id="queryChannelInfo" resultType="java.util.HashMap">
+        SELECT device_code AS deviceCode, channel_code AS channelCode, channel_type AS channelType
+        FROM vm_uav_nest_channel_info
+        WHERE del_flag = '0' AND device_code = #{deviceCode}
+    </select>
+
+    <select id="queryUserDeviceOrder" resultType="com.chinatower.device.entity.vo.TenantInfoRes">
+        select d.tenant_id,d.industry_code,u.user_id from vm_order_uav_devices d
+                                                              left join sys_user u on u.tenant_id =d.tenant_id
+                                                              left join vm_uav_device_info_t dt on dt.device_code = d.device_code
+        where dt.uav_nest_code = #{deviceCode} and ord_status in (0,1,2) and u.DEL_FLAG = 0
+    </select>
+
+    <select id="getAlgorithmInfoByLineId" resultType="java.util.Map">
+        SELECT
+            a.task_id AS taskId,c.algorithm_code AS algorithmCode, c.algorithm_name AS algorithmName
+        FROM
+            vm_air_algorithm_t a
+                LEFT JOIN vm_algorithm_info_t c on a.warning_type_id = c.algorithm_code
+        WHERE
+            a.flight_route_id = #{flightRouteId}
+          and a.status = 0
+          and a.delete_flag = 0
+          and c.model_config like '%dict-pushStreamType%'
+    </select>
+    <select id="getAirLinesListNologin" resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT
+        t.flight_route_id as flightRouteId,
+        t.flight_route_name as flightRouteName,
+        t.uav_code as uavCode,
+        t.device_code as deviceCode,
+        t.access_node as accessNode
+        FROM vm_air_line_t t
+        where t.delete_flag = 0 and t.flight_main_type = 0
+        <if test="deviceCode != null and deviceCode != ''">
+            and t.device_code =  #{deviceCode}
+        </if>
+        and tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+        ORDER BY t.create_time DESC
+    </select>
+
+    <select id="checkAirLineExist" resultType="java.lang.Boolean">
+        SELECT
+            count(1) > 0
+        FROM
+            vm_air_line_t
+        WHERE
+            delete_flag = 0
+          AND flight_route_id = #{flightRouteId}
+    </select>
+
+    <select id="queryFlightMainTypeByFlightRouteId" resultType="java.lang.Integer">
+        SELECT flight_main_type
+        FROM vm_air_line_t
+        WHERE delete_flag = 0
+          AND flight_route_id = #{flightRouteId}
+        LIMIT 1
+    </select>
+
+    <update id="delAirPlanByFlightRoutId">
+        update vm_air_plan_t set delete_flag = 1
+        where flight_route_id = #{flightRouteId}
+    </update>
+
+    <update id="delAirTaskByFlightRoutId">
+        update vm_air_task_t set delete_flag = 1
+        where flight_route_id = #{flightRouteId} and delete_flag = '0'
+    </update>
+
+    <insert id="editAlgorithms">
+            INSERT INTO `vm_air_algorithm_t` (`task_id`,
+        `flight_route_id`,
+        `warning_type_id`,
+        `create_time`,
+        `create_user`,
+        `delete_flag`,
+        `tenant_id`,
+        `industry_code`,
+        `access_node`,
+        `accept_node`,status
+        <if test='algorithmType != null and algorithmType != "" '>
+            ,algorithm_type
+        </if>
+        <if test='recoveryFlag != null and recoveryFlag != "" '>
+            ,recovery_flag
+        </if>
+        )
+
+        VALUES (#{taskId},
+        #{flightRouteId},
+        #{algorithmCode},
+        NOW(),
+        #{createUser},
+        '0',
+        #{teanantId},
+        #{industryCode},
+        #{accessNode},
+        #{acceptNode},
+        #{status}
+        <if test='algorithmType != null and algorithmType != "" '>
+            ,#{algorithmType}
+        </if>
+        <if test='recoveryFlag != null and recoveryFlag != "" '>
+            ,#{recoveryFlag}
+        </if>
+        );
+    </insert>
+</mapper>

@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.timeline.mapper.VmTimelineDetailMapper">
+
+    <resultMap type="com.chinatower.bdm.modules.timeline.entity.VmTimelineDetail" id="VmTimelineDetailMap">
+        <result property="timelineDetailId" column="timeline_detail_id" jdbcType="INTEGER"/>
+        <result property="timelineId" column="timeline_id" jdbcType="INTEGER"/>
+        <result property="layer" column="layer" jdbcType="VARCHAR"/>
+        <result property="layerName" column="layer_name" jdbcType="VARCHAR"/>
+        <result property="layerNamespace" column="layer_namespace" jdbcType="VARCHAR"/>
+        <result property="year" column="year" jdbcType="VARCHAR"/>
+        <result property="month" column="month" jdbcType="VARCHAR"/>
+        <result property="day" column="day" jdbcType="VARCHAR"/>
+        <result property="sortNum" column="sort_num" jdbcType="VARCHAR"/>
+        <result property="geoType" column="geo_type" jdbcType="VARCHAR"/>
+        <result property="rootGeoserverUrl" column="root_geoserver_url" jdbcType="VARCHAR"/>
+        <result property="customName" column="custom_name" jdbcType="VARCHAR"/>
+        <result property="maxx" column="maxx" jdbcType="VARCHAR"/>
+        <result property="maxy" column="maxy" jdbcType="VARCHAR"/>
+        <result property="minx" column="minx" jdbcType="VARCHAR"/>
+        <result property="miny" column="miny" jdbcType="VARCHAR"/>
+        <result property="stayTime" column="stay_time" jdbcType="VARCHAR"/>
+        <result property="industryCode" column="industry_code" jdbcType="VARCHAR"/>
+        <result property="appVerCode" column="app_ver_code" jdbcType="VARCHAR"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="tenantName" column="tenant_name" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="modifier" column="modifier" jdbcType="VARCHAR"/>
+        <result property="deleteFlag" column="delete_flag" jdbcType="INTEGER"/>
+        <result property="category" column="category" jdbcType="VARCHAR"/>
+        <result property="fileUrl" column="fileUrl" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 伪列 -->
+    <sql id="Base_Column_List">
+        timeline_detail_id
+        , timeline_id, layer, layer_name, layer_namespace, year, month, day, sort_num,
+        geo_type, root_geoserver_url, custom_name, maxx, maxy, minx, miny, stay_time,
+        industry_code, app_ver_code, tenant_id, tenant_name, create_time, update_time,
+        creator, modifier, delete_flag, category, fileUrl
+    </sql>
+
+
+    <!--查询单个类型 resultType="com.chinatower.bdm.modules.entity.timeline.VmTimelineDetail">-->
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="VmTimelineDetailMap">
+        select
+        <include refid="Base_Column_List"/>
+        from vm_timeline_detail
+        where timeline_detail_id = #{timelineDetailId}
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" parameterType="com.chinatower.bdm.modules.timeline.dto.VmTimelineDetailQueryDto" resultMap="VmTimelineDetailMap">
+        select
+        <include refid="Base_Column_List"/>
+
+        from vm_timeline_detail t
+        <where>
+            and t.delete_flag = 0
+            ${dataScope}
+            <if test="timelineId != null">
+                and t.timeline_id = #{timelineId}
+            </if>
+            <if test="layer != null and layer != ''">
+                and t.layer = #{layer}
+            </if>
+        </where>
+    </select>
+
+    <!--根据时间轴表ID批量查询时间轴详情-->
+    <select id="queryByTimelineInfoIds" resultMap="VmTimelineDetailMap">
+        select
+        <include refid="Base_Column_List"/>
+        from vm_timeline_detail t
+        <where>
+            and t.delete_flag = 0
+            and t.timeline_id in
+            <foreach collection="timelineInfoIds" item="id" separator="," open="(" close=")" >
+                #{id}
+            </foreach>
+        </where>
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="timelineDetailId" useGeneratedKeys="true">
+        insert into vm_timeline_detail(timeline_id, layer, layer_name, layer_namespace, year, month, day, sort_num,
+                                       geo_type, root_geoserver_url, custom_name, maxx, maxy, minx, miny, stay_time,
+                                       industry_code, app_ver_code, tenant_id, tenant_name, create_time, update_time,
+                                       creator, modifier, delete_flag, category, fileUrl)
+        values (#{timelineId}, #{layer}, #{layerName}, #{layerNamespace}, #{year}, #{month}, #{day}, #{sortNum},
+                #{geoType}, #{rootGeoserverUrl}, #{customName}, #{maxx}, #{maxy}, #{minx}, #{miny}, #{stayTime},
+                #{industryCode}, #{appVerCode}, #{tenantId}, #{tenantName}, #{createTime}, #{updateTime}, #{creator},
+                #{modifier}, #{deleteFlag}, #{category}, #{fileUrl})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="timelineDetailId" useGeneratedKeys="true">
+        insert into vm_timeline_detail(timeline_id, layer, layer_name, layer_namespace, year, month, day, sort_num,
+        geo_type, root_geoserver_url, custom_name, maxx, maxy, minx, miny, stay_time, industry_code, app_ver_code,
+        tenant_id, tenant_name, create_time, update_time, creator, modifier, delete_flag, category, fileUrl)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.timelineId}, #{entity.layer}, #{entity.layerName}, #{entity.layerNamespace}, #{entity.year},
+            #{entity.month}, #{entity.day}, #{entity.sortNum}, #{entity.geoType}, #{entity.rootGeoserverUrl},
+            #{entity.customName}, #{entity.maxx}, #{entity.maxy}, #{entity.minx}, #{entity.miny}, #{entity.stayTime},
+            #{entity.industryCode}, #{entity.appVerCode}, #{entity.tenantId}, #{entity.tenantName},
+            #{entity.createTime}, #{entity.updateTime}, #{entity.creator}, #{entity.modifier}, #{entity.deleteFlag}, #{entity.category}, #{entity.fileUrl})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="timelineDetailId" useGeneratedKeys="true">
+        insert into vm_timeline_detail(timeline_id, layer, layer_name, layer_namespace, year, month, day, sort_num,
+        geo_type, root_geoserver_url, custom_name, maxx, maxy, minx, miny, stay_time, industry_code, app_ver_code,
+        tenant_id, tenant_name, create_time, update_time, creator, modifier, delete_flag, category, fileUrl)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.timelineId}, #{entity.layer}, #{entity.layerName}, #{entity.layerNamespace}, #{entity.year},
+            #{entity.month}, #{entity.day}, #{entity.sortNum}, #{entity.geoType}, #{entity.rootGeoserverUrl},
+            #{entity.customName}, #{entity.maxx}, #{entity.maxy}, #{entity.minx}, #{entity.miny}, #{entity.stayTime},
+            #{entity.industryCode}, #{entity.appVerCode}, #{entity.tenantId}, #{entity.tenantName},
+            #{entity.createTime}, #{entity.updateTime}, #{entity.creator}, #{entity.modifier}, #{entity.deleteFlag}, #{entity.category}, #{entity.fileUrl})
+        </foreach>
+        on duplicate key update
+        timeline_id = values(timeline_id),
+        layer = values(layer),
+        layer_name = values(layer_name),
+        layer_namespace = values(layer_namespace),
+        year = values(year),
+        month = values(month),
+        day = values(day),
+        sort_num = values(sort_num),
+        geo_type = values(geo_type),
+        root_geoserver_url = values(root_geoserver_url),
+        custom_name = values(custom_name),
+        maxx = values(maxx),
+        maxy = values(maxy),
+        minx = values(minx),
+        miny = values(miny),
+        stay_time = values(stay_time),
+        industry_code = values(industry_code),
+        app_ver_code = values(app_ver_code),
+        tenant_id = values(tenant_id),
+        tenant_name = values(tenant_name),
+        create_time = values(create_time),
+        update_time = values(update_time),
+        creator = values(creator),
+        modifier = values(modifier),
+        delete_flag = values(delete_flag),
+        category = values(category),
+        fileUrl = values(fileUrl)
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update vm_timeline_detail
+        <set>
+            <if test="timelineId != null">
+                timeline_id = #{timelineId},
+            </if>
+            <if test="layer != null and layer != ''">
+                layer = #{layer},
+            </if>
+            <if test="layerName != null and layerName != ''">
+                layer_name = #{layerName},
+            </if>
+            <if test="layerNamespace != null and layerNamespace != ''">
+                layer_namespace = #{layerNamespace},
+            </if>
+            <if test="year != null and year != ''">
+                year = #{year},
+            </if>
+            <if test="month != null and month != ''">
+                month = #{month},
+            </if>
+            <if test="day != null and day != ''">
+                day = #{day},
+            </if>
+            <if test="sortNum != null and sortNum != ''">
+                sort_num = #{sortNum},
+            </if>
+            <if test="geoType != null and geoType != ''">
+                geo_type = #{geoType},
+            </if>
+            <if test="rootGeoserverUrl != null and rootGeoserverUrl != ''">
+                root_geoserver_url = #{rootGeoserverUrl},
+            </if>
+            <if test="customName != null and customName != ''">
+                custom_name = #{customName},
+            </if>
+            <if test="maxx != null and maxx != ''">
+                maxx = #{maxx},
+            </if>
+            <if test="maxy != null and maxy != ''">
+                maxy = #{maxy},
+            </if>
+            <if test="minx != null and minx != ''">
+                minx = #{minx},
+            </if>
+            <if test="miny != null and miny != ''">
+                miny = #{miny},
+            </if>
+            <if test="stayTime != null and stayTime != ''">
+                stay_time = #{stayTime},
+            </if>
+            <if test="industryCode != null and industryCode != ''">
+                industry_code = #{industryCode},
+            </if>
+            <if test="appVerCode != null and appVerCode != ''">
+                app_ver_code = #{appVerCode},
+            </if>
+            <if test="tenantId != null and tenantId != ''">
+                tenant_id = #{tenantId},
+            </if>
+            <if test="tenantName != null and tenantName != ''">
+                tenant_name = #{tenantName},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="creator != null and creator != ''">
+                creator = #{creator},
+            </if>
+            <if test="modifier != null and modifier != ''">
+                modifier = #{modifier},
+            </if>
+            <if test="deleteFlag != null">
+                delete_flag = #{deleteFlag},
+            </if>
+            <if test="category != null and category != ''">
+                category = #{category},
+            </if>
+            <if test="fileUrl != null and fileUrl != ''">
+                fileUrl = #{fileUrl},
+            </if>
+        </set>
+        where timeline_detail_id = #{timelineDetailId}
+    </update>
+
+    <!--通过主键删除-->
+    <update id="deleteById">
+        update vm_timeline_detail
+        set delete_flag = 1, update_time = now()
+        where timeline_detail_id = #{timelineDetailId}
+    </update>
+
+
+    <!--通过时间轴ID删除-->
+    <update id="deleteByTimeLineId">
+        update vm_timeline_detail
+        set delete_flag = 1, update_time = now()
+        where timeline_id = #{timelineId}
+    </update>
+
+</mapper>

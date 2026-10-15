@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.SysIndustryViewUrlMapper">
+
+	<select id="querySysLinkViewUrlAll" resultType="com.chinatower.event.dto.SysLinkViewUrlModel">
+		SELECT
+		v.id,
+		v.link_id,
+		v.app_ver_code,
+		v.cust_ver_code,
+		v.screen_url,
+		v.pc_url,
+		v.app_url,
+		v.create_date,
+		v.update_date,
+		v.STATUS,
+		v.creator,
+		v.modifier
+		FROM
+		sys_link_view_url v
+		where v.status = '1'
+	</select>
+
+</mapper>

@@ -1,0 +1,841 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.query.dao.VideoQueryDAO">
+
+    <resultMap id="roleMap" type="com.chinatower.video.api.entity.QueryRoleReq">
+        <result column="enum_id" property="enumId" jdbcType="VARCHAR"/>
+        <result column="enum_code" property="enumCode" jdbcType="VARCHAR"/>
+        <result column="enum_type_id" property="enumTypeId" jdbcType="INTEGER"/>
+        <result column="enum_name" property="enumName" jdbcType="VARCHAR"/>
+        <result column="param_category" property="paramCategory" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="creator_date" property="creatorDate" jdbcType="DATE"/>
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR"/>
+    </resultMap>
+    <!-- 查询角色列表数据信息表单条数据-->
+    <select id="getRoleById" resultType="com.chinatower.video.api.entity.QueryRoleReq" parameterType="com.chinatower.video.api.entity.QueryRoleReq">
+        SELECT
+            role_id AS "roleId",
+            role_name AS "roleName",
+            STATUS AS "roleStatus",
+            tenant_id AS "tenantId",
+            CREATE_BY AS creator,
+            CREATE_TIME AS "creatorDate",
+            role_type AS "roleType",
+            CLOUD_POWER AS "cloudControl",
+            DEL_FLAG AS "deleteFlag"
+        FROM
+            sys_role
+        WHERE
+            DEL_FLAG = '0'
+          AND STATUS = '0'
+          AND role_id = #{roleId}
+    </select>
+    <select id="getRoleByIds" parameterType = "java.lang.String" resultType="java.lang.String">
+        select
+            cloud_control
+        from  vm_role_t where delete_flag = '0'
+                          AND cloud_control = '0'
+    </select>
+
+    <select id="getEnumInfo" resultType="com.chinatower.video.api.entity.QueryGetEnumInfoReq"
+            parameterType="com.chinatower.video.api.entity.QueryGetEnumInfoReq">
+        select
+        dict_code,
+        dict_sort,
+        dict_label,
+        dict_value,
+        dict_type,
+        css_class,
+        list_class,
+        is_default,
+        status,
+        remark
+        from sys_dict_data where status = 0
+        <if test='dictCode!= null and dictCode != "" '>
+            AND dict_code = #{dictCode}
+        </if>
+        <if test='dictValue != null and dictValue != "" '>
+            AND dict_value = #{dictValue}
+        </if>
+        <if test='dictType != null and dictType != "" '>
+            AND dict_type = #{dictType}
+        </if>
+        <if test='dictLabel != null and dictLabel != "" '>
+            AND dict_label LIKE CONCAT(CONCAT('%',#{dictLabel},'%'))
+        </if>
+        <if test='dictLabelEqual != null and dictLabelEqual != "" '>
+            AND dict_label = #{dictLabelEqual}
+        </if>
+    </select>
+
+    <select id="getUserHabit" resultType="java.lang.String"
+            parameterType="com.chinatower.video.modules.query.entity.HabitVO">
+        select t.habit_value from sys_user_video_habit t where t.user_habit_key = #{habitKey}
+    </select>
+
+    <select id="checkUserHabit" resultType="java.lang.Integer"
+            parameterType="com.chinatower.video.modules.query.entity.HabitVO">
+        select count(t.habit_value) from sys_user_video_habit t where t.user_habit_key = #{habitKey}
+    </select>
+
+    <insert id="setUserHabit" parameterType="com.chinatower.video.modules.query.entity.HabitVO">
+        INSERT INTO sys_user_video_habit
+            (user_habit_key, habit_value, create_time)
+        VALUES (#{habitKey}, #{habitValue}, now());
+    </insert>
+
+    <update id="updateUserHabit">
+        update sys_user_video_habit set habit_value = #{habitValue} where user_habit_key = #{habitKey};
+    </update>
+
+    <delete id="delUserHabit" parameterType="com.chinatower.video.modules.query.entity.HabitVO">
+        DELETE FROM sys_user_video_habit WHERE user_habit_key LIKE CONCAT(#{habitKey}, '%')
+    </delete>
+
+    <select id="queryVideoPlanInfo"  resultType="com.chinatower.video.api.entity.VideoChannelVideoPlanVO"
+            parameterType="com.chinatower.video.api.entity.VideoChannelVideoPlanVO">
+        SELECT DISTINCT
+        t1.record_plan_id,t1.record_plan_name,t1.record_plan_status,t1.start_date,t1.end_date,
+        t1.is_all_day,t1.stream_type,t1.storage_type,t1.storage_day,t1.is_audio,
+        t1.device_code,t1.channel_code,t1.tenant_id,t1.creator,
+        t1.create_time,t1.modifier,t1.update_time,t1.delete_flag,
+        ( case when length(IFNULL(ten.device_name, '')) = 0 then t4.device_name else ten.device_name end ) devName,
+        ( case when length(IFNULL(ten.channel_name, '')) = 0 then t3.channel_name else ten.channel_name end ) channelName,
+        t5.tenant_name,t5.province_id,t5.city_id,
+        (SELECT aa.area_name FROM sys_area aa WHERE aa.area_code = t5.province_id) AS province_name,
+        (SELECT aa.area_name FROM sys_area aa WHERE aa.area_code = t5.city_id) AS city_name,
+        t6.NICK_NAME as creatorName,t7.NICK_NAME as modifierName
+        FROM
+        vm_channel_video_plan_t t1
+        LEFT JOIN vm_channel_info_t t3 ON t1.channel_code = t3.channel_code and t3.delete_flag = '0'
+        LEFT JOIN vm_device_info_t t4 ON t1.device_code = t4.device_code and t4.delete_flag = '0'
+        inner JOIN sys_tenant_info t5 ON t1.tenant_id = t5.tenant_id
+        LEFT JOIN vm_tenant_device_channel_rel_t ten on t4.device_code = ten.device_code and ten.tenant_id = t1.tenant_id
+        and t3.channel_code = ten.channel_code and ten.industry_code = t1.industry_code and ten.delete_flag='0'
+        LEFT JOIN sys_user t6 ON t1.creator = t6.user_name AND t6.DEL_FLAG = '0' and t6.STATUS = '0'
+        LEFT JOIN sys_user t7 ON t1.modifier = t7.user_name AND t7.DEL_FLAG = '0' and t7.STATUS = '0'
+        LEFT JOIN vm_order_devices d ON t1.device_code = d.device_code
+        AND d.delete_flag = '0' AND d.tenant_id = t1.tenant_id AND d.industry_code = t1.industry_code
+        WHERE
+        t1.delete_flag = '0'
+        and d.ord_status IN ( 0, 1, 2 )
+        ${dataScope}
+        <if test='recordPlanId!= null and recordPlanId != "" '>
+            AND t1.record_plan_id= #{recordPlanId}
+        </if>
+        <if test='deviceCode != null and deviceCode != "" '>
+            AND t1.device_code LIKE CONCAT('%',#{deviceCode},'%')
+        </if>
+        <if test='channelCode != null and channelCode != "" '>
+            AND t1.channel_code LIKE CONCAT('%',#{channelCode},'%')
+        </if>
+        <if test='customerCode != null and customerCode != "" '>
+            AND t1.tenant_id = #{customerCode}
+        </if>
+        <if test='startDate != null and startDate != "" '>
+            AND #{startDate} >  t1.start_date
+        </if>
+        <if test='endDate!= null and endDate != "" '>
+            AND t1.end_date > #{endDate}
+        </if>
+
+        <if test='startTime!= null and startTime != "" '>
+            AND t1.record_plan_id = (select record_plan_id from vm_plan_time_section_t where delete_flag = '0' and #{startTime} > start_time)
+        </if>
+
+        <if test='endTime!= null and endTime != "" '>
+            AND t1.record_plan_id = (select record_plan_id from vm_plan_time_section_t where delete_flag = '0' and end_time > #{endTime})
+        </if>
+
+        <if test='tenantName != null and tenantName != "" '>
+            AND t5.tenant_name LIKE CONCAT('%',#{tenantName},'%')
+        </if>
+        <if test='provinceId != null and provinceId != "" '>
+            AND t5.province_id = #{provinceId}
+        </if>
+        <if test='cityId != null and cityId != "" '>
+            AND t5.city_id = #{cityId}
+        </if>
+
+        <if test='keyword!= null and keyword != "" '>
+            AND (t1.tenant_id LIKE CONCAT(CONCAT('%',#{keyword},'%')) OR (t5.tenant_name LIKE CONCAT(CONCAT('%',#{keyword},'%'))))
+        </if>
+
+        <if test='devName != null and devName != "" '>
+            AND ( case when length(IFNULL(ten.device_name, '')) = 0 then t4.device_name LIKE CONCAT('%',#{devName},'%') else ten.device_name LIKE CONCAT('%',#{devName},'%') end )
+        </if>
+
+        <if test='channelName != null and channelName != "" '>
+            AND ( case when length(IFNULL(ten.channel_name, '')) = 0 then t3.channel_name LIKE CONCAT('%',#{channelName},'%')  else ten.channel_name LIKE CONCAT('%',#{channelName},'%') end )
+        </if>
+
+        <if test='creator != null and creator != "" '>
+            AND t1.creator= #{creator}
+        </if>
+
+        <if test='createTimeStart != null and createTimeStart != "" '>
+            AND t1.create_time >= #{createTimeStart}
+        </if>
+
+        <if test='createTimeEnd != null and createTimeEnd != "" '>
+            AND #{createTimeEnd} >= t1.create_time
+        </if>
+
+        <if test='modifier != null and modifier != "" '>
+            AND t1.modifier= #{modifier}
+        </if>
+
+        <if test='updateTimeStart != null and updateTimeStart != "" '>
+            AND t1.update_time >= #{updateTimeStart}
+        </if>
+
+        <if test='updateTimeEnd != null and updateTimeEnd != "" '>
+            AND #{updateTimeEnd} >= t1.update_time
+        </if>
+
+
+        <if test='recordPlanStatusStr != null and recordPlanStatusStr != "" '>
+            AND t1.record_plan_status= #{recordPlanStatusStr}
+        </if>
+
+
+        ORDER BY create_time desc
+
+    </select>
+    <select id="queryTimeSectionInfo"  resultType="com.chinatower.video.api.entity.VideoTimeSectionVO"
+            parameterType="com.chinatower.video.api.entity.VideoTimeSectionVO">
+        SELECT
+        record_plan_id,day_of_week,start_time,end_time,creator,create_time,modifier,update_time,delete_flag,industry_code
+        FROM
+        vm_plan_time_section_t
+        WHERE
+        1=1
+
+        <if test='recordPlanId!= null and recordPlanId != "" '>
+            AND record_plan_id= #{recordPlanId}
+        </if>
+
+        <if test='deleteFlag!= null and deleteFlag != "" '>
+            AND delete_flag= #{deleteFlag}
+        </if>
+        <if test='industryCode!= null and industryCode != "" '>
+            AND industry_code= #{industryCode}
+        </if>
+
+    </select>
+
+
+    <resultMap id="patrolMap" type="com.chinatower.video.api.entity.VideoPatrolVO">
+        <result column="patrol_id" property="patrolId" jdbcType="VARCHAR" />
+        <result column="patrol_name" property="patrolName" jdbcType="VARCHAR" />
+        <result column="device_code" property="deviceCode" jdbcType="VARCHAR" />
+        <result column="channel_code" property="channelCode" jdbcType="VARCHAR" />
+        <result column="tenant_id" property="customerCode" jdbcType="VARCHAR" />
+        <result column="creator" property="creator" jdbcType="VARCHAR" />
+        <result column="creator_date" property="creatorDate" jdbcType="DATE" />
+        <result column="modifier" property="modifier" jdbcType="VARCHAR" />
+        <result column="modifier_date" property="modifierDate" jdbcType="DATE" />
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR" />
+        <result column="start_stop" property="startStop" jdbcType="VARCHAR" />
+        <result column="start_stop_date" property="startStopDate" jdbcType="VARCHAR" />
+        <result column="if_cruise" property="ifCruise" jdbcType="VARCHAR" />
+        <result column="order_code" property="orderCode" jdbcType="VARCHAR" />
+        <result column="start_time_period" property="startTimePeriod" jdbcType="VARCHAR" />
+    </resultMap>
+
+
+    <select id="getPatrol"  resultMap="patrolMap"
+            parameterType="com.chinatower.video.api.entity.VideoPatrolVO">
+        select patrol_id,patrol_name,device_code,channel_code,tenant_id,creator,create_time creator_date,if_cruise,
+        start_stop,start_time_period,start_stop_date,order_code
+        from vm_patrol_info_t where 1 = 1
+        <if test='channelCode!= null and channelCode != "" '>
+            AND channel_code= #{channelCode}
+        </if>
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND device_code= #{deviceCode}
+        </if>
+        <if test='customerCode!= null and customerCode != "" '>
+            AND tenant_id= #{customerCode}
+        </if>
+        <if test='patrolId!= null and patrolId != "" '>
+            AND patrol_id= #{patrolId}
+        </if>
+        <if test='deleteFlag != null and deleteFlag != "" '>
+            AND delete_flag= #{deleteFlag}
+        </if>
+    </select>
+
+    <select id="getPatrolByIdList"  resultMap="patrolMap" >
+        select patrol_id,patrol_name,device_code,channel_code,tenant_id,creator,create_time creator_date,if_cruise,
+        start_stop,start_time_period,start_stop_date,order_code
+        from vm_patrol_info_t where patrol_id in
+        <foreach collection="idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="queryPreset" resultType="com.chinatower.video.api.entity.QueryPresetListData" parameterType="String">
+        SELECT
+            preset_id,
+            preset_name,
+            device_code,
+            img_url,
+            create_time
+        FROM
+            vm_video_preset
+        WHERE
+            tenant_id = #{tenantId}
+          AND delete_flag = 0
+          AND industry_code = #{industryCode}
+         AND device_code = #{deviceCode}
+    </select>
+
+    <select id="queryPresetByName" resultType="com.chinatower.video.api.entity.QueryPresetListData" parameterType="String">
+        SELECT preset_id FROM vm_video_preset WHERE tenant_id = #{tenantId} AND delete_flag = 0 AND industry_code = #{industryCode}
+        AND preset_name = #{presetName} AND device_code = #{deviceCode} AND channel_code = #{channelCode}
+    </select>
+
+<!--    <select id="getGuardName" resultType="com.chinatower.video.api.entity.QueryGuardListData" parameterType="String">-->
+<!--        SELECT preset_name, preset_id, is_guard, tenant_id FROM vm_video_preset t-->
+<!--        WHERE preset_id = #{guardId}-->
+<!--          AND user_code = #{userCode}-->
+<!--    </select>-->
+
+    <select id="getGuard" resultType="com.chinatower.video.api.entity.QueryGuardListData" parameterType="String">
+        SELECT preset_name as guard_name, preset_id,preset_id as "guardId", if(is_guard = '1','1','0') as is_start,
+               IFNULL(stay_seconds,300) as stay_seconds, is_guard, tenant_id
+        FROM vm_video_preset t
+        WHERE tenant_id = #{userCode} and is_guard != '0' and delete_flag = 0 and device_code = #{deviceCode} and channel_code = #{channelCode}
+        order by update_time desc
+            limit 1
+    </select>
+
+    <update id="invalidGuard" parameterType="String">
+        UPDATE vm_video_preset
+        SET is_guard = '2'
+        WHERE device_code = #{deviceCode}
+          and is_guard = '1'
+          and delete_flag = 0
+    </update>
+
+    <update id="invalidGuardById" parameterType="String">
+        UPDATE vm_video_preset
+        SET is_guard = '2'
+        WHERE device_code = #{deviceCode}
+          and is_guard = '1'
+          and delete_flag = 0
+          and preset_id != #{guardId}
+    </update>
+    <update id="updateAlgorithm">
+        update vm_algorithm_config
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="points =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.points!=null and item.points != ''">
+                        when config_id=#{item.configId} then #{item.points}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        <where>
+            config_id IN
+            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+                #{item.configId}
+            </foreach>
+        </where>
+    </update>
+    <update id="batchUpdateAlgo">
+        update vm_algorithm_config
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="points_lon_lat =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.pointsLonLat!=null and item.pointsLonLat != ''">
+                        when config_id=#{item.configId} then #{item.pointsLonLat}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="trip_thread_lon_lat =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.tripThreadLonLat!=null and item.tripThreadLonLat != ''">
+                        when config_id=#{item.configId} then #{item.tripThreadLonLat}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="oil_gas_pipelines_lon_lat =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.oilGasPipelinesLonLat!=null and item.oilGasPipelinesLonLat != ''">
+                        when config_id=#{item.configId} then #{item.oilGasPipelinesLonLat}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="text_labels_lon_lat =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.textLabelsLonLat!=null and item.textLabelsLonLat != ''">
+                        when config_id=#{item.configId} then #{item.textLabelsLonLat}
+                    </if>
+                </foreach>
+            </trim>
+        </trim>
+        <where>
+            config_id IN
+            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+                #{item.configId}
+            </foreach>
+        </where>
+    </update>
+
+    <select id="getPatrolList"  resultType="com.chinatower.video.api.entity.QueryPatrolData"
+            parameterType="com.chinatower.video.api.entity.VideoPatrolVO">
+        select DISTINCT t.patrol_id,t.patrol_name,t.device_code,t.channel_code,t.tenant_id,t.creator,t.create_time creator_date,case t.if_cruise when 1 then 0 else 1 end  as isCruise,
+        t.start_stop,t.init_start_time_period as startTimePeriod,t.start_stop_date,t.order_code,t.modifier,t.update_time, vci.channel_name, vdi.device_name,t.operator,t.operation_time
+        from vm_patrol_info_t t
+        left join vm_channel_info_t vci on vci.channel_code = t.channel_code AND vci.device_code = t.device_code
+        left join vm_device_info_t vdi on vdi.device_code = t.device_code
+        left JOIN vm_order_devices vod ON vod.device_code = t.device_code and vod.tenant_id = t.tenant_id AND t.industry_code = vod.industry_code
+        where vod.ord_status in (0,1,2) and vod.delete_flag = 0
+        ${dataScope}
+<!--        <if test='channelCode!= null and channelCode != "" '>-->
+<!--            AND t.channel_code like CONCAT('%',#{channelCode},'%')-->
+<!--        </if>-->
+        <if test='channelName!= null and channelName != "" '>
+            AND vci.channel_name like CONCAT('%',#{channelName},'%')
+        </if>
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND t.device_code like CONCAT('%',#{deviceCode},'%')
+        </if>
+        <if test='deviceName!= null and deviceName != "" '>
+            AND vdi.device_name like CONCAT('%',#{deviceName},'%')
+        </if>
+        <if test='industryCode!= null and industryCode != "" '>
+            AND t.industry_code= #{industryCode}
+        </if>
+        <if test='customerCode!= null and customerCode != "" '>
+            AND t.tenant_id= #{customerCode}
+        </if>
+        <if test='patrolId!= null and patrolId != "" '>
+            AND t.patrol_id like CONCAT('%',#{patrolId},'%')
+        </if>
+        <if test='deleteFlag != null '>
+            AND t.delete_flag= #{deleteFlag}
+        </if>
+        <if test='startTime != null and startTime != "" '>
+            AND t.create_time &gt;= STR_TO_DATE(CONCAT(#{startTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='endTime != null and endTime != "" '>
+            AND t.create_time &lt;= STR_TO_DATE(CONCAT(#{endTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='createStartTime != null and createStartTime != "" '>
+            AND t.create_time &gt;= STR_TO_DATE(#{createStartTime},'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='createEndTime != null and createEndTime != "" '>
+            AND t.create_time &lt;= STR_TO_DATE(#{createEndTime},'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='updateStartTime != null and updateStartTime != "" '>
+            AND t.update_time &gt;= STR_TO_DATE(#{updateStartTime},'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='updateEndTime != null and updateEndTime != "" '>
+            AND t.update_time &lt;= STR_TO_DATE(#{updateEndTime},'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='updateStartDate != null and updateStartDate != "" '>
+            AND t.update_time &gt;= STR_TO_DATE(CONCAT(#{updateStartDate}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='updateEndDate != null and updateEndDate != "" '>
+            AND t.update_time &lt;= STR_TO_DATE(CONCAT(#{updateEndDate}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test='patrolName != null and patrolName != "" '>
+            AND t.patrol_name like CONCAT('%',#{patrolName},'%')
+        </if>
+        <if test='startStop!= null and startStop != "" '>
+            AND t.start_stop = #{startStop}
+        </if>
+        <if test='isCruise!= null and isCruise != "" '>
+            AND t.if_cruise = #{isCruise}
+        </if>
+        <if test='creator != null and creator != "" '>
+            AND t.creator like CONCAT('%',#{creator},'%')
+        </if>
+        <if test='modifier != null and modifier != "" '>
+            AND t.modifier like CONCAT('%',#{modifier},'%')
+        </if>
+        <choose>
+            <when test="orderBy == 'creatorDate'">
+                order by t.create_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+            </when>
+            <when test="orderBy == 'updateTime'">
+                order by t.update_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+            </when>
+            <when test="orderBy == 'operationTime'">
+                order by t.operation_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+            </when>
+            <otherwise>
+                order by t.create_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="getPatrolAllPresetList"  resultType="com.chinatower.video.api.entity.QueryPatrolListData">
+        select patrol_id,t.preset_id,t.stay_seconds,speed,sort,p.preset_name,t.channel_code,t.device_code
+        from vm_patrol_preset_rela_t t
+        left join vm_video_preset p
+        on t.preset_id = p.preset_id and t.device_code = p.device_code
+        where t.delete_flag = 0 and p.delete_flag = 0
+        AND patrol_id IN
+        <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+            #{item.patrolId}
+        </foreach>
+    </select>
+
+    <select id="getPointsByDeviceAndChannel"
+            resultType="com.chinatower.video.api.entity.PointsAndDeviceModelDto">
+        SELECT
+            t1.points,
+            t1.device_code AS "deviceCode",
+            t1.channel_code AS "channelCode",
+            t2.model_code AS "modelCode",
+            t2.device_model_code AS "deviceModelCode",
+            t3.pic_sensor_length AS "picSensorLength",
+            t3.pic_sensor_width AS "picSensorWidth",
+            t3.min_focus AS "minFocus"
+        FROM
+            vm_algorithm_config t1
+                LEFT JOIN vm_device_info_t t2 ON t1.device_code = t2.device_code
+                LEFT JOIN vm_device_model_t t3 ON t2.model_code = t3.mfgr_code AND t2.device_model_code = t3.device_model_code
+        WHERE
+            config_id = #{configId} AND t1.delete_flag = '0' AND t2.delete_flag = '0'
+    </select>
+    <select id="getHistoryPoints" resultType="com.chinatower.video.api.entity.PointsAndDeviceModelDto">
+        SELECT
+            t1.config_id AS "configId",
+            t1.points,
+            t1.device_code AS "deviceCode",
+            t1.channel_code AS "channelCode",
+            t2.model_code AS "modelCode",
+            t2.device_model_code AS "deviceModelCode",
+            t3.pic_sensor_length AS "picSensorLength",
+            t3.pic_sensor_width AS "picSensorWidth",
+            t3.min_focus AS "minFocus"
+        FROM
+            vm_algorithm_config t1
+                LEFT JOIN vm_device_info_t t2 ON t1.device_code = t2.device_code
+                LEFT JOIN vm_device_model_t t3 ON t2.model_code = t3.mfgr_code AND t2.device_model_code = t3.device_model_code
+        WHERE
+            t1.delete_flag = '0' AND t2.delete_flag = '0' AND pos_type = 2
+    </select>
+
+	<select id="queryPresetNameCnt" resultType="int" parameterType="com.chinatower.video.api.entity.ModPresetReq">
+        SELECT count(*) FROM vm_video_preset WHERE tenant_id = #{tenantId} AND delete_flag = 0 AND industry_code = #{industryCode}
+        AND preset_name = #{presetName} AND device_code = #{deviceCode} AND channel_code = #{channelCode} and preset_id != #{presetId}
+    </select>
+
+	<select id="queryPresetSnapshotJob" resultType="com.chinatower.video.api.entity.PresetDTO">
+    	select distinct t1.preset_id, t1.preset_name, t1.pan, t1.tilt, t1.zoom, t1.device_code, t1.channel_code,
+		t1.tenant_id, t1.order_code, t1.industry_code, t1.snapshot_cycle, t1.snapshot_day, t1.snapshot_time, t1.double_img_analysis
+		from vm_video_preset t1
+		left join vm_order_devices t2 on t1.device_code = t2.device_code and t1.tenant_id  = t2.tenant_id and  t1.industry_code  = t2.industry_code
+		where t1.delete_flag = 0
+		and t2.ord_status in (0,1,2)
+		and t1.snapshot_cycle != 0
+		and t1.snapshot_time like CONCAT('%',#{time},'%')
+		and ((t1.snapshot_cycle = 1) or
+		(t1.snapshot_cycle = 2 and t1.snapshot_day like CONCAT('%',#{weekday},'%')) or
+		(t1.snapshot_cycle = 3 and t1.snapshot_day like CONCAT('%',#{day},'%')))
+    </select>
+
+    <select id="queryDeviceOptAuthInfo" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceOptAuthVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceOptAuthVO">
+        SELECT config_id,device_code,tenant_id,industry_code,config_type,user_id,priority,operate_period,
+               camera_status,
+               preset_priority,preset_operate_period,preset_status,
+               patrol_priority,patrol_operate_period,patrol_status,
+               guard_priority,guard_operate_period,guard_status
+        FROM vm_device_operate_auth_config oac
+        where oac.delete_flag = 0
+        <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+            and oac.device_code in
+            <foreach collection="deviceCodeList" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='deviceCode != null and deviceCode != ""'>
+            AND oac.device_code = #{deviceCode}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND oac.tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND oac.industry_code = #{industryCode}
+        </if>
+        <if test='configType != null and configType != ""'>
+            AND oac.config_type = #{configType}
+        </if>
+        <if test='userId != null and userId != ""'>
+            AND oac.user_id = #{userId}
+        </if>
+    </select>
+
+
+    <select id="queryTenantIndustryByUser" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceOptAuthVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceOptAuthVO">
+        SELECT DISTINCT us.USER_ID,us.USER_NAME,us.tenant_id,d.INDUSTRY_CODE,us.USER_TYPE
+        FROM sys_user us
+        LEFT JOIN (
+        WITH RECURSIVE cte AS (
+        SELECT 1 AS n
+        UNION ALL
+        SELECT n + 1 FROM cte WHERE n <![CDATA[<]]> 50
+        )
+        SELECT
+        us_inner.USER_ID,
+        SUBSTRING_INDEX(SUBSTRING_INDEX(us_inner.DEPT_ID, ',', n), ',', -1) AS split_dept_id
+        FROM sys_user us_inner
+        JOIN cte ON cte.n <![CDATA[<=]]> (
+        LENGTH(us_inner.DEPT_ID) - LENGTH(REPLACE(us_inner.DEPT_ID, ',', '')) + 1
+        )
+        WHERE us_inner.DEL_FLAG = '0' AND us_inner.USER_ID = #{userId}
+        ) us_split ON us.USER_ID = us_split.USER_ID
+        LEFT JOIN sys_dept d ON d.DEPT_ID = us_split.split_dept_id AND d.del_flag = '0'
+        WHERE us.DEL_FLAG = '0' AND us.USER_ID = #{userId}
+    </select>
+
+    <select id="getControlPriority" parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceOptAuthVO" resultType="java.lang.String">
+        SELECT
+        priority
+        FROM
+        vm_device_operate_auth_config
+        WHERE
+        delete_flag = 0
+        AND device_code = #{deviceCode}
+        <if test='configType != null and configType != ""'>
+            AND config_type = #{configType}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND industry_code = #{industryCode}
+        </if>
+        <if test='userId != null and userId != ""'>
+            AND user_id = #{userId}
+        </if>
+    </select>
+
+    <select id="getUserName" resultType="java.lang.String">
+        select user_name from sys_user where user_id = #{userId}
+    </select>
+
+    <select id="getLockLevel" resultType="java.lang.String">
+        SELECT
+            lock_level
+        FROM
+            vm_device_snapshot_task_rel_t t1
+                LEFT JOIN vm_device_snapshot_task_t t2 ON t1.task_id = t2.task_id
+        WHERE
+            t1.device_code = #{deviceCode}
+          AND t1.channel_code = #{channelCode}
+          AND t1.deal_status = '1'
+    </select>
+
+    <select id="getUserHabitList" resultType="com.chinatower.video.modules.query.entity.HabitVO"
+            parameterType="java.lang.String">
+        select t.user_habit_key as "habitKey", t.habit_value from sys_user_video_habit t where t.user_habit_key in
+        <if test="list != null and list.size() > 0">
+            <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="getQueryRolesByRoleIds" resultType="com.chinatower.video.api.entity.QueryRoleReq">
+        SELECT
+        role_id roleId,
+        role_name roleName,
+        STATUS roleStatus,
+        tenant_id tenantId,
+        CREATE_BY creator,
+        CREATE_TIME creatorDate,
+        role_type roleType,
+        CLOUD_POWER cloudControl,
+        DEL_FLAG deleteFlag
+        FROM
+        sys_role
+        WHERE
+            DEL_FLAG = '0'
+            AND STATUS = '0'
+        <if test="list != null and list.size() > 0">
+            AND role_id in
+            <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+                #{item.roleId}
+            </foreach>
+        </if>
+    </select>
+    <select id="queryTimeSectionList" resultType="com.chinatower.video.api.entity.VideoTimeSectionVO">
+        SELECT
+        record_plan_id,day_of_week,start_time,end_time,creator,create_time,modifier,update_time,delete_flag,industry_code
+        FROM
+        vm_plan_time_section_t
+        WHERE
+        delete_flag = '0'
+        <if test='list != null and list.size() > 0 '>
+            AND record_plan_id IN
+            <foreach collection="list" item="item" index="index" open="(" separator="or" close=") ">
+                #{item.recordPlanId}
+            </foreach>
+        </if>
+
+    </select>
+    <select id="getControlPresetPriority" resultType="java.lang.String">
+        SELECT
+        preset_priority
+        FROM
+        vm_device_operate_auth_config
+        WHERE
+        delete_flag = 0
+        AND device_code = #{deviceCode}
+        <if test='configType != null and configType != ""'>
+            AND config_type = #{configType}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND industry_code = #{industryCode}
+        </if>
+        <if test='userId != null and userId != ""'>
+            AND user_id = #{userId}
+        </if>
+
+    </select>
+    <select id="getControlPatrolPriority" resultType="java.lang.String">
+        SELECT
+        patrol_priority
+        FROM
+        vm_device_operate_auth_config
+        WHERE
+        delete_flag = 0
+        AND device_code = #{deviceCode}
+        <if test='configType != null and configType != ""'>
+            AND config_type = #{configType}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND industry_code = #{industryCode}
+        </if>
+        <if test='userId != null and userId != ""'>
+            AND user_id = #{userId}
+        </if>
+
+    </select>
+    <select id="getControlGuardPriority" resultType="java.lang.String">
+        SELECT
+        guard_priority
+        FROM
+        vm_device_operate_auth_config
+        WHERE
+        delete_flag = 0
+        AND device_code = #{deviceCode}
+        <if test='configType != null and configType != ""'>
+            AND config_type = #{configType}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND industry_code = #{industryCode}
+        </if>
+        <if test='userId != null and userId != ""'>
+            AND user_id = #{userId}
+        </if>
+    </select>
+    <select id="queryHisAuth" resultType="java.lang.String">
+        select type from sys_user_no_his_auth where user_id = #{userId}
+    </select>
+
+    <select id="queryHisAuthByUserId" resultType="java.lang.String">
+
+    </select>
+    <select id="findAlgoByIds" resultType="com.chinatower.video.modules.query.vo.AlgorithmAreaVO">
+        SELECT config_id,device_code,channel_code,tenant_id,industry_code,algorithm_code,algorithm_name,
+               pos_type,preset_id,points,img,task_id,algorithm_status,thresh,model_config,
+               trip_thread,create_time,update_time,creator,modifier,delete_flag,oil_gas_pipelines,
+               text_labels AS textLabels,
+               points_lon_lat,
+               trip_thread_lon_lat,
+               oil_gas_pipelines_lon_lat,
+               text_labels_lon_lat
+        FROM vm_algorithm_config
+        WHERE delete_flag = 0 AND config_id IN
+        <foreach collection="list" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="findPreset" resultType="com.chinatower.video.api.entity.PresetData">
+        SELECT pan,tilt,zoom FROM vm_video_preset
+                             WHERE delete_flag = 0
+                                                  AND preset_id = #{presetId}
+                                                  AND device_code = #{deviceCode}
+                                                  AND channel_code = #{channelCode}
+    </select>
+
+    <select id="queryAlgorithmAlarmList" resultType="com.chinatower.video.api.entity.AlgorithmAlarmVO">
+        SELECT
+            DISTINCT
+            t1.type_value,
+            t1.type_name,
+            t3.algorithm_code
+        FROM
+            sys_alarm_type t1,
+            vm_algorithm_alarm t2,
+            vm_algorithm_info_t t3
+        WHERE
+            t1.delete_flag = '0'
+          AND t2.delete_flag = '0'
+          AND t3.delete_flag = '0'
+          AND t1.type_value = t2.alarm_type
+          AND t2.algo_min_type = t3.algo_min_type_code
+    </select>
+    <select id="getOrderDevices" resultType="com.chinatower.platform.entity.order.OrderDevicesVO">
+        select * from vm_order_devices where delete_flag = '0' and device_code =#{deviceCode} and ord_status IN ( 0, 1, 2 ) AND tenant_id = #{tenantId} AND industry_code = #{industryCode}
+    </select>
+    <select id="getChannelsByDeviceCode" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        SELECT
+        device_code,
+        channel_code,
+        channel_name
+        FROM
+        vm_channel_info_t
+        WHERE
+        delete_flag = 0
+        AND device_code IN
+        <foreach collection="deviceCodeList" separator="," item="item" open="(" close=")" index="index">
+            #{item}
+        </foreach>
+        ORDER BY
+        channel_code
+    </select>
+    <select id="getUserHabitBatch" resultType="com.chinatower.video.modules.query.entity.HabitVO">
+        select
+        SUBSTRING(user_habit_key, LOCATE('_', user_habit_key) + 1) AS habitKey, habit_value
+        from sys_user_video_habit
+        <where>
+            <if test='list != null and list.size() > 0 '>
+                AND user_habit_key IN
+                <foreach collection="list"  item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+</mapper>

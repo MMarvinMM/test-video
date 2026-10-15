@@ -1,0 +1,723 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.algorithm.mapper.SysSceneAlarmMapper">
+
+    <!-- ========== 场景配置表（sys_scene_config）ResultMap ========== -->
+    <resultMap id="SceneConfigResultMap" type="com.chinatower.algorithm.dataobject.SysSceneConfigDO">
+        <id column="scene_id" property="sceneId"/>
+        <result column="scene_name" property="sceneName"/>
+        <result column="type_value" property="typeValue"/>
+        <result column="algorithm_code" property="algorithmCode"/>
+        <result column="creator" property="creator"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modifier" property="modifier"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="delete_flag" property="deleteFlag"/>
+        <result column="app_ver_code" property="appVerCode"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="industry_code" property="industryCode"/>
+    </resultMap>
+
+    <!-- 场景配置表字段列表 -->
+    <sql id="SceneConfig_Column_List">
+        scene_id, scene_name, type_value, algorithm_code, creator, create_time, modifier, update_time, 
+        delete_flag, app_ver_code, tenant_id, industry_code
+    </sql>
+
+    <!-- ========== 场景告警关系表（sys_scene_alarm_rel）ResultMap ========== -->
+    <resultMap id="SceneAlarmRelResultMap" type="com.chinatower.algorithm.dataobject.SysSceneAlarmRelDO">
+        <id column="id" property="id"/>
+        <result column="scene_id" property="sceneId"/>
+        <result column="alarm_type" property="alarmType"/>
+        <result column="alarm_type_name" property="alarmTypeName"/>
+        <result column="algorithm_code" property="algorithmCode"/>
+        <result column="creator" property="creator"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modifier" property="modifier"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="delete_flag" property="deleteFlag"/>
+        <result column="app_ver_code" property="appVerCode"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="industry_code" property="industryCode"/>
+    </resultMap>
+
+    <!-- 场景告警关系表字段列表 -->
+    <sql id="SceneAlarmRel_Column_List">
+        id, scene_id, alarm_type, alarm_type_name, algorithm_code, creator, create_time, modifier, update_time, 
+        delete_flag, app_ver_code, tenant_id, industry_code
+    </sql>
+
+    <!-- ========== 关联查询ResultMap（用于返回SysSceneAlarmDO，包含场景和告警信息） ========== -->
+    <resultMap id="BaseResultMap" type="com.chinatower.algorithm.dataobject.SysSceneAlarmDO">
+        <id column="id" property="id"/>
+        <result column="scene_id" property="sceneId"/>
+        <result column="scene_name" property="sceneName"/>
+        <result column="alarm_type" property="alarmType"/>
+        <result column="alarm_type_name" property="alarmTypeName"/>
+        <result column="algorithm_code" property="algorithmCode"/>
+        <result column="creator" property="creator"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modifier" property="modifier"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="delete_flag" property="deleteFlag"/>
+        <result column="app_ver_code" property="appVerCode"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="industry_code" property="industryCode"/>
+    </resultMap>
+
+    <!-- ========== 树状结构ResultMap（使用collection构建树） ========== -->
+    <resultMap id="SceneAlarmTreeResultMap" type="com.chinatower.algorithm.dataobject.SceneAlarmTreeVO">
+        <id column="scene_id" property="sceneId"/>
+        <result column="id" property="id"/>
+        <result column="scene_id" property="sceneId"/>
+        <result column="scene_name" property="sceneName"/>
+        <result column="algorithm_code" property="algorithmCode"/>
+        <result column="first_rel_id" property="id"/>
+        <collection property="alarmTypeList" ofType="com.chinatower.algorithm.dataobject.SceneAlarmTreeVO$AlarmTypeItem">
+            <id column="rel_id" property="id"/>
+            <result column="alarm_type" property="alarmType"/>
+            <result column="alarm_type_name" property="alarmTypeName"/>
+        </collection>
+    </resultMap>
+
+    <!-- ========== 场景树状结构ResultMap（使用collection构建树，用于treeByAlgoCode） ========== -->
+    <resultMap id="SceneTreeResultMap" type="com.chinatower.algorithm.dataobject.SceneTreeVO">
+        <id column="scene_id" property="sceneId"/>
+        <result column="scene_id" property="sceneId"/>
+        <result column="scene_name" property="sceneName"/>
+        <result column="algorithm_code" property="algorithmCode"/>
+        <collection property="children" ofType="com.chinatower.algorithm.dataobject.AlarmTypeVO">
+            <result column="alarm_type_id" property="alarmTypeId"/>
+            <result column="alarm_type" property="typeValue"/>
+            <result column="alarm_type_name" property="typeName"/>
+            <result column="icon" property="icon"/>
+        </collection>
+    </resultMap>
+
+    <!-- ========== 场景配置表（sys_scene_config）操作 ========== -->
+
+    <!-- 根据sceneId查询场景配置 -->
+    <select id="selectSceneConfigBySceneId" parameterType="String" resultMap="SceneConfigResultMap">
+        SELECT
+        <include refid="SceneConfig_Column_List"/>
+        FROM sys_scene_config
+        WHERE scene_id = #{sceneId}
+        AND delete_flag = 0
+    </select>
+
+    <!-- 新增场景配置 -->
+    <insert id="insertSceneConfig" parameterType="com.chinatower.algorithm.dataobject.SysSceneConfigDO">
+        INSERT INTO sys_scene_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sceneId != null and sceneId != ''">scene_id,</if>
+            <if test="sceneName != null and sceneName != ''">scene_name,</if>
+            <if test="typeValue != null and typeValue != ''">type_value,</if>
+            <if test="algorithmCode != null and algorithmCode != ''">algorithm_code,</if>
+            <if test="creator != null and creator != ''">creator,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="modifier != null and modifier != ''">modifier,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="deleteFlag != null">delete_flag,</if>
+            <if test="appVerCode != null and appVerCode != ''">app_ver_code,</if>
+            <if test="tenantId != null and tenantId != ''">tenant_id,</if>
+            <if test="industryCode != null and industryCode != ''">industry_code,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sceneId != null and sceneId != ''">#{sceneId},</if>
+            <if test="sceneName != null and sceneName != ''">#{sceneName},</if>
+            <if test="typeValue != null and typeValue != ''">#{typeValue},</if>
+            <if test="algorithmCode != null and algorithmCode != ''">#{algorithmCode},</if>
+            <if test="creator != null and creator != ''">#{creator},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="modifier != null and modifier != ''">#{modifier},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="deleteFlag != null">#{deleteFlag},</if>
+            <if test="appVerCode != null and appVerCode != ''">#{appVerCode},</if>
+            <if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+            <if test="industryCode != null and industryCode != ''">#{industryCode},</if>
+        </trim>
+    </insert>
+
+    <!-- 批量新增场景配置 -->
+    <insert id="insertSceneConfigBatch" parameterType="java.util.List">
+        INSERT INTO sys_scene_config
+        (scene_id, scene_name, type_value, algorithm_code, creator, create_time, delete_flag, app_ver_code, tenant_id, industry_code)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.sceneId}, #{item.sceneName}, #{item.typeValue}, #{item.algorithmCode}, 
+             #{item.creator}, NOW(), 0, #{item.appVerCode}, #{item.tenantId}, #{item.industryCode})
+        </foreach>
+    </insert>
+
+    <!-- 修改场景配置 -->
+    <update id="updateSceneConfig" parameterType="com.chinatower.algorithm.dataobject.SysSceneConfigDO">
+        UPDATE sys_scene_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="sceneName != null and sceneName != ''">scene_name = #{sceneName},</if>
+            <if test="typeValue != null and typeValue != ''">type_value = #{typeValue},</if>
+            <if test="algorithmCode != null and algorithmCode != ''">algorithm_code = #{algorithmCode},</if>
+            <if test="modifier != null and modifier != ''">modifier = #{modifier},</if>
+            <if test="updateTime != null">update_time = NOW(),</if>
+        </trim>
+        WHERE scene_id = #{sceneId} AND tenant_id = #{tenantId} AND industry_code = #{industryCode} AND delete_flag = 0
+    </update>
+
+    <!-- 删除场景配置（逻辑删除） -->
+    <update id="deleteSceneConfigBySceneId">
+        UPDATE sys_scene_config 
+        SET delete_flag = 1 
+        WHERE scene_id = #{sceneId}
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND delete_flag = 0
+    </update>
+
+    <!-- ========== 场景告警关系表（sys_scene_alarm_rel）操作 ========== -->
+
+    <!-- 根据id查询场景告警关系表 -->
+    <select id="selectSysSceneAlarmRelById" resultMap="SceneAlarmRelResultMap">
+        SELECT
+        <include refid="SceneAlarmRel_Column_List"/>
+        FROM sys_scene_alarm_rel
+        WHERE scene_id = #{sceneId}
+        AND delete_flag = 0
+    </select>
+
+    <!-- 新增场景告警关系表 -->
+    <insert id="insertSysSceneAlarmRel" parameterType="com.chinatower.algorithm.dataobject.SysSceneAlarmRelDO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_scene_alarm_rel
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sceneId != null and sceneId != ''">scene_id,</if>
+            <if test="alarmType != null and alarmType != ''">alarm_type,</if>
+            <if test="alarmTypeName != null and alarmTypeName != ''">alarm_type_name,</if>
+            <if test="algorithmCode != null and algorithmCode != ''">algorithm_code,</if>
+            <if test="creator != null and creator != ''">creator,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="modifier != null and modifier != ''">modifier,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="deleteFlag != null">delete_flag,</if>
+            <if test="appVerCode != null and appVerCode != ''">app_ver_code,</if>
+            <if test="tenantId != null and tenantId != ''">tenant_id,</if>
+            <if test="industryCode != null and industryCode != ''">industry_code,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sceneId != null and sceneId != ''">#{sceneId},</if>
+            <if test="alarmType != null and alarmType != ''">#{alarmType},</if>
+            <if test="alarmTypeName != null and alarmTypeName != ''">#{alarmTypeName},</if>
+            <if test="algorithmCode != null and algorithmCode != ''">#{algorithmCode},</if>
+            <if test="creator != null and creator != ''">#{creator},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="modifier != null and modifier != ''">#{modifier},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="deleteFlag != null">#{deleteFlag},</if>
+            <if test="appVerCode != null and appVerCode != ''">#{appVerCode},</if>
+            <if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+            <if test="industryCode != null and industryCode != ''">#{industryCode},</if>
+        </trim>
+    </insert>
+
+    <!-- 批量新增场景告警关系表 -->
+    <insert id="insertSysSceneAlarmRelBatch" parameterType="java.util.List">
+        INSERT INTO sys_scene_alarm_rel
+        (scene_id, alarm_type, alarm_type_name, algorithm_code, creator, create_time, delete_flag, app_ver_code, tenant_id, industry_code)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.sceneId}, #{item.alarmType}, #{item.alarmTypeName}, #{item.algorithmCode}, 
+             #{item.creator}, NOW(), 0, #{item.appVerCode}, #{item.tenantId}, #{item.industryCode})
+        </foreach>
+    </insert>
+
+    <!-- 修改场景告警关系表 -->
+    <update id="updateSysSceneAlarmRel" parameterType="com.chinatower.algorithm.dataobject.SysSceneAlarmRelDO">
+        UPDATE sys_scene_alarm_rel
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="sceneId != null and sceneId != ''">scene_id = #{sceneId},</if>
+            <if test="alarmType != null and alarmType != ''">alarm_type = #{alarmType},</if>
+            <if test="alarmTypeName != null and alarmTypeName != ''">alarm_type_name = #{alarmTypeName},</if>
+            <if test="algorithmCode != null and algorithmCode != ''">algorithm_code = #{algorithmCode},</if>
+            <if test="modifier != null and modifier != ''">modifier = #{modifier},</if>
+            <if test="updateTime != null">update_time = NOW(),</if>
+        </trim>
+        WHERE id = #{id} AND tenant_id = #{tenantId} AND industry_code = #{industryCode} AND delete_flag = 0
+    </update>
+
+    <!-- 删除场景告警关系表（逻辑删除） -->
+    <update id="deleteSysSceneAlarmRelById" parameterType="Long">
+        UPDATE sys_scene_alarm_rel SET delete_flag = 1 WHERE id = #{id}
+    </update>
+
+    <!-- 批量删除场景告警关系表（逻辑删除） -->
+    <update id="deleteSysSceneAlarmRelByIds" parameterType="Long">
+        UPDATE sys_scene_alarm_rel SET delete_flag = 1 WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 根据场景ID删除场景告警关系表（逻辑删除） -->
+    <update id="deleteSysSceneAlarmRelBySceneId">
+        UPDATE sys_scene_alarm_rel 
+        SET delete_flag = 1 
+        WHERE scene_id = #{sceneId}
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND delete_flag = 0
+    </update>
+
+    <!-- ========== 关联查询（返回SysSceneAlarmDO，包含场景和告警信息） ========== -->
+
+    <!-- 查询场景告警关系表列表（关联查询两张表） -->
+    <select id="selectSysSceneAlarmList" parameterType="com.chinatower.algorithm.dataobject.SysSceneAlarmQueryDTO" resultMap="BaseResultMap">
+        SELECT
+            rel.id,
+            rel.scene_id,
+            config.scene_name,
+            rel.alarm_type,
+            rel.alarm_type_name,
+            rel.algorithm_code,
+            rel.creator,
+            rel.create_time,
+            rel.modifier,
+            rel.update_time,
+            rel.delete_flag,
+            rel.app_ver_code,
+            rel.tenant_id,
+            rel.industry_code
+        FROM sys_scene_alarm_rel rel
+        INNER JOIN sys_scene_config config ON rel.scene_id = config.scene_id AND config.delete_flag = 0
+        WHERE rel.delete_flag = 0
+        <if test="tenantId != null and tenantId != ''">
+            AND rel.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND rel.industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND rel.app_ver_code = #{appVerCode}
+        </if>
+        <if test="sceneId != null and sceneId != ''">
+            AND rel.scene_id = #{sceneId}
+        </if>
+        <if test="sceneName != null and sceneName != ''">
+            AND config.scene_name LIKE CONCAT('%', #{sceneName}, '%')
+        </if>
+        <if test="alarmTypeList != null and alarmTypeList.size() > 0">
+            AND rel.alarm_type IN
+            <foreach collection="alarmTypeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="alarmTypeName != null and alarmTypeName != ''">
+            AND rel.alarm_type_name LIKE CONCAT('%', #{alarmTypeName}, '%')
+        </if>
+        <if test="algorithmCode != null and algorithmCode != ''">
+            AND rel.algorithm_code = #{algorithmCode}
+        </if>
+        ORDER BY rel.create_time DESC
+    </select>
+
+    <!-- 查询场景告警关系表列表（支持分页和alarmType列表，关联查询两张表） -->
+    <select id="selectSysSceneAlarmListWithPage" parameterType="com.chinatower.algorithm.dataobject.SysSceneAlarmQueryDTO" resultMap="BaseResultMap">
+        SELECT
+            rel.id,
+            rel.scene_id,
+            config.scene_name,
+            rel.alarm_type,
+            rel.alarm_type_name,
+            rel.algorithm_code,
+            rel.creator,
+            rel.create_time,
+            rel.modifier,
+            rel.update_time,
+            rel.delete_flag,
+            rel.app_ver_code,
+            rel.tenant_id,
+            rel.industry_code
+        FROM sys_scene_alarm_rel rel
+        INNER JOIN sys_scene_config config ON rel.scene_id = config.scene_id AND config.delete_flag = 0
+        WHERE rel.delete_flag = 0
+        <if test="tenantId != null and tenantId != ''">
+            AND rel.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND rel.industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND rel.app_ver_code = #{appVerCode}
+        </if>
+        <if test="sceneId != null and sceneId != ''">
+            AND rel.scene_id = #{sceneId}
+        </if>
+        <if test="sceneName != null and sceneName != ''">
+            AND config.scene_name LIKE CONCAT('%', #{sceneName}, '%')
+        </if>
+        <if test="alarmTypeList != null and alarmTypeList.size() > 0">
+            AND rel.alarm_type IN
+            <foreach collection="alarmTypeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="alarmTypeName != null and alarmTypeName != ''">
+            AND rel.alarm_type_name LIKE CONCAT('%', #{alarmTypeName}, '%')
+        </if>
+        <if test="algorithmCode != null and algorithmCode != ''">
+            AND rel.algorithm_code = #{algorithmCode}
+        </if>
+        ORDER BY rel.create_time DESC
+    </select>
+
+    <!-- 查询场景告警关系表列表（用于树状结构，使用collection构建树，支持分页） -->
+    <!-- 如果传入alarmTypeList，先找到包含这些告警类型的场景，然后返回这些场景下的所有告警类型 -->
+    <select id="selectSysSceneAlarmListForTree" parameterType="com.chinatower.algorithm.dataobject.SysSceneAlarmQueryDTO" resultMap="SceneAlarmTreeResultMap">
+        SELECT
+            config.id,
+            config.scene_id,
+            config.scene_name,
+            config.algorithm_code,
+            rel.id AS rel_id,
+            rel.alarm_type,
+            rel.alarm_type_name
+        FROM sys_scene_config config
+        INNER JOIN sys_scene_alarm_rel rel ON rel.scene_id = config.scene_id AND rel.delete_flag = 0
+        WHERE config.delete_flag = 0
+        AND rel.alarm_type IS NOT NULL
+        AND rel.alarm_type != ''
+        AND rel.tenant_id = #{tenantId}
+        AND rel.industry_code = #{industryCode}
+        <if test="appVerCode != null and appVerCode != ''">
+            AND config.app_ver_code = #{appVerCode}
+            AND rel.app_ver_code = #{appVerCode}
+        </if>
+        <if test="sceneId != null and sceneId != ''">
+            AND config.scene_id = #{sceneId}
+        </if>
+        <if test="sceneName != null and sceneName != ''">
+            AND config.scene_name LIKE CONCAT('%', #{sceneName}, '%')
+        </if>
+        <if test="alarmTypeList != null and alarmTypeList.size() > 0">
+            <!-- 如果传入了alarmTypeList，先找到包含这些告警类型的场景，然后查询这些场景下的所有告警类型 -->
+            AND config.scene_id IN (
+                SELECT DISTINCT r.scene_id
+                FROM sys_scene_alarm_rel r
+                WHERE r.delete_flag = 0
+                AND r.alarm_type IS NOT NULL
+                AND r.alarm_type != ''
+                AND r.tenant_id = #{tenantId}
+                AND r.industry_code = #{industryCode}
+                AND r.alarm_type IN
+                <foreach collection="alarmTypeList" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            )
+        </if>
+        <if test="alarmTypeName != null and alarmTypeName != ''">
+            AND rel.alarm_type_name LIKE CONCAT('%', #{alarmTypeName}, '%')
+        </if>
+        <if test="algorithmCode != null and algorithmCode != ''">
+            AND config.algorithm_code = #{algorithmCode}
+        </if>
+        ORDER BY config.create_time DESC
+    </select>
+
+    <!-- ========== 其他查询方法 ========== -->
+
+    <!-- 根据告警名称查询某客户行业下的配置了场景的告警类型 -->
+    <select id="selectAlarmTypesByName" resultType="com.chinatower.algorithm.dataobject.AlarmTypeVO">
+        SELECT DISTINCT
+        rel.alarm_type AS typeValue,
+        rel.alarm_type_name AS typeName
+        from sys_scene_config config
+        LEFT JOIN sys_scene_alarm_rel rel ON rel.scene_id = config.scene_id
+        WHERE rel.delete_flag = 0
+        AND config.delete_flag = 0
+        AND rel.alarm_type IS NOT NULL
+        AND rel.tenant_id = #{tenantId}
+        AND rel.industry_code = #{industryCode}
+        <if test="alarmTypeName != null and alarmTypeName != ''">
+            AND sat.type_name LIKE CONCAT('%', #{alarmTypeName}, '%')
+        </if>
+        <if test="algorithmCode != null and algorithmCode != ''">
+            AND config.algorithm_code = #{algorithmCode}
+        </if>
+        ORDER BY rel.alarm_type_name
+    </select>
+
+    <!-- 根据场景名称查询某客户行业下的场景（从场景配置表查询） -->
+    <select id="selectScenesByName" resultType="com.chinatower.algorithm.dataobject.SceneVO">
+        SELECT DISTINCT
+            scene_id AS sceneId,
+            scene_name AS sceneName
+        FROM sys_scene_config
+        WHERE delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        <if test="sceneName != null and sceneName != ''">
+            AND scene_name LIKE CONCAT('%', #{sceneName}, '%')
+        </if>
+        <if test="algorithmCode != null and algorithmCode != ''">
+            AND algorithm_code = #{algorithmCode}
+        </if>
+        ORDER BY scene_name
+    </select>
+
+    <!-- 查询当前用户包含的大模型算法列表 -->
+    <select id="selectModelAlgorithms" resultType="com.chinatower.algorithm.dataobject.ModelAlgorithmVO">
+        SELECT DISTINCT
+            algorithm_code AS algorithmCode,
+            algorithm_name AS algorithmName
+        FROM vm_order_algorithms
+        WHERE delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        <if test="algorithmCodeList != null and algorithmCodeList.size() > 0">
+            AND algorithm_code IN
+            <foreach collection="algorithmCodeList" item="algorithmCode" open="(" separator="," close=")">
+                #{algorithmCode}
+            </foreach>
+        </if>
+        ORDER BY algorithm_code
+    </select>
+
+    <!-- 根据算法编码查询场景列表（用于树状结构，从场景配置表查询） -->
+    <select id="selectScenesByAlgorithmCode" resultType="com.chinatower.algorithm.dataobject.SceneTreeVO">
+        SELECT DISTINCT
+            scene_id AS sceneId,
+            scene_name AS sceneName,
+            algorithm_code AS algorithmCode
+        FROM sys_scene_config
+        WHERE delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        <if test="algorithmCode != null and algorithmCode != ''">
+            AND algorithm_code = #{algorithmCode}
+        </if>
+        ORDER BY scene_name
+    </select>
+
+    <!-- 根据场景ID列表查询告警类型（用于树状结构，从关系表查询） -->
+    <select id="selectAlarmTypesBySceneIds" resultType="com.chinatower.algorithm.dataobject.AlarmTypeVO">
+        SELECT DISTINCT
+            NULL AS alarmTypeId,
+            alarm_type AS typeValue,
+            alarm_type_name AS typeName,
+            NULL AS icon
+        FROM sys_scene_alarm_rel
+        WHERE delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        <if test="sceneIds != null and sceneIds.size() > 0">
+            AND scene_id IN
+            <foreach collection="sceneIds" item="sceneId" open="(" separator="," close=")">
+                #{sceneId}
+            </foreach>
+        </if>
+        ORDER BY alarm_type, alarm_type_name
+    </select>
+
+    <!-- 根据算法编码查询场景告警树状结构（使用collection构建树，无需内存拼接） -->
+    <select id="selectSceneTreeByAlgorithmCode" resultMap="SceneTreeResultMap">
+        SELECT
+            config.scene_id,
+            config.scene_name,
+            config.algorithm_code,
+            NULL AS alarm_type_id,
+            rel.alarm_type,
+            rel.alarm_type_name,
+            NULL AS icon
+        FROM sys_scene_config config
+        INNER JOIN sys_scene_alarm_rel rel ON rel.scene_id = config.scene_id AND rel.delete_flag = 0
+        WHERE config.delete_flag = 0
+        AND rel.alarm_type IS NOT NULL
+        AND rel.alarm_type != ''
+        <if test="algorithmCode != null and algorithmCode != ''">
+            AND config.algorithm_code = #{algorithmCode}
+        </if>
+        ${dataScope}
+        ORDER BY config.scene_name, rel.alarm_type_name
+    </select>
+
+    <!-- 检查场景是否在算法配置表中使用 -->
+    <select id="countAlgorithmConfigBySceneId" resultType="int">
+        SELECT COUNT(1)
+        FROM vm_algorithm_config
+        WHERE delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND scene_code IS NOT NULL
+        AND scene_code != ''
+        AND FIND_IN_SET(#{sceneId}, scene_code) > 0
+    </select>
+
+    <!-- 判断场景ID是否在算法配置表的scene_code字段中 -->
+    <select id="countSceneInAlgorithmConfig" resultType="int">
+        SELECT COUNT(1)
+        FROM vm_algorithm_config
+        WHERE delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND scene_code IS NOT NULL
+        AND scene_code != ''
+        AND FIND_IN_SET(#{sceneId}, scene_code) > 0
+    </select>
+
+    <!-- ========== 告警类型表（sys_alarm_type）操作 ========== -->
+
+    <!-- 根据type_value和alarm_source查询告警类型 -->
+    <select id="selectAlarmTypeByTypeValue" resultType="com.chinatower.algorithm.dataobject.SysAlarmTypeDO">
+        SELECT
+            alarm_type_id,
+            alarm_type_class_id,
+            type_name,
+            type_value,
+            type_code,
+            alarm_source,
+            tenantor,
+            source,
+            if_free,
+            creator,
+            create_time,
+            modifier,
+            update_time,
+            delete_flag,
+            icon,
+            app_ver_code,
+            tenant_id,
+            industry_code
+        FROM sys_alarm_type
+        WHERE type_value = #{typeValue}
+        AND alarm_source = #{alarmSource}
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND delete_flag = 0
+        LIMIT 1
+    </select>
+
+    <!-- 新增告警类型 -->
+    <insert id="insertAlarmType" parameterType="com.chinatower.algorithm.dataobject.SysAlarmTypeDO" useGeneratedKeys="true" keyProperty="alarmTypeId">
+        INSERT INTO sys_alarm_type
+        (alarm_source, type_value, type_name, source, delete_flag, creator, create_time, tenant_id, industry_code, app_ver_code, icon)
+        VALUES
+        (#{alarmSource}, #{typeValue}, #{typeName}, #{source}, #{deleteFlag}, #{creator}, #{createTime}, #{tenantId}, #{industryCode}, #{appVerCode}, #{icon})
+    </insert>
+
+    <!-- 批量新增告警类型 -->
+    <insert id="insertAlarmTypeBatch" parameterType="java.util.List">
+        INSERT INTO sys_alarm_type
+        (alarm_source, type_value, type_name, source, delete_flag, creator, create_time, tenant_id, industry_code, icon)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.alarmSource}, #{item.typeValue}, #{item.typeName}, #{item.source}, #{item.deleteFlag},
+             #{item.creator}, #{item.createTime}, #{item.tenantId}, #{item.industryCode}, #{item.icon})
+        </foreach>
+    </insert>
+
+    <!-- 更新告警类型 -->
+    <update id="updateAlarmType" parameterType="com.chinatower.algorithm.dataobject.SysAlarmTypeDO">
+        UPDATE sys_alarm_type
+        SET type_name = #{typeName},
+            modifier = #{modifier},
+            update_time = #{updateTime},
+            icon = #{icon}
+        WHERE alarm_type_id = #{alarmTypeId}
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND delete_flag = 0
+    </update>
+
+    <!-- 根据type_value和source物理删除告警类型 -->
+    <delete id="deleteAlarmTypeByTypeValue">
+        UPDATE sys_alarm_type
+        SET delete_flag = 1
+        WHERE type_value = #{typeValue}
+        AND source = #{source}
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+    </delete>
+
+    <!-- 检查场景名称是否已存在（排除指定sceneId） -->
+    <select id="countSceneNameExists" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_scene_config
+        WHERE delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND scene_name = #{sceneName}
+        <if test="sceneId != null and sceneId != ''">
+            AND scene_id != #{sceneId}
+        </if>
+    </select>
+
+    <!-- 检查场景名称是否与告警类型名称重复 -->
+    <select id="checkSceneNameConflictWithAlarmType" resultType="String">
+        SELECT DISTINCT type_name
+        FROM sys_alarm_type
+        WHERE delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND type_name = #{sceneName}
+    </select>
+
+    <!-- 检查 sys_scene_config 表中是否有有效数据 -->
+    <select id="countSceneConfigExists" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_scene_config
+        WHERE delete_flag = 0
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND algorithm_code = #{algorithmCode}
+    </select>
+
+    <!-- 从 vm_algorithm_info_t 表中查询 model_config 字段 -->
+    <select id="selectModelConfigFromAlgorithmInfo" resultType="String">
+        SELECT model_config
+        FROM vm_algorithm_info_t
+        WHERE delete_flag = 0
+        AND algorithm_code = #{algorithmCode}
+        LIMIT 1
+    </select>
+
+    <!-- 根据字典值中的算法编码列表，查询vm_order_algorithms表中的行业和版本数据 -->
+    <select id="selectOrderAlgorithmsByAlgorithmCodes" resultType="com.chinatower.algorithm.dataobject.OrderAlgorithmDTO">
+        SELECT DISTINCT
+            tenant_id AS tenantId,
+            industry_code AS industryCode,
+            algorithm_code AS algorithmCode
+        FROM vm_order_algorithms
+        WHERE delete_flag = 0
+        AND ord_status IN (0, 1, 2)
+        <if test="algorithmCodeList != null and algorithmCodeList.size() > 0">
+            AND algorithm_code IN
+            <foreach collection="algorithmCodeList" item="algorithmCode" open="(" separator="," close=")">
+                #{algorithmCode}
+            </foreach>
+        </if>
+        ORDER BY tenant_id, industry_code, algorithm_code
+    </select>
+
+    <!-- 根据字典类型查询字典值列表 -->
+    <select id="selectDictValuesByType" resultType="String">
+        SELECT dict_value
+        FROM sys_dict_data
+        WHERE status = '0'
+        AND dict_type = #{dictType}
+        ORDER BY dict_sort ASC
+    </select>
+
+    <select id="getLargeModelAlgorithms" resultType="java.lang.String">
+        SELECT DISTINCT
+            algorithm_code
+        FROM
+            vm_algorithm_info_t
+        WHERE
+            delete_flag = '0'
+          AND algorithm_model_type = '2'
+    </select>
+
+    <select id="getDictDataByType" resultType="com.chinatower.platform.entity.admin.SysDictData">
+        SELECT dict_value,DICT_LABEL
+        FROM sys_dict_data
+        WHERE status = '0'
+          AND dict_type = #{dictType}
+        ORDER BY dict_sort ASC
+    </select>
+</mapper>

@@ -1,0 +1,606 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.WarningInterceptMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.WarningInterceptDO">
+        <result column="id" property="id" />
+        <result column="task_id" property="taskId" />
+        <result column="warning_type_id" property="warningTypeId" />
+        <result column="alarm_time" property="alarmTime" />
+        <result column="province_code" property="provinceCode" />
+        <result column="city_code" property="cityCode" />
+        <result column="county_code" property="countyCode" />
+        <result column="longitude" property="longitude" />
+        <result column="latitude" property="latitude" />
+        <result column="alarm_body" property="alarmBody" />
+        <result column="channel_code" property="channelCode" />
+        <result column="channel_name" property="channelName" />
+        <result column="device_code" property="deviceCode" />
+        <result column="device_name" property="deviceName" />
+        <result column="ptz_p" property="ptzP" />
+        <result column="ptz_t" property="ptzT" />
+        <result column="ptz_z" property="ptzZ" />
+        <result column="alarm_code" property="alarmCode" />
+        <result column="algorithm_code" property="algorithmCode" />
+        <result column="customer_code" property="customerCode" />
+        <result column="video_url" property="videoUrl" />
+        <result column="file_img_url_src" property="fileImgUrlSrc" />
+        <result column="file_img_url_icon" property="fileImgUrlIcon" />
+        <result column="create_time" property="createTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="importance_level" property="importanceLevel" />
+        <result column="intercept" property="intercept" />
+        <result column="prevAlarmTime" property="prevAlarmTime" />
+        <result column="this_thresh" property="thisThresh" />
+        <result column="thresh" property="thresh" />
+        <result column="alarmInterval" property="alarmInterval" />
+        <result column="alarmInterval_type" property="alarmintervalType" />
+        <result column="algorithm_time" property="algorithmTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, task_id, warning_type_id, alarm_time, province_code, city_code, county_code, longitude, latitude, alarm_body, channel_code, channel_name, device_code, device_name, ptz_p, ptz_t, ptz_z, alarm_code, algorithm_code, customer_code, video_url, file_img_url_src, file_img_url_icon, create_time, delete_flag, importance_level, intercept, prevAlarmTime, this_thresh, thresh, alarmInterval, alarmInterval_type, algorithm_time
+    </sql>
+
+    <!-- 封装查询参数 -->
+    <sql id="searchField">
+        dataTable.alarm_body AS alarmBody,
+        dataTable.warning_order_id AS warningOrderId,
+        dataTable.warning_source as warningSource,
+        dataTable.warning_type_id AS warningTypeId,
+        IFNULL(DATE_FORMAT(dataTable.alarm_time,'%Y-%m-%d %H:%i:%S'),'') AS alarmTime,
+        dataTable.longitude,
+        dataTable.latitude,
+        dataTable.file_img_url_src AS imgUrl,
+        dataTable.file_img_url_icon AS fileImgUrlIcon,
+        dataTable.emergency_level AS emergencyLevel,
+        dataTable.importance_level AS importanceLevel,
+        dataTable.tenant_id AS tenantId,
+        dataTable.tenant_name AS tenantName,
+        dataTable.province_code as provinceCode,
+        dataTable.province_name as provinceName,
+        dataTable.city_code as cityCode,
+        dataTable.city_name as cityName,
+        dataTable.device_name AS deviceName,
+        dataTable.channel_name AS channelName,
+        dataTable.device_code as deviceCode,
+        dataTable.channel_code AS channelCode,
+        dataTable.address,
+        dataTable.notice_resource as noticeResource,
+        dataTable.is_second_judge as isSecondJudge,
+        dataTable.second_judge_result as secondJudgeResult,
+        IFNULL(dataTable.confidence_level,'') as confidenceLevel,
+        dataTable.front_alarm_pic_url as frontAlarmPicUrl,
+        IFNULL(dataTable.comp_confidence_level,'') as compConfidenceLevel,
+        dataTable.intercept as intercept,
+        dataTable.extra_field as extraField
+    </sql>
+
+    <!-- 封装告警列表查询条件 -->
+    <sql id="queryOrderList">
+        WHERE dataTable.delete_flag = '0' AND dataTable.judge_result IS NULL
+        <!-- APP搜索用 -->
+        <if test='param.keyword != null and param.keyword != ""'>
+            AND (dataTable.warning_order_id like concat('%',#{param.keyword,jdbcType=VARCHAR},'%') OR dataTable.alarm_body like concat('%',#{param.keyword,jdbcType=VARCHAR},'%'))
+        </if>
+        <if test='param.orderId != null and param.orderId != ""'>
+            AND dataTable.warning_order_id = #{param.orderId,jdbcType=VARCHAR}
+        </if>
+        <if test="param.warningOrderIds != null and param.warningOrderIds.size()>0 ">
+            and dataTable.warning_order_id in
+            <foreach collection="param.warningOrderIds" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.alarmBody != null and param.alarmBody != ""'>
+            AND dataTable.alarm_body like concat('%',#{param.alarmBody,jdbcType=VARCHAR},'%')
+        </if>
+        <if test='param.warningTypeId != null and param.warningTypeId !=""'>
+            AND dataTable.warning_type_id = #{param.warningTypeId,jdbcType=VARCHAR}
+        </if>
+        <if test='param.provinceId != null and param.provinceId != ""'>
+            and dataTable.province_code = #{param.provinceId}
+        </if>
+        <if test='param.cityId != null and param.cityId != ""'>
+            AND dataTable.city_code = #{param.cityId,jdbcType=VARCHAR}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND dataTable.county_code = #{param.countyId,jdbcType=VARCHAR}
+        </if>
+        <if test='param.emergencyLevel != null and param.emergencyLevel !=""'>
+            AND dataTable.emergency_level = #{param.emergencyLevel,jdbcType=VARCHAR}
+        </if>
+        <if test='param.alarmTimeStart != null and param.alarmTimeStart != ""'>
+            AND dataTable.alarm_time <![CDATA[>=]]> #{param.alarmTimeStart}
+        </if>
+        <if test='param.alarmTimeEnd != null and param.alarmTimeEnd != ""'>
+            AND dataTable.alarm_time <![CDATA[<=]]> #{param.alarmTimeEnd}
+        </if>
+        <if test="param.deviceCode != null and param.deviceCode.size()>0 ">
+            and dataTable.device_code in
+            <foreach collection="param.deviceCode" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.interceptList != null and param.interceptList.size()>0 ">
+            and dataTable.intercept in
+            <foreach collection="param.interceptList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.algorithmCodeList != null and param.algorithmCodeList.size()>0 ">
+            and dataTable.algorithm_code in
+            <foreach collection="param.algorithmCodeList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.deviceCodes != null and param.deviceCodes.size()>0 ">
+            and dataTable.device_code in
+            <foreach collection="param.deviceCodes" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.importanceLevel != null and param.importanceLevel != ""'>
+            AND dataTable.importance_level = #{param.importanceLevel}
+        </if>
+        <if test='param.tenantId != null and param.tenantId !=""'>
+            AND dataTable.tenant_id = #{param.tenantId,jdbcType=CHAR}
+        </if>
+        <if test='(param.confidenceLevelMin != null and param.confidenceLevelMin !="") or (param.confidenceLevelMax != null and param.confidenceLevelMax !="") '>
+            <!--AND dataTable.confidence_level_min <![CDATA[>=]]> #{param.confidenceLevel}-->
+            AND (((dataTable.comp_confidence_level is null or dataTable.comp_confidence_level = '')
+
+            <if test='param.confidenceLevelMin != null and param.confidenceLevelMin !=""'>
+                and  #{param.confidenceLevelMin}
+                <if test='param.maxChar != null and param.maxChar !="" and param.minChar == "100" '>
+                    <![CDATA[<]]>
+                </if>
+                <if test='param.maxChar != null and param.maxChar !="" and param.minChar == "101" '>
+                    <![CDATA[<=]]>
+                </if>
+                dataTable.confidence_level_max
+            </if>
+
+            <if test='param.confidenceLevelMax != null and param.confidenceLevelMax !=""'>
+                and dataTable.confidence_level_max
+                <if test='param.maxChar != null and param.maxChar !="" and param.maxChar == "100" '>
+                    <![CDATA[<]]>
+                </if>
+                <if test='param.maxChar != null and param.maxChar !="" and param.maxChar == "101" '>
+                    <![CDATA[<=]]>
+                </if>
+                #{param.confidenceLevelMax}
+            </if>
+            )
+            or
+            (
+            <if test='param.confidenceLevelMin != null and param.confidenceLevelMin !=""'>#{param.confidenceLevelMin}
+                <if test='param.maxChar != null and param.maxChar !="" and param.minChar == "100" '>
+                    <![CDATA[<]]>
+                </if>
+                <if test='param.maxChar != null and param.maxChar !="" and param.minChar == "101" '>
+                    <![CDATA[<=]]>
+                </if>
+                dataTable.comp_confidence_level
+            </if>
+            <if test='param.confidenceLevelMin != null and param.confidenceLevelMin !="" and param.confidenceLevelMax != null and param.confidenceLevelMax !=""'>
+                and
+            </if>
+            <if test='param.confidenceLevelMax != null and param.confidenceLevelMax !=""'>
+                dataTable.comp_confidence_level
+                <if test='param.maxChar != null and param.maxChar !="" and param.maxChar == "100" '>
+                    <![CDATA[<]]>
+                </if>
+                <if test='param.maxChar != null and param.maxChar !="" and param.maxChar == "101" '>
+                    <![CDATA[<=]]>
+                </if>
+                #{param.confidenceLevelMax}
+            </if>
+            and dataTable.comp_confidence_level is not null and dataTable.comp_confidence_level != '')
+            )
+        </if>
+        <if test='param.warningSource != null and param.warningSource != ""'>
+            and dataTable.warning_source = #{param.warningSource}
+        </if>
+        <if test="param.warningSourceList != null and param.warningSourceList.size()>0 ">
+            and dataTable.warning_source in
+            <foreach collection="param.warningSourceList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <!-- 方案 G V2.0：告警类型 ∧ 下游任务 -->
+        <include refid="com.chinatower.event.mapper.WarningOrderMapper.warningTypeIdFilter">
+            <property name="alias" value="dataTable"/>
+        </include>
+        <include refid="com.chinatower.event.mapper.WarningOrderMapper.subScenesOnlyFilter">
+            <property name="alias" value="dataTable"/>
+        </include>
+        <if test="param.devList != null and param.devList.size()>0 ">
+            and
+            <foreach collection="param.devList" item="item" index="index" open="(" close=")" separator="or">
+                dataTable.device_code = #{item.deviceCode}
+            </foreach>
+        </if>
+        <if test='param.orgIdList != null and param.orgIdList.size() > 0
+        and ((param.radarList != null and param.radarList.size() > 0) or (param.satelliteList != null and param.satelliteList.size() > 0) or (param.deviceCodeList != null and param.deviceCodeList.size() > 0))'>
+            and(
+            <if test='param.satelliteList != null and param.satelliteList.size() > 0'>
+                (dataTable.county_code in
+                <foreach collection="param.satelliteList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item.countyId}
+                </foreach>
+                and dataTable.warning_source = '9')
+                or
+            </if>
+            <if test='param.radarList != null and param.radarList.size() > 0'>
+                (dataTable.county_code in
+                <foreach collection="param.radarList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item.countyId}
+                </foreach>
+                and dataTable.warning_source = '10')
+                or
+            </if>
+            <if test='param.deviceCodeList != null and param.deviceCodeList.size() > 0'>
+                (dataTable.device_code in
+                <foreach collection="param.deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                and dataTable.warning_source in ('1','3','4','8','12'))
+            </if>
+            )
+        </if>
+        <if test='param.cameraAlarmType != null and param.cameraAlarmType != ""'>
+            and dataTable.camera_alarm_type = #{param.cameraAlarmType}
+        </if>
+        <if test='param.isSecondJudge != null and param.isSecondJudge != ""'>
+            and dataTable.is_second_judge = #{param.isSecondJudge} and dataTable.warning_source = '4'
+        </if>
+        <if test='param.secondJudgeResult != null and param.secondJudgeResult != ""'>
+            and dataTable.second_judge_result = #{param.secondJudgeResult}
+        </if>
+        <if test='param.isSecondIdentify != null and param.isSecondIdentify !=""'>
+            AND dataTable.is_second_identify = #{param.isSecondIdentify,jdbcType=CHAR}
+        </if>
+        <if test='param.secondIdentifyResult != null and param.secondIdentifyResult !=""'>
+            AND dataTable.second_identify_result = #{param.secondIdentifyResult,jdbcType=CHAR}
+        </if>
+        <if test="param.iotDeviceCode != null and param.iotDeviceCode.size()>0 ">
+            and dataTable.device_code in
+            <foreach collection="param.iotDeviceCode" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.alarmReasonList != null and param.alarmReasonList.size()>0 ">
+            and dataTable.alarm_reason in
+            <foreach collection="param.alarmReasonList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.enlargeFlag != null and param.enlargeFlag != ""'>
+            and (dataTable.enlarge_flag = #{param.enlargeFlag}
+            <if test='param.enlargeFlag == "0" '>
+                OR dataTable.enlarge_flag is null
+            </if>
+            )
+            AND dataTable.warning_source IN ('1', '4')
+        </if>
+        <if test='param.intercept != null and param.intercept != ""'>
+            and dataTable.intercept = #{param.intercept}
+        </if>
+    </sql>
+
+    <select id="getInterceptList" resultType="com.chinatower.event.entity.vo.InterceptVO" parameterType="com.chinatower.event.entity.dto.WarningInterceptDTO">
+        SELECT
+        <if test='param.userLongitude != null and param.userLongitude !="" and param.userLatitude != null and param.userLatitude !=""'>
+            ST_DISTANCE(POINT(#{param.userLongitude},#{param.userLatitude}),POINT(dataTable.longitude,dataTable.latitude))*111195 AS userDistance,
+        </if>
+        <include refid="searchField"/>
+        FROM vm_warning_intercept_t dataTable
+        <include refid="queryOrderList"/>
+        ${param.dataScope}
+        <choose>
+            <when test='param.sortFlag!= null and param.sortFlag!= "" and param.sortFlag =="1" and param.userLongitude != null and param.userLongitude !="" and param.userLatitude != null and param.userLatitude !=""'>
+                order by userDistance asc
+            </when>
+            <when test="param.sortName != null and param.sortName != ''">
+                <if test="param.sortName == 'alarmTime'">
+                    order by dataTable.alarm_time
+                </if>
+                <if test="param.sortName == 'auditTime'">
+                    order by dataTable.audit_time
+                </if>
+                <if test="param.sortName == 'applyTime'">
+                    order by dataTable.create_time
+                </if>
+                <if test="param.sortName == 'importanceLevel'">
+                    order by dataTable.importance_level
+                </if>
+                <if test="param.sort == 'desc'">
+                    desc,dataTable.alarm_time desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc,dataTable.alarm_time desc
+                </if>
+            </when>
+            <otherwise>
+                order by dataTable.alarm_time desc
+            </otherwise>
+        </choose>
+
+    </select>
+
+    <update id="updateInterceptImg" parameterType="java.util.Map">
+        update vm_warning_intercept_t
+        <set>
+            <if test='videoUrl != null and videoUrl != ""'>
+                video_url = #{videoUrl,jdbcType=VARCHAR},
+            </if>
+            <if test='fileImgUrlSrc != null and fileImgUrlSrc != ""'>
+                file_img_url_src = #{fileImgUrlSrc,jdbcType=VARCHAR},
+            </if>
+            <if test='fileImgUrlIcon != null and fileImgUrlIcon != ""'>
+                file_img_url_icon = #{fileImgUrlIcon,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where warning_order_id = #{warningOrderId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="getInterceptInfo" resultType="com.chinatower.event.entity.vo.InterceptVO">
+        SELECT
+        a.warning_order_id as warningOrderId,
+        a.warning_source as warningSource,
+        a.task_id as taskId,
+        a.emergency_level as emergencyLevel,
+        a.alarm_body AS alarmBody,
+        a.warning_order_id AS orderId,
+        a.warning_type_id AS warningTypeId,
+        IF(a.alarm_time IS NULL,'',DATE_FORMAT(a.alarm_time,'%Y-%m-%d %H:%i:%s')) as alarmTime,
+        IF(a.create_time IS NULL,'',DATE_FORMAT(a.create_time,'%Y-%m-%d %H:%i:%s')) as createTime,
+        a.province_code AS provinceId,
+        a.city_code AS cityId,
+        a.county_code AS countyId,
+        a.province_name as provinceName,
+        a.city_name as cityName,
+        a.county_name as countyName,
+        a.address,
+        a.longitude,
+        a.latitude,
+        a.tenant_id AS tenantId,
+        a.device_code AS deviceCode,
+        a.device_name AS deviceName,
+        a.channel_code AS channelCode,
+        a.channel_name AS channelName,
+        a.alarm_code AS alarmCode,
+        a.tenant_name AS tenantName,
+        IFNULL(a.video_url,'') as videoUrl,
+        IFNULL(a.file_img_url_src,'') as fileImgUrlSrc,
+        IFNULL(a.file_img_url_icon,'') as fileImgUrlIcon,
+        a.ptz_p as pan,
+        a.ptz_t as tilt,
+        a.ptz_z as zoom,
+        a.grid_id,
+        a.grid_code,
+        a.grid_name,
+        a.alarm_code as alarmCode,
+        a.algorithm_code as algorithmCode,
+        a.importance_level as importanceLevel,
+        a.industry_code as tradeId,
+        a.app_ver_code as tradeVerCode,
+        a.alarm_param as alarmParam,
+        a.alarm_param_value as alarmParamValue,
+        a.extra_field as extraField,
+        a.judge_result as judgeResult,
+        <if test='userId != null and userId != ""'>
+            case when co.warning_order_id is not null then '1' else '0' end isCollection,
+        </if>
+        a.notice_resource as noticeResource,
+        a.msg_type msgType,
+        IFNULL(a.confidence_level,'') as confidenceLevel,
+        a.confidence_level_min confidenceLevelMin,
+        a.confidence_level_max confidenceLevelMax,
+        a.comp_confidence_level compConfidenceLevel,
+        a.hori_azimuth_angle horiAzimuthAngle,
+        a.msg_id as msgId,
+        a.front_alarm_pic_url frontAlarmPicUrl,
+        a.front_alarm_vedio_url frontAlarmVedioUrl,
+        a.camera_alarm_type as cameraAlarmType,
+        a.is_second_judge as isSecondJudge,
+        a.second_judge_result as secondJudgeResult,
+        a.is_second_identify as isSecondIdentify,
+        a.second_identify_result as secondIdentifyResult,
+        a.linkage_algorithm as linkageAlgorithm,
+        a.app_ver_code as applicationCode,
+        a.intercept as intercept,
+        a.flow_id as flowId,
+        a.preset_id as presetId,
+        a.delete_flag as deleteFlag,
+        a.alarm_reason as alarmReason,
+        a.device_pitch as devicePitch,
+        a.device_horizontal as deviceHorizontal,
+        a.enlarge_flag AS enlargeFlag,
+        a.transparent_fields AS transparentFields,
+        a.pitch_angle AS pitchAngle,
+        a.hori_field_angle AS horiFieldAngle,
+        a.vertical_field_angle AS verticalFieldAngle
+        FROM vm_warning_intercept_t a
+        <if test='userId != null and userId != ""'>
+            LEFT JOIN (select cot.warning_order_id from vm_warning_order_collection_t cot
+            where cot.collection_creator = #{userId} and cot.delete_flag = '0' and cot.warning_order_id=#{orderId,jdbcType=VARCHAR} ) as co on co.warning_order_id = a.warning_order_id
+        </if>
+        WHERE a.warning_order_id = #{orderId,jdbcType=VARCHAR}
+    </select>
+
+    <update id="updateIntercept" parameterType="com.chinatower.event.dto.InterceptDTO">
+        update vm_warning_intercept_t
+        <set>
+            modifier_date = now(),
+            <if test='id != null and id !=""'>
+                id = #{id,jdbcType=VARCHAR},
+            </if>
+            <if test='warningTypeId != null and warningTypeId !=""'>
+                warning_type_id = #{warningTypeId,jdbcType=VARCHAR},
+            </if>
+            <if test='emergencyLevel != null and emergencyLevel != ""'>
+                emergency_level = #{emergencyLevel,jdbcType=VARCHAR},
+            </if>
+            <if test='longitude != null and longitude != ""'>
+                longitude = #{longitude,jdbcType=VARCHAR},
+            </if>
+            <if test='latitude != null and latitude != ""'>
+                latitude = #{latitude,jdbcType=VARCHAR},
+            </if>
+            <if test='address != null and address != ""'>
+                address = #{address,jdbcType=VARCHAR},
+            </if>
+            <if test='judgeResult != null and judgeResult != ""'>
+                judge_result = #{judgeResult,jdbcType=VARCHAR},
+            </if>
+            <if test='provinceCode != null and provinceCode != ""'>
+                province_code = #{provinceCode,jdbcType=VARCHAR},
+            </if>
+            <if test='provinceName != null and provinceName != ""'>
+                province_name = #{provinceName,jdbcType=VARCHAR},
+            </if>
+            <if test='cityCode != null and cityCode != ""'>
+                city_code = #{cityCode,jdbcType=VARCHAR},
+            </if>
+            <if test='cityName != null and cityName != ""'>
+                city_name = #{cityName,jdbcType=VARCHAR},
+            </if>
+            <if test='countyCode != null and countyCode != ""'>
+                county_code = #{countyCode,jdbcType=VARCHAR},
+            </if>
+            <if test='countyName != null and countyName != ""'>
+                county_name = #{countyName,jdbcType=VARCHAR},
+            </if>
+            <if test='horiAzimuthAngle != null and horiAzimuthAngle != ""'>
+                hori_azimuth_angle = #{horiAzimuthAngle},
+            </if>
+            <if test='checkGridFlag != null and checkGridFlag == "1"'>
+                grid_id = #{gridId},
+            </if>
+            <if test='checkGridFlag != null and checkGridFlag == "1"'>
+                grid_name = #{gridName},
+            </if>
+            <if test='importanceLevel != null and importanceLevel != ""'>
+                importance_level = #{importanceLevel},
+            </if>
+        </set>
+        where warning_order_id = #{orderId,jdbcType=VARCHAR}
+    </update>
+
+    <resultMap id="BaseFlowResultMap" type="com.chinatower.event.vo.FlowTemplateVO" >
+        <id column="templateId" property="templateId" jdbcType="VARCHAR" />
+        <result column="templateName" property="templateName" jdbcType="VARCHAR" />
+        <result column="templateType" property="templateType" jdbcType="CHAR" />
+        <result column="templateRemark" property="templateRemark" jdbcType="VARCHAR" />
+        <result column="flow" property="flow" jdbcType="VARCHAR" />
+        <result column="createUser" property="createUser" jdbcType="VARCHAR" />
+        <result column="createTime" property="createTime" jdbcType="DATE" />
+        <result column="updateTime" property="updateTime" jdbcType="DATE" />
+        <result column="delete_flag" property="deleteFlag" jdbcType="CHAR" />
+        <result column="if_default" property="ifDefault" jdbcType="CHAR" />
+    </resultMap>
+    <sql id="Base_Column_flow_List" >
+    f.templateId, f.templateName, f.templateType, f.templateRemark, f.flow, f.createUser, f.createTime,
+    f.updateTime, f.delete_flag, f.if_default
+    </sql>
+    <select id="getTemplateInfo" resultMap="BaseFlowResultMap" parameterType="com.chinatower.event.vo.FlowTemplateVO" >
+        SELECT
+        <include refid="Base_Column_flow_List" />
+        FROM
+        sys_flow_template f
+        LEFT JOIN sys_alarm_class_template ct on ct.template_id = f.templateId
+        LEFT JOIN sys_alarm_type a ON a.alarm_type_id = ct.alarm_type_id AND a.delete_flag = '0'
+        WHERE  f.delete_flag = '1'
+        AND a.type_value = #{typeValue}
+        AND f.templateType = #{templateType}
+        AND ct.tenant_id = #{tenantId}
+        AND ct.event_level = #{eventLevelCode}
+    </select>
+
+    <select id="getOrganDevice" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT
+            t.org_id
+        FROM
+            vm_organ_device_rel_t t
+        WHERE
+            delete_flag = '0'
+        AND t.tenant_id = #{tenantId}
+        AND t.device_code = #{deviceCode} ORDER BY CHAR_LENGTH(t.org_id) DESC;
+    </select>
+
+    <select id="getUserByOrg" parameterType="java.lang.String" resultType="com.chinatower.event.vo.UsersVO">
+        SELECT
+        t.user_id,
+        t.user_name,
+        t.user_account,
+        t.org_id
+        FROM
+        vm_userinfo_t t
+        LEFT JOIN vm_user_role_rel_t ur ON t.user_id = ur.user_id
+        WHERE ur.role_id = '6'
+        <if test="orgIdList != null and orgIdList.size() > 0 ">
+            AND t.org_id IN
+            <foreach collection="orgIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        ORDER BY CHAR_LENGTH(t.org_id) DESC;
+    </select>
+
+    <select id="getUUID" resultType="String" flushCache="true">
+        select UUID_SHORT()
+    </select>
+
+    <select id="getTimeLimitByInfo" resultType="java.util.HashMap"  parameterType="com.chinatower.common.core.vo.AlarmClassTimeVO" >
+        SELECT
+        t.process_link AS processLink,
+        t.time_limit AS timeLimit
+        FROM
+        sys_alarm_class_time t
+        LEFT JOIN sys_alarm_type  a on a.alarm_type_id = t.alarm_type_id AND a.delete_flag = '0'
+        WHERE
+        a.type_value = #{typeValue}
+        AND t.tenant_id = #{tenantId}
+        <if test="processLink != null and processLink != ''">
+            AND t.process_link = #{processLink}
+        </if>
+
+    </select>
+
+    <insert id="insertInterceptAlarm" parameterType="java.util.List">
+
+        INSERT INTO `vm_warning_intercept_t` (
+        id, warning_order_id, task_id, warning_type_id, alarm_time, tenant_id, tenant_name, province_code, province_name, city_code,
+        city_name, county_code, county_name, longitude, latitude, alarm_body, channel_code, channel_name, device_code, device_name,
+        ptz_p, ptz_t, ptz_z, address, alarm_code, algorithm_code, emergency_level, customer_code, grid_id, grid_code, grid_name, video_url,
+        file_img_url_src, file_img_url_icon, judge_result, create_time, modifier_date, delete_flag, importance_level, intercept, prevAlarmTime,
+        this_thresh, thresh, alarmInterval, alarmInterval_type, algorithm_time,industry_code,app_ver_code, alarm_param, alarm_param_value, extra_field, hori_azimuth_angle,
+        confidence_level,confidence_level_min,confidence_level_max,comp_confidence_level,warning_source ,msg_type,
+        msg_id,notice_resource,front_alarm_pic_url,front_alarm_vedio_url,preset_id,camera_alarm_type,is_second_judge,second_judge_result,town_code,town_name,enlarge_flag,device_pitch,device_horizontal,is_second_identify
+        )
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (UUID_SHORT(),#{item.warningOrderId},#{item.taskId}, #{item.warningTypeId}, #{item.alarmTime}, #{item.tenantId},#{item.tenantName}, #{item.provinceCode}, #{item.provinceName}, #{item.cityCode},
+            #{item.cityName}, #{item.countyCode},#{item.countyName}, #{item.longitude},#{item.latitude}, #{item.alarmBody}, #{item.channelCode}, #{item.channelName}, #{item.deviceCode}, #{item.deviceName},
+            #{item.pan}, #{item.tilt}, #{item.zoom},#{item.address}, #{item.alarmCode},#{item.algorithmCode},#{item.emergencyLevel},#{item.tenantId},#{item.gridId},'',#{item.gridName}, #{item.alarmVideoUrl},
+            #{item.originalPictureUrl}, #{item.alarmPictureUrl},null,NOW(),NOW(),'0', #{item.importanceLevel}, #{item.intercept},#{item.prevAlarmTime},
+            #{item.thresh},#{item.nowThresh},#{item.alarmInterval},#{item.alarmIntervalType},#{item.algorithmTime},#{item.industryCode},#{item.appVerCode},#{item.alarmParam},#{item.alarmParamValue},#{item.extraField},#{item.horiAzimuthAngle},
+            #{item.confidenceLevel},#{item.confidenceLevelMin},#{item.confidenceLevelMax},#{item.compConfidenceLevel},#{item.warningSource},
+            #{item.msgType}
+            <choose>
+                <when test='item.extraInfo != null and item.extraInfo != ""'>
+                    ,#{item.extraInfo.msgId},#{item.extraInfo.noticeResource},#{item.extraInfo.frontAlarmPicUrl},#{item.extraInfo.frontAlarmVedioUrl},#{item.extraInfo.presetId}
+                </when>
+                <otherwise>
+                    ,null,null,null,null,null
+                </otherwise>
+            </choose>
+            ,#{item.cameraAlarmType},#{item.isSecondJudge},#{item.secondJudgeResult},#{item.townCode},#{item.townName},#{item.enlargeFlag},#{item.devicePitch},#{item.horiAzimuthAngle},#{item.isSecondIdentify}
+            )
+        </foreach>
+    </insert>
+</mapper>

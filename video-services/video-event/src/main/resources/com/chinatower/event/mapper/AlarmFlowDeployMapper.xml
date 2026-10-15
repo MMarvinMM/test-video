@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.AlarmFlowDeployMapper">
+
+	<resultMap type="com.chinatower.event.dto.FlowTemplateDTO" id="FlowTemplateResult">
+		<id property="templateId" column="template_id"/>
+		<result property="tenantId" column="tenant_id"/>
+		<result property="flowName" column="flow_name"/>
+		<result property="flowJson" column="flow_json"/>
+		<result property="flowType" column="flow_type"/>
+		<result property="initSource" column="init_source"/>
+		<result property="createTime" column="create_time"/>
+		<result property="updateTime" column="update_time"/>
+		<result property="status" column="status"/>
+		<result property="deleteFlag" column="delete_flag"/>
+		<result property="creator" column="creator"/>
+		<result property="modifier" column="modifier"/>
+		<result property="appVerCode" column="app_ver_code"/>
+		<result property="industryCode" column="industry_Code"/>
+	</resultMap>
+
+	<select id="getFlowTemplateList" parameterType="com.chinatower.event.dto.FlowTemplateDTO" resultMap="FlowTemplateResult">
+		select template_id, tenant_id, flow_name, flow_json, flow_type, creator, create_time, modifier, update_time, status, delete_flag, app_ver_code, industry_Code from vm_flow_template
+		<where>
+			<if test="status != null and status != ''">
+				AND status = #{status}
+			</if>
+			<if test="deleteFlag != null ">
+				AND delete_flag = #{deleteFlag}
+			</if>
+			<if test="flowType != null and flowType != ''">
+				AND flow_type = #{flowType}
+			</if>
+			<if test="templateId != null and templateId != ''">
+				AND template_id = #{templateId}
+			</if>
+		</where>
+		<choose>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				order by create_time asc
+			</when>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				order by create_time desc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				order by update_time asc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				order by update_time desc
+			</when>
+			<otherwise>
+				order by update_time desc
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="getFlowTemplateIdsLocalVersion" parameterType="java.util.Map" resultType="string">
+		SELECT
+			GROUP_CONCAT(template_id) AS templateId
+		FROM
+			vm_flow_template_industry_local
+		WHERE
+			delete_flag = 0
+			<if test='param.appVerCode != null and param.appVerCode != ""'>
+				AND app_ver_code = #{param.appVerCode}
+			</if>
+			<if test='param.industryCode != null and param.industryCode != ""'>
+				AND industry_code = #{param.industryCode}
+			</if>
+		<if test='param.localVersion != null and param.localVersion != ""'>
+			AND local_version = #{param.localVersion}
+		</if>
+	</select>
+
+	<select id="getFlowTemplateIds" parameterType="java.util.Map" resultType="string">
+		SELECT
+		GROUP_CONCAT(template_id) AS templateId
+		FROM
+		vm_flow_template_industry
+		WHERE
+		delete_flag = 0
+		<if test='param.appVerCode != null and param.appVerCode != ""'>
+			AND app_ver_code = #{param.appVerCode}
+		</if>
+		<if test='param.industryCode != null and param.industryCode != ""'>
+			AND industry_code = #{param.industryCode}
+		</if>
+	</select>
+
+	<select id="queryFlowTemplateIndustry" parameterType="java.util.Map" resultType="com.chinatower.event.dataobject.FlowTemplateIndustryDO">
+		SELECT
+			id,
+			template_id,
+			warning_source,
+			STATUS,
+			creator,
+			modifier,
+			create_time,
+			update_time,
+			delete_flag,
+			app_ver_code,
+			industry_code
+		FROM
+			vm_flow_template_industry
+		WHERE
+			status = '1' AND delete_flag = 0
+		<if test='param.appVerCode != null and param.appVerCode != ""'>
+			AND app_ver_code = #{param.appVerCode}
+		</if>
+		<if test='param.industryCode != null and param.industryCode != ""'>
+			AND industry_code = #{param.industryCode}
+		</if>
+	</select>
+
+	<select id="queryFlowTemplateIndustryLocalVersion" parameterType="java.util.Map" resultType="com.chinatower.event.dataobject.FlowTemplateIndustryDO">
+		SELECT
+		id,
+		template_id,
+		warning_source,
+		STATUS,
+		creator,
+		modifier,
+		create_time,
+		update_time,
+		delete_flag,
+		app_ver_code,
+		industry_code,
+		local_version
+		FROM
+		vm_flow_template_industry_local
+		WHERE
+		status = '1' AND delete_flag = 0
+		<if test='param.appVerCode != null and param.appVerCode != ""'>
+			AND app_ver_code = #{param.appVerCode}
+		</if>
+		<if test='param.industryCode != null and param.industryCode != ""'>
+			AND industry_code = #{param.industryCode}
+		</if>
+		<if test='param.localVersion != null and param.localVersion != ""'>
+			AND local_version = #{param.localVersion}
+		</if>
+	</select>
+	<select id="queryFlowLinkIndustryConfig" parameterType="java.util.Map" resultType="com.chinatower.event.entity.dto.FlowLinkIndustryConfigDO">
+		SELECT
+			id,
+			link_id,
+			link_name,
+			role_id,
+			msg_notify_type,
+			leader_flag,
+			sign_flag,
+			rollback_flag,
+			screen_url,
+			pc_url,
+			app_url,
+			time_limit,
+			notify_admin_flag,
+			msg_notify_limit,
+			msg_notify_company,
+			attr_flag,
+			status,
+			delete_flag,
+			create_time,
+			update_time,
+			creator,
+			modifier,
+			app_ver_code,
+			industry_code,
+			data_filter_permiss,
+			custom_admin,
+			time_limit_company,
+			time_start_alram,
+			time_end_alram,
+			voice_alram,
+			time_remind,
+			time_remind_auto,
+			time_remind_number,
+			if_later_remind,
+			later_remind,
+			later_remind_company,
+			time_push_type,
+			time_limit_push,
+			grid_sign_role,
+			user_type,
+			msg_send_time_interval
+		FROM
+			vm_flow_link_industry_config
+		WHERE
+			STATUS = '1'
+		<if test='param.appVerCode != null and param.appVerCode != ""'>
+			AND app_ver_code = #{param.appVerCode}
+		</if>
+		<if test='param.industryCode != null and param.industryCode != ""'>
+			AND industry_code = #{param.industryCode}
+		</if>
+		<if test='param.includeEndLink != null and param.includeEndLink == "N"'>
+			AND link_id != '6'
+			and delete_flag='0'
+		</if>
+	</select>
+
+	<select id="queryFlowLinkIndustryConfigLocalVersion" parameterType="java.util.Map" resultType="com.chinatower.event.entity.dto.FlowLinkIndustryConfigDO">
+		SELECT
+		id,
+		link_id,
+		link_name,
+		role_id,
+		msg_notify_type,
+		leader_flag,
+		sign_flag,
+		rollback_flag,
+		screen_url,
+		pc_url,
+		app_url,
+		time_limit,
+		notify_admin_flag,
+		msg_notify_limit,
+		msg_notify_company,
+		attr_flag,
+		status,
+		delete_flag,
+		create_time,
+		update_time,
+		creator,
+		modifier,
+		app_ver_code,
+		industry_code,
+		data_filter_permiss,
+		custom_admin,
+		time_limit_company,
+		time_start_alram,
+		time_end_alram,
+		voice_alram,
+		time_remind,
+		time_remind_auto,
+		time_remind_number,
+		if_later_remind,
+		later_remind,
+		later_remind_company,
+		time_push_type,
+		time_limit_push,
+		grid_sign_role,
+		user_type,
+		msg_send_time_interval,
+		local_version
+		FROM
+		vm_flow_link_industry_config_local
+		WHERE
+		STATUS = '1'
+		<if test='param.appVerCode != null and param.appVerCode != ""'>
+			AND app_ver_code = #{param.appVerCode}
+		</if>
+		<if test='param.industryCode != null and param.industryCode != ""'>
+			AND industry_code = #{param.industryCode}
+		</if>
+		<if test='param.localVersion != null and param.localVersion != ""'>
+			AND local_version = #{param.localVersion}
+		</if>
+		<if test='param.includeEndLink != null and param.includeEndLink == "N"'>
+			AND link_id != '6'
+			and delete_flag='0'
+		</if>
+	</select>
+
+	<insert id="addFlowTemplateIndustry" parameterType="com.chinatower.event.dataobject.FlowTemplateIndustryDO">
+		INSERT INTO vm_flow_template_industry (
+			template_id,
+			warning_source,
+			status,
+			creator,
+			create_time,
+			update_time,
+			app_ver_code,
+			industry_code
+		)
+		VALUES
+		<foreach collection="templateIndustryList" item="item" index="index" separator=",">
+			(#{item.templateId},
+			#{item.warningSource},
+			#{item.status},
+			#{item.creator},
+			NOW(),
+			NOW(),
+			#{item.appVerCode},
+			#{item.industryCode})
+		</foreach>
+	</insert>
+
+	<insert id="addFlowTemplateIndustryLocalVersion" parameterType="com.chinatower.event.dataobject.FlowTemplateIndustryDO">
+		INSERT INTO vm_flow_template_industry_local (
+		template_id,
+		warning_source,
+		status,
+		creator,
+		create_time,
+		update_time,
+		app_ver_code,
+		industry_code,
+		local_version
+		)
+		VALUES
+		<foreach collection="templateIndustryList" item="item" index="index" separator=",">
+			(#{item.templateId},
+			#{item.warningSource},
+			#{item.status},
+			#{item.creator},
+			NOW(),
+			NOW(),
+			#{item.appVerCode},
+			#{item.industryCode},
+			#{item.localVersion})
+		</foreach>
+	</insert>
+
+	<insert id="addFlowLinkIndustryConfig" parameterType="com.chinatower.event.entity.dto.FlowLinkIndustryConfigDO">
+		INSERT INTO vm_flow_link_industry_config (
+			link_id,
+			link_name,
+			role_id,
+			msg_notify_type,
+			leader_flag,
+			rollback_flag,
+			time_limit,
+			msg_notify_limit,
+			msg_notify_company,
+			screen_url,
+			pc_url,
+			app_url,
+			create_time,
+			update_time,
+			creator,
+			status,
+			app_ver_code,
+			industry_code,
+			data_filter_permiss,
+			custom_admin,
+			time_limit_company,
+			time_start_alram,
+			time_end_alram,
+			voice_alram,
+			time_remind,
+			time_remind_auto,
+			time_remind_number,
+			if_later_remind,
+			later_remind,
+			later_remind_company,
+			time_push_type,
+			time_limit_push,
+			grid_sign_role,
+			user_type,
+			msg_send_time_interval
+		)
+		VALUES
+		<foreach collection="industryConfigList" item="item" index="index" separator=",">
+			(#{item.linkId},
+			#{item.linkName},
+			<choose>
+				<when test='item.userType == "3"'>
+					'',
+				</when>
+				<otherwise>
+					#{item.roleId},
+				</otherwise>
+			</choose>
+			#{item.msgNotifyType},
+			#{item.leaderFlag},
+			#{item.rollbackFlag},
+			#{item.timeLimit},
+			#{item.msgNotifyLimit},
+			#{item.msgNotifyCompany},
+			#{item.screenUrl},
+			#{item.pcUrl},
+			#{item.appUrl},
+			NOW(),
+			NOW(),
+			#{item.creator},
+			'1',
+			#{item.appVerCode},
+			#{item.industryCode},
+			#{item.dataFilterPermiss},
+			#{item.customAdmin},
+			#{item.timeLimitCompany},
+			#{item.timeStartAlram},
+			#{item.timeEndAlram},
+			#{item.voiceAlram},
+			#{item.timeRemind},
+			#{item.timeRemindAuto},
+			#{item.timeRemindNumber},
+			#{item.ifLaterRemind},
+			#{item.laterRemind},
+			#{item.laterRemindCompany},
+			#{item.timePushType},
+			#{item.timeLimitPush},
+			<choose>
+				<when test='item.userType == "2"'>
+					'',
+				</when>
+				<otherwise>
+					#{item.gridSignRole},
+				</otherwise>
+			</choose>
+			#{item.userType},
+			#{item.msgSendTimeInterval})
+		</foreach>
+	</insert>
+
+	<insert id="addFlowLinkIndustryConfigLocalVersion" parameterType="com.chinatower.event.entity.dto.FlowLinkIndustryConfigDO">
+		INSERT INTO vm_flow_link_industry_config_local (
+		link_id,
+		link_name,
+		role_id,
+		msg_notify_type,
+		leader_flag,
+		rollback_flag,
+		time_limit,
+		msg_notify_limit,
+		msg_notify_company,
+		screen_url,
+		pc_url,
+		app_url,
+		create_time,
+		update_time,
+		creator,
+		status,
+		app_ver_code,
+		industry_code,
+		data_filter_permiss,
+		custom_admin,
+		time_limit_company,
+		time_start_alram,
+		time_end_alram,
+		voice_alram,
+		time_remind,
+		time_remind_auto,
+		time_remind_number,
+		if_later_remind,
+		later_remind,
+		later_remind_company,
+		time_push_type,
+		time_limit_push,
+		grid_sign_role,
+		user_type,
+		local_version,
+		msg_send_time_interval
+		)
+		VALUES
+		<foreach collection="industryConfigList" item="item" index="index" separator=",">
+			(#{item.linkId},
+			#{item.linkName},
+			<choose>
+				<when test='item.userType == "3"'>
+					'',
+				</when>
+				<otherwise>
+					#{item.roleId},
+				</otherwise>
+			</choose>
+			#{item.msgNotifyType},
+			#{item.leaderFlag},
+			#{item.rollbackFlag},
+			#{item.timeLimit},
+			#{item.msgNotifyLimit},
+			#{item.msgNotifyCompany},
+			#{item.screenUrl},
+			#{item.pcUrl},
+			#{item.appUrl},
+			NOW(),
+			NOW(),
+			#{item.creator},
+			'1',
+			#{item.appVerCode},
+			#{item.industryCode},
+			#{item.dataFilterPermiss},
+			#{item.customAdmin},
+			#{item.timeLimitCompany},
+			#{item.timeStartAlram},
+			#{item.timeEndAlram},
+			#{item.voiceAlram},
+			#{item.timeRemind},
+			#{item.timeRemindAuto},
+			#{item.timeRemindNumber},
+			#{item.ifLaterRemind},
+			#{item.laterRemind},
+			#{item.laterRemindCompany},
+			#{item.timePushType},
+			#{item.timeLimitPush},
+			<choose>
+				<when test='item.userType == "2"'>
+					'',
+				</when>
+				<otherwise>
+					#{item.gridSignRole},
+				</otherwise>
+			</choose>
+			#{item.userType},
+			#{item.localVersion},
+			#{item.msgSendTimeInterval})
+		</foreach>
+	</insert>
+
+	<update id="delTemplateIndustry">
+		UPDATE vm_flow_template_industry
+		SET delete_flag = 1
+		WHERE delete_flag = 0
+		<if test='appVerCode != null and appVerCode != ""'>
+			AND app_ver_code = #{appVerCode}
+		</if>
+		<if test='industryCode != null and industryCode != ""'>
+			AND industry_code = #{industryCode}
+		</if>
+	</update>
+
+	<update id="delTemplateIndustryLocalVersion">
+		UPDATE vm_flow_template_industry_local
+		SET delete_flag = 1
+		WHERE delete_flag = 0
+		<if test='appVerCode != null and appVerCode != ""'>
+			AND app_ver_code = #{appVerCode}
+		</if>
+		<if test='industryCode != null and industryCode != ""'>
+			AND industry_code = #{industryCode}
+		</if>
+		<if test='localVersion != null and localVersion != ""'>
+			AND local_version = #{localVersion}
+		</if>
+	</update>
+
+	<update id="delIndustryConfig">
+		UPDATE vm_flow_link_industry_config
+		SET delete_flag = 1
+		WHERE delete_flag = 0
+		<if test='appVerCode != null and appVerCode != ""'>
+			AND app_ver_code = #{appVerCode}
+		</if>
+		<if test='industryCode != null and industryCode != ""'>
+			AND industry_code = #{industryCode}
+		</if>
+	</update>
+
+	<update id="delIndustryConfigLocalVersion">
+		UPDATE vm_flow_link_industry_config_local
+		SET delete_flag = 1
+		WHERE delete_flag = 0
+		<if test='appVerCode != null and appVerCode != ""'>
+			AND app_ver_code = #{appVerCode}
+		</if>
+		<if test='industryCode != null and industryCode != ""'>
+			AND industry_code = #{industryCode}
+		</if>
+		<if test='localVersion != null and localVersion != ""'>
+			AND local_version = #{localVersion}
+		</if>
+	</update>
+
+</mapper>

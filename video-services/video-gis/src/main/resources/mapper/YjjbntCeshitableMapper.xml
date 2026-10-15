@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.YjjbntCeshitableMapper">
+    <resultMap id="BaseResultMap" type="com.chinatower.gis.modules.gis.entity.YjjbntCeshitable" >
+        <result column="gid" property="gid" />
+        <result column="geom" property="geom" />
+        <result column="layertype" property="layertype" />
+        <result column="calarea" property="calarea" />
+        <result column="bsm" property="bsm" />
+        <result column="ysdm" property="ysdm" />
+        <result column="xzqdm" property="xzqdm" />
+        <result column="xzqmc" property="xzqmc" />
+        <result column="yjjbnttbbh" property="yjjbnttbbh" />
+        <result column="tbbh" property="tbbh" />
+        <result column="dlbm" property="dlbm" />
+        <result column="dlmc" property="dlmc" />
+        <result column="qsxz" property="qsxz" />
+        <result column="qsdwdm" property="qsdwdm" />
+        <result column="qsdwmc" property="qsdwmc" />
+        <result column="zldwdm" property="zldwdm" />
+        <result column="zldwmc" property="zldwmc" />
+        <result column="yjjbnttbmj" property="yjjbnttbmj" />
+        <result column="kcdlbm" property="kcdlbm" />
+        <result column="tkxs" property="tkxs" />
+        <result column="tkmj" property="tkmj" />
+        <result column="yjjbntmj" property="yjjbntmj" />
+        <result column="gdlx" property="gdlx" />
+        <result column="yjjbntlx" property="yjjbntlx" />
+        <result column="gdpdjb" property="gdpdjb" />
+        <result column="tbxhdm" property="tbxhdm" />
+        <result column="tbxhmc" property="tbxhmc" />
+        <result column="gdzzsxdm" property="gdzzsxdm" />
+        <result column="gdzzsxmc" property="gdzzsxmc" />
+        <result column="gddb" property="gddb" />
+        <result column="gddj" property="gddj" />
+        <result column="frdbs" property="frdbs" />
+        <result column="sjnf" property="sjnf" />
+        <result column="bz" property="bz" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        gid,
+                geom,
+                layertype,
+                calarea,
+                bsm,
+                ysdm,
+                xzqdm,
+                xzqmc,
+                yjjbnttbbh,
+                tbbh,
+                dlbm,
+                dlmc,
+                qsxz,
+                qsdwdm,
+                qsdwmc,
+                zldwdm,
+                zldwmc,
+                yjjbnttbmj,
+                kcdlbm,
+                tkxs,
+                tkmj,
+                yjjbntmj,
+                gdlx,
+                yjjbntlx,
+                gdpdjb,
+                tbxhdm,
+                tbxhmc,
+                gdzzsxdm,
+                gdzzsxmc,
+                gddb,
+                gddj,
+                frdbs,
+                sjnf,
+                bz
+    </sql>
+
+    <insert id="saveBatch" >
+        insert into ${tableName}
+        (
+            <if test="list.get(0).containsKey('the_geom')">
+                geom
+            </if>
+            <if test="layerType != null and layerType != ''">
+                ,layertype
+            </if>
+            <if test="list.get(0).containsKey('calarea')">
+                ,calarea
+            </if>
+            <if test="list.get(0).containsKey('bsm')">
+                ,bsm
+            </if>
+            <if test="list.get(0).containsKey('ysdm')">
+                ,ysdm
+            </if>
+            <if test="list.get(0).containsKey('xzqdm')">
+                ,xzqdm
+            </if>
+            <if test="list.get(0).containsKey('xzqmc')">
+                ,xzqmc
+            </if>
+            <if test="list.get(0).containsKey('yjjbnttbbh')">
+                ,yjjbnttbbh
+            </if>
+            <if test="list.get(0).containsKey('tbbh')">
+                ,tbbh
+            </if>
+            <if test="list.get(0).containsKey('dlbm')">
+                ,dlbm
+            </if>
+            <if test="list.get(0).containsKey('dlmc')">
+                ,dlmc
+            </if>
+            <if test="list.get(0).containsKey('qsxz')">
+                ,qsxz
+            </if>
+            <if test="list.get(0).containsKey('qsdwdm')">
+                ,qsdwdm
+            </if>
+            <if test="list.get(0).containsKey('qsdwmc')">
+                ,qsdwmc
+            </if>
+            <if test="list.get(0).containsKey('zldwdm')">
+                ,zldwdm
+            </if>
+            <if test="list.get(0).containsKey('zldwmc')">
+                ,zldwmc
+            </if>
+            <if test="list.get(0).containsKey('yjjbnttbmj')">
+                ,yjjbnttbmj
+            </if>
+            <if test="list.get(0).containsKey('kcdlbm')">
+                ,kcdlbm
+            </if>
+            <if test="list.get(0).containsKey('tkxs')">
+                ,tkxs
+            </if>
+            <if test="list.get(0).containsKey('tkmj')">
+                ,tkmj
+            </if>
+            <if test="list.get(0).containsKey('yjjbntmj')">
+                ,yjjbntmj
+            </if>
+            <if test="list.get(0).containsKey('gdlx')">
+                ,gdlx
+            </if>
+            <if test="list.get(0).containsKey('yjjbntlx')">
+                ,yjjbntlx
+            </if>
+            <if test="list.get(0).containsKey('gdpdjb')">
+                ,gdpdjb
+            </if>
+            <if test="list.get(0).containsKey('tbxhdm')">
+                ,tbxhdm
+            </if>
+            <if test="list.get(0).containsKey('tbxhmc')">
+                ,tbxhmc
+            </if>
+            <if test="list.get(0).containsKey('gdzzsxdm')">
+                ,gdzzsxdm
+            </if>
+            <if test="list.get(0).containsKey('gdzzsxmc')">
+                ,gdzzsxmc
+            </if>
+            <if test="list.get(0).containsKey('gddb')">
+                ,gddb
+            </if>
+            <if test="list.get(0).containsKey('gddj')">
+                ,gddj
+            </if>
+            <if test="list.get(0).containsKey('frdbs')">
+                ,frdbs
+            </if>
+            <if test="list.get(0).containsKey('sjnf')">
+                ,sjnf
+            </if>
+            <if test="list.get(0).containsKey('bz')">
+                ,bz
+            </if>
+        )
+        values
+        <foreach collection="list" item="item" separator=",">
+            (
+            <if test="list.get(0).containsKey('the_geom')">
+                ST_GeomFromText(#{item.the_geom},4326)
+            </if>
+            <if test="layerType != null and layerType != ''">
+                ,#{layerType}
+            </if>
+            <if test="list.get(0).containsKey('calarea')">
+                ,#{item.calarea}
+            </if>
+            <if test="list.get(0).containsKey('bsm')">
+                ,#{item.bsm}
+            </if>
+            <if test="list.get(0).containsKey('ysdm')">
+                ,#{item.ysdm}
+            </if>
+            <if test="list.get(0).containsKey('xzqdm')">
+                ,#{item.xzqdm}
+            </if>
+            <if test="list.get(0).containsKey('xzqmc')">
+                ,#{item.xzqmc}
+            </if>
+            <if test="list.get(0).containsKey('yjjbnttbbh')">
+                ,#{item.yjjbnttbbh}
+            </if>
+            <if test="list.get(0).containsKey('tbbh')">
+                ,#{item.tbbh}
+            </if>
+            <if test="list.get(0).containsKey('dlbm')">
+                ,#{item.dlbm}
+            </if>
+            <if test="list.get(0).containsKey('dlmc')">
+                ,#{item.dlmc}
+            </if>
+            <if test="list.get(0).containsKey('qsxz')">
+                ,#{item.qsxz}
+            </if>
+            <if test="list.get(0).containsKey('qsdwdm')">
+                ,#{item.qsdwdm}
+            </if>
+            <if test="list.get(0).containsKey('qsdwmc')">
+                ,#{item.qsdwmc}
+            </if>
+            <if test="list.get(0).containsKey('zldwdm')">
+                ,#{item.zldwdm}
+            </if>
+            <if test="list.get(0).containsKey('zldwmc')">
+                ,#{item.zldwmc}
+            </if>
+            <if test="list.get(0).containsKey('yjjbnttbmj')">
+                ,CAST(#{item.yjjbnttbmj} AS double precision)
+            </if>
+            <if test="list.get(0).containsKey('kcdlbm')">
+                ,#{item.kcdlbm}
+            </if>
+            <if test="list.get(0).containsKey('tkxs')">
+                ,CAST(#{item.tkxs} AS double precision)
+            </if>
+            <if test="list.get(0).containsKey('tkmj')">
+                ,CAST(#{item.tkmj} AS double precision)
+            </if>
+            <if test="list.get(0).containsKey('yjjbntmj')">
+                ,CAST(#{item.yjjbntmj} AS double precision)
+            </if>
+            <if test="list.get(0).containsKey('gdlx')">
+                ,#{item.gdlx}
+            </if>
+            <if test="list.get(0).containsKey('yjjbntlx')">
+                ,#{item.yjjbntlx}
+            </if>
+            <if test="list.get(0).containsKey('gdpdjb')">
+                ,#{item.gdpdjb}
+            </if>
+            <if test="list.get(0).containsKey('tbxhdm')">
+                ,#{item.tbxhdm}
+            </if>
+            <if test="list.get(0).containsKey('tbxhmc')">
+                ,#{item.tbxhmc}
+            </if>
+            <if test="list.get(0).containsKey('gdzzsxdm')">
+                ,#{item.gdzzsxdm}
+            </if>
+            <if test="list.get(0).containsKey('gdzzsxmc')">
+                ,#{item.gdzzsxmc}
+            </if>
+            <if test="list.get(0).containsKey('gddb')">
+                ,CAST(#{item.gddb} AS double precision)
+            </if>
+            <if test="list.get(0).containsKey('gddj')">
+                ,CAST(#{item.gddj} AS double precision)
+            </if>
+            <if test="list.get(0).containsKey('frdbs')">
+                ,#{item.frdbs}
+            </if>
+            <if test="list.get(0).containsKey('sjnf')">
+                ,CAST(#{item.sjnf} AS double precision)
+            </if>
+            <if test="list.get(0).containsKey('bz')">
+                ,#{item.bz}
+            </if>
+            )
+        </foreach>
+    </insert>
+
+
+    <insert id="createTable">
+        create table IF NOT EXISTS ${tableName} (like yjjbnt_ceshitable INCLUDING indexes including constraints including comments including defaults) ;
+        CREATE SEQUENCE IF NOT EXISTS ${tableName}_gid_seq
+            INCREMENT 1
+            START 1
+            MINVALUE 1
+            MAXVALUE 2147483647
+            CACHE 1;
+        alter table ${tableName} alter column "gid" set default nextval('${tableName}_gid_seq');
+    </insert>
+    <insert id="createTableView">
+        CREATE VIEW view_${tableName} AS
+        SELECT gid, geom, bsm, minx, miny, maxx, maxy, TBBH, DLMC, YJJBNTTBMJ, GDPDJB
+        FROM ${tableName}
+    </insert>
+    <update id="updateCalarea">
+        update ${tableName}
+        set minx = ST_X ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 1 ) ) ),
+            miny = ST_Y ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 1 ) ) ),
+            maxx = ST_X ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 3 ) ) ),
+            maxy = ST_Y ( st_astext ( st_pointn ( ST_ExteriorRing ( ST_Envelope ( geom ) ), 3 ) ) ),
+            calarea=st_area (st_transform ( geom, CAST ( ( FLOOR ( ( ST_X ( st_centroid ( geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER ) ) )
+        where calarea is null;
+    </update>
+    <select id="inspectionRoute" resultType="java.lang.String"
+            parameterType="com.chinatower.gis.api.entity.layer.GetXjxlFeaturesByIdsReq">
+        SELECT
+        row_to_json(fc)
+        FROM (
+            SELECT
+                'FeatureCollection' AS type,
+                '212' AS id,
+                array_to_json(array_agg(f)) AS features
+            FROM (
+                SELECT
+                    'Feature' AS type
+                    <if test="req.returnGeometry">
+                        ,ST_AsGeoJSON(geom)::json as geometry
+                    </if>
+                ,(
+                    SELECT
+                    row_to_json(t)
+                    FROM (
+                        SELECT tbbh,bsm,dlmc,zldwmc
+                        <if test="req.returnAllCols">
+                            ,ysdm,xzqdm,xzqmc,yjjbnttbbh,dlbm,qsxz,qsdwdm,qsdwmc,zldwdm,yjjbnttbmj,kcdlbm,tkxs,tkmj,yjjbntmj,gdlx,yjjbntlx,gdpdjb,tbxhdm,tbxhmc,gdzzsxdm,gdzzsxmc,gddb,gddj,frdbs,sjnf,bz
+                        </if>
+                        ) AS t
+                    ) AS properties
+                    FROM ${tableName}
+                    <where>
+                        <if test="req.tbbhs != null and req.tbbhs.size() > 0">
+                            and bsm in
+                            <foreach collection="req.tbbhs" item="item"  open="(" close=")" separator=",">
+                                #{item}
+                            </foreach>
+                        </if>
+                    </where>
+            ) AS f
+        ) AS fc
+    </select>
+
+    <select id="inspectionRouteCount" resultType="java.lang.Integer">
+        select
+        count(1)
+        from ${tableName}
+        <where>
+            <if test="req.tbbhs != null and req.tbbhs.size() > 0">
+                and bsm in
+                <foreach collection="req.tbbhs" item="item"  open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getLayerArea" resultType="java.lang.Double">
+        select
+            sum(yjjbnttbmj)
+        from ${tableName}
+    </select>
+    <select id="getXlsjFeatures" resultType="java.lang.String">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        SELECT
+        'FeatureCollection' AS type,
+        '212' AS id,
+        array_to_json(array_agg(f)) AS features
+        FROM (
+        SELECT
+        'Feature' AS type
+        <if test="req.returnGeometry">
+            ,ST_AsGeoJSON(geom)::json as geometry
+        </if>
+        ,(
+        SELECT
+        row_to_json(t)
+        FROM (
+        SELECT tbbh,bsm,yjjbnttbmj as area
+        ) AS t
+        ) AS properties
+        FROM ${tableName}
+        <where>
+            <if test="req.tbbh != null and req.tbbh != ''">
+                and tbbh like concat('%',#{req.tbbh},'%')
+            </if>
+        </where>
+        limit ${size} offset ${offset}
+        ) AS f
+        ) AS fc
+    </select>
+    <select id="getXlsjFeaturesCount" resultType="java.lang.Integer">
+        select
+        count(1)
+        from ${tableName}
+        <where>
+            <if test="req.tbbh != null and req.tbbh != ''">
+                and tbbh like concat('%',#{req.tbbh},'%')
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteBadData">
+        delete from ${tableName} where YJJBNTTBMJ is null or TBBH is null or DLMC is null
+    </delete>
+
+</mapper>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.manage.mapper.SysIndustryViewMapper">
+
+	<resultMap type="com.chinatower.manage.dataobject.SysIndustryView" id="SysIndustryViewResult">
+		<id property="viewId" column="id"/>
+		<result property="viewName" column="view_name"/>
+		<result property="dirId" column="page_id"/>
+		<result property="viewJson" column="view_json"/>
+		<result property="imgUrl" column="img_url"/>
+		<result property="createTime" column="create_time"/>
+		<result property="updateTime" column="update_time"/>
+		<result property="status" column="status"/>
+		<collection property="compoLists" column="{industryViewId = id}" ofType="String" javaType="ArrayList" select="com.chinatower.manage.mapper.SysIndustryViewMapper.queryCompoIds">
+			<result column="compo_id"/>
+		</collection>
+	</resultMap>
+
+	<select id="querySysIndustryView" parameterType="com.chinatower.manage.dto.SysIndustryViewModel" resultMap="SysIndustryViewResult">
+		select id, view_name, page_id, view_json,base_map_json, img_url, create_time, update_time, status from sys_industry_view
+		<where>
+			<if test="industryViewId != null and industryViewId != ''">
+				AND id = #{industryViewId}
+			</if>
+			<if test="viewIdArr != null and viewIdArr != ''">
+				AND id in
+				<foreach collection="viewIdArr" item="item" open="(" close=")" index="index" separator=",">
+					#{item}
+				</foreach>
+			</if>
+			<if test="pageId != null and pageId != ''">
+				AND page_id = #{pageId}
+			</if>
+			<if test="viewName != null and viewName != ''">
+				AND view_name like CONCAT(CONCAT('%', #{viewName}),'%')
+			</if>
+			<if test="status != null and status != ''">
+				AND status = #{status}
+			</if>
+			<if test="deleteFlag != null and deleteFlag != ''">
+				AND delete_flag = #{deleteFlag}
+			</if>
+		</where>
+        order by update_time desc
+	</select>
+
+	<select id="querySysIndustryViewConf" parameterType="com.chinatower.manage.dto.SysIndustryViewModel" resultType="com.chinatower.manage.dataobject.SysIndustryView">
+		select view.id viewId , rel.view_name, rel.display_type displayType, view.view_json, view.base_map_json,
+		view.img_url, view.create_time, view.update_time, view.status, rel.industry_view_type, rel.sort
+		from sys_industry_view view
+		inner join sys_industry_view_rel rel on view.id = rel.industry_view_id and rel.industry_view_type = 1
+		where view.delete_flag = 0 and rel.industry_code = #{industryCode} and rel.app_ver_code = #{appVerCode}
+		<if test="viewIdList != null and viewIdList.size() > 0">
+			AND view.id in
+			<foreach collection="viewIdList" item="item" open="(" close=")" index="index" separator=",">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<select id="querySysIndustryScreenConf" parameterType="com.chinatower.manage.dto.SysIndustryViewModel" resultType="com.chinatower.manage.dataobject.SysIndustryView">
+		select view.id viewId , rel.view_name, rel.display_type displayType, view.screen_url, view.img_url,
+		view.create_time, view.update_time, rel.industry_view_type, view.screen_compo_type screenCompoType, rel.sort
+		from sys_industry_screen view
+		inner join sys_industry_view_rel rel on view.id = rel.industry_view_id and rel.industry_view_type = 2
+		where view.delete_flag = 0 and rel.industry_code = #{industryCode} and rel.app_ver_code = #{appVerCode}
+		<if test="viewIdList != null and viewIdList.size() > 0">
+			AND view.id in
+			<foreach collection="viewIdList" item="item" open="(" close=")" index="index" separator=",">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<select id="queryCompoIds" resultType="String">
+		select compo_id from sys_industry_view_compo_rel where industry_view_id = #{industryViewId}
+	</select>
+
+	<select id="queryIndustryScreenView"  resultType="com.chinatower.manage.dataobject.SysIndustryView">
+		select view.id viewId, rel.view_name viewName, rel.display_type displayType, 0 viewType, view.view_json viewJson,
+		view.base_map_json baseMapJson, view.img_url imgUrl, view.create_time createTime, view.update_time updateTime,
+		view.status, rel.industry_view_type, rel.sort
+		from sys_industry_view view
+		INNER JOIN sys_industry_view_rel as rel on rel.industry_view_id = view.id and rel.industry_view_type = 1
+		inner join sys_industry_ver_conf as vconf on vconf.industry_code = rel.industry_code and  vconf.app_ver_code = rel.app_ver_code
+		inner join sys_industry_conf as conf on vconf.industry_code = conf.industry_code and vconf.accept_node = conf.accept_node
+		where view.delete_flag = '0' and vconf.delete_flag = '0' AND conf.delete_flag='0'
+		AND vconf.industry_code = #{industryCode} AND vconf.app_ver_code = #{appVerCode} and vconf.accept_node = #{acceptNode}
+		order by rel.sort asc, view.id;
+	</select>
+
+	<select id="queryNewIndustryScreenView"  resultType="com.chinatower.manage.dataobject.SysIndustryView">
+		select view.id viewId, rel.view_name viewName, rel.display_type displayType, 0 viewType, view.img_url imgUrl, view.screen_url screenUrl,
+		view.create_time createTime, view.update_time updateTime, rel.industry_view_type, view.screen_compo_type screenCompoType, rel.sort
+		from sys_industry_screen view
+		INNER JOIN sys_industry_view_rel as rel on rel.industry_view_id = view.id and rel.industry_view_type = 2
+		inner join sys_industry_ver_conf as vconf on vconf.industry_code = rel.industry_code and  vconf.app_ver_code = rel.app_ver_code
+		inner join sys_industry_conf as conf on vconf.industry_code = conf.industry_code and vconf.accept_node = conf.accept_node
+		where view.delete_flag = '0' and vconf.delete_flag = '0' AND conf.delete_flag='0'
+		AND vconf.industry_code = #{industryCode} AND vconf.app_ver_code = #{appVerCode} and vconf.accept_node = #{acceptNode}
+		order by rel.sort asc, view.id;
+	</select>
+
+	<select id="queryThirdViewInfoList" resultType="com.chinatower.manage.dataobject.SysIndustryView">
+		select c.id viewId, rel.screen_alias viewName, c.screen_url screenUrl, 1 viewType, rel.display_type displayType,
+		c.sso_flag ssoFlag, c.screen_type
+		from `sys_third_party_screen_tenant_rel` rel
+		inner join `sys_third_party_screen_conf` c on rel.`third_party_screen_id` = c.id
+		where rel.tenant_id = #{tenantId} and rel.industry_code = #{industryCode} and rel.app_ver_code = #{appVerCode}
+		and c.delete_flag = 0
+		<if test="industryViewIdList != null and industryViewIdList.size() > 0">
+			AND c.id in
+			<foreach collection="industryViewIdList" item="item" open="(" close=")" index="index" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		order by c.create_time, c.id
+	</select>
+</mapper>

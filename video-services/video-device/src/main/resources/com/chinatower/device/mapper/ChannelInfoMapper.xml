@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.ChannelInfoMapper">
+
+    <select id="listChannelInfoForCustDev" resultType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">
+        SELECT DISTINCT od.device_code as parentDeviceCode,
+        ( case when length(IFNULL(ten.channel_name, '')) = 0 then t.channel_name else ten.channel_name end ) channelName,
+        t.channel_code,
+        t.channel_status as status,
+        t.visual_range,
+        t.horiz_range,
+        t.verti_range
+        <if test="queryAddType !=1">
+        ,od.tenant_id
+        </if>
+        FROM vm_order_devices od
+        LEFT JOIN vm_channel_info_t t on od.device_code = t.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t ten on od.device_code = ten.device_code and ten.tenant_id =
+        <if test="queryAddType == 1">#{tenantId}</if>
+        <if test="queryAddType != 1">od.tenant_id</if>
+        and t.channel_code = ten.channel_code and ten.industry_code =
+        <if test="queryAddType == 1">#{industryCode}</if>
+        <if test="queryAddType !=1">od.industry_code</if>
+        and ten.delete_flag='0'
+        <where>
+            <if test='channelCode!= null and channelCode != "" '>
+                AND t.channel_code= #{channelCode}
+            </if>
+            <if test='deviceCodeList != null and deviceCodeList.size()>0'>
+                and od.device_code in
+                <foreach item="item" index="index" collection="deviceCodeList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test='deviceCode!= null and deviceCode != "" '>
+                AND od.device_code= #{deviceCode}
+            </if>
+            <if test="queryAddType !=1">
+                <if test='tenantId!= null and tenantId != "" '>
+                    AND od.tenant_id= #{tenantId}
+                </if>
+                <if test='industryCode != null and industryCode != ""'>
+                    and od.industry_code = #{industryCode}
+                </if>
+            </if>
+        </where>
+        <if test="queryAddType !=1">
+            ORDER BY t.channel_code
+        </if>
+    </select>
+
+
+    <select id="listChannelInfoForCustDevNew" resultType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">
+        SELECT DISTINCT od.device_code as parentDeviceCode,
+        ( case when length(IFNULL(ten.channel_name, '')) = 0 then t.channel_name else ten.channel_name end ) channelName,
+        t.channel_code,
+        t.channel_status as status,
+        t.visual_range,
+        t.horiz_range,
+        t.verti_range
+        FROM vm_device_info_t od
+        LEFT JOIN vm_channel_info_t t on od.device_code = t.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t ten on od.device_code = ten.device_code and ten.tenant_id = #{tenantId}
+        and t.channel_code = ten.channel_code and ten.industry_code = #{industryCode} and ten.delete_flag='0'
+        <where>
+            <if test='channelCode!= null and channelCode != "" '>
+                AND t.channel_code= #{channelCode}
+            </if>
+            <if test='deviceCodeList != null and deviceCodeList.size()>0'>
+                and od.device_code in
+                <foreach item="item" index="index" collection="deviceCodeList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test='deviceCode!= null and deviceCode != "" '>
+                AND od.device_code= #{deviceCode}
+            </if>
+        </where>
+    </select>
+
+    <select id="getAllChannelInfo" resultType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">
+        SELECT DISTINCT od.device_code as parentDeviceCode,
+        ( case when length(IFNULL(ten.channel_name, '')) = 0 then t.channel_name else ten.channel_name end ) channelName,
+        t.channel_code,
+        t.channel_status as status,
+        t.visual_range,
+        t.horiz_range,
+        t.verti_range
+        FROM vm_order_devices od
+        LEFT JOIN vm_device_info_t dev ON od.device_code = dev.device_code
+        LEFT JOIN vm_channel_info_t t on od.device_code = t.device_code
+        LEFT JOIN vm_tenant_device_channel_rel_t ten on od.device_code = ten.device_code and ten.tenant_id = od.tenant_id
+        and t.channel_code = ten.channel_code and ten.industry_code = od.industry_code
+        and ten.delete_flag='0'
+        where
+            dev.device_code IS NOT NULL
+            AND t.channel_code IS NOT NULL
+            ${dataScope}
+    </select>
+</mapper>

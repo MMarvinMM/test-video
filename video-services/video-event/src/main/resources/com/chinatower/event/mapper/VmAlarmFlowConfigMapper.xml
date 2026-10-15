@@ -1,0 +1,1093 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.VmAlarmFlowConfigMapper">
+
+	<resultMap type="com.chinatower.event.dataobject.VmAlarmFlowConfigDO" id="VmAlarmFlowConfigResult">
+		<id property="id" column="id"/>
+		<result property="alarmFlowName" column="alarm_flow_name"/>
+		<result property="tenantId" column="tenant_id"/>
+		<result property="flowName" column="flow_name"/>
+		<result property="templateId" column="template_id"/>
+		<result property="creator" column="creator"/>
+		<result property="createTime" column="create_time"/>
+		<result property="updateTime" column="update_time"/>
+		<result property="modifier" column="modifier"/>
+		<result property="status" column="status"/>
+		<result property="appVerCode" column="app_ver_code"/>
+		<result property="industryCode" column="industry_code"/>
+		<result property="configType" column="config_type"/>
+	</resultMap>
+
+	<resultMap id="VmFlowConfigAndTypeResultMap" type="com.chinatower.event.entity.dto.VmAlarmFlowConfigDTO">
+		<id property="id" column="id"/>
+		<result property="alarmFlowName" column="alarm_flow_name"/>
+		<result property="tenantId" column="tenant_id"/>
+		<result property="flowName" column="flow_name"/>
+		<result property="templateId" column="template_id"/>
+		<collection property="flowTemplateTypeList" ofType="com.chinatower.event.entity.dto.VmAlarmFlowTemplateTypeDO">
+			<id property="id" column="id"/>
+			<result property="warningSource" column="warning_source"></result>
+			<result property="alarmType" column="alarm_type"></result>
+		</collection>
+	</resultMap>
+
+	<sql id="Base_Column_List" >
+		id,alarm_flow_name,tenant_id,flow_name,template_id,creator,create_time,update_time,modifier,app_ver_code,industry_code
+	</sql>
+
+	<sql id="selectIndustryDefaultFlowSql">
+		select
+		0 id,
+		'默认流程' alarm_flow_name,
+		#{tenantId} tenant_id,
+		t.flow_name flow_name,
+		ti.template_id template_id,
+		ti.creator creator,
+		ti.create_time create_time,
+		null update_time,
+		'' modifier,
+		ti.app_ver_code app_ver_code,
+		ti.industry_code industry_code,
+		'0' config_type
+		from vm_flow_template_industry ti
+		left join vm_flow_template t on ti.template_id = t.template_id
+		where ti.delete_flag = 0
+		and ti.status = 1
+		<if test="appVerCode != null and appVerCode != ''">
+			AND ti.app_ver_code = #{appVerCode}
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			AND ti.industry_code = #{industryCode}
+		</if>
+	</sql>
+	<!-- 查询行业初始化的配置 -->
+	<select id="selectIndustryDefaultFlow" resultMap="VmAlarmFlowConfigResult">
+		<include refid="selectIndustryDefaultFlowSql"/>
+	</select>
+
+	<select id="getAlarmFlowConfigList" parameterType="com.chinatower.event.entity.dto.VmAlarmFlowConfigDTO" resultMap="VmAlarmFlowConfigResult">
+		select * from
+		(
+		<if test="tenantId != null and tenantId != ''">
+			(<include refid="selectIndustryDefaultFlowSql"/>)
+			union
+		</if>
+		(SELECT
+		<include refid="Base_Column_List"/>
+		,'1' config_type
+		FROM
+		vm_alarm_flow_config
+		<where>
+			delete_flag = 0
+			<if test="id != null and id != ''">
+				AND id = #{id}
+			</if>
+			<if test="tenantId != null and tenantId != ''">
+				AND tenant_id = #{tenantId}
+			</if>
+			<if test="status != null and status != ''">
+				AND status = #{status}
+			</if>
+			<if test="appVerCode != null and appVerCode != ''">
+				AND app_ver_code = #{appVerCode}
+			</if>
+			<if test="industryCode != null and industryCode != ''">
+				AND industry_code = #{industryCode}
+			</if>
+			${dataScope}
+		</where>)
+		) e
+		<where>
+			<if test="templateId != null and templateId != ''">
+				AND template_id like CONCAT('%', #{templateId},'%')
+			</if>
+			<if test="flowName != null and flowName != ''">
+				AND flow_name like CONCAT('%', #{flowName},'%')
+			</if>
+			<if test="alarmFlowName != null and alarmFlowName != ''">
+				AND (alarm_flow_name like CONCAT('%', #{alarmFlowName},'%')
+				<if test="userIdList != null and userIdList.size()>0 ">
+					OR creator in
+					<foreach collection="userIdList" item="userId" index="index" open="(" close=")" separator=",">
+						#{userId}
+					</foreach>
+				</if>
+				)
+			</if>
+			<if test='createTimeStart != null and createTimeStart != "" and createTimeEnd != null and createTimeEnd != "" '>
+				AND DATE_FORMAT(create_time,'%Y-%m-%d') <![CDATA[>=]]> DATE_FORMAT(#{createTimeStart},'%Y-%m-%d')
+				AND DATE_FORMAT(create_time,'%Y-%m-%d') <![CDATA[<=]]> DATE_FORMAT(#{createTimeEnd},'%Y-%m-%d')
+			</if>
+			<if test="templateIdList != null and templateIdList.size()>0 ">
+				AND template_id in
+				<foreach collection="templateIdList" item="templateId" index="index" open="(" close=")" separator=",">
+					#{templateId}
+				</foreach>
+			</if>
+		</where>
+		<choose>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				order by create_time asc
+			</when>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				order by create_time desc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				order by update_time asc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				order by update_time desc
+			</when>
+			<otherwise>
+				order by create_time desc
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="queryAlarmFlowConfigById" parameterType="Long" resultType="com.chinatower.event.entity.dto.VmAlarmFlowConfigModel">
+		SELECT
+		<include refid="Base_Column_List"/>
+		FROM
+		vm_alarm_flow_config
+		WHERE delete_flag = 0
+		AND status = '1'
+		AND id = #{id}
+	</select>
+
+	<select id="getAlarmTypeByFlowId" parameterType="Long" resultType="com.chinatower.event.entity.dto.VmAlarmFlowTemplateTypeDO">
+		SELECT
+		id,
+		template_id,
+		alarm_flow_id,
+		tenant_id,
+		warning_source,
+		alarm_type,
+		creator,
+		modifier,
+		create_time,
+		update_time,
+		delete_flag
+		FROM
+		vm_flow_template_alarm_type
+		WHERE delete_flag = 0
+		<if test="alarmFlowId != null and alarmFlowId != ''">
+			AND alarm_flow_id = #{alarmFlowId}
+		</if>
+	</select>
+
+	<select id="queryAlarmFlowConfigAndType" parameterType="com.chinatower.event.entity.dto.VmAlarmFlowConfigDTO" resultMap="VmFlowConfigAndTypeResultMap">
+		SELECT
+		t1.id,
+		t1.alarm_flow_name,
+		t1.tenant_id,
+		t1.flow_name,
+		t1.template_id,
+		t2.id,
+		t2.warning_source,
+		t2.alarm_type
+		FROM
+		vm_alarm_flow_config t1
+		LEFT JOIN vm_flow_template_alarm_type t2 ON t1.id = t2.alarm_flow_id
+		<where>
+			t1.delete_flag = 0
+			<!--<if test="id != null and id != ''">
+				AND t1.id != #{id}
+			</if>-->
+			<if test="tenantId != null and tenantId != ''">
+				AND t1.tenant_id = #{tenantId}
+			</if>
+			<if test="status != null and status != ''">
+				AND t1.status = #{status}
+			</if>
+			<if test="alarmFlowName != null and alarmFlowName != ''">
+				AND t1.alarm_flow_name = #{alarmFlowName}
+			</if>
+			<if test="appVerCode != null and appVerCode != ''">
+				AND t1.app_ver_code = #{appVerCode}
+			</if>
+			<if test="industryCode != null and industryCode != ''">
+				AND t1.industry_code = #{industryCode}
+			</if>
+			<if test="sourceAndTypeList != null and sourceAndTypeList.size() > 0">
+				AND concat(t2.alarm_type, '-', t2.warning_source)
+				<foreach collection="sourceAndTypeList" item="item" index="index" open=" in (" close=")" separator=",">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+	</select>
+
+	<select id="queryFlowLinkAttrList" parameterType="Long" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrPageDTO">
+		SELECT
+		t1.id,
+		t1.tenant_id,
+		t1.template_id,
+		t1.link_id,
+		t1.alarm_flow_id,
+		t1.user_type,
+		t1.msg_notify_type,
+		t1.msg_notify_limit,
+		t1.msg_notify_company,
+		t1.leader_flag,
+		t1.rollback_flag,
+		t1.time_limit,
+		t1.msg_send_time_interval,
+		case when t1.link_id IN (1, 2, 4 ,5) then CONCAT(t2.link_name, 1) else t2.link_name end AS link_name,
+		t1.link_alias,
+		t1.turn_flag,
+		t1.real_link_type,
+		t1.grid_user_type,
+		t1.data_filter_permiss,
+		t1.custom_admin,
+		t1.time_limit_company,
+		t1.time_start_alram,
+		t1.time_end_alram,
+		t1.voice_alram,
+		t1.time_remind,
+		t1.time_remind_auto,
+		t1.time_remind_number,
+		t1.if_later_remind,
+		t1.later_remind,
+		t1.later_remind_company,
+		t1.time_push_type,
+		t1.time_limit_push,
+		t1.enable_acceptance_mode,
+		t1.time_limit_acceptance,
+		t1.acceptance_company,
+		t1.industry_code
+		FROM
+		vm_flow_link_attr t1
+		LEFT JOIN vm_flow_link_config t2 on t1.link_id = t2.link_id
+		WHERE t1.delete_flag = 0
+		<if test="alarmFlowId != null and alarmFlowId != ''">
+			AND t1.alarm_flow_id = #{alarmFlowId}
+		</if>
+	</select>
+
+	<select id="getFlowLinkIndustryConfig" parameterType="java.util.Map" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrPageDTO">
+		SELECT
+		t1.id,
+		t2.id AS alarmFlowId,
+		t2.tenant_id AS tenantId,
+		t2.template_id AS templateId,
+		t1.link_id AS linkId,
+		t1.link_name AS linkName,
+		t1.role_id AS roleId,
+		t1.user_type AS userType,
+		t1.msg_notify_type AS msgNotifyType,
+		t1.msg_notify_limit AS msgNotifyLimit,
+		t1.msg_notify_company AS msgNotifyCompany,
+		t1.leader_flag AS leaderFlag,
+		t1.rollback_flag AS rollbackFlag,
+		t1.attr_flag AS attrFlag,
+		t1.time_limit AS timeLimit,
+		t1.creator,
+		t1.create_time AS createTime,
+		t1.modifier,
+		t1.update_time AS updateTime
+		FROM
+		vm_flow_link_industry_config t1
+		LEFT JOIN vm_alarm_flow_config t2 ON t1.industry_code = t2.industry_code
+		WHERE t1.status = '1'
+		<if test="alarmFlowId != null and alarmFlowId != ''">
+			AND t2.id = #{alarmFlowId}
+		</if>
+		<if test="industryCode == null">
+			AND t1.app_ver_code is null AND industry_code is null
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			AND t1.industry_code = #{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			AND t1.app_ver_code = #{appVerCode}
+		</if>
+	</select>
+
+	<select id="getIndustryAttr" parameterType="java.util.Map" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrPageDTO">
+		SELECT
+		t2.template_id AS templateId,
+		t1.link_id AS linkId,
+		t1.link_name AS linkName,
+		t1.role_id AS roleId,
+		t1.user_type AS userType,
+		t1.msg_notify_type AS msgNotifyType,
+		t1.msg_notify_limit AS msgNotifyLimit,
+		t1.msg_notify_company AS msgNotifyCompany,
+		t1.leader_flag AS leaderFlag,
+		t1.rollback_flag AS rollbackFlag,
+		t1.attr_flag AS attrFlag,
+		t1.time_limit AS timeLimit,
+		0 as turnFlag,
+		t1.grid_user_type,
+		t1.data_filter_permiss,
+		t1.custom_admin,
+		t1.time_limit_company,
+		t1.time_start_alram,
+		t1.time_end_alram,
+		t1.voice_alram,
+		t1.time_remind,
+		t1.time_remind_auto,
+		t1.time_remind_number,
+		t1.if_later_remind,
+		t1.later_remind,
+		t1.later_remind_company,
+		t1.time_push_type,
+		t1.time_limit_push,
+		t1.msg_send_time_interval,
+		2 as gridUserType,
+		t1.grid_sign_role
+		FROM
+		vm_flow_link_industry_config t1
+		LEFT JOIN vm_flow_template_industry t2 ON t1.industry_code = t2.industry_code and t1.app_ver_code = t2.app_ver_code
+		WHERE t2.status = '1'
+		and t1.delete_flag='0'
+		and t2.delete_flag='0'
+		<if test="industryCode != null and industryCode != ''">
+			AND t1.industry_code = #{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			AND t1.app_ver_code = #{appVerCode}
+		</if>
+	</select>
+
+	<select id="queryFlowLinkUserList" resultType="com.chinatower.event.entity.dto.VmFlowLinkUserDO">
+		SELECT
+			t1.link_user_id,
+			t1.user_id,
+			t1.org_id,
+			t1.template_id,
+			t1.tenant_id,
+			t1.link_id,
+			t1.attr_id
+		FROM
+			vm_flow_link_user t1
+		WHERE t1.delete_flag = 0 AND t1.attr_id = #{attrId, jdbcType=BIGINT}
+	</select>
+
+	<select id="queryFlowLinkRoleList" resultType="com.chinatower.event.entity.dto.VmFlowLinkRoleDO">
+		SELECT
+			t1.link_role_id,
+			t1.role_id,
+			t1.org_id,
+			t1.template_id,
+			t1.tenant_id,
+			t1.link_id,
+			t1.attr_id
+		FROM
+			vm_flow_link_role t1
+		WHERE t1.delete_flag = 0 AND t1.attr_id = #{attrId, jdbcType=BIGINT}
+	</select>
+
+	<select id="queryFlowLinkUserListNew" resultType="com.chinatower.event.entity.dto.VmFlowLinkUserDO">
+		SELECT
+		t1.link_user_id,
+		t1.user_id,
+		t1.org_id,
+		t1.template_id,
+		t1.tenant_id,
+		t1.link_id,
+		t1.attr_id,
+		t1.grid_sign
+		FROM
+		vm_flow_link_user t1
+		WHERE t1.delete_flag = 0 AND t1.attr_id IN
+		<foreach collection ="attrList" item="item" index="index" open="(" separator="," close=")">
+			#{item.id, jdbcType=BIGINT}
+		</foreach>
+	</select>
+
+	<select id="queryFlowLinkRoleListNew" resultType="com.chinatower.event.entity.dto.VmFlowLinkRoleDO">
+		SELECT
+		t1.link_role_id,
+		t1.role_id,
+		t1.org_id,
+		t1.template_id,
+		t1.tenant_id,
+		t1.link_id,
+		t1.attr_id,
+		t1.grid_sign
+		FROM
+		vm_flow_link_role t1
+		WHERE t1.delete_flag = 0 AND t1.attr_id IN
+		<foreach collection ="attrList" item="item" index="index" open="(" separator="," close=")">
+			#{item.id, jdbcType=BIGINT}
+		</foreach>
+	</select>
+
+	<select id="queryFlowLinkOverdueRemind" resultType="com.chinatower.event.entity.dto.VmFlowLinkOverdueRemindDO">
+		SELECT
+		t1.id,
+		t1.attr_id,
+		t1.time_limit_remind,
+		t1.time_limit_remind_company,
+		t1.time_limit_remind_name,
+		t1.overdue_remind_sign
+		FROM
+		vm_flow_link_overdue_remind t1
+		WHERE t1.delete_flag = 0 AND t1.attr_id IN
+		<foreach collection ="attrList" item="item" index="index" open="(" separator="," close=")">
+			#{item.id, jdbcType=BIGINT}
+		</foreach>
+	</select>
+
+	<select id="queryFlowLinkUserListByParam" resultType="com.chinatower.event.entity.dto.VmFlowLinkUserDO">
+		SELECT
+		t1.link_user_id,
+		t1.user_id,
+		t1.org_id,
+		t1.template_id,
+		t1.tenant_id,
+		t1.link_id,
+		t1.attr_id
+		FROM
+		vm_flow_link_user t1
+		WHERE t1.delete_flag = 0 AND t1.attr_id = #{attrId, jdbcType=BIGINT}
+		<if test="linkId != null and linkId != ''">
+			AND t1.link_id = #{linkId}
+		</if>
+	</select>
+
+	<select id="queryFlowLinkRoleListByParam" resultType="com.chinatower.event.entity.dto.VmFlowLinkRoleDO">
+		SELECT
+		t1.link_role_id,
+		t1.role_id,
+		t1.org_id,
+		t1.template_id,
+		t1.tenant_id,
+		t1.link_id,
+		t1.attr_id
+		FROM
+		vm_flow_link_role t1
+		WHERE t1.delete_flag = 0 AND t1.attr_id = #{attrId, jdbcType=BIGINT}
+		<if test="linkId != null and linkId != ''">
+			AND t1.link_id = #{linkId}
+		</if>
+	</select>
+
+	<select id="queryUsers" resultType="com.chinatower.platform.entity.admin.SysUser">
+		select user_id as userId, user_name as userName, dept_id as deptId, nick_name as nickName
+		from sys_user where 1=1
+		<if test="list != null and list.size()>0 ">
+			and user_id in
+			<foreach collection="list" item="userId" index="index" open="(" close=")" separator=",">
+				#{userId}
+			</foreach>
+		</if>
+		<if test="userName != null  and userName != ''">
+			and user_name like CONCAT('%', #{userName}, '%')
+		</if>
+	</select>
+
+	<select id="queryTenantList" parameterType="java.util.List" resultType="com.chinatower.platform.entity.admin.SysTenantInfo">
+		select tenant_id as tenantId, tenant_name as tenantName
+		from sys_tenant_info where tenant_id in
+		<foreach collection="list" item="tenantId" index="index" open="(" close=")" separator=",">
+			#{tenantId}
+		</foreach>
+	</select>
+
+	<select id="getThirdPartyAlarmTypes" resultType="com.chinatower.event.entity.vo.AlarmTypeVO">
+		SELECT
+			t.tenant_id,
+			t.industry_code,
+			'11' AS alarmSource,
+			t.warning_source_name AS 'alarmSourceName',
+			t.alarm_type AS 'typeValue'
+		FROM
+			vm_third_party_alarm t
+		WHERE
+			t.delete_flag = 0
+		<if test="tenantId != null and tenantId != '' ">
+			AND t.tenant_id = #{tenantId}
+		</if>
+		<if test="industryCode != null and industryCode != '' ">
+			AND t.industry_code = #{industryCode}
+		</if>
+	</select>
+
+	<select id="getUserInfoByName" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="java.util.Map">
+		SELECT
+			DISTINCT d.tenant_id AS tenantId,
+		    '0' AS dept,
+			d.dept_id AS pid,
+			d.dept_name AS deptName,
+			d.industry_code as industryCode,
+			u.user_id AS id,
+			u.user_name AS userName,
+			u.nick_name AS nickName,
+			u.sex AS sex,
+			u.avatar AS avatar
+		FROM
+			sys_dept d
+		LEFT JOIN sys_user u on FIND_IN_SET( d.DEPT_ID, u.DEPT_ID ) AND u.DEL_FLAG = '0'
+		WHERE
+			d.del_flag = '0' AND d.tenant_id = #{tenantId} and d.INDUSTRY_CODE=#{industryCode}
+		<if test="nickName != null and nickName != ''">
+			AND u.nick_name like concat('%',#{nickName},'%')
+		</if>
+		<if test="userIdList != null and userIdList.size()>0 ">
+			AND u.USER_ID in
+			<foreach collection="userIdList" item="userId" index="index" open="(" close=")" separator=",">
+				#{userId}
+			</foreach>
+		</if>
+	</select>
+
+	<select id="getAutoConfigName" resultType="java.lang.String">
+		SELECT
+			IFNULL( CONCAT( '告警流程名称', MAX_ID + 1 ), '告警流程名称1' ) AS new_alarm_flow_name
+		FROM
+			(
+				SELECT
+					MAX(CAST( SUBSTRING( alarm_flow_name, 7 ) AS SIGNED )) AS MAX_ID
+				FROM
+					vm_alarm_flow_config
+				WHERE
+					alarm_flow_name LIKE '告警流程名称%'
+				  AND delete_flag = 0
+				  AND status = '1'
+				  AND tenant_id = #{tenantId}
+				  AND app_ver_code = #{appVerCode}
+				  AND industry_code = #{industryCode}
+			) a
+	</select>
+
+	<select id="getConfigNameCount" resultType="int">
+		select count(1) from vm_alarm_flow_config
+		where alarm_flow_name = #{alarmFlowName}
+		and delete_flag = '0'
+		and tenant_id = #{tenantId}
+		and app_ver_code = #{appVerCode}
+		and industry_code = #{industryCode}
+		<if test="id != null and id != ''">
+			and id != #{id}
+		</if>
+	</select>
+
+	<insert id="addVmAlarmFlowConfig" parameterType="com.chinatower.event.entity.dto.VmAlarmFlowConfigModel" keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+		insert into vm_alarm_flow_config
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="alarmFlowName != null and alarmFlowName != ''">alarm_flow_name,</if>
+			<if test="tenantId != null and tenantId != ''">tenant_id,</if>
+			<if test="flowName != null and flowName != ''">flow_name,</if>
+			<if test="templateId != null and templateId != ''">template_id,</if>
+			<if test="creator != null and creator != ''">creator,</if>
+			create_time,
+			update_time,
+			modifier,
+			<if test="appVerCode != null and appVerCode != ''">app_ver_code,</if>
+			<if test="industryCode != null and industryCode != ''">industry_code,</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="alarmFlowName != null and alarmFlowName != ''">#{alarmFlowName},</if>
+			<if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+			<if test="flowName != null and flowName != ''">#{flowName},</if>
+			<if test="templateId != null and templateId != ''">#{templateId},</if>
+			<if test="creator != null and creator != ''">#{creator},</if>
+			<choose>
+				<when test="createTime != null">
+					#{createTime},
+					now(),
+					#{modifier},
+				</when>
+				<otherwise>
+					NOW(),
+					null,
+					'',
+				</otherwise>
+			</choose>
+			<if test="appVerCode != null and appVerCode != '' ">#{appVerCode},</if>
+			<if test="industryCode != null and industryCode != '' ">#{industryCode},</if>
+		</trim>
+	</insert>
+
+	<insert id="batchAddFlowTemplateType" parameterType="java.util.List">
+		INSERT INTO vm_flow_template_alarm_type( template_id, alarm_flow_id, tenant_id, warning_source, alarm_type, creator, modifier, create_time, update_time, industry_code, app_ver_code )
+		VALUES
+		<foreach collection="templateTypeList" item="item" index="index" separator=",">
+			(#{item.templateId},
+			#{item.alarmFlowId},
+			#{item.tenantId},
+			#{item.warningSource},
+			#{item.alarmType},
+			#{item.creator},
+			#{item.modifier},
+			NOW(),
+			NOW(),
+			#{item.industryCode},
+			#{item.appVerCode})
+		</foreach>
+	</insert>
+
+	<insert id="batchAddFlowLinkAttr" parameterType="java.util.List" keyColumn="id" keyProperty="id" useGeneratedKeys="true">
+		INSERT INTO vm_flow_link_attr( template_id, tenant_id, link_id, alarm_flow_id, user_type, msg_notify_type, msg_notify_limit, msg_notify_company, leader_flag,
+		rollback_flag, time_limit, create_time, update_time, creator, modifier, app_ver_code, industry_code,msg_send_time_interval,link_alias,turn_flag,real_link_type,grid_user_type,
+		data_filter_permiss,
+		custom_admin,
+		time_limit_company,
+		time_start_alram,
+		time_end_alram,
+		voice_alram,
+		time_remind,
+		time_remind_auto,
+		time_remind_number,
+		if_later_remind,
+		later_remind,
+		later_remind_company,
+		time_push_type,
+		time_limit_push,
+		enable_acceptance_mode,
+		time_limit_acceptance,
+		acceptance_company ) VALUES
+		<foreach collection="flowLinkAttrList" item="item" index="index" separator=",">
+			(#{item.templateId},
+			#{item.tenantId},
+			#{item.linkId},
+			#{item.alarmFlowId},
+			#{item.userType},
+			#{item.msgNotifyType},
+			#{item.msgNotifyLimit},
+			#{item.msgNotifyCompany},
+			#{item.leaderFlag},
+			#{item.rollbackFlag},
+			#{item.timeLimit},
+			NOW(),
+			NOW(),
+			#{item.creator},
+			#{item.modifier},
+			#{item.appVerCode},
+			#{item.industryCode},
+			#{item.msgSendTimeInterval},
+			#{item.linkAlias},
+			#{item.turnFlag},
+			#{item.realLinkType},
+			#{item.gridUserType},
+			#{item.dataFilterPermiss},
+			#{item.customAdmin},
+			#{item.timeLimitCompany},
+			#{item.timeStartAlram},
+			#{item.timeEndAlram},
+			#{item.voiceAlram},
+			#{item.timeRemind},
+			#{item.timeRemindAuto},
+			#{item.timeRemindNumber},
+			#{item.ifLaterRemind},
+			#{item.laterRemind},
+			#{item.laterRemindCompany},
+			#{item.timePushType},
+			#{item.timeLimitPush},
+			#{item.enableAcceptanceMode},
+			#{item.timeLimitAcceptance},
+			#{item.acceptanceCompany})
+		</foreach>
+	</insert>
+
+	<insert id="batchAddFlowLinkUser" parameterType="java.util.List">
+		INSERT INTO vm_flow_link_user( user_id, org_id, template_id, tenant_id, link_id, attr_id, create_time, update_time, creator, modifier,grid_sign )
+		VALUES
+		<foreach collection="flowLinkUserList" item="item" index="index" separator=",">
+			(#{item.userId},
+			#{item.orgId},
+			#{item.templateId},
+			#{item.tenantId},
+			#{item.linkId},
+			#{item.attrId},
+			NOW(),
+			NOW(),
+			#{item.creator},
+			#{item.modifier},
+			#{item.gridSign})
+		</foreach>
+	</insert>
+
+	<insert id="batchAddFlowLinkRole" parameterType="java.util.List">
+		INSERT INTO vm_flow_link_role( role_id, org_id, template_id, tenant_id, link_id, attr_id, create_time, update_time, creator, modifier,grid_sign )
+		VALUES
+		<foreach collection="flowLinkRoleList" item="item" index="index" separator=",">
+			(#{item.roleId},
+			#{item.orgId},
+			#{item.templateId},
+			#{item.tenantId},
+			#{item.linkId},
+			#{item.attrId},
+			NOW(),
+			NOW(),
+			#{item.creator},
+			#{item.modifier},
+			#{item.gridSign})
+		</foreach>
+	</insert>
+
+	<insert id="batchAddFlowLinkOverdueRemind" parameterType="java.util.List">
+		INSERT INTO vm_flow_link_overdue_remind( attr_id, time_limit_remind, time_limit_remind_company, time_limit_remind_name,
+		overdue_remind_sign, create_time, update_time, creator, modifier )
+		VALUES
+		<foreach collection="overdueRemindList" item="item" index="index" separator=",">
+			(#{item.attrId},
+			#{item.timeLimitRemind},
+			#{item.timeLimitRemindCompany},
+			#{item.timeLimitRemindName},
+			#{item.overdueRemindSign},
+			NOW(),
+			NOW(),
+			#{item.creator},
+			#{item.modifier})
+		</foreach>
+	</insert>
+
+	<update id="modifierAlarmFlowConfigById">
+		UPDATE vm_alarm_flow_config
+		<set>
+			<if test="alarmFlowName != null and alarmFlowName != ''">
+				alarm_flow_name = #{alarmFlowName,jdbcType=VARCHAR},
+			</if>
+			<if test="tenantId != null and tenantId != ''">
+				tenant_id = #{tenantId,jdbcType=VARCHAR},
+			</if>
+			<if test="flowName != null and flowName != ''">
+				flow_name = #{flowName,jdbcType=VARCHAR},
+			</if>
+			<if test="templateId != null and templateId != ''">
+				template_id = #{templateId,jdbcType=BIGINT},
+			</if>
+			<if test="status != null and status != ''">
+				status = #{status,jdbcType=VARCHAR},
+			</if>
+			<if test="deleteFlag != null and deleteFlag != ''">
+				delete_flag = #{deleteFlag,jdbcType=INTEGER},
+			</if>
+			<if test="modifier != null and modifier != ''">
+				modifier = #{modifier,jdbcType=VARCHAR},
+			</if>
+			update_time = NOW(),
+			<if test="industryCode != null and industryCode != ''">
+				industry_code = #{industryCode,jdbcType=VARCHAR},
+			</if>
+			<if test="appVerCode != null and appVerCode != ''">
+				app_ver_code = #{appVerCode,jdbcType=VARCHAR},
+			</if>
+		</set>
+		WHERE id = #{id, jdbcType=BIGINT}
+	</update>
+
+	<update id="deleteAlarmTypes" parameterType="com.chinatower.event.entity.dto.VmAlarmFlowConfigModel">
+		update vm_flow_template_alarm_type
+		set delete_flag = 1
+		where tenant_id = #{tenantId}
+		and industry_code = #{industryCode,jdbcType=VARCHAR}
+		and app_ver_code = #{appVerCode,jdbcType=VARCHAR}
+		<if test="sourceAndTypeList != null and sourceAndTypeList.size() > 0">
+			AND concat(alarm_type, '-', warning_source)
+			<foreach collection="sourceAndTypeList" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		<if test="id != null and id != ''">
+			and alarm_flow_id != #{id}
+		</if>
+		and delete_flag= 0
+	</update>
+
+	<select id="getConfigIdByAlarmType" parameterType="com.chinatower.event.entity.dto.VmAlarmFlowConfigModel" resultType="String">
+		select alarm_flow_id
+		from vm_flow_template_alarm_type
+		where tenant_id = #{tenantId}
+		and industry_code = #{industryCode,jdbcType=VARCHAR}
+		and app_ver_code = #{appVerCode,jdbcType=VARCHAR}
+		and delete_flag= 0
+		<if test="sourceAndTypeList != null and sourceAndTypeList.size() > 0">
+			AND concat(alarm_type, '-', warning_source)
+			<foreach collection="sourceAndTypeList" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<select id="selectEmptyConfigIds" resultType="java.lang.Long">
+		select distinct id from vm_alarm_flow_config where
+		delete_flag= 0
+		and tenant_id = #{model.tenantId}
+		and industry_code = #{model.industryCode,jdbcType=VARCHAR}
+		and app_ver_code = #{model.appVerCode,jdbcType=VARCHAR}
+		and id in
+		<foreach collection="flowConfigIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and id not in
+		(select distinct alarm_flow_id
+		from vm_flow_template_alarm_type
+		where tenant_id = #{model.tenantId}
+		and industry_code = #{model.industryCode,jdbcType=VARCHAR}
+		and app_ver_code = #{model.appVerCode,jdbcType=VARCHAR}
+		and delete_flag= 0 and alarm_flow_id in
+		<foreach collection="flowConfigIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>)
+	</select>
+
+	<update id="deleteFlowConfig">
+		update vm_alarm_flow_config
+		set delete_flag = 1
+		where tenant_id = #{tenantId}
+		and id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0
+	</update>
+
+	<update id="deleteAlarmTypeByConfigId">
+		update vm_flow_template_alarm_type
+		set delete_flag = 1
+		where tenant_id = #{tenantId}
+		and alarm_flow_id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0
+	</update>
+
+	<update id="deleteAttrByConfigId">
+		update vm_flow_link_attr
+		set delete_flag = 1
+		where tenant_id = #{tenantId}
+		and alarm_flow_id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0
+	</update>
+
+	<delete id="deleteRealAttrByConfigId">
+		delete from vm_flow_link_attr
+		where tenant_id = #{tenantId}
+		and alarm_flow_id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+	<delete id="deleteRealUserByConfigId">
+		delete from vm_flow_link_user
+		where attr_id in
+		(select id from vm_flow_link_attr where tenant_id = #{tenantId}
+		and alarm_flow_id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0)
+		and delete_flag= 0
+	</delete>
+
+
+	<delete id="deleteRealRoleByConfigId">
+		delete from vm_flow_link_role
+		where attr_id in
+		(select id from vm_flow_link_attr where tenant_id = #{tenantId}
+		and alarm_flow_id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0)
+	</delete>
+
+	<delete id="deleteRealRemindByConfigId">
+		delete from vm_flow_link_overdue_remind
+		where attr_id in
+		(select id from vm_flow_link_attr where tenant_id = #{tenantId}
+		and alarm_flow_id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0)
+	</delete>
+
+
+	<update id="deleteUserByConfigId">
+		update vm_flow_link_user
+		set delete_flag = 1
+		where attr_id in
+		(select id from vm_flow_link_attr where tenant_id = #{tenantId}
+		and alarm_flow_id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0)
+		and delete_flag= 0
+	</update>
+
+	<update id="deleteRoleByConfigId">
+		update vm_flow_link_role
+		set delete_flag = 1
+		where attr_id in
+		(select id from vm_flow_link_attr where tenant_id = #{tenantId}
+		and alarm_flow_id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0)
+	</update>
+
+	<update id="deleteRemindByConfigId">
+		update vm_flow_link_overdue_remind
+		set delete_flag = 1
+		where attr_id in
+		(select id from vm_flow_link_attr where tenant_id = #{tenantId}
+		and alarm_flow_id in
+		<foreach collection="alarmFlowIds" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		and delete_flag= 0)
+	</update>
+
+
+	<select id="getExistAlarmType" parameterType="com.chinatower.event.entity.dto.VmAlarmFlowConfigModel" resultType="String">
+		select concat(alarm_type, '-', warning_source)
+		from vm_flow_template_alarm_type
+		where tenant_id = #{tenantId}
+		and industry_code = #{industryCode,jdbcType=VARCHAR}
+		and app_ver_code = #{appVerCode,jdbcType=VARCHAR}
+		and delete_flag= 0
+		<if test="sourceAndTypeList != null and sourceAndTypeList.size() > 0">
+			AND concat(alarm_type, '-', warning_source)
+			<foreach collection="sourceAndTypeList" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<select id="getTenantConfigAlarmType" resultType="com.chinatower.event.entity.dto.VmAlarmFlowTemplateTypeDO">
+		select distinct warning_source, alarm_type
+		from vm_flow_template_alarm_type
+		where tenant_id = #{tenantId}
+		  and industry_code = #{industryCode,jdbcType=VARCHAR}
+		  and app_ver_code = #{appVerCode,jdbcType=VARCHAR}
+		  and delete_flag= 0
+		order by warning_source
+	</select>
+
+
+	<select id="getFlowByRoleId" resultType="map">
+		SELECT DISTINCT  c.id, c.alarm_flow_name alarmFlowName FROM
+		`vm_flow_link_role` r
+		left join vm_flow_link_attr a on  a.id = r.attr_id
+		left join vm_alarm_flow_config c on a.alarm_flow_id = c.id
+		where r.role_id = #{roleId}
+		<if test="tenantId != null and tenantId != ''">
+			and r.tenant_id = #{tenantId}
+			and c.tenant_id =  #{tenantId}
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			and c.industry_code =  #{industryCode,jdbcType=VARCHAR}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			and c.app_ver_code =  #{appVerCode,jdbcType=VARCHAR}
+		</if>
+		<if test="deleteFlag != null and deleteFlag != ''">
+			and c.delete_flag = #{deleteFlag}
+			and r.delete_flag = #{deleteFlag}
+			and a.delete_flag = #{deleteFlag}
+		</if>
+	</select>
+	<select id="getFlowByUserId" resultType="map">
+		SELECT DISTINCT  c.id, c.alarm_flow_name alarmFlowName FROM
+		`vm_flow_link_user` u
+		left join vm_flow_link_attr a on  a.id = u.attr_id
+		left join vm_alarm_flow_config c on a.alarm_flow_id = c.id
+		where u.user_id = #{userId}
+		<if test="tenantId != null and tenantId != ''">
+			and u.tenant_id = #{tenantId}
+			and c.tenant_id =  #{tenantId}
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			and c.industry_code =  #{industryCode,jdbcType=VARCHAR}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			and c.app_ver_code =  #{appVerCode,jdbcType=VARCHAR}
+		</if>
+		<if test="deleteFlag != null and deleteFlag != ''">
+			and c.delete_flag = #{deleteFlag}
+			and u.delete_flag = #{deleteFlag}
+			and a.delete_flag = #{deleteFlag}
+		</if>
+	</select>
+
+	<select id="getIndustryConfigByRoleId" resultType="map">
+		select distinct industry_code, app_ver_code
+		from vm_flow_link_industry_config
+		where delete_flag='0'
+		  and FIND_IN_SET(#{roleId}, role_id)
+	</select>
+
+	<select id="getFlowInUse" resultType="map">
+		SELECT DISTINCT '' as alarmFlowName, o.flow_id
+		FROM ${tableName} o
+		where o.order_status not in (0,6,7) AND o.delete_flag = '0'
+		<if test="flows != null and flows.size() > 0">
+			and (o.flow_id in
+			<foreach collection="flows" item="item" index="index" open=" (" close=")" separator=",">
+				#{item.id}
+			</foreach>
+			<if test="userId != null and userId != ''">
+				or FIND_IN_SET(#{userId}, o.process_id)
+			</if>
+			)
+		</if>
+		<if test="templateId != null and templateId != ''">
+			and o.flow_template = CONCAT('',#{templateId},'')
+		</if>
+		<if test="(templateId == null or templateId == '') and (flows == null or flows.size() == 0)">
+			<if test="userId != null and userId != ''">
+				and FIND_IN_SET(#{userId}, o.process_id)
+			</if>
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			and o.industry_code = #{industryCode}
+		</if>
+		<if test="tenantId != null and tenantId != ''">
+			and o.tenant_id = #{tenantId}
+		</if>
+	</select>
+
+	<select id="queryFlowLinkAttrListByIds" parameterType="com.chinatower.event.entity.dto.VmAlarmFlowConfigDTO"  resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrPageDTO">
+		SELECT
+			t1.id,
+			t1.tenant_id,
+			t1.template_id,
+			t1.link_id,
+			t1.alarm_flow_id,
+			t1.user_type,
+			t1.msg_notify_type,
+			t1.msg_notify_limit,
+			t1.msg_notify_company,
+			t1.leader_flag,
+			t1.rollback_flag,
+			t1.time_limit,
+			t1.msg_send_time_interval,
+			t1.link_alias,
+			t1.turn_flag,
+			t1.real_link_type,
+			t2.link_name
+		FROM
+			vm_flow_link_attr t1
+				LEFT JOIN vm_flow_link_config t2 on t1.link_id = t2.link_id
+		WHERE t1.delete_flag = 0
+		  AND t1.template_id = #{templateId} and t1.alarm_flow_id = #{id}
+	</select>
+
+	<select id="queryFlowLinkAttrListByVoice" parameterType="com.chinatower.event.entity.dto.VmAlarmFlowConfigDTO"  resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrPageDTO">
+		SELECT
+			t1.id,
+			t1.tenant_id,
+			t1.template_id,
+			t1.alarm_flow_id,
+			t1.voice_alram
+		FROM
+			vm_flow_link_attr t1
+		WHERE t1.voice_alram = #{voiceAlram}
+		  and t1.delete_flag = 0
+	</select>
+
+</mapper>

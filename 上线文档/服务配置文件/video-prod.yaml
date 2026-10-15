@@ -1,0 +1,1127 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: video-prod
+  namespace: default
+  selfLink: /api/v1/namespaces/default/configmaps/video-prod
+  uid: 18da0213-53fb-436e-b032-e5d6318e7c14
+  resourceVersion: '469400112'
+  creationTimestamp: '2024-07-23T10:02:00Z'
+  annotations:
+    currentVersion: '1'
+    description: 生产环境配置
+    originName: video-prod
+  managedFields:
+    - manager: cfe-apiserver
+      operation: Update
+      apiVersion: v1
+      time: '2024-07-24T09:16:33Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:data:
+          .: {}
+          f:public.yml: {}
+          f:ttview-analysis.yml: {}
+          f:ttview-event.yml: {}
+          f:ttview-manage.yml: {}
+          f:ttview-system.yml: {}
+          f:video-analysis.yml: {}
+          f:video-bdm.yml: {}
+          f:video-device.yml: {}
+          f:video-event.yml: {}
+          f:video-export.yml: {}
+          f:video-manage.yml: {}
+          f:video-msg.yml: {}
+          f:video-order.yml: {}
+          f:video-out-data.yml: {}
+          f:video-system.yml: {}
+          f:video-task-data.yml: {}
+          f:video-task.yml: {}
+          f:video-video.yml: {}
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:currentVersion: {}
+            f:description: {}
+            f:originName: {}
+data:
+  public.yml: |
+    feign:
+      sentinel:
+        enabled: true
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 60000
+    tower:
+      log:
+        enable: true
+      swagger:
+        enable: true
+      redis:
+        enabled: true
+        max-pool-idex: 10
+        max-pool-total: 10
+        min-pool-idex: 10
+        max-wait-millis: 100
+        command-timeout: 10000
+        primary:
+          cluster: true
+          host: 10.19.30.209:6379,10.19.30.171:6379,10.19.30.105:6379,10.19.30.134:6379,10.19.30.85:6379,10.19.30.152:6379
+          port: 6379
+          password: ENC(nnaNVbzkrFJOxHvpL3wzU9Q9XKWdOMKJuoIa2iYeRYwbbgpV5BcgTA==)
+      mongodb:
+        enable: true
+        primary:
+          cluster: true
+          host: 10.19.30.198:8635,10.19.30.88:8635,10.19.30.181:8635
+          username: videoplatformrwuser
+          password: ENC(8lPR0VWinB2C2pC6ZM4lwBBAjz5asUFAF8B/arGePbI=)
+          database: videoPlatform
+          port: 8635
+          min-pool-size: 20
+          max-pool-size: 200
+          connect-timeout: 5
+        secondary:
+          cluster: true
+          host: 10.19.30.198:8635,10.19.30.88:8635,10.19.30.181:8635
+          username: videoplatformrwuser
+          password: ENC(f5IBKxlSdDGQuPgQtWbNIot8XLqRPqvIXmwxWQDfWUQ=)
+          database: videoPlatform
+          authenticationDatabase: admin
+          port: 8635
+          min-pool-size: 20
+          max-pool-size: 200
+          connect-timeout: 5
+    spring:
+      cloud:
+        nacos:
+          discovery:
+            server-addr: 10.19.30.175:8848
+            username: nacos
+            password: aKMriWY7
+          config:
+            enabled: false
+      datasource:
+        dynamic:
+          primary: base
+          datasource:
+            slave:
+              url: jdbc:mysql://10.19.30.51:3306/video_platform_base?characterEncoding=utf8&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true
+              username: rwhjbase
+              password: ENC(uciZxNCyGO0rYPBO1EiDHk0czOIG5i7WabcDMk7uN0M=)
+              driver-class-name: com.mysql.cj.jdbc.Driver
+            base:
+              url: jdbc:mysql://10.19.30.51:3306/video_platform_base?characterEncoding=UTF-8&useSSL=false&serverTimezone=GMT%2b8&allowMultiQueries=true&zeroDateTimeBehavior=CONVERT_TO_NULL
+              username: rwhjbase
+              password: ENC(ggqdIijh2AeXkbTJu1TywJZmsixUc1SSTceFZccioJw=)
+              driver-class-name: com.mysql.cj.jdbc.Driver
+            platform:
+              url: jdbc:mysql://10.19.30.27:3306/video_platform?characterEncoding=UTF-8&useSSL=false&serverTimezone=GMT%2b8&allowMultiQueries=true
+              username: rwhjplatform
+              password: ENC(OQ7H1+2oAXyNeMImggHo/r0KwntQwoOAwqB7NubJ9pc=)
+              driver-class-name: com.mysql.cj.jdbc.Driver
+            statistic:
+              url: jdbc:mysql://10.19.30.156:3306/video_platform_statistic?characterEncoding=UTF-8&useSSL=false&serverTimezone=GMT%2b8&allowMultiQueries=true
+              username: rwhjstatistic
+              password: ENC(b6crNXSqGg8Kt0IRKHaVXvepDz4XTnEYsYZCVzje1cc=)
+              driver-class-name: com.mysql.cj.jdbc.Driver
+            platform_readonly:
+              url: jdbc:mysql://10.19.30.27:3306/video_platform?characterEncoding=UTF-8&useSSL=false&serverTimezone=GMT%2b8&allowMultiQueries=true
+              username: rwhjplatform
+              password: ENC(OQ7H1+2oAXyNeMImggHo/r0KwntQwoOAwqB7NubJ9pc=)
+              driver-class-name: com.mysql.cj.jdbc.Driver
+        druid:
+          initial-size: 5
+          min-idle: 5
+          maxActive: 20
+          maxWait: 60000
+          timeBetweenEvictionRunsMillis: 60000
+          minEvictableIdleTimeMillis: 300000
+          validationQuery: SELECT 1 FROM DUAL
+          testWhileIdle: true
+          testOnBorrow: false
+          testOnReturn: false
+          poolPreparedStatements: true
+          maxPoolPreparedStatementPerConnectionSize: 20
+          filters: stat,wall,slf4j
+          connectionProperties: druid.stat.mergeSql\=true;druid.stat.slowSqlMillis\=5000
+      kafka:
+        bootstrap-servers: 10.19.30.64:9092,10.19.30.81:9092,10.19.30.236:9092
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        consumer:
+          enable-auto-commit: true
+          auto-offset-reset: earliest
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      kafka2:
+        bootstrap-servers: 10.46.17.86:9092,10.46.17.99:9092,10.46.17.202:9092
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        consumer:
+          max-poll-records: 100
+          max-partition-fetch-bytes: 10485760
+          enable-auto-commit: true
+          auto-offset-reset: earliest
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    mybatis:
+      mapperLocations: classpath*:mapper/**/*.xml
+      configuration:
+        cache-enabled: true
+        use-generated-keys: false
+        default-executor-type: reuse
+        log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+        map-underscore-to-camel-case: true
+    mybatis-plus:
+      mapper-locations: classpath*:**/*Mapper.xml,classpath*:**/*DAO.xml
+    video-bdm:
+      url: http://10.19.30.175:9994
+    video-video:
+      appKey: eddb2010abea447d8993a0c7f400ab90
+      secretKey: 7db1cc5e84094807b6f4bb7fe2c036d7
+      appCode: commonPlatform
+      url: http://10.19.30.175:9994
+    north:
+      intf:
+        ipPort: http://10.19.30.175:9994
+    tower-config:
+      xxl-job-address: http://10.19.30.175:9221/job
+      xxl-job-port: 9912
+      xxl-job-logpath: logs/xxl-job/jobhandler
+      xxl-job-address2: http://10.38.26.252:19080/job
+      xxl-job-port2: 1920
+      xxl-job-port3: 1899
+    obs-config:
+      obs-ak: ENC(E+JhNFhCrAnbBxsJGWWMPDGD8YWJiT1xW+3tWeYZb52140CgovoMsQ==)
+      obs-sk: ENC(PpL6syNXZgtuifjcwLgi4DSWOcduKzVujhaEZpX2gwTiCTmaePETnqugPjJCYEDU0e8Px4ZjCz+Zo0EJAtEOLA==)
+      video-task-data-obs-ak: ENC(0GIzuxfDdnvWyAwd7GaCGcooaZlLokwX1+Z0g7CW+Emu/fWQTHC9IA==)
+      video-task-data-obs-sk: ENC(WnGignw74caXm+BVnzEHiAo5z72xQmwUawzpZM6UM9GU0BNqqu0boL+Z13fSTfC/sRZyRW4LmZsIyQKoSbT8SA==)
+      obs-endPoint: obs.cn-north-4.myhuaweicloud.com
+      obs-suffixRules: jpg,bmp,pcx,tif,gif,jpeg,tga,exif,fpx,svg,psd,cdr,pcd,dxf,ufo,eps,ai,png,hdri,raw,wmf,flic,emf,ico,xlsx,xls,pdf,doc,docx,mp4,txt,JPG,MP3,MP4,mp3,JPEG,PNG,wav
+    hwobs-config:
+      hwobs-endPoint: obs.cn-north-4.myhuaweicloud.com
+      hwobs-suffixRules: jpg,bmp,pcx,tif,gif,jpeg,tga,exif,fpx,svg,psd,cdr,pcd,dxf,ufo,eps,ai,png,hdri,raw,wmf,flic,emf,ico,xlsx,xls,pdf,doc,docx
+      hwobs-bucketList-ak1: ENC(C3wDXadDfLOR3OUcctIsOuqgyLAjnlAEBKw+6Tllmqzc71EpP3YMMw==)
+      hwobs-bucketList-sk1: ENC(asyLp8yeFklNvve6un+/CGHCDlX0kfnz4Ht5sMk1YXoNvSXc8OHKQ34AOp33wQW3EXGq8ZlZe8U4Nkk9tiy0Iw==)
+      hwobs-bucketList-ak2: ENC(C3wDXadDfLOR3OUcctIsOuqgyLAjnlAEBKw+6Tllmqzc71EpP3YMMw==)
+      hwobs-bucketList-sk2: ENC(asyLp8yeFklNvve6un+/CGHCDlX0kfnz4Ht5sMk1YXoNvSXc8OHKQ34AOp33wQW3EXGq8ZlZe8U4Nkk9tiy0Iw==)
+      hwobs-bucketList-ak3: ENC(C3wDXadDfLOR3OUcctIsOuqgyLAjnlAEBKw+6Tllmqzc71EpP3YMMw==)
+      hwobs-bucketList-sk3: ENC(asyLp8yeFklNvve6un+/CGHCDlX0kfnz4Ht5sMk1YXoNvSXc8OHKQ34AOp33wQW3EXGq8ZlZe8U4Nkk9tiy0Iw==)
+      hwobs-bucketList-ak4: ENC(0HrIU06GAi7m6lm8Fyb739rIAjJV1Mky0jbFd0VG4q3Xy9eFVRzhdA==)
+      hwobs-bucketList-sk4: ENC(W3gLX5ALgxDmXVdiHRh8iqWH0WNu4M6wJ2i4a433bJTVZ7R6tYwu8pa45yUwvo33hZtWlTUnF+n+6y3JPKWfVQ==)
+    tower-es:
+      uris: 10.19.30.231:9200,10.19.30.35:9200,10.19.30.145:9200
+      username: admin
+      password: ENC(fZSxF9Tagm2CxZY5lL3CK7iHjECWfAji02gOl1Ov+Xo=)
+    tower-sms:
+      loginUrl: https://sl.chinatowercom.cn/login
+    runZhi:
+      url: http://139.224.209.186
+  ttview-analysis.yml: |-
+    #最大连接数
+    http:
+      maxTotal: 100
+      #并发数
+      defaultMaxPerRoute: 20
+      #创建连接的最长时间
+      connectTimeout: 1000
+      #从连接池中获取到连接的最长时间
+      connectionRequestTimeout: 500
+      #数据传输的最长时间
+      socketTimeout: 10000
+      #提交请求前测试连接是否可用
+      staleConnectionCheckEnabled: true
+      #可用空闲连接过期时间,重用空闲连接时会先检查是否空闲时间超过这个时间，如果超过，释放socket重新建立
+      validateAfterInactivity: 3000000
+
+    server:
+      servlet:
+        context-path: /
+      tomcat:
+        uri-encoding: UTF-8
+        max-threads: 800
+        min-spare-threads: 30
+    logging:
+      level:
+        root: info
+        com.chinatower: debug
+        com.alibaba.nacos.client.naming: error
+      path: .logs
+        #pattern:
+      #console: '%d{yyyy-MM-dd HH:mm:ss.SSS,GMT+08} %5level ${PID:- } - %logger : %msg%n'
+    spring:
+      application:
+        name: ttview-analysis
+      messages:
+        basename: i18n/messages
+      servlet:
+        multipart:
+          max-file-size:  30MB
+          max-request-size:  100MB
+      devtools:
+        restart:
+          enabled: false
+      datasource:
+        dynamic:
+          primary: statistic
+    pagehelper:
+      helperDialect: mysql
+      reasonable: true
+      supportMethodsArguments: true
+      params: count=countSql
+    maxPageSize:
+      mongodb: 20000
+      mongodb2: 10000
+      oracle: 5000
+    obs:
+      ak: ${OBS_AK}
+      sk: ${OBS_SK}
+      endPoint: ${obs-config.obs-endPoint}
+      bucketName: video-platform
+      suffixRules: ${obs-config.obs-suffixRules}
+    knife4j:
+      production: false
+  ttview-event.yml: |
+    feign:
+      sentinel:
+        enabled: false
+    tower:
+      authAspect:
+        enable: true
+      flow:
+        alarm-default-flow: '-1,-2,-3'
+    spring:
+      elelasticsearch:
+        rest:
+          uris: ${tower-es.uris}
+          keep-alive-time: 30s
+          load-balancer: Ribbon
+      datasource:
+        dynamic:
+          primary: platform
+    mybatis-plus:
+      typeAliasesPackage: com.chinatower.event.mapper
+      configuration:
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        map-underscore-to-camel-case: true
+    knife4j:
+      production: false
+    sms:
+      templateCode: givh_gjdd
+      deviceTemplateCode: givh_gjdd_device
+      iotTemplateCode: givh_gjdd_iot
+    hwobs:
+      enable: true
+      expires: 600
+      endPoint: ${hwobs-config.hwobs-endPoint}
+      bucketList:
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: slw-base-video
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: sc-slyy2
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: video-platform
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: slw-base-video-test
+      suffixRules: ${hwobs-config.hwobs-suffixRules}
+  ttview-manage.yml: |-
+    # Spring配置
+    spring:
+      main:
+        allow-bean-definition-overriding: true
+        
+    pagehelper:
+      helper-dialect: mysql
+      reasonable: false
+      support-methods-arguments: true
+      params: count=countSql
+      
+    mybatis-plus:
+      typeAliasesPackage: com.chinatower.ttview.manage.mapper
+      mapper-locations: classpath*:mapper/**/**.xml
+      configuration:
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        map-underscore-to-camel-case: true
+  ttview-system.yml: |-
+    spring:
+      cloud:
+        loadbalancer:
+          ribbon:
+            enabled: false
+      servlet:
+        multipart:
+          max-file-size: 500MB
+          max-request-size: 500MB
+    knife4j:
+      production: false
+    logging:
+      level:
+        root: info
+        com.chinatower: debug
+        com.alibaba.nacos.client.naming: error
+      path: .logs
+    video-video:
+      appKey: ENC(GaS4gywavTPQAfdixYTnMTXlwUNEgxFvJJVyIBN1busALwitE7B0cZxUcUbv/aQd0qrK3iaTIRc=)
+      secretKey: ENC(SToD0U+tWGjD0IY6Jc7fonUM6ks/n82Ek3YZmUJXWyq1kBvaGMQZGe8TAcq+VMSHGbCt3RRSySs=)
+      appCode: junnan006
+      url: http://10.19.30.175:9994
+    jackson:
+      time-zone: GMT+8
+      date-format: yyyy-MM-dd HH:mm:ss
+  video-analysis.yml: |-
+    #最大连接数
+    http:
+      maxTotal: 100
+      #并发数
+      defaultMaxPerRoute: 20
+      #创建连接的最长时间
+      connectTimeout: 1000
+      #从连接池中获取到连接的最长时间
+      connectionRequestTimeout: 500
+      #数据传输的最长时间
+      socketTimeout: 10000
+      #提交请求前测试连接是否可用
+      staleConnectionCheckEnabled: true
+      #可用空闲连接过期时间,重用空闲连接时会先检查是否空闲时间超过这个时间，如果超过，释放socket重新建立
+      validateAfterInactivity: 3000000
+
+    server:
+      servlet:
+        context-path: /
+      tomcat:
+        uri-encoding: UTF-8
+        max-threads: 800
+        min-spare-threads: 30
+    logging:
+      level:
+        root: info
+        com.chinatower: debug
+        com.alibaba.nacos.client.naming: error
+      path: .logs
+        #pattern:
+      #console: '%d{yyyy-MM-dd HH:mm:ss.SSS,GMT+08} %5level ${PID:- } - %logger : %msg%n'
+    spring:
+      application:
+        name: video-analysis
+      messages:
+        basename: i18n/messages
+      servlet:
+        multipart:
+          max-file-size:  30MB
+          max-request-size:  100MB
+      devtools:
+        restart:
+          enabled: false
+      datasource:
+        dynamic:
+          primary: statistic
+    pagehelper:
+      helperDialect: mysql
+      reasonable: true
+      supportMethodsArguments: true
+      params: count=countSql
+    maxPageSize:
+      mongodb: 20000
+      mongodb2: 10000
+      oracle: 5000
+    obs:
+      ak: ${OBS_AK}
+      sk: ${OBS_SK}
+      endPoint: ${obs-config.obs-endPoint}
+      bucketName: video-platform
+      suffixRules: ${obs-config.obs-suffixRules}
+
+    knife4j:
+      production: false
+  video-bdm.yml: |-
+    spring:
+      jackson:
+        time-zone: GMT+8
+        date-format: yyyy-MM-dd HH:mm:ss
+      cloud:
+        loadbalancer:
+          ribbon:
+            enabled: false
+      datasource:
+        druid:
+          stat-view-servlet:
+            enabled: true
+            loginUsername: admin
+            loginPassword: 123456
+      kafka:
+        consumer:
+          group-id: videoTower
+    logging:
+      level:
+        root: info
+        com.chinatower: debug
+        com.alibaba.nacos.client.naming: error
+      path: .logs
+    pagehelper:
+      helperDialect: mysql
+      reasonable: true
+      supportMethodsArguments: true
+      params: count=countSql
+    geoserver:
+      url: http://10.19.30.175:9239/geoserver
+      showUrl: https://sl.chinatowercom.cn/geoserver
+      username: GEOSERVER_ADMIN_USER
+      password: ENC(g2g/qmS/lKER9ZO9MywQqDVBepXtvmoWITu6x88NdNE=)
+      shpworkspace: chinatower
+      tiffKeyword: GeoTIFF
+    pgsql:
+      host: yy-pg.towerslw-local.com
+      port: 5432
+      user: root
+      password: ENC(l4Dw83Y4PIhJt5Y2OaRbXipQ7+/E3+04QXlk/Fkgvxl+HqyZEB4HHA==)
+      database: gtgis
+
+    queryAnswer:
+      api:
+        url: http://10.46.10.38:8008/
+        tenantId: 110000-perception
+        appCode: 110000-perception
+  video-device.yml: |
+    spring:
+      kafka:
+        consumer:
+          group-id: videoTower
+      kafka2:
+        consumer:
+          group-id: videoTowerNew-ygdevice-algo
+    tower:
+      authAspect:
+        enable: true
+    device:
+      sync:
+        count: 500
+        timing: 30000
+    mybatis-plus:
+      typeAliasesPackage: com.chinatower.device.mapper,com.chinatower.algorithm.mapper
+      configuration:
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        map-underscore-to-camel-case: true
+    obs:
+      enable: true
+      expires: 600
+      ak: ${obs-config.obs-ak}
+      sk: ${obs-config.obs-sk}
+      endPoint: ${obs-config.obs-endPoint}
+      bucketName: video-platform
+      suffixRules: ${obs-config.obs-suffixRules}
+    xxl:
+      job:
+        enable: true
+        accessToken: null
+        admin:
+          addresses: ${tower-config.xxl-job-address}
+        executor:
+          appname: video-device
+          address: null
+          ip: null
+          port: ${tower-config.xxl-job-port}
+          logpath: logs/xxl-job/jobhandler
+          logretentiondays: 30
+  video-event.yml: |
+    feign:
+      sentinel:
+        enabled: false
+    tower:
+      authAspect:
+        enable: true
+      flow:
+        alarm-default-flow: '-1,-2,-3'
+    amap:
+      url: https://restapi.amap.com/v3/geocode/regeo
+      key: d6dec8c590af05d092033afc2cd51a57
+    spring:
+      datasource:
+        dynamic:
+          primary: platform
+      kafka:
+        producer:
+          retries: 0
+          buffer-memory: 40960
+          batch-size: 4096
+    mybatis-plus:
+      typeAliasesPackage: com.chinatower.event.mapper
+      configuration:
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        map-underscore-to-camel-case: true
+    knife4j:
+      production: false
+    sms:
+      templateCode: givh_gjdd
+      deviceTemplateCode: givh_gjdd_device
+      iotTemplateCode: givh_gjdd_iot
+    obs:
+      enable: true
+      expires: 600
+      ak: ${OBS_AK}
+      sk: ${OBS_SK}
+      endPoint: ${obs-config.obs-endPoint}
+      bucketName: video-platform
+      suffixRules: ${obs-config.obs-suffixRules}
+    hwobs:
+      enable: true
+      expires: 600
+      endPoint: ${hwobs-config.hwobs-endPoint}
+      bucketList:
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: slw-base-video
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: sc-slyy2
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: video-platform
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: slw-base-video-test
+      suffixRules: ${hwobs-config.hwobs-suffixRules}
+    elink:
+      corApp: wxb8886d4e0be4d15f
+      appSecret: ENC(nYvpWicYZZwgTyoSHvqus5lHdHJ2xsM1RV2BAjzgbmDbSWp2g/PpUpdzuosdThT0xuvLyqf7rQo=)
+      username: gh_cc7ddc77e6d8
+    algorithm:
+      sk: 1519DF8C8DAA45C0AA7748394AF1A30D
+      appCode: algorithm-wh
+    appSecret: 301ef5753a40939ee7138b7c3a687868
+    get-camera:
+      page-size: 1000
+      radius: 1000
+  video-export.yml: |-
+    server:
+      port: 9223
+      servlet:
+        context-path: /
+
+    # Spring配置
+    spring:
+      servlet:
+        multipart:
+          max-file-size: 50MB
+      jackson:
+        time-zone: GMT+8
+        date-format: yyyy-MM-dd HH:mm:ss
+      application:
+        name: video-export
+      main:
+        allow-bean-definition-overriding: true
+      
+    export:
+      maxPageSize: 5000
+    path:
+      temp: /path/temp/
+    mybatis-plus:
+      mapper-locations: classpath*:mybatis/mapper/**/*Mapper.xml
+      #实体扫描，多个package用逗号或者分号分隔
+      typeAliasesPackage: com.chinatower.**.domain
+
+    feign:
+      client:
+        config:
+          #default代表所有服务
+          default: 
+            #feign客户端建立连接超时时间
+            connect-timeout: 10000
+            #feign客户端建立连接后读取资源超时时间
+            read-timeout: 20000
+  video-manage.yml: |-
+    mybatis-plus:
+      typeAliasesPackage: com.chinatower.order
+      mapper-locations: classpath*:mapper/**/**.xml
+      configuration:
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        map-underscore-to-camel-case: true
+  video-msg.yml: |
+    server:
+      port: 8031
+      servlet:
+        context-path: /
+      tomcat:
+        uri-encoding: UTF-8
+        max-threads: 800
+        min-spare-threads: 30
+    JpushAPPKey: 6d296b5fd2059cb06aa5c0da
+    JpushMasterSecret: 2112a69bc764777fb11dbd3b
+    sms:
+      url: https://comp.chinatowercom.cn:19090/sms/msg/sendMessage
+      pri: MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAJII8l8ZlOxCSM6HAm6NrNM+kTSepZgDiGewgPsrTEz3NwmtM0jMwVD7fMVGHHIrrjB6mLS9PckhBN993b7kXfXiDHWlO5YbwQHHqaq0FCMPgZ3Pjulg1vtJnh8bB3vgcFNGd+Sy8zNjkR1/0hH1VDQ2Ur9m7JCw7mP26BMfcPoxAgMBAAECgYAbwougPFKs3qTMbamurkvOFDSyFf5QeUtyuoCqPj7Q2qWht0Tqb9HHvSaosX0yzs7b9FIW+WpHU3mDqn9+jBa4H2++hrG8Zg3+3nw3YtSGaS/7e/VgJQU4MYpzbm3J9SQ1BLULPpU27kLyaMz7f56xjvdw/wXh/TgwyLqC+X1JYQJBAMF7mccYKyuK02cNGR5EgpJiK2ceqxv79vxBHSLRv7n9lJgLr45wCTVIRcyzWWaJGgjkUvowvrp4xmKIIKhy/d0CQQDBOJS3ydewLDdougnmHlhom1gGMkPkKjAY3ii0/Uyhx7t/fMVnkzP5EKXP0afmky9EjIyYUhhXUu2+OiSavfplAkBzTcWG8NBJUqJJd3TQpONreTWEbrJqKu41xlgmt/kaThSPx+cHa50RM9Dk/Lz6bhol0mvgzcvcNL2FWrqbqGvBAkBV7u8dajR2EsQ13H+oi5hwNZ6JavOM10J63Nsn23uoe+ckxP4amXpE7CWCbtEImC8ugn/JAsH2nFhGAR/kfleNAkA6fSnKQGSTfSQvtF7gY8ieJIsrLXi96Xw8BxFzxpgTWXGv5ossnvoPo4qQHX7hSpEoZvHR53ZS1LNhSBCrqMmq
+      tenantId: 110000-video
+      channelRatio: '{“AiPai":"3","ZhongShang":"7"}'
+      signCode: fvdq_nikc
+      templateKeyMap:
+        login: tydu_zsfv
+        updatePwd: jwzo_ignr
+        resetPwd: adnn_zbxe
+        updatePhone: jyjr_lijd
+    loadbalance: randomweight
+    AIPaiCMPPhost: 123.57.111.67
+    AIPaiCMPPport: 7890
+    AIPaiCMPPsourceAddr: tasms1
+    AIPaiCMPPsharedSecret: Tas_Ys@101
+    AIPaiCMPPheartbeatInterval: 10
+    AIPaiCMPPreconnectInterval: 10
+    AIPaiCMPPheartbeatNoresponseout: 5
+    AIPaiCMPPtransactionTimeout: 10
+    AIPaiCMPPversion: 1
+    AIPaiCMPPdebug: true
+    AIPaiTerminalId: 10886101
+    ZhongShangCMPPhost: 139.129.107.160
+    ZhongShangCMPPport: 7895
+    ZhongShangCMPPsourceAddr: 125082
+    ZhongShangCMPPsharedSecret: '!z^mkwb*'
+    ZhongShangCMPPheartbeatInterval: 10
+    ZhongShangCMPPreconnectInterval: 10
+    ZhongShangCMPPheartbeatNoresponseout: 5
+    ZhongShangCMPPtransactionTimeout: 10
+    ZhongShangCMPPversion: 1
+    ZhongShangCMPPdebug: true
+    ZhongShangTerminalId: 10691134
+    wx:
+      appId: wxb8886d4e0be4d15f
+      secret: 301ef5753a40939ee7138b7c3a687868
+      token: towersl
+      templateId: FDv6r2HGAx6ILj84VP_GU_mqXBFcp57nxGvi3mEwkUA
+      aesKey: 1ATagSewLJi05Yan5XrzXeRQKwZ2mcaSxX0cHXsKHO0
+      serverHost: https://sl.chinatowercom.cn
+      miniAppEventUrl: pages/entrance/workspace
+      miniAppId: wxbcb6e13c380c707f
+      miniSecret: c980f4d82418d1d1b6950eac02e1b323
+      pwdTemplateId: KkRwxuTmrV5OcqfT1yA2z54FXBV5H8LOyojAGt8YSB0
+  video-order.yml: |-
+    spring:
+      kafka:
+        producer:
+          retries: 0
+          buffer-memory: 40960
+          batch-size: 4096
+
+    mybatis-plus:
+      typeAliasesPackage: com.chinatower.order.mapper
+      mapper-locations: classpath*:mapper/**/**.xml
+      configuration:
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+        map-underscore-to-camel-case: true
+
+    knife4j:
+      production: false
+
+    weather:
+      api:
+        key: ENC(OpsAlpP4gwOxmv5KvPOMU/Lc5HR5WixQg2YE2dE8CUO11PXK4flO7thgQGyx604byzC4CPB+FyI=)
+        url: https://api.qweather.com/v7/
+    component:
+      weather:
+        api:
+          url: http://10.46.17.61:18091/pweather/v7/
+    sms:
+      loginUrl: ${tower-sms.loginUrl}
+      template:
+        addUser: account_activation_node
+        
+    xxl:
+      job:
+        enable: true
+        accessToken:
+        admin:
+          addresses: ${tower-config.xxl-job-address}
+        executor:
+          appname: video-order
+          address:
+          ip:
+          port: ${tower-config.xxl-job-port2}
+          logpath: ${tower-config.xxl-job-logpath}
+          logretentiondays: 30
+
+    feign:
+      client:
+        config:
+          default:
+            connectTimeout: 3000
+            readTimeout: 5000
+  video-out-data.yml: |
+    tower:
+      flow:
+        alarm-default-flow: '-1,-2,-3'
+    spring:
+      cloud:
+        loadbalancer:
+          ribbon:
+            enabled: false
+      kafka:
+        bootstrap-servers: 10.19.30.193:9092,10.19.30.40:9092,10.19.30.59:9092
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        consumer:
+          group-id: iot-msg
+          enable-auto-commit: true
+          auto-offset-reset: earliest
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      kafka4:
+        bootstrap-servers: 10.19.37.79:9092,10.19.37.200:9092,10.19.37.133:9092
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        consumer:
+          group-id: randar-msginfo
+          enable-auto-commit: true
+          auto-offset-reset: earliest
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      kafka2:
+        bootstrap-servers: 10.46.17.86:9092,10.46.17.99:9092,10.46.17.202:9092
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        consumer:
+          max-poll-records: 100
+          #10M
+          max-partition-fetch-bytes: 10485760
+          group-id: canal-device
+          enable-auto-commit: true
+          auto-offset-reset: earliest
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer        
+    knife4j:
+      production: false
+    skAuth:
+      ak: testAK
+      sk: testSK
+      industryCode: test
+      gatewayHost: test
+      gatewayPort: test
+    xxl:
+      job:
+        enable: true
+        accessToken: null
+        admin:
+          addresses: ${tower-config.xxl-job-address}
+        executor:
+          appname: out-data
+          address: null
+          ip: null
+          port: ${tower-config.xxl-job-port}
+          logpath: ${tower-config.xxl-job-logpath}
+          logretentiondays: 30
+  video-system.yml: |
+    server:
+      port: 18083
+      servlet:
+        context-path: /
+      tomcat:
+        uri-encoding: UTF-8
+        max-threads: 800
+        min-spare-threads: 30
+        accept-count: 1000
+    spring:
+      jackson:
+        time-zone: GMT+8
+        date-format: yyyy-MM-dd HH:mm:ss
+      application:
+        name: video-system
+      messages:
+        basename: i18n/messages
+      servlet:
+        multipart:
+          max-file-size: 500MB
+          max-request-size: 500MB
+      devtools:
+        restart:
+          enabled: false
+      kafka:
+        consumer:
+          group-id: videoTower
+    obs:
+      ak: ${obs-config.obs-ak}
+      sk: ${obs-config.obs-sk}
+      endPoint: ${obs-config.obs-endPoint}
+      bucketName: video-platform
+      suffixRules: ${obs-config.obs-suffixRules}
+      customPath: slyy2/prd
+    pagehelper:
+      helperDialect: mysql
+      reasonable: true
+      supportMethodsArguments: true
+      params: count=countSql
+    xxl:
+      job:
+        enable: true
+        accessToken: null
+        admin:
+          addresses: ${tower-config.xxl-job-address}
+        executor:
+          appname: video-system
+          address: null
+          ip: null
+          port: ${tower-config.xxl-job-port3}
+          logpath: logs/xxl-job/jobhandler
+          logretentiondays: 30
+    maxPageSize:
+      mongodb: 20000
+      oracle: 5000
+    hwobs:
+      enable: true
+      expires: 600
+      endPoint: ${hwobs-config.hwobs-endPoint}
+      bucketList:
+        - ak: ${hwobs-config.hwobs-bucketList-ak4}
+          sk: ${hwobs-config.hwobs-bucketList-sk4}
+          bucketName: slw-base-video
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: video-platform
+        - ak: ${hwobs-config.hwobs-bucketList-ak1}
+          sk: ${hwobs-config.hwobs-bucketList-sk1}
+          bucketName: sc-slyy2
+      suffixRules: ${hwobs-config.hwobs-suffixRules}
+    sms:
+      loginUrl: ${tower-sms.loginUrl}
+      template:
+        addUser: account_activation_node
+        updatePassword: reset_password_node
+    runZhi:
+      adopt: YZZF-hn
+      login: yzzfhn
+    feign:
+      client:
+        config:
+          warningOrderService:
+            connectTimeout: 10000
+            readTimeout: 10000
+  video-task-data.yml: |
+    feign:
+      sentinel:
+        enabled: false
+    http:
+      maxTotal: 100
+      defaultMaxPerRoute: 20
+      connectTimeout: 1000
+      connectionRequestTimeout: 500
+      socketTimeout: 10000
+      staleConnectionCheckEnabled: true
+      validateAfterInactivity: 3000000
+    server:
+      port: 9214
+      servlet:
+        context-path: /
+      tomcat:
+        uri-encoding: UTF-8
+        max-threads: 800
+        min-spare-threads: 30
+    logging:
+      level:
+        root: info
+        com.chinatower: debug
+        com.alibaba.nacos.client.naming: error
+    spring:
+      application:
+        name: video-task-data
+      datasource:
+        dynamic:
+          primary: master
+      elasticsearch:
+        rest:
+          uris: ${tower-es.uris}
+          keep-alive-time: 30s
+          load-balancer: Ribbon
+      messages:
+        basename: i18n/messages
+      servlet:
+        multipart:
+          max-file-size: 30MB
+          max-request-size: 100MB
+      devtools:
+        restart:
+          enabled: false
+    token:
+      header: Authorization
+      secret: abcdefghijklmnopqrstuvwxyz
+      expireTime: 1440
+      universalCaptcha: 6666
+    pagehelper:
+      helperDialect: mysql
+      reasonable: true
+      supportMethodsArguments: true
+      params: count=countSql
+    xss:
+      enabled: true
+      excludes: /system/notice/*
+      urlPatterns: /system/*,/monitor/*,/tool/*
+    gen:
+      author: wangzic
+      packageName: com.chinatower.idmm.project.modules.cust
+      tablePrefix: bs_,tb_
+    ofs:
+      filepath: /test
+    xxl:
+      job:
+        enable: true
+        accessToken: null
+        admin:
+          addresses: ${tower-config.xxl-job-address}
+        executor:
+          appname: video-task-data
+          address: null
+          ip: null
+          port: ${tower-config.xxl-job-port}
+          logpath: ${tower-config.xxl-job-logpath}
+          logretentiondays: 30
+    maxPageSize:
+      mongodb: 20000
+      mongodb2: 10000
+      oracle: 5000
+    obs:
+      ak: ${obs-config.video-task-data-obs-ak}
+      sk: ${obs-config.video-task-data-obs-sk}
+      endPoint: ${obs-config.obs-endPoint}
+      bucketName: powerexchange-fs
+      suffixRules: ${obs-config.obs-suffixRules}
+    path:
+      temp: /path/temp/
+  video-task.yml: |
+    sms:
+      templateCode:
+        tatistics: xlhm_yfxg    #研判统计短信推送模板编码
+
+    #最大连接数
+    http:
+      maxTotal: 100
+      #并发数
+      defaultMaxPerRoute: 20
+      #创建连接的最长时间
+      connectTimeout: 1000
+      #从连接池中获取到连接的最长时间
+      connectionRequestTimeout: 500
+      #数据传输的最长时间
+      socketTimeout: 10000
+      #提交请求前测试连接是否可用
+      staleConnectionCheckEnabled: true
+      #可用空闲连接过期时间,重用空闲连接时会先检查是否空闲时间超过这个时间，如果超过，释放socket重新建立
+      validateAfterInactivity: 3000000
+
+    server:
+      servlet:
+        context-path: /
+      tomcat:
+        uri-encoding: UTF-8
+        max-threads: 800
+        min-spare-threads: 30
+    logging:
+      level:
+        root: info
+        com.chinatower: debug
+        com.alibaba.nacos.client.naming: error
+      path: .logs
+        #pattern:
+      #console: '%d{yyyy-MM-dd HH:mm:ss.SSS,GMT+08} %5level ${PID:- } - %logger : %msg%n'
+    spring:
+      application:
+        name: video-task
+      messages:
+        basename: i18n/messages
+      servlet:
+        multipart:
+          max-file-size:  30MB
+          max-request-size:  100MB
+      devtools:
+        restart:
+          enabled: false
+      datasource:
+        dynamic:
+          primary: statistic
+    pagehelper:
+      helperDialect: mysql
+      reasonable: true
+      supportMethodsArguments: true
+      params: count=countSql
+    xss:
+      enabled: true
+      excludes: /system/notice/*
+      urlPatterns: /system/*,/monitor/*,/tool/*
+    gen:
+      author: wangzic
+      packageName: com.chinatower.idmm.project.modules.cust
+      tablePrefix: bs_,tb_
+
+
+    xxl:
+      job:
+        enable: true
+        accessToken:
+        admin:
+          addresses: ${tower-config.xxl-job-address}
+        executor:
+          appname: video-task
+          address:
+          ip:
+          port: ${tower-config.xxl-job-port}
+          logpath: ${tower-config.xxl-job-logpath}
+          logretentiondays: 30
+
+    maxPageSize:
+      mongodb: 20000
+      mongodb2: 10000
+      oracle: 5000
+    obs:
+      ak: ${OBS_AK}
+      sk: ${OBS_SK}
+      endPoint: ${obs-config.obs-endPoint}
+      bucketName: video-platform
+      suffixRules: ${obs-config.obs-suffixRules}
+    knife4j:
+      production: false
+    feign:
+      sentinel:
+        enabled: false
+  video-video.yml: |
+    spring:
+      cloud:
+        loadbalancer:
+          ribbon:
+            enabled: false
+    logging:
+      level:
+        root: info
+        com.chinatower: debug
+        com.alibaba.nacos.client.naming: error
+      path: .logs
+    pagehelper:
+      helperDialect: mysql
+      reasonable: true
+      supportMethodsArguments: false
+      params: count=countSql
+    xxl:
+      job:
+        enable: true
+        accessToken:
+        admin:
+          addresses: ${tower-config.xxl-job-address}
+        executor:
+          appname: video-video
+          address:
+          ip:
+          port: ${tower-config.xxl-job-port}
+          logpath: ${tower-config.xxl-job-logpath}
+          logretentiondays: 30
+    obs:
+      enable: true
+      ak: ${obs-config.obs-ak}
+      sk: ${obs-config.obs-sk}
+      endPoint: ${obs-config.obs-endPoint}
+      bucketName: video-platform
+      suffixRules: ${obs-config.obs-suffixRules}
+      customPath: slyy2/prd

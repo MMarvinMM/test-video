@@ -1,0 +1,110 @@
+============================================================
+告警分级（AI研判）上线配置清单
+涉及服务：video-receive / video-task / video-event
+============================================================
+
+一、Kafka Topic（运维创建）
+------------------------------------------------------------
+Topic 名称：alarm_grading_ai_judge
+说明：video-task 投递待研判告警，消费后调用 Dify；失败可回队重试
+分区/副本：按环境现有告警类 Topic 标准配置
+
+
+二、Nacos 配置 —— video-task
+------------------------------------------------------------
+依赖已有配置：
+  spring.kafka.bootstrap-servers   # 必填，否则不启用 AI 研判 Kafka 生产/消费
+
+新增配置（建议追加到 video-task.yml / video-event.yml）：
+
+ai:
+  judge:
+    # 从哪个月起月表包含 AI 研判字段（老月表查询自动 NULL 兼容）
+    column-since-month: 202608
+    # Kafka 消费组（默认 video-task-ai-judge）
+    kafka:
+      group-id: video-task-ai-judge
+    # 调度扫描：向前扫描月表月数、研判中超时重置（分钟）
+    dispatch:
+      scan-months: 2
+      stuck-timeout-minutes: 30
+    # Dify 智能体（必填，否则消费者不启动）
+    dify:
+      url: https://{dify-host}/v1/chat-messages
+      api-key: {dify-api-key}
+      timeout-ms: 60000
+      max-retry: 3
+      query: 森林智保烟火告警研判
+
+说明：
+1. ai.judge.dify.url、ai.judge.dify.api-key 与 spring.kafka.bootstrap-servers 同时存在时，才启用 Kafka 消费调 Dify
+2. 消费流程：查气象(/weather/getWeatherInfoByAlarmTime) → 写入 agent_extend_field → 调 Dify
+3. Dify 请求体：
+   {
+     "inputs": { "alarm_params": "<告警JSON字符串，含气象字段>" },
+     "user": "<alarmCode>",
+     "query": "森林智保烟火告警研判"
+   }
+4. Authorization: Bearer {api-key}
+5. query 可通过 ai.judge.dify.query 配置，默认「森林智保烟火告警研判」
+
+
+三、XXL-JOB 定时任务 —— video-task 执行器
+------------------------------------------------------------
+执行器：视联定时任务（video-task）
+任务描述：告警分级AI研判调度
+JobHandler：aiJudgeDispatchHandler
+Cron：建议 0/30 * * * * ?（按环境吞吐调整）
+任务参数（可选 JSON）：{"limit":50}
+负责人：按实际填写
+
+逻辑：拉取 ai_judge_status=0 → 乐观更新为 1 → 投递 Topic alarm_grading_ai_judge
+      发送失败回滚为 0；研判中超时可重置为 0
+
+
+四、video-receive
+------------------------------------------------------------
+无新增 Nacos 配置项。
+回调地址（需对 Dify/智能体侧开放）：
+  POST /alarm/receive/aiJudgeCallback
+
+成功回填：
+  独立字段：risk_level、scene_code（由回调 sceneCode 映射）、ai_judge_status=2
+  扩展字段 agent_extend_field（JSON 驼峰）：
+    riskLevel / fireLevel / surroundings / judgmentBasis
+失败回填：ai_judge_status=3
+
+回调 sceneCode 枚举与库内 scene_code 映射：
+  烟+明火 → smokeFire
+  单独烟 → smoke
+  单独明火 → fire
+  未识别 → 不映射（scene_code 置空）
+
+命中条件：上报成功后查询基础库 vm_ai_judge_scene_rel（industry_code + algorithm_code）
+  命中则写 ai_judge_status=0 与 scene_template
+
+
+五、video-event
+------------------------------------------------------------
+Nacos 新增（与 video-task 保持一致）：
+  ai.judge.column-since-month: 202608   # 从哪个月起月表含 AI 字段，老表查询自动 NULL 兼容
+
+列表/详情透出：riskLevel、sceneCode、sceneTemplate、aiJudgeStatus、fireLevel、surroundings、
+               judgmentBasis 等
+详情天气字段 temperature / humidity / windSpeed / windDir：
+  从 agent_extend_field 拆分返回（由 video-task 调 Dify 前落库），不再实时查气象
+筛选：sceneCodeList、riskLevelList 多选；排序 sortName=aiSort
+  （研判：真警优先；告警状态：待研判>误报/重复>其他>已完结；风险：高>中>低；时间倒序）
+
+
+六、配置核对清单
+------------------------------------------------------------
+[ ] 基础库已建 vm_ai_judge_scene_rel（字段 scene_template），并维护场景关系数据
+[ ] 业务库当月月表已执行 0818告警分级字段-video_platform.sql（含 scene_code + scene_template）
+[ ] Nacos 已配 ai.judge.column-since-month（video-event / video-task）
+[ ] Kafka Topic alarm_grading_ai_judge 已创建
+[ ] video-task Nacos 已配 spring.kafka.bootstrap-servers + ai.judge.dify.*
+[ ] video-task 可调通 order 服务气象接口 getWeatherInfoByAlarmTime
+[ ] XXL 已配置 aiJudgeDispatchHandler 并启用
+[ ] Dify 回调地址指向 video-receive /alarm/receive/aiJudgeCallback
+[ ] Dify 回调字段使用 sceneCode（中文枚举）

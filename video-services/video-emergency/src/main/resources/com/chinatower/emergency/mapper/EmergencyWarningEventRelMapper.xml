@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.emergency.mapper.EmergencyWarningEventRelMapper">
+    <!-- 插入数据 -->
+    <insert id="insert" parameterType="com.chinatower.emergency.dto.EmergencyWarningEventRelVO">
+        INSERT INTO vm_emergency_warning_event_rel (warning_order_id, event_code, tenant_id, industry_code,
+                                                    create_time, creator, delete_flag)
+        VALUES (#{warningOrderId}, #{eventCode}, #{tenantId}, #{industryCode},
+                now(), #{creator}, 0)
+    </insert>
+
+    <!-- 删除数据 -->
+    <delete id="delete">
+        DELETE FROM
+            vm_emergency_warning_event_rel
+       WHERE
+           1 = 1
+          <if test="eventCodes != null and eventCodes.size() > 0">
+          AND event_code IN
+            <foreach collection="eventCodes" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+         </if>
+         <if test = "eventCode != null and eventCode !=''">
+            AND event_code = #{eventCode}
+        </if>
+    </delete>
+
+    <!-- 根据ID查询 -->
+    <select id="selectByCondition" resultType="com.chinatower.emergency.dto.EmergencyWarningEventRelVO">
+        SELECT
+            id,
+            warning_order_id,
+            event_code,
+            tenant_id,
+            industry_code,
+            app_ver_code,
+            create_time,
+            creator,
+            update_time,
+            modifier,
+            delete_flag
+        FROM
+            vm_emergency_warning_event_rel
+        WHERE
+            delete_flag = 0
+        <if test="warningOrderId != null and warningOrderId !=''">
+           AND warning_order_id = #{warningOrderId}
+        </if>
+        <if test="eventCode != null and eventCode !=''">
+           AND event_code = #{eventCode}
+        </if>
+        ORDER BY warning_order_id ASC
+    </select>
+
+</mapper>

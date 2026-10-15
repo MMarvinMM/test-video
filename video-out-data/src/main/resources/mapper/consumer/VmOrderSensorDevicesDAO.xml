@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.consumer.dao.VmOrderSensorDevicesDAO">
+
+    <select id="select" resultType="com.chinatower.platform.consumer.item.VmOrderSensorDevicesDO">
+        select tenant_id as "tenantId",device_code as "deviceCode",
+        device_name as "deviceName"
+        from vm_order_sensor_devices
+        where industry_code = #{industryCode}
+        <if test="tenantId != null">
+            and tenant_id = #{tenantId}
+        </if>
+        and ord_status in (0,1,2)
+        and delete_flag = 0
+    </select>
+    <select id="seleceDeviceCodeListByTenantId" resultType="java.lang.String">
+        select distinct device_code
+        from vm_order_sensor_devices
+        where industry_code = #{industryCode}
+          and tenant_id = #{tenantId}
+          and category_code = 1
+          and ord_status in (0,1,2)
+          and delete_flag = 0
+    </select>
+
+    <select id="selectRadarTemplateInfoByTaskIdList" resultType="com.chinatower.platform.consumer.item.WarningTargetRadarTemplateDTO">
+        select tenant_id AS "tenantId", industry_code AS "industryCode", task_id AS "taskId"
+        from vm_radar_alarm_template
+        where delete_flag = 0 and task_id in
+        <foreach collection="taskIdList" item="item" open="(" close=")" separator="," >
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getDeviceInfoList" resultType="com.chinatower.outdata.api.entity.DeviceInfoMongoDO">
+        select * from vm_device_info_t
+    </select>
+
+    <select id="getDeviceModelInfoList" resultType="com.chinatower.outdata.api.entity.DeviceModelMongoDO">
+        select * from vm_device_model_t
+    </select>
+</mapper>

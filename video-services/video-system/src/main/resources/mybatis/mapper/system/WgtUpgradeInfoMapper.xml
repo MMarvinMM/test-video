@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.WgtUpgradeInfoMapper">
+    <select id="queryColonyVersion" resultType="java.lang.String">
+    select colony_version from vm_platform_data_config where platform_code = #{colonyCode}
+    </select>
+    <select id="queryWgtUpgradeInfo"
+            resultType="com.chinatower.platform.project.system.domain.vo.WgtUpgradeInfoVO">
+        select
+            colony_version as colonyVersion,
+            wgt_version as wgtVersion,
+            upgrade_url as upgradeUrl,
+            upgrade_describe as upgradeDescribe,
+            is_force_upgrade as isForceUpgrade,
+            type as type
+        from bs_wgt_upgrade_info where colony_version = #{colonyVersion} AND type = #{type}
+        and delete_flag = '0'
+    </select>
+    <select id="queryWgtList" resultType="com.chinatower.platform.project.system.domain.vo.WgtUpgradeInfoVO">
+        SELECT
+            t.id,
+            t.colony_version AS colonyVersion,
+            t.wgt_version AS wgtVersion,
+            t.upgrade_url AS upgradeUrl,
+            t.upgrade_describe AS upgradeDescribe,
+            t.is_force_upgrade isForceUpgrade,
+            t.type as type,
+            t.parent_id as parentId,
+            t.platform_code as platformCode,
+            CASE
+                WHEN t.upgrade_url IS NULL OR t.upgrade_url = '' THEN
+                    '0' ELSE '1'
+                END AS wgtStatus,
+            t.creator,
+            DATE_FORMAT(t.create_time,'%Y-%m-%d %H:%i:%s') AS createTime,
+            t.modifier,
+            DATE_FORMAT(t.update_time,'%Y-%m-%d %H:%i:%s') AS updateTime,
+            t.wgt_package_name AS wgtPackageName,
+            t2.platform_name as platformName
+        FROM
+            bs_wgt_upgrade_info t
+            left join vm_platform_data_config t2 on t.platform_code = t2.platform_code and t2.delete_flag = '0'
+        <where>
+            AND t.delete_flag = '0'
+            <if test="param.queryType != null and param.queryType == 0 ">
+                AND t.parent_id = 0
+            </if>
+            <if test="param.parentId != null and param.parentId != 0 ">
+                AND t.parent_id = #{param.parentId}
+            </if>
+            <if test="param.platformCode != null and param.platformCode != '' ">
+                AND t.platform_code = #{param.platformCode}
+            </if>
+            <if test="param.parentIds != null  and param.parentIds.size() != 0 ">
+                AND t.parent_id IN
+                <foreach collection="param.parentIds" item="parentId" open="(" separator="," close=")">
+                    #{parentId}
+                </foreach>
+            </if>
+            <if test="param.colonyVersion != null  and param.colonyVersion != ''">
+                AND t.colony_version like CONCAT('%', #{param.colonyVersion}, '%')
+            </if>
+            <if test='param.wgtStatus != null and param.wgtStatus != "" and  param.wgtStatus == "0"'>
+                AND t.upgrade_url is null
+            </if>
+            <if test='param.wgtStatus != null and param.wgtStatus != "" and  param.wgtStatus == "1"'>
+                AND t.upgrade_url is not null
+            </if>
+            <if test="param.isForceUpgrade != null  and param.isForceUpgrade != ''">
+                AND t.is_force_upgrade = #{param.isForceUpgrade}
+            </if>
+            <if test="param.creator != null  and param.creator != ''">
+                AND t.creator like CONCAT('%', #{param.creator}, '%')
+            </if>
+            <if test="param.createTimeStart != null ">
+                AND t.create_time BETWEEN  DATE_FORMAT(#{param.createTimeStart},'%y-%m-%d 00:00:00') AND DATE_FORMAT(#{param.createTimeEnd},'%y-%m-%d 23:59:59')
+            </if>
+            <if test="param.modifier != null  and param.modifier != ''">
+                AND t.modifier like CONCAT('%', #{param.modifier}, '%')
+            </if>
+            <if test="param.updateTimeStart != null ">
+                AND t.update_time BETWEEN  DATE_FORMAT(#{param.updateTimeStart},'%y-%m-%d 00:00:00') AND DATE_FORMAT(#{param.updateTimeEnd},'%y-%m-%d 23:59:59')
+            </if>
+            ${param.dataScope}
+            ORDER BY t.colony_version
+        </where>
+    </select>
+    <select id="getDownloadUrl" resultType="com.chinatower.platform.project.system.domain.vo.WgtUpgradeInfoVO">
+        SELECT
+            t.id,
+            t.colony_version AS colonyVersion,
+            t.wgt_version AS wgtVersion,
+            t.upgrade_url AS upgradeUrl,
+            t.upgrade_describe AS upgradeDescribe,
+            t.is_force_upgrade isForceUpgrade,
+            t.wgt_package_name AS wgtPackageName,
+            t.type as type
+        FROM
+            bs_wgt_upgrade_info t
+            where t.delete_flag = '0'
+        <if test="param.colonyVersion != null  and param.colonyVersion != ''">
+            AND t.colony_version like CONCAT('%', #{param.colonyVersion}, '%')
+        </if>
+        <if test="param.id != null  and param.id != ''">
+            AND t.id =#{param.id}
+        </if>
+    </select>
+    <update id="updateWgt">
+        UPDATE bs_wgt_upgrade_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="param.isForceUpgrade != null  and param.isForceUpgrade != ''">is_force_upgrade = #{param.isForceUpgrade},</if>
+            <if test="param.wgtPackageName != null  and param.wgtPackageName != ''">wgt_package_name = #{param.wgtPackageName},</if>
+            <if test="param.upgradeUrl != null  and param.upgradeUrl != ''">upgrade_url = #{param.upgradeUrl},</if>
+            <if test="param.wgtVersion != null  and param.wgtVersion != ''">wgt_version = #{param.wgtVersion},</if>
+            upgrade_describe = #{param.upgradeDescribe},
+            <if test="param.platformCode != null  and param.platformCode != ''">platform_code = #{param.platformCode},</if>
+            <if test="param.modifier != null  and param.modifier != ''">modifier = #{param.modifier},</if>
+            <if test="param.updateTime != null">update_time = #{param.updateTime},</if>
+        </trim>
+        WHERE id = #{param.id}
+    </update>
+
+
+    <select id="queryMiniProgramUpgradeInfo"
+            resultType="com.chinatower.platform.project.system.domain.vo.MiniProgramUpgradeInfoVO">
+        select
+            colony_version as colonyVersion,
+            mini_program_version as miniProgramVersion,
+            code_version as codeVersion
+        from bs_mini_program_upgrade_info where colony_version = #{colonyVersion}
+        and delete_flag = '0'
+    </select>
+
+    <select id="queryMiniProgramList" resultType="com.chinatower.platform.project.system.domain.vo.MiniProgramUpgradeInfoVO">
+        SELECT
+        t.id,
+        t.colony_version AS colonyVersion,
+        t.mini_program_version AS miniProgramVersion,
+        t.code_version AS codeVersion,
+        t.creator,
+        DATE_FORMAT(t.create_time,'%Y-%m-%d %H:%i:%s') AS createTime,
+        t.modifier,
+        DATE_FORMAT(t.update_time,'%Y-%m-%d %H:%i:%s') AS updateTime
+        FROM
+        bs_mini_program_upgrade_info t
+        <where>
+            AND t.delete_flag = '0'
+            <if test="param.colonyVersion != null  and param.colonyVersion != ''">
+                AND t.colony_version like CONCAT('%', #{param.colonyVersion}, '%')
+            </if>
+            <if test="param.miniProgramVersion != null  and param.miniProgramVersion != ''">
+                AND t.mini_program_version like CONCAT('%', #{param.miniProgramVersion}, '%')
+            </if>
+            <if test="param.codeVersion != null  and param.codeVersion != ''">
+                AND t.code_version like CONCAT('%', #{param.codeVersion}, '%')
+            </if>
+            <if test="param.creator != null  and param.creator != ''">
+                AND t.creator like CONCAT('%', #{param.creator}, '%')
+            </if>
+            <if test="param.createTimeStart != null ">
+                AND t.create_time BETWEEN  DATE_FORMAT(#{param.createTimeStart},'%y-%m-%d 00:00:00') AND DATE_FORMAT(#{param.createTimeEnd},'%y-%m-%d 23:59:59')
+            </if>
+            <if test="param.modifier != null  and param.modifier != ''">
+                AND t.modifier like CONCAT('%', #{param.modifier}, '%')
+            </if>
+            <if test="param.updateTimeStart != null ">
+                AND t.update_time BETWEEN  DATE_FORMAT(#{param.updateTimeStart},'%y-%m-%d 00:00:00') AND DATE_FORMAT(#{param.updateTimeEnd},'%y-%m-%d 23:59:59')
+            </if>
+        </where>
+
+        <choose>
+            <when test="param.orderByColumn != null and param.orderByColumn != '' and param.isAsc != null and param.isAsc != '' ">
+                <if test='param.orderByColumn == "createTime"'>
+                    order by t.create_time
+                    <if test='param.isAsc == "desc"'>
+                        desc
+                    </if>
+                </if>
+                <if test='param.orderByColumn == "updateTime"'>
+                    order by t.update_time
+                    <if test='param.isAsc == "desc"'>
+                        desc
+                    </if>
+                </if>
+            </when>
+            <otherwise>
+                ORDER BY t.colony_version desc
+            </otherwise>
+        </choose>
+    </select>
+
+
+    <update id="updateMiniProgram">
+        UPDATE bs_mini_program_upgrade_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="param.miniProgramVersion != null  and param.miniProgramVersion != ''">mini_program_version = #{param.miniProgramVersion},</if>
+            <if test="param.codeVersion != null  and param.codeVersion != ''">code_version = #{param.codeVersion},</if>
+            <if test="param.modifier != null  and param.modifier != ''">modifier = #{param.modifier},</if>
+            update_time = now()
+        </trim>
+        WHERE id = #{param.id}
+    </update>
+
+
+    <insert id="addChildWgt" parameterType="com.chinatower.platform.project.system.domain.vo.WgtUpgradeInfoVO">
+        INSERT INTO `bs_wgt_upgrade_info` (`colony_version`,`wgt_version`,`upgrade_url`,`is_force_upgrade`,
+                `upgrade_describe`,`delete_flag`,`creator`,`create_time`,`wgt_package_name`,`type`,`parent_id`,`platform_code`)
+        VALUES (#{colonyVersion},#{wgtVersion},#{upgradeUrl},#{isForceUpgrade},
+                #{upgradeDescribe},0,#{creator},NOW(),#{wgtPackageName},#{type},#{parentId},#{platformCode})
+    </insert>
+
+
+
+</mapper>

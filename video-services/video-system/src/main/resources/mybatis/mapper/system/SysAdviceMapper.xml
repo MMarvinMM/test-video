@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysAdviceMapper">
+
+
+    <insert id="insertAdvice" parameterType="com.chinatower.common.core.domain.SysAdvice" useGeneratedKeys="true"
+            keyProperty="adviceId">
+        insert into sys_advice(
+        advice_id,
+        <if test="tenantId != null and tenantId != ''">tenant_id,</if>
+        <if test="userId != null and userId != ''">user_id,</if>
+        <if test="nodeCode != null and nodeCode != ''">node_code,</if>
+        <if test="tenantName != null and tenantName != ''">tenant_name,</if>
+        <if test="industryCode != null and industryCode != ''">industry_code,</if>
+        <if test="industryName != null and industryName != ''">industry_name,</if>
+        <if test="appVerCode != null and appVerCode != ''">app_ver_code,</if>
+        <if test="userName != null and userName != ''">USER_NAME,</if>
+        <if test="nickName != null and nickName != ''">NICK_NAME,</if>
+        <if test="phoneNumber != null and phoneNumber != ''">PHONENUMBER,</if>
+        <if test="adviceType != null and adviceType != ''">advice_type,</if>
+        <if test="adviceSource != null and adviceSource != ''">advice_source,</if>
+        <if test="adviceText != null and adviceText != ''">advice_text,</if>
+        <if test="fileUrl != null and fileUrl != ''">FILE_URL,</if>
+        <if test="adviceAttachJson != null and adviceAttachJson != ''">advice_attach_json,</if>
+        CREATE_TIME
+        )values(
+        #{adviceId},
+        <if test="tenantId != null and tenantId != ''">#{tenantId},</if>
+        <if test="userId != null and userId != ''">#{userId},</if>
+        <if test="nodeCode != null and nodeCode != ''">#{nodeCode},</if>
+        <if test="tenantName != null and tenantName != ''">#{tenantName},</if>
+        <if test="industryCode != null and industryCode != ''">#{industryCode},</if>
+        <if test="industryName != null and industryName != ''">#{industryName},</if>
+        <if test="appVerCode != null and appVerCode != ''">#{appVerCode},</if>
+        <if test="userName != null and userName != ''">#{userName},</if>
+        <if test="nickName != null and nickName != ''">#{nickName},</if>
+        <if test="phoneNumber != null and phoneNumber != ''">#{phoneNumber},</if>
+        <if test="adviceType != null and adviceType != ''">#{adviceType},</if>
+        <if test="adviceSource != null and adviceSource != ''">#{adviceSource},</if>
+        <if test="adviceText != null and adviceText != ''">#{adviceText},</if>
+        <if test="fileUrl != null and fileUrl != ''">#{fileUrl},</if>
+        <if test="adviceAttachJson != null and adviceAttachJson != ''">#{adviceAttachJson},</if>
+        #{createTime}
+        )
+    </insert>
+    <select id="selectOrderCustomerOrgList" resultType="java.lang.String">
+    select DISTINCT business_org from vm_order_customer where delete_Flag = '0' and ord_status in ('0','1','2') and tenant_id = #{tenantId}
+    </select>
+    <select id="selectDeptInfo" resultType="com.chinatower.platform.project.system.domain.vo.DeptInfoVO">
+    select DEPT_ID as deptId,PARENT_ID as parentId,DEPT_LEVEL as deptLevel from sys_dept
+    <where>
+        <if test="deptId != null and deptId != ''">
+            and  DEPT_ID = #{deptId}
+        </if>
+        <if test="parentId != null and parentId != ''">
+            and PARENT_ID = #{parentId}
+        </if>
+    </where>
+
+    </select>
+</mapper>

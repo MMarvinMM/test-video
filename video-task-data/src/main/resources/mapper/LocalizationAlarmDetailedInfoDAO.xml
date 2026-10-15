@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.dao.LocalizationAlarmDetailedInfoDAO">
+
+    <select id="getDictDataByType" parameterType="java.lang.String" resultType="com.chinatower.system.api.resp.SysDictDataResponse">
+        SELECT
+            dict_code,
+            dict_sort,
+            dict_label,
+            dict_value,
+            dict_type,
+            css_class,
+            list_class,
+            is_default,
+            STATUS,
+            create_by,
+            create_time,
+            remark
+        FROM
+            sys_dict_data
+        WHERE
+            STATUS = '0'
+            AND dict_type = #{dictType}
+        ORDER BY
+            dict_sort ASC
+    </select>
+
+    <select id="findAlarmTypeAll" resultType="java.util.Map">
+        select t.* from (
+        select DISTINCT
+        sat.alarm_type_id AS "alarmTypeId",
+        sat.type_name AS "typeName",
+        sat.icon AS icon,
+        sat.type_value AS "typeValue"
+        FROM vm_order_algorithms t1
+        inner JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+        inner JOIN vm_algorithm_alarm al ON t2.algo_min_type_code = al.algo_min_type
+        inner JOIN sys_alarm_type sat ON al.alarm_type = sat.type_value
+        WHERE
+        sat.alarm_source = '1'
+        and t2.app_scenarios = '1'
+        and t1.ord_status in (0, 1, 2)
+        ORDER BY sat.alarm_type_id ASC
+        ) t
+        union
+        SELECT DISTINCT
+        sat.alarm_type_id AS "alarmTypeId",
+        sat.type_name AS "typeName",
+        sat.icon AS icon,
+        sat.type_value AS "typeValue"
+        FROM sys_alarm_type sat
+        WHERE sat.tenant_id is null and sat.industry_code is null
+        union
+        select distinct sat.alarm_type_id AS "alarmTypeId",
+        sat.type_name AS "alarmTypeName",
+        sat.icon AS icon,
+        sat.type_value AS "typeValue"
+        from vm_order_sensor_devices t1
+        INNER JOIN vm_sensor_monitor_status ms on t1.device_code=ms.device_code
+        INNER JOIN vm_sensor_monitor_config mc on ms.monitor_code=mc.monitor_code
+        INNER JOIN sys_alarm_type sat on mc.alarm_type=sat.type_value
+        where
+        sat.alarm_source = '8'
+        and t1.ord_status in (0, 1, 2)
+        union
+        SELECT DISTINCT
+            t.alarm_type_id AS alarmTypeId,
+            t.type_name AS typeName,
+            t.icon AS icon,
+            t.type_value AS typeValue
+        FROM
+            sys_alarm_type t
+                INNER JOIN sys_scene_alarm_rel r ON t.type_value = r.alarm_type
+                OR t.type_value = r.scene_id
+        WHERE
+            r.delete_flag= '0' AND t.delete_flag='0'
+    </select>
+
+    <select id="getGridList" resultType="java.util.Map">
+        SELECT
+        (select b.grid_name from bm_grid b where b.delete_flag = 0 and b.grid_code=a.parent_code and b.tenant_id = a.tenant_id and b.industry_code = a.industry_code) as "parentName",
+        a.grid_id AS "gridId",
+        a.is_end AS "isEnd",
+        a.grid_code AS "gridCode",
+        a.grid_name AS "gridName",
+        a.parent_id AS "parentId",
+        a.parent_code AS "parentCode",
+        a.grid_level AS "gridLevel",
+        a.create_time AS "createTime",
+        a.point_status AS "pointStatus",
+        a.color,
+        a.grid_center AS "gridCenter",
+        a.border_color AS "borderColor",
+        a.border_color_transparency AS "borderColorTransparency",
+        a.border_color_line_thickness AS "borderColorLineThickness",
+        a.color_transparency AS "colorTransparency"
+        FROM
+        bm_grid a
+        WHERE
+        a.delete_flag = 0
+        order by a.grid_sort
+    </select>
+
+    <select id="getKeeperLeader" resultType="com.chinatower.bdm.api.entity.GridListVO">
+        SELECT
+            sys.nick_name AS "keeperName",
+            b.grid_id AS "gridId"
+        FROM
+            bm_gridkeeper a,
+            bm_grid_keeper_ref b,
+            sys_user sys
+        WHERE
+            a.keeper_id = b.keeper_id
+        AND a.staff_id = sys.USER_ID
+        and b.grid_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        AND a.delete_flag = 0
+        AND b.delete_flag = 0
+    </select>
+
+    <select id="getDevice" resultType="com.chinatower.event.api.model.DeviceInfoEntity">
+        SELECT
+            a.device_code,
+            a.device_name,
+            a.latitude,
+            a.longitude,
+            a.location,
+            a.province_id,
+            a.city_id,
+            a.county_id,
+            a.height,
+            a.model_code AS "modelId",
+            p.area_name AS "provinceName",
+            ci.area_name AS "cityName",
+            co.area_name AS "countyName",
+            a.alarm_location,
+            t.focus_range AS "focusRange",
+            t.verti_down_neg AS "vertiDownNeg",
+            t.device_model_code AS "deviceModelCode",
+            a.category_code AS deviceType,
+	        ( SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'device_type' AND DICT_VALUE = a.category_code LIMIT 1 ) as deviceTypeName,
+	        a.device_sub_type AS deviceSubType,
+	        ( SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'device_subtype' AND DICT_VALUE = a.device_sub_type LIMIT 1 ) as deviceSubTypeName,
+            ct.channel_name AS "channelName"
+        FROM
+            vm_device_info_t a
+            LEFT JOIN vm_device_model_t t ON a.device_model_code = t.device_model_code
+            AND a.model_code = t.mfgr_code
+            LEFT JOIN sys_area p ON a.province_id = p.area_code
+            LEFT JOIN sys_area ci ON a.city_id = ci.area_code
+            LEFT JOIN sys_area co ON a.county_id = co.area_code
+            LEFT JOIN vm_channel_info_t ct ON ct.device_code = a.device_code
+        WHERE
+            a.delete_flag = '0'
+    </select>
+
+    <select id="getIotDevice" resultType="com.chinatower.event.api.model.DeviceInfoEntity">
+        SELECT
+            a.latitude,
+            a.longitude,
+            a.location,
+            a.province_id,
+            a.city_id,
+            a.county_id,
+            a.height,
+            a.model_code AS "modelId",
+            a.device_code,
+            a.device_name,
+            a.device_model_code AS "deviceModelCode",
+            p.area_name AS "provinceName",
+            ci.area_name AS "cityName",
+            co.area_name AS "countyName"
+        FROM
+            vm_iot_device_t a
+            LEFT JOIN vm_iot_device_model_t t ON a.device_model_code = t.device_model_code
+            AND a.model_code = t.mfgr_code
+            LEFT JOIN sys_area p ON a.province_id = p.area_code
+            LEFT JOIN sys_area ci ON a.city_id = ci.area_code
+            LEFT JOIN sys_area co ON a.county_id = co.area_code
+        WHERE
+            a.delete_flag = '0'
+    </select>
+
+    <select id="getIotDevConf" resultType="com.chinatower.event.api.model.DeviceInfoEntity">
+        SELECT DISTINCT
+            t.tenant_id,
+            t.industry_code,
+            t.device_code AS "vidiconCode",
+            r.device_code,
+            d.device_name,
+            d.longitude,
+            d.latitude,
+            d.model_code,
+            ( SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = d.model_code LIMIT 1 ) "modelCodeName",
+            d.location,
+            d.height,
+            d.category_code AS deviceType,
+            ( SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'device_type' AND DICT_VALUE = d.category_code LIMIT 1 ) as deviceTypeName,
+            d.device_sub_type AS deviceSubType,
+	        ( SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'device_subtype' AND DICT_VALUE = d.device_sub_type LIMIT 1 ) as deviceSubTypeName
+        FROM
+            vm_tenant_iot_device_conf_t t
+            LEFT JOIN vm_tenant_iot_conf_rel_t r ON t.iot_device_conf_id = r.iot_device_conf_id
+            LEFT JOIN vm_device_info_t d ON d.device_code = r.device_code
+            AND d.delete_flag = '0'
+    </select>
+
+    <select id="getUavDeviceInfo" resultType="com.chinatower.event.api.model.DeviceInfoEntity">
+        SELECT
+            t.device_code AS deviceCode,
+            t.device_name AS deviceName,
+            t.manufacturer_code AS manufacturerCode,
+            ( SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'uav_manufacturer' AND DICT_VALUE = t.manufacturer_code LIMIT 1 ) modelFactoryName,
+            t.model_code,
+            model.model_name AS deviceModelCode,
+            t.location AS location,
+            t.longitude,
+            t.latitude
+        FROM
+            vm_uav_device_info_t t
+            LEFT JOIN vm_uav_device_model_t model ON t.model_code = model.model_code and model.delete_flag = 0
+        WHERE
+            t.delete_flag = '0'
+    </select>
+
+    <select id="getUavNestDevcieInfo" resultType="com.chinatower.event.entity.vo.UavNestDeviceVo">
+        SELECT
+            n.device_code AS deviceCode,
+            n.device_code AS uavNestCode,
+            n.device_name AS uavNestName,
+            nestM.model_name AS deviceModel,
+            ( SELECT DICT_LABEL FROM sys_dict_data WHERE DICT_TYPE = 'uav_nest_manufacturer' AND DICT_VALUE = n.manufacturer_code LIMIT 1 ) modelCodeName,
+            n.manufacturer_code AS modelCode
+        FROM
+            vm_uav_nest_device_info n
+            LEFT JOIN vm_uav_nest_device_model_t nestM ON n.model_code = nestM.model_code and nestM.delete_flag = 0
+        WHERE
+            n.delete_flag = '0'
+    </select>
+
+    <select id="getRadarDevice" resultType="com.chinatower.event.api.model.DeviceInfoEntity">
+        SELECT
+            osd.tenant_id,
+            osd.industry_code,
+            a.device_code,
+            IFNULL( b.device_name, a.device_name ) AS "deviceName",
+            a.latitude,
+            a.longitude,
+            a.location,
+            a.province_id,
+            a.city_id,
+            a.county_id,
+            a.height,
+            a.model_code AS "modelId",
+            a.device_model_code AS "deviceModelCode",
+            p.area_name AS "provinceName",
+            ci.area_name AS "cityName",
+            co.area_name AS "countyName"
+        FROM
+            vm_order_sensor_devices osd
+            LEFT JOIN vm_iot_device_t a ON a.device_code = osd.device_code
+            LEFT JOIN vm_tenant_iot_device_rel_t b ON b.device_code = osd.device_code
+            AND osd.tenant_id = b.tenant_id
+            LEFT JOIN sys_area p ON a.province_id = p.area_code
+            LEFT JOIN sys_area ci ON a.city_id = ci.area_code
+            LEFT JOIN sys_area co ON a.county_id = co.area_code
+        WHERE
+            a.delete_flag = '0'
+            AND osd.category_code = 1
+            AND osd.ord_status IN (0,1,2)
+    </select>
+
+    <select id="getDeviceCodeCollect" resultType="java.lang.String">
+        SELECT
+            t.coll_obj_code AS "collObjCode"
+        FROM
+            vm_user_device_collection_t t
+        WHERE
+            t.coll_obj_type = '5'
+    </select>
+
+    <select id="getIndustryName" resultType="com.chinatower.platform.entity.admin.SysIndustryConf">
+		SELECT
+            industry_code AS "industryCode",
+            industry_name AS "industryName"
+        FROM
+            sys_industry_conf
+        WHERE
+            `status` = 1 AND delete_flag = 0
+        <if test='localNode != null and localNode != ""'>
+            and	accept_node =#{localNode}
+        </if>
+	</select>
+
+    <select id="getUserInfoById" resultType="com.chinatower.platform.entity.admin.SysUser">
+		SELECT
+            u.USER_ID,
+            u.USER_NAME,
+            u.NICK_NAME,
+            u.USER_TYPE,
+            u.PHONENUMBER,
+            u.tenant_id
+        FROM
+            sys_user u
+        WHERE
+            u.del_flag = '0'
+        <if test="userIdList != null and userIdList.size() > 0 ">
+            and u.user_id in
+            <foreach collection="userIdList" item="userId" index="index" open="(" close=")" separator=",">
+                #{userId}
+            </foreach>
+        </if>
+	</select>
+
+    <select id="getUserInfoByName" resultType="com.chinatower.platform.entity.admin.SysUser">
+        SELECT
+        u.USER_ID,
+        u.USER_NAME,
+        u.NICK_NAME,
+        u.USER_TYPE,
+        u.PHONENUMBER,
+        u.tenant_id
+        FROM
+        sys_user u
+        WHERE
+        u.del_flag = '0'
+        <if test="userNameList != null and userNameList.size() > 0 ">
+            and u.USER_NAME in
+            <foreach collection="userNameList" item="userName" index="index" open="(" close=")" separator=",">
+                #{userName}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getPresetName" resultType="java.util.Map">
+        SELECT
+            preset_id AS "presetId",
+            preset_name AS "presetName"
+        FROM
+            vm_video_preset
+    </select>
+
+    <select id="getLayerInfo" resultType="java.util.Map">
+        SELECT
+            a.task_id AS "taskId",
+            c.industry_code AS "industryCode",
+            c.monitor_area_id AS "monitorAreaId",
+            l.custom_name AS "layerName",
+            l.id AS "layerId",
+            c.feature_id AS "featureId",
+            c.tbbh
+        FROM
+            vm_algorithm_config a
+            LEFT JOIN vm_polygon_patch_algo_area_rela p ON a.config_id = p.config_id
+            LEFT JOIN vm_polygon_patch_config c ON c.polygon_id = p.polygon_id
+            AND c.monitor_area_id = p.monitor_area_id
+            LEFT JOIN sys_layer l ON l.id = c.layer_id
+        WHERE
+            a.delete_flag = 0
+            AND p.delete_flag = 0
+            AND c.delete_flag = 0
+    </select>
+
+    <select id="getPolygonPatch" resultType="java.util.Map">
+        SELECT
+            t1.`polygon_id` AS "polygonId",
+            t1.`monitor_area_id` AS "monitorAreaId",
+            t1.`polygon_points` AS "polygonPoints",
+            t1.`device_code` AS "deviceCode",
+            t1.`channel_code` AS "channelCode",
+            t1.`layer_id` AS "layerId",
+            t1.`feature_id` AS "featureId",
+            CONCAT( '电子围栏', t1.polygon_no ) AS "polygonName",
+            t1.`tbbh` AS tbbh
+        FROM
+            vm_polygon_patch_config t1
+            LEFT JOIN sys_layer t2 ON t1.layer_id = t2.id
+        WHERE
+            t1.delete_flag = 0
+            AND t2.delete_flag = 0
+    </select>
+
+    <select id="getAllSwitchData" resultType="com.chinatower.platform.modules.PlatformDataConfigDto">
+        SELECT
+            platform_code AS "platformCode",
+            platform_name AS "platformName",
+            platform_level AS "platformLevel",
+            platform_parent_code AS "platformParentCode",
+            gateway_url AS "gatewayUrl",
+            general_url AS "generalUrl",
+            ofs_url AS "ofsUrl",
+            app_key AS "appkey",
+            secret_key AS secretkey,
+            adm_code AS "admCode",
+            area_code AS "areaCode"
+        FROM
+            vm_platform_data_config
+        WHERE
+          delete_flag = 0
+        and platform_parent_code in
+        <foreach collection="platformCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+
+    </select>
+    <select id="getPlatformCodeList" resultType="java.lang.String">
+
+        SELECT
+            platform_code
+        FROM
+            vm_platform_data_config
+        WHERE
+            delete_flag = 0
+            and platform_parent_code in
+        <foreach collection="platformCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+
+    </select>
+
+    <select id="getPlatformDataList" resultType="java.util.Map">
+        SELECT
+            platform_code AS "platformCode",
+            platform_name AS "platformName"
+        FROM
+            vm_platform_data_config
+        WHERE
+            delete_flag = 0
+    </select>
+
+    <select id="getPlatformInfoByCodes" resultType="com.chinatower.platform.modules.PlatformDataConfigDto">
+        SELECT
+            platform_code AS "platformCode",
+            platform_name AS "platformName"
+        FROM
+            vm_platform_data_config
+        WHERE
+            delete_flag = 0
+            AND platform_code IN
+        <foreach collection="platformCodeList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getAlgorithmNameAll" resultType="java.util.Map">
+        SELECT
+            algorithm_code AS "algorithmCode",
+            algorithm_name AS "algorithmName"
+        FROM
+            vm_algorithm_info_t
+        WHERE
+            delete_flag = '0'
+            and app_scenarios = '1'
+    </select>
+
+
+    <select id="getDeviceLabelAll" resultType="com.chinatower.platform.entity.devicemgmt.vo.TowerDeviceLabelVO">
+        select r.device_code, l.label_id, l.label_name
+        from vm_tower_device_labels_rel r
+                 inner join vm_tower_label_config l on r.label_id = l.label_id
+        where l.delete_flag = 0
+    </select>
+
+</mapper>

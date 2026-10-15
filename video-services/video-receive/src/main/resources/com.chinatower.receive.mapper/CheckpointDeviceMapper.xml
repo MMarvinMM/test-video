@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.CheckpointDeviceMapper">
+
+    <select id="getCheckpointDeviceList" resultType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceInfoVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceInfoVO">
+        SELECT t.province_id,
+               t.province_name,
+               t.city_id,
+               t.city_name,
+               t.county_id,
+               t.county_name,
+               t.tenant_id,
+               ti.tenant_name,
+               t.industry_code,
+               t.app_ver_code
+        FROM vm_checkpoint_device_info_t t, vm_device_info_t d,sys_tenant_info ti
+        WHERE t.delete_flag = 0
+          AND t.device_code = d.device_code
+          AND d.delete_flag = '0'
+          and ti.del_flag = '0'
+          AND t.tenant_id = ti.tenant_id
+          AND t.device_code = #{deviceCode}
+          AND t.channel_code = #{channelCode}
+          AND EXISTS(SELECT 1 FROM
+                                  vm_order_devices a,
+                                  vm_order_customer b
+                     WHERE a.delete_flag = 0
+                       AND b.delete_flag = 0
+                       AND a.order_code = b.order_code
+                       AND b.ord_status in(0, 1, 2)
+                       AND a.device_code = #{deviceCode})
+    </select>
+
+</mapper>

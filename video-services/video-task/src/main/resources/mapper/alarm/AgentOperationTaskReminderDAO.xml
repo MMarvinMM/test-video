@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.AgentOperationTaskReminderDAO">
+
+
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.AgentOperationTaskReminderDO">
+        <id column="notify_id" property="notifyId" jdbcType="BIGINT"/>
+        <result column="execution_id" property="executionId" jdbcType="BIGINT"/>
+        <result column="task_id" property="taskId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="VARCHAR"/>
+        <result column="notify_type" property="notifyType" jdbcType="VARCHAR"/>
+        <result column="overdue_notify_type" property="overdueNotifyType" jdbcType="VARCHAR"/>
+        <result column="notify_content" property="notifyContent" jdbcType="VARCHAR"/>
+        <result column="send_status" property="sendStatus" jdbcType="TINYINT"/>
+        <result column="send_time" property="sendTime" jdbcType="TIMESTAMP"/>
+        <result column="error_message" property="errorMessage" jdbcType="VARCHAR"/>
+        <result column="creator" property="creator" jdbcType="VARCHAR"/>
+        <result column="modifier" property="modifier" jdbcType="VARCHAR"/>
+        <result column="delete_flag" property="deleteFlag" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        notify_id, execution_id, task_id, user_id, notify_type,overdue_notify_type, notify_content,
+        send_status, send_time, error_message, creator, modifier, delete_flag, create_time, update_time
+    </sql>
+
+    <select id="selectByPrimaryKey" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM vm_agent_operation_task_notify
+        WHERE notify_id = #{notifyId} AND delete_flag = 0
+    </select>
+
+    <insert id="insert" parameterType="com.chinatower.event.dataobject.AgentOperationTaskReminderDO"
+            useGeneratedKeys="true" keyProperty="notifyId">
+        INSERT INTO vm_agent_operation_task_notify
+        (execution_id, task_id, user_id, notify_type,overdue_notify_type, notify_content,
+         send_status, send_time, error_message, creator, modifier)
+        VALUES
+            (#{executionId}, #{taskId}, #{userId}, #{notifyType},#{overdueNotifyType}, #{notifyContent},
+             #{sendStatus}, #{sendTime}, #{errorMessage}, #{creator}, #{modifier})
+    </insert>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO vm_agent_operation_task_notify
+        (execution_id, task_id, user_id, notify_type,overdue_notify_type, notify_content,
+        send_status, send_time, error_message, creator, modifier)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{executionId}, #{taskId}, #{userId}, #{notifyType},#{overdueNotifyType}, #{notifyContent},
+            #{sendStatus}, #{sendTime}, #{errorMessage}, #{creator}, #{modifier})
+        </foreach>
+    </insert>
+    <update id="updateSendStatus">
+        UPDATE vm_agent_operation_task_notify
+        SET send_status = #{sendStatus},
+        error_message = #{errorMessage},
+        <if test="sendStatus == 1">
+            send_time = NOW(),
+        </if>
+        update_time = NOW()
+        WHERE notify_id = #{notifyId} AND delete_flag = 0
+    </update>
+
+    <update id="batchUpdateSendStatus">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE vm_agent_operation_task_notify
+            SET send_status = #{sendStatus},
+            error_message = #{errorMessage},
+            <if test="sendStatus == 1">
+                send_time = NOW(),
+            </if>
+            update_time = NOW()
+            WHERE notify_id = #{notifyId} AND delete_flag = 0
+        </foreach>
+    </update>
+
+    <select id="selectReminderList" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from vm_agent_operation_task_notify
+        where execution_id in
+        <foreach collection="historyList" item="executionId" index="index" open="(" close=")" separator=",">
+            #{executionId}
+        </foreach>
+          AND delete_flag = 0
+    </select>
+</mapper>

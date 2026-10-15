@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrganDeviceRelMapper">
+
+    <select id="getDeptRel" resultType="com.chinatower.order.dto.StreetDeptDTO">
+        SELECT
+            d.dept_id AS deptId,
+            t.province_id AS provinceId,
+            t.city_id AS cityId,
+            t.county_id AS countyId,
+            t.town_code as townCode
+        FROM
+            vm_organ_device_rel_t d
+            INNER JOIN vm_order_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+            INNER JOIN vm_device_info_t t ON d.device_code = t.device_code
+        WHERE
+            d.tenant_id = #{tenantId}
+          AND d.device_type = 4
+          AND t.delete_flag = '0'
+          AND d.industry_code = #{industryCode}
+          AND o.ord_status in (0,1,2)
+        GROUP BY
+            d.dept_id,
+            t.province_id,
+            t.city_id,
+            t.county_id,
+            t.town_code
+        UNION
+        SELECT
+            d.dept_id AS deptId,
+            it.province_id AS provinceId,
+            it.city_id AS cityId,
+            it.county_id AS countyId,
+            it.town_code as townCode
+        FROM
+            vm_organ_device_rel_t d
+            INNER JOIN vm_order_sensor_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+            LEFT JOIN vm_iot_device_t it ON d.device_code = it.device_code
+        WHERE
+            d.tenant_id = #{tenantId}
+            AND d.device_type in (8, 10)
+          AND it.delete_flag = '0'
+          AND d.industry_code = #{industryCode}
+          AND o.ord_status in (0,1,2)
+        GROUP BY
+            d.dept_id,
+            it.province_id,
+            it.city_id,
+            it.county_id,
+            it.town_code
+        UNION
+        SELECT
+            d.dept_id AS deptId,
+            t.province_code AS provinceId,
+            t.city_code AS cityId,
+            t.county_code AS countyId,
+            t.town_code as townCode
+        FROM
+            vm_organ_device_rel_t d
+            INNER JOIN vm_order_uav_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+            INNER JOIN vm_uav_device_info_t t ON d.device_code = t.device_code
+        WHERE
+            d.tenant_id = #{tenantId}
+            AND d.device_type = 11
+            AND t.delete_flag = '0'
+            AND d.industry_code = #{industryCode}
+            AND o.ord_status in (0,1,2)
+        GROUP BY
+            d.dept_id,
+            t.province_code,
+            t.city_code,
+            t.county_code,
+            t.town_code
+        UNION
+        SELECT
+            d.dept_id AS deptId,
+            it.province_code AS provinceId,
+            it.city_code AS cityId,
+            it.county_code AS countyId,
+            it.town_code as townCode
+        FROM
+            vm_organ_device_rel_t d
+            INNER JOIN vm_order_horn_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+            LEFT JOIN vm_horn_device_info_t it ON d.device_code = it.device_code
+        WHERE
+            d.tenant_id = #{tenantId}
+            AND d.device_type = 12
+            AND it.delete_flag = '0'
+            AND d.industry_code = #{industryCode}
+            AND o.ord_status in (0,1,2)
+        GROUP BY
+            d.dept_id,
+            it.province_code,
+            it.city_code,
+            it.county_code,
+            it.town_code
+        UNION
+        SELECT
+            d.dept_id AS deptId,
+            it.province_code AS provinceId,
+            it.city_code AS cityId,
+            it.county_code AS countyId,
+            it.town_code as townCode
+        FROM
+            vm_organ_device_rel_t d
+            INNER JOIN vm_order_recorder_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+            LEFT JOIN vm_recorder_device_info_t it ON d.device_code = it.device_code
+        WHERE
+            d.tenant_id = #{tenantId}
+            AND d.device_type = 13
+            AND it.delete_flag = '0'
+            AND d.industry_code = #{industryCode}
+            AND o.ord_status in (0,1,2)
+        GROUP BY
+            d.dept_id,
+            it.province_code,
+            it.city_code,
+            it.county_code,
+            it.town_code
+        UNION
+        SELECT
+            d.dept_id AS deptId,
+            d.province_code AS provinceId,
+            d.city_code AS cityId,
+            d.county_code AS countyId,
+            d.street_code as townCode
+        FROM
+            vm_organ_street_rel_t d
+            INNER JOIN vm_order_services_rel o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.county_code = d.county_code
+        WHERE
+            d.tenant_id = #{tenantId}
+        AND d.delete_flag = '0'
+        AND d.category_code = 9
+        AND d.industry_code = #{industryCode}
+        AND o.ord_status in (0,1,2)
+        GROUP BY
+            d.dept_id,
+            d.province_code,
+            d.city_code,
+            d.county_code,
+            d.street_code
+    </select>
+
+    <select id="getDeptRelBatch" resultType="com.chinatower.order.dto.StreetDeptDTO">
+        SELECT
+        d.dept_id AS deptId,
+        t.province_id AS provinceId,
+        t.city_id AS cityId,
+        t.county_id AS countyId,
+        t.town_code as townCode,
+        d.industry_code as industryCode
+        FROM
+        vm_organ_device_rel_t d
+        INNER JOIN vm_order_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+        INNER JOIN vm_device_info_t t ON d.device_code = t.device_code
+        WHERE
+        d.tenant_id = #{tenantId}
+        AND d.device_type = 4
+        AND t.delete_flag = '0'
+        AND d.industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND o.ord_status in (0,1,2)
+        GROUP BY
+        d.industry_code,
+        d.dept_id,
+        t.province_id,
+        t.city_id,
+        t.county_id,
+        t.town_code
+        UNION
+        SELECT
+        d.dept_id AS deptId,
+        it.province_id AS provinceId,
+        it.city_id AS cityId,
+        it.county_id AS countyId,
+        it.town_code as townCode,
+        d.industry_code as industryCode
+        FROM
+        vm_organ_device_rel_t d
+        INNER JOIN vm_order_sensor_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+        LEFT JOIN vm_iot_device_t it ON d.device_code = it.device_code
+        WHERE
+        d.tenant_id = #{tenantId}
+        AND d.device_type in (8, 10)
+        AND it.delete_flag = '0'
+        AND d.industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND o.ord_status in (0,1,2)
+        GROUP BY
+        d.industry_code,
+        d.dept_id,
+        it.province_id,
+        it.city_id,
+        it.county_id,
+        it.town_code
+        UNION
+        SELECT
+        d.dept_id AS deptId,
+        t.province_code AS provinceId,
+        t.city_code AS cityId,
+        t.county_code AS countyId,
+        t.town_code as townCode,
+        d.industry_code as industryCode
+        FROM
+        vm_organ_device_rel_t d
+        INNER JOIN vm_order_uav_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+        INNER JOIN vm_uav_device_info_t t ON d.device_code = t.device_code
+        WHERE
+        d.tenant_id = #{tenantId}
+        AND d.device_type = 11
+        AND t.delete_flag = '0'
+        AND d.industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND o.ord_status in (0,1,2)
+        GROUP BY
+        d.industry_code,
+        d.dept_id,
+        t.province_code,
+        t.city_code,
+        t.county_code,
+        t.town_code
+        UNION
+        SELECT
+        d.dept_id AS deptId,
+        t.province_code AS provinceId,
+        t.city_code AS cityId,
+        t.county_code AS countyId,
+        t.town_code as townCode,
+        d.industry_code as industryCode
+        FROM
+        vm_organ_device_rel_t d
+        INNER JOIN vm_order_uav_nest_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+        INNER JOIN vm_uav_nest_device_info t ON d.device_code = t.device_code
+        WHERE
+        d.tenant_id = #{tenantId}
+        AND d.device_type = 15
+        AND t.delete_flag = '0'
+        AND d.industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND o.ord_status in (0,1,2)
+        GROUP BY
+        d.industry_code,
+        d.dept_id,
+        t.province_code,
+        t.city_code,
+        t.county_code,
+        t.town_code
+        UNION
+        SELECT
+        d.dept_id AS deptId,
+        it.province_code AS provinceId,
+        it.city_code AS cityId,
+        it.county_code AS countyId,
+        it.town_code as townCode,
+        d.industry_code as industryCode
+        FROM
+        vm_organ_device_rel_t d
+        INNER JOIN vm_order_horn_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+        LEFT JOIN vm_horn_device_info_t it ON d.device_code = it.device_code
+        WHERE
+        d.tenant_id = #{tenantId}
+        AND d.device_type = 12
+        AND it.delete_flag = '0'
+        AND d.industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND o.ord_status in (0,1,2)
+        GROUP BY
+        d.industry_code,
+        d.dept_id,
+        it.province_code,
+        it.city_code,
+        it.county_code,
+        it.town_code
+        UNION
+        SELECT
+        d.dept_id AS deptId,
+        it.province_code AS provinceId,
+        it.city_code AS cityId,
+        it.county_code AS countyId,
+        it.town_code as townCode,
+        d.industry_code as industryCode
+        FROM
+        vm_organ_device_rel_t d
+        INNER JOIN vm_order_recorder_devices o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.device_code = d.device_code
+        LEFT JOIN vm_recorder_device_info_t it ON d.device_code = it.device_code
+        WHERE
+        d.tenant_id = #{tenantId}
+        AND d.device_type = 13
+        AND it.delete_flag = '0'
+        AND d.industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND o.ord_status in (0,1,2)
+        GROUP BY
+        d.industry_code,
+        d.dept_id,
+        it.province_code,
+        it.city_code,
+        it.county_code,
+        it.town_code
+        UNION
+        SELECT
+        d.dept_id AS deptId,
+        d.province_code AS provinceId,
+        d.city_code AS cityId,
+        d.county_code AS countyId,
+        d.street_code as townCode,
+        d.industry_code as industryCode
+        FROM
+        vm_organ_street_rel_t d
+        INNER JOIN vm_order_services_rel o ON o.tenant_id = d.tenant_id and o.industry_code = d.industry_code and o.county_code = d.county_code
+        WHERE
+        d.tenant_id = #{tenantId}
+        AND d.delete_flag = '0'
+        AND d.category_code = 9
+        AND d.industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND o.ord_status in (0,1,2)
+        GROUP BY
+        d.industry_code,
+        d.dept_id,
+        d.province_code,
+        d.city_code,
+        d.county_code,
+        d.street_code
+    </select>
+
+
+    <delete id="deleteDeptStreetRel" parameterType="com.chinatower.system.api.model.SysDeptStreetRelVO">
+        delete from sys_dept_street_rel
+        where TENANT_ID = #{tenantId}
+        AND industry_code = #{industryCode}
+    </delete>
+
+    <delete id="deleteDeptStreetRelBatch" parameterType="com.chinatower.system.api.model.SysDeptStreetRelVO">
+        delete from sys_dept_street_rel
+        where TENANT_ID = #{tenantId}
+        AND industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <insert id="insertBatchDeptStreetRelNew" parameterType="com.chinatower.system.api.model.SysDeptStreetRelVO">
+        insert into sys_dept_street_rel
+            (DEPT_ID,STREET_AREA_CODE,PROVINCE_CODE,CITY_CODE,COUNTY_CODE,TENANT_ID,industry_code,app_ver_code) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.deptId},#{item.streetAreaCode},#{item.provinceCode},#{item.cityCode},#{item.countyCode},#{item.tenantId},#{item.industryCode},#{item.appVerCode})
+        </foreach>
+
+    </insert>
+
+    <insert id="insertBatchOrganStreetRel" parameterType="com.chinatower.platform.entity.order.OrganStreetRelVO">
+        insert into vm_organ_street_rel_t
+        (TENANT_ID,DEPT_ID,PROVINCE_CODE,CITY_CODE,COUNTY_CODE,STREET_CODE,CATEGORY_CODE,DELETE_FLAG,create_time,update_time,industry_code,app_ver_code) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.tenantId},#{item.deptId},#{item.provinceCode},#{item.cityCode},#{item.countyCode},#{item.streetCode},#{item.categoryCode},
+            #{item.deleteFlag},#{item.createTime},#{item.updateTime},#{item.industryCode},#{item.appVerCode})
+        </foreach>
+
+    </insert>
+
+    <delete id="batchDelStreetRela">
+        delete from vm_organ_street_rel_t
+        where tenant_id = #{tenantId}
+        and  category_code = #{categoryCode}
+        AND industry_code = #{industryCode}
+        and county_code in
+        <foreach collection="areaCodeList" item="areaCode" open="(" separator="," close=")">
+            #{areaCode}
+        </foreach>
+    </delete>
+
+    <select id="selectOrganStreetInfoByCondition" resultType="com.chinatower.platform.entity.order.OrganStreetRelVO">
+        select id, county_code, industry_code, category_code
+        from vm_organ_street_rel_t
+        where tenant_id = #{tenantId}
+        and category_code = #{categoryCode}
+        AND industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and county_code in
+        <foreach collection="areaCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectExistServiceCountyCodeList" resultType="java.lang.String">
+        select county_code
+        from vm_organ_street_rel_t
+        where tenant_id = #{tenantId}
+        and  category_code = #{categoryCode}
+        AND industry_code = #{industryCode}
+        and county_code in
+        <foreach collection="areaCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <delete id="batchDelStreetRelaByIds">
+        delete from vm_organ_street_rel_t
+        where id in
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="selectTenantDeptId" resultType="com.chinatower.platform.entity.admin.SysDept">
+        select  s.tenant_name, d.TENANT_ID as tenantId,   d.TENANT_TOWER_DEPT_ID as tenantTowerDeptId,  d.id, d.dept_id, d.parent_id,d.parent_name, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time, d.dept_level,d.bussness_unit,
+        CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN d.dept_id ELSE d.parent_id END province,
+        CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN NULL ELSE d.dept_id END city,d.app_ver_code,
+        d.MDM_ORG_CODE as mdmOrgCode,d.industry_code as industryCode
+        from sys_dept d
+        left join sys_tenant_info s on d.tenant_id = s.tenant_id
+        where d.del_flag = 0 and d.status = '0'
+        AND d.TENANT_ID is not null
+        <if test="tenantId != null and tenantId != ''">
+            AND d.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND d.industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="selectTenantRootDeptId" resultType="com.chinatower.platform.entity.admin.SysDept">
+        select  s.tenant_name, d.TENANT_ID as tenantId,   d.TENANT_TOWER_DEPT_ID as tenantTowerDeptId,  d.id, d.dept_id,
+        d.parent_id, d.parent_name, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag,
+        d.create_by, d.create_time, d.dept_level,d.bussness_unit,
+        CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN d.dept_id ELSE d.parent_id END province,
+        CASE WHEN d.parent_id = '1' THEN NULL WHEN d.parent_id = '100000' THEN NULL ELSE d.dept_id END city,d.app_ver_code,
+        d.MDM_ORG_CODE as mdmOrgCode,d.industry_code as industryCode
+        from sys_dept d
+        left join sys_tenant_info s on d.tenant_id = s.tenant_id
+        where d.del_flag = 0 and d.status = '0'
+        AND d.TENANT_ID is not null and (d.parent_id = '000000' or d.parent_id = '无')
+        <if test="tenantId != null and tenantId != ''">
+            AND d.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCodeList != null and industryCodeList.size() > 0 ">
+            AND d.industry_code in
+            <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        group by d.tenant_id, d.industry_code
+    </select>
+
+
+    <select id="selectExistDeviceCodeList" resultType="com.chinatower.order.dto.DeviceIndustryDTO">
+        select device_code, industry_code, device_type
+        from vm_organ_device_rel_t
+        where tenant_id = #{tenantId}
+        and device_type in
+        <foreach collection="deviceTypeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND industry_code in
+        <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and device_code in
+        <foreach collection="deviceCodeList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectOrganDeviceInfoByCondition" resultType="com.chinatower.order.domain.OrganDeviceRelDO">
+        select id, device_code, industry_code, device_type
+        from vm_organ_device_rel_t
+        where tenant_id = #{tenantId} and delete_flag = 0 and device_type = #{deviceType}
+        <if test="industryCodeList != null and industryCodeList.size() > 0 ">
+            and industry_code in
+            <foreach collection="industryCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceCodeList != null and deviceCodeList.size() > 0 ">
+            and device_code in
+            <foreach collection="deviceCodeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+</mapper>

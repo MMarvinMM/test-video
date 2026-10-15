@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.CheckpointDeviceInfoMapper">
+
+    <select id="queryCheckpointDeviceInfoList" resultType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceInfoVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceInfoVO">
+     SELECT  m.cp_id as cpId,
+             m.device_name as deviceName,
+             m.device_code as deviceCode,
+             m.channel_name as channelName,
+             m.channel_code as channelCode,
+             d.device_status as deviceStatus,
+             m.province_name as provinceName,
+             m.province_id as provinceId,
+             m.city_name as cityName,
+             m.city_id as cityId,
+             m.county_name as countyName,
+             m.county_id as countyId,
+             m.create_time as createTime
+             FROM vm_checkpoint_device_info_t m,
+             vm_device_info_t d,
+             vm_order_devices t
+             WHERE t.device_code = d.device_code
+             AND m.device_code = d.device_code
+             AND m.delete_flag = 0
+             AND d.delete_flag = '0'
+             AND t.delete_flag = 0 AND t.ord_status in(0, 1, 2) and t.tenant_id = #{tenantId} and t.industry_code = #{industryCode}
+        <if test='provinceId != null and provinceId != ""'>
+             AND m.province_id = #{provinceId}
+        </if>
+        <if test='cityId != null and cityId != ""'>
+             AND m.city_id = #{cityId}
+        </if>
+        <if test='countyId != null and countyId != ""'>
+            AND m.county_id = #{countyId}
+        </if>
+        <if test='deviceCode != null and deviceCode != ""'>
+            AND m.device_code like CONCAT('%', #{deviceCode}, '%')
+        </if>
+        <if test='deviceStatus != null and deviceStatus != ""'>
+            AND d.device_status = #{deviceStatus}
+        </if>
+        <if test='channelCode != null and channelCode != ""'>
+            AND m.channel_code like CONCAT('%', #{channelCode}, '%')
+        </if>
+        <if test='channelName != null and channelName != ""'>
+            AND m.channel_name like CONCAT('%', #{channelName}, '%')
+        </if>
+        <if test='deviceName != null and deviceName != ""'>
+            AND m.device_name like CONCAT('%', #{deviceName}, '%')
+        </if>
+        <if test="ids != null and ids.size() > 0">
+            and m.cp_id in
+            <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+        <if test='sortName == "deviceName" and sort == "desc"'>
+            order by CONVERT(m.device_name USING GBK) DESC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "deviceCode" and sort == "desc"'>
+            order by m.device_code DESC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "channelName" and sort == "desc"'>
+            order by CONVERT(m.channel_name USING GBK) DESC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "channelCode" and sort == "desc"'>
+            order by  m.channel_code DESC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "deviceStatus" and sort == "desc"'>
+            order by  d.device_status DESC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "provinceId" and sort == "desc"'>
+            order by  m.province_id DESC, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "cityId" and sort == "desc"'>
+            order by  m.city_id DESC, m.province_id, m.county_id
+        </if>
+        <if test='sortName == "countyId" and sort == "desc"'>
+            order by  m.county_id DESC, m.province_id, m.city_id
+        </if>
+        <if test='sortName == "createTime" and sort == "desc"'>
+            order by m.create_time DESC, m.county_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "provinceName" and sort == "desc"'>
+            order by CONVERT(m.province_name USING GBK) DESC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "cityName" and sort == "desc"'>
+            order by CONVERT(m.city_name USING GBK) DESC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "countyName" and sort == "desc"'>
+            order by CONVERT(m.county_name USING GBK) DESC, m.province_id, m.city_id, m.county_id
+        </if>
+
+
+        <if test='sortName == "deviceName" and sort == "asc"'>
+            order by CONVERT(m.device_name USING GBK) ASC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "deviceCode" and sort == "asc"'>
+            order by m.device_code ASC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "channelName" and sort == "asc"'>
+            order by CONVERT(m.channel_name USING GBK) ASC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "channelCode" and sort == "asc"'>
+            order by  m.channel_code ASC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "deviceStatus" and sort == "asc"'>
+            order by  d.device_status ASC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "provinceId" and sort == "asc"'>
+            order by  m.province_id ASC, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "cityId" and sort == "asc"'>
+            order by  m.city_id ASC, m.province_id, m.county_id
+        </if>
+        <if test='sortName == "countyId" and sort == "asc"'>
+            order by  m.county_id ASC, m.province_id, m.city_id
+        </if>
+        <if test='sortName == "createTime" and sort == "asc"'>
+            order by m.create_time ASC, m.county_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "provinceName" and sort == "asc"'>
+            order by CONVERT(m.province_name USING GBK) ASC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "cityName" and sort == "asc"'>
+            order by CONVERT(m.city_name USING GBK) ASC, m.province_id, m.city_id, m.county_id
+        </if>
+        <if test='sortName == "countyName" and sort == "asc"'>
+            order by CONVERT(m.county_name USING GBK) ASC, m.province_id, m.city_id, m.county_id
+        </if>
+    </select>
+
+    <select id="queryCheckpointDeviceExportList" resultType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceExportVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceInfoVO">
+    SELECT  m.device_name as deviceName,
+        m.device_code as deviceCode,
+        m.channel_name as channelName,
+        m.channel_code as channelCode,
+        d.device_status as deviceStatus,
+        m.province_name as provinceName,
+        m.city_name as cityName,
+        m.county_name as countyName
+        FROM vm_checkpoint_device_info_t m, vm_device_info_t d, (
+        SELECT
+        a.device_code
+        FROM
+        vm_order_devices a
+        WHERE a.delete_flag = 0
+        AND a.ord_status in(0, 1, 2)
+        GROUP BY a.device_code) t
+        WHERE t.device_code = d.device_code
+        AND m.device_code = d.device_code
+        AND m.delete_flag = 0
+        AND d.delete_flag = '0'
+        ${dataScope}
+        <choose>
+            <when test='ids != null and ids.size != 0'>
+                AND m.cp_id in
+                <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                <if test='countyId != null and countyId != ""'>
+                    AND m.county_id = #{countyId}
+                </if>
+                <if test='deviceCode != null and deviceCode != ""'>
+                    AND m.device_code like CONCAT('%', #{deviceCode}, '%')
+                </if>
+<!--                <if test='deviceStatus != null and deviceStatus != ""'>-->
+<!--                    AND m.device_status = #{deviceStatus}-->
+<!--                </if>-->
+                <if test='channelCode != null and channelCode != ""'>
+                    AND m.channel_code like CONCAT('%', #{channelCode}, '%')
+                </if>
+                <if test='channelName != null and channelName != ""'>
+                    AND m.channel_name like CONCAT('%', #{channelName}, '%')
+                </if>
+                <if test='deviceName != null and deviceName != ""'>
+                    AND m.device_name like CONCAT('%', #{deviceName}, '%')
+                </if>
+            </otherwise>
+        </choose>
+        order by m.province_id, m.city_id, m.county_id, m.device_code
+    </select>
+
+    <insert id="insertCheckpointDeviceInfo">
+        insert into vm_checkpoint_device_info_t (device_code,
+        device_name,
+        channel_code,
+        channel_name,
+        province_id,
+        province_name,
+        city_id,
+        city_name,
+        county_id,
+        county_name,
+        creator,
+        create_time,
+        industry_code,
+        app_ver_code,
+        delete_flag,
+        tenant_id,
+        tenant_name) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.deviceCode},#{item.deviceName},#{item.channelCode},#{item.channelName},#{item.provinceId},
+            #{item.provinceName},#{item.cityId},#{item.cityName},#{item.countyId},#{item.countyName},#{item.creator},now(),
+            #{item.industryCode},#{item.appVerCode},#{item.deleteFlag},#{item.tenantId},#{item.tenantName})
+        </foreach>
+    </insert>
+
+    <update id="deleteCheckpointDeviceInfoBatch" parameterType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceInfoVO">
+        update vm_checkpoint_device_info_t
+        set delete_flag = #{deleteFlag}
+        where 1= 1
+        <if test="ids != null and ids.size() > 0">
+            and cp_id in
+            <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="deviceCodeList != null and deviceCodeList.size() > 0">
+            and device_code in
+            <foreach item="item" index="index" collection="deviceCodeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <select id="getDeviceList" resultType="com.chinatower.platform.entity.devicemgmt.vo.SysAreaBusinessCheckpointVO">
+        SELECT DISTINCT
+            d.device_code as area_code,
+            d.device_name as area_name,
+            '10' as area_level,
+            d.county_id as area_parent_code,
+            d.province_id,
+            d.city_id,
+            d.county_id
+        FROM vm_device_info_t d left join vm_order_devices a on d.device_code = a.device_code
+        left join vm_checkpoint_device_info_t i on
+            d.device_code = i.device_code
+            and a.industry_code = i.industry_code
+            and a.tenant_id = i.tenant_id
+            and i.delete_flag = '0'
+        WHERE d.delete_flag = '0'
+          ${dataScope}
+          and a.delete_flag = 0
+          AND a.ord_status in(0, 1, 2)
+          AND i.device_code is null
+    </select>
+
+    <select id="selectSysArea"
+            resultType="com.chinatower.platform.entity.devicemgmt.vo.SysAreaBusinessCheckpointVO" parameterType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceInfoVO">
+        SELECT
+            a.area_code,
+            a.area_name,
+            a.area_level,
+            a.area_parent_code,
+            '' as province_id,
+            '' as city_id,
+            '' as county_id
+        FROM
+            sys_area a
+        where a.DEL_FLAG='0'
+          and a.status='0'
+        <if test="areaCodeList != null and areaCodeList.size() > 0">
+            and area_code in
+            <foreach item="item" index="index" collection="areaCodeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="selectDeviceInfo"
+            resultType="com.chinatower.platform.entity.devicemgmt.vo.CheckpointDeviceInfoVO">
+        select  DISTINCT
+        t.device_code,
+        t.device_name,
+        c.channel_code,
+        c.channel_name,
+        t.province_id,
+        a.AREA_NAME province_name,
+        t.city_id,
+        b.AREA_NAME city_name,
+        t.county_id,
+        d.AREA_NAME county_name
+        from vm_device_info_t t
+        left join sys_area a on a.AREA_CODE = t.province_id
+        left join sys_area b on b.AREA_CODE = t.city_id
+        left join sys_area d on d.AREA_CODE = t.county_id,
+        vm_channel_info_t c
+        where t.device_code = c.device_code
+        AND c.delete_flag = 0
+        AND t.device_code in
+        <if test="channelCodeList != null and channelCodeList.size() > 0">
+            <foreach item="item" index="index" collection="channelCodeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+
+</mapper>

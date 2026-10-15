@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.FlowTimeOutDAO">
+
+    <delete id="deleteHistoryList">
+        delete from vm_warning_intercept_t where alarm_time &lt; #{lastDate}
+    </delete>
+
+    <insert id="bakOperate3MonthsAgo" parameterType="Map">
+        insert into vm_alarm_operate_history_t
+        (warning_order_id,tenant_id,tenant_name,task_id,alarm_body,device_code,device_name,channel_code,
+        channel_name,warning_type_id,warning_type_name,alarm_time,province_id,province_name,city_id,
+        city_name,county_id,county_name,longitude,latitude,img_url,create_time,modifier_time,delete_flag,
+        ptz_p,ptz_t,ptz_z,address,alarm_code,algorithm_code,emergency_level,emergency_level_name,
+        duplicate_order_id,false_alarm_remark,create_user,create_user_name,judge_result,grid_id,grid_name,
+        video_url,file_img_url_icon,importance_level,source,operate_type,notice_resource,front_alarm_pic_url,
+        front_alarm_vedio_url,confidence_level,msg_type,confidence_level_min,hori_azimuth_angle,comp_confidence_level,confidence_level_max,preset_id,enlarge_flag)
+        select
+        warning_order_id,tenant_id,tenant_name,task_id,alarm_body,device_code,device_name,channel_code,
+        channel_name,warning_type_id,warning_type_name,alarm_time,province_id,province_name,city_id,
+        city_name,county_id,county_name,longitude,latitude,img_url,create_time,modifier_time,delete_flag,
+        ptz_p,ptz_t,ptz_z,address,alarm_code,algorithm_code,emergency_level,emergency_level_name,
+        duplicate_order_id,false_alarm_remark,create_user,create_user_name,judge_result,grid_id,grid_name,
+        video_url,file_img_url_icon,importance_level,source,operate_type,notice_resource,front_alarm_pic_url,
+        front_alarm_vedio_url,confidence_level,msg_type,confidence_level_min,hori_azimuth_angle,comp_confidence_level,confidence_level_max,preset_id,enlarge_flag
+        from vm_alarm_operate_t
+        where alarm_time &lt; #{threeMonthsAgo};
+    </insert>
+
+    <delete id="deleteOperate3MonthsAgo" parameterType="Map">
+        delete from vm_alarm_operate_t
+        where alarm_time &lt; #{threeMonthsAgo};
+    </delete>
+</mapper>

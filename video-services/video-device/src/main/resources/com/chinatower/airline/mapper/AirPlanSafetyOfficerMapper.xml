@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.airline.mapper.AirPlanSafetyOfficerMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.airline.dto.request.AirPlanSafetyOfficer">
+        <id column="id" property="id"/>
+        <result column="plan_id" property="planId"/>
+        <result column="safety_officer" property="safetyOfficer"/>
+        <result column="safety_officer_mobile" property="safetyOfficerMobile"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="industry_code" property="industryCode"/>
+        <result column="create_time" property="createTime"/>
+        <result column="create_user" property="createUser"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="update_user" property="updateUser"/>
+        <result column="delete_flag" property="deleteFlag"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, plan_id, safety_officer, safety_officer_mobile,
+        tenant_id, industry_code,
+        create_time, create_user, update_time, update_user, delete_flag
+    </sql>
+
+    <insert id="insert" parameterType="com.chinatower.airline.dto.request.AirPlanSafetyOfficer" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO vm_air_plan_safety_officer_t
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planId != null">plan_id,</if>
+            <if test="safetyOfficer != null">safety_officer,</if>
+            <if test="safetyOfficerMobile != null">safety_officer_mobile,</if>
+            <if test="tenantId != null">tenant_id,</if>
+            <if test="industryCode != null">industry_code,</if>
+            create_time,
+            <if test="createUser != null">create_user,</if>
+            delete_flag
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="planId != null">#{planId},</if>
+            <if test="safetyOfficer != null">#{safetyOfficer},</if>
+            <if test="safetyOfficerMobile != null">#{safetyOfficerMobile},</if>
+            <if test="tenantId != null">#{tenantId},</if>
+            <if test="industryCode != null">#{industryCode},</if>
+            now(),
+            <if test="createUser != null">#{createUser},</if>
+            '0'
+        </trim>
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO vm_air_plan_safety_officer_t
+        (plan_id, safety_officer, safety_officer_mobile, tenant_id, industry_code, create_time, create_user, delete_flag)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.planId}, #{item.safetyOfficer}, #{item.safetyOfficerMobile}, #{item.tenantId}, #{item.industryCode}, now(), #{item.createUser}, '0')
+        </foreach>
+    </insert>
+
+    <update id="updateById" parameterType="com.chinatower.airline.dto.request.AirPlanSafetyOfficer">
+        UPDATE vm_air_plan_safety_officer_t
+        <set>
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="safetyOfficer != null">safety_officer = #{safetyOfficer},</if>
+            <if test="safetyOfficerMobile != null">safety_officer_mobile = #{safetyOfficerMobile},</if>
+            <if test="tenantId != null">tenant_id = #{tenantId},</if>
+            <if test="industryCode != null">industry_code = #{industryCode},</if>
+            <if test="updateUser != null">update_user = #{updateUser},</if>
+            update_time = now()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap" parameterType="java.lang.Long">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM vm_air_plan_safety_officer_t
+        WHERE id = #{id}
+          AND delete_flag = '0'
+        LIMIT 1
+    </select>
+
+    <select id="selectByPlanId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM vm_air_plan_safety_officer_t
+        WHERE plan_id = #{planId}
+          AND delete_flag = '0'
+        ORDER BY create_time DESC
+    </select>
+
+    <update id="deleteByPlanId">
+        UPDATE vm_air_plan_safety_officer_t
+        SET delete_flag = '1',
+            <if test="updateUser != null">update_user = #{updateUser},</if>
+            update_time = now()
+        WHERE plan_id = #{planId}
+          AND delete_flag = '0'
+    </update>
+
+    <select id="selectLatestByUser" resultType="com.chinatower.device.entity.dto.AirPlanSafetyOfficerReq">
+        SELECT
+            distinct
+            safety_officer AS safetyOfficer,
+            safety_officer_mobile AS safetyOfficerMobile
+        FROM vm_air_plan_safety_officer_t
+        WHERE delete_flag = '0'
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND create_user = #{createUser}
+        <if test="safetyOfficer != null and safetyOfficer != ''">
+            AND safety_officer LIKE CONCAT('%', #{safetyOfficer}, '%')
+        </if>
+        ORDER BY create_time DESC
+        LIMIT 10
+    </select>
+
+    <select id="selectSafetyOfficerPhonesByFlyingUav" resultType="java.lang.String">
+        SELECT DISTINCT so.safety_officer_mobile
+        FROM vm_air_plan_safety_officer_t so
+        INNER JOIN (
+            SELECT t.plan_id
+            FROM vm_air_task_t t
+            WHERE t.task_status = '3'
+              AND t.delete_flag = '0'
+              and t.plan_id != ''
+            ORDER BY t.create_time DESC
+            LIMIT 1
+        ) ft ON ft.plan_id = so.plan_id
+        WHERE so.delete_flag = '0'
+    </select>
+
+
+    <select id="selectUavNameByUavCode" resultType="java.lang.String">
+        SELECT u.device_name
+        FROM vm_uav_device_info_t u
+        WHERE u.device_code = #{uavCode}
+        LIMIT 1
+    </select>
+
+</mapper>
+

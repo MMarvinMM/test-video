@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.BdmGridKeeperExportMapper">
+
+    <select id="getGridKeeperExportList" resultType="com.chinatower.bdm.api.entity.GridKeeperForExportViewVO">
+        SELECT GROUP_CONCAT(c.grid_name) AS grid_name,
+        a.keeper_id_card_number AS keeper_id_card_number,
+        a.keeper_phone_number AS keeper_phone_number,
+        a.keeper_name,a.login_name,a.keeper_gender,a.keeper_email,
+        DATE_FORMAT(a.keeper_birth_date,'%Y-%m-%d') keeper_birth_date,DATE_FORMAT(a.entry_time,'%Y-%m-%d') entry_time,
+        a.wechat_number,cc.DICT_LABEL AS party,
+        a.location_flag,a.keeper_type,a.operating_duty,a.keeper_id
+        FROM bm_gridkeeper a
+        LEFT JOIN bm_grid_keeper_ref b ON b.keeper_id = a.keeper_id
+        LEFT JOIN bm_grid c ON b.grid_id = c.grid_id
+        LEFT JOIN sys_dict_data cc ON (cc.DICT_TYPE = 'political_status' AND a.party = cc.DICT_VALUE)
+        WHERE a.delete_flag = 0 AND b.delete_flag = 0 AND c.delete_flag = 0
+        <if test="deptId != null and deptId != ''">
+            and a.keeper_id in (select r.keeper_id from bm_grid_keeper_ref r where r.delete_flag = '0' and r.grid_id = #{deptId,jdbcType=VARCHAR} )
+        </if>
+        <if test="provinceId != null and provinceId != ''">
+            and a.province_id = #{provinceId,jdbcType=VARCHAR}
+        </if>
+        <if test="cityId != null and cityId != ''">
+            and a.city_id = #{cityId,jdbcType=VARCHAR}
+        </if>
+        <if test="status != null and status != ''">
+            and a.status = #{status}
+        </if>
+        <if test="keeperCode != null and keeperCode != ''">
+            and a.keeper_code  like concat('%',#{keeperCode},'%')
+        </if>
+        <if test="keeperName != null and keeperName != ''">
+            and a.keeper_name  like concat('%',#{keeperName},'%')
+        </if>
+        <if test="loginName != null and loginName != ''">
+            and a.login_name  like concat('%',#{loginName},'%')
+        </if>
+        <if test="keeperPhoneNumber != null and keeperPhoneNumber != ''">
+            and a.keeper_phone_number like concat('%',#{keeperPhoneNumber},'%')
+        </if>
+        <if test="gridId != null">
+            and EXISTS(SELECT t.keeper_id FROM bm_grid_keeper_ref t WHERE t.delete_flag = '0' and t.grid_id = #{gridId} AND t.keeper_id = a.keeper_id)
+        </if>
+        <if test='keyword != null and keyword != ""'>
+            and (a.keeper_code  like concat('%',#{keyword},'%') or a.keeper_name  like concat('%',#{keyword},'%'))
+        </if>
+        <if test='locationFlag != null and locationFlag != ""'>
+            and a.location_flag = #{locationFlag}
+        </if>
+        <if test='keeperType != null and keeperType != ""'>
+            and a.keeper_type = #{keeperType}
+        </if>
+        ${dataScope}
+        GROUP BY a.keeper_id
+        order by a.create_time DESC,a.keeper_id DESC
+    </select>
+
+
+
+    <select id="getKeeperLeader" resultType="com.chinatower.bdm.api.entity.GridListVO">
+        SELECT a.keeper_id,a.keeper_name,b.grid_id,
+        CONCAT(
+        SUBSTRING( a.keeper_phone_number, 1, 3 ),
+        '****',
+        SUBSTRING( a.keeper_phone_number, 8 )) AS keeper_phone_number,
+        a.keeper_phone_number AS phonePlainText,
+        sys.AVATAR as keeperPhotoUrl,
+        (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as isLine
+        FROM bm_gridkeeper a, bm_grid_keeper_ref b, sys_user sys
+        WHERE a.keeper_id = b.keeper_id
+        and a.staff_id = sys.USER_ID
+        and b.grid_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and a.tenant_id = #{tenantId,jdbcType=VARCHAR}
+        and a.industry_code = #{industryCode,jdbcType=VARCHAR}
+        AND a.delete_flag = 0
+        AND b.delete_flag = 0
+        AND a.keeper_type = '1'
+        <if test="keeperId != null and keeperId != ''">
+            and a.keeper_id != #{keeperId,jdbcType=BIGINT}
+        </if>
+    </select>
+
+    <select id="findKeeperIdByGridName" resultType="com.chinatower.platform.dto.KeeperIdGridNameVo">
+        SELECT
+        r.keeper_id,
+        bg.grid_name
+        FROM
+        bm_grid_keeper_ref r
+        INNER JOIN
+        bm_grid g ON r.grid_id = g.grid_id
+        LEFT JOIN
+        bm_grid bg ON bg.grid_id = g.parent_code
+        WHERE r.keeper_id IN
+        <foreach item="keeperId" index="index" collection="keeperIds" open="(" separator="," close=")">
+            #{keeperId}
+        </foreach>
+        AND r.delete_flag = 0 AND g.delete_flag = 0 AND bg.grid_name IS NOT NULL
+    </select>
+
+
+
+</mapper>

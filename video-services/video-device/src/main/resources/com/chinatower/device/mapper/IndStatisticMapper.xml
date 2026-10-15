@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.IndStatisticMapper">
+
+    <select id="getStatisticsDevices" resultType="com.chinatower.industry.vo.IndDeviceVO">
+        SELECT IFNULL(sum(device_num), 0) as deviceCountTotal,
+        IFNULL(sum(dev_online_num), 0) as devCountOnline,
+        IFNULL(sum(dev_offline_num), 0) as devCountOffline,
+        IFNULL(sum(channel_num), 0) as channelCountTotal,
+        IFNULL(sum(channel_online_num), 0) as channelCountOnline,
+        IFNULL(sum(channel_offline_num), 0) as channelCountOffline
+        FROM vm_statistics_devices dataTable
+        where `year` = YEAR(NOW())
+          AND `month` = MONTH(NOW())
+          AND `day` = DAY(NOW())
+        <if test='industryCode != null and industryCode !=""'>
+            and dataTable.industry_code = #{industryCode}
+        </if>
+        <if test='tenantId != null and tenantId !=""'>
+            and dataTable.tenant_id = #{tenantId}
+        </if>
+        ${dataScope}
+    </select>
+
+    <select id="getEventAlarmNumYearMonth" resultType="com.chinatower.industry.vo.IndEventAlarmNumVO">
+        SELECT IFNULL(SUM(dataTable.today_all),0) AS allNum,IFNULL(SUM(dataTable.ai_num),0) AS AINum,
+        IFNULL(SUM(dataTable.manual_num),0) AS manNum,IFNULL(SUM(dataTable.onekey_num),0) AS keyNum
+        FROM vm_statistics_event_num_day dataTable
+        WHERE 1=1
+        ${dataScope}
+        <if test='dimensionFlag == "1" '>
+            AND DATE_FORMAT(dataTable.create_date ,'%Y') = DATE_FORMAT(NOW() ,'%Y')
+        </if>
+        <if test='dimensionFlag == "2" '>
+            AND DATE_FORMAT(dataTable.create_date ,'%Y-%m') = DATE_FORMAT(NOW() ,'%Y-%m')
+        </if>
+        <if test='dimensionFlag == "3" '>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),interval 1 DAY) ,'%Y-%m-%d')
+        </if>
+        <if test='dimensionFlag == "4" '>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(NOW() ,'%Y-%m-%d')
+        </if>
+    </select>
+
+    <select id="getDevTypeYearMonth" resultType="com.chinatower.industry.vo.IndDevTypeVO">
+        SELECT dataTable.warning_type_id typeId,SUM(dataTable.warning_num) num,
+        SUM(dataTable.ai_num) aiNum, SUM(dataTable.judge_num) judgeNum, SUM(dataTable.real_num) realNum,
+        SUM(dataTable.false_num) falseNum
+        FROM vm_statistics_event_type dataTable
+        WHERE 1=1
+        ${dataScope}
+        <if test='dimensionFlag == "1" '>
+            AND DATE_FORMAT(dataTable.create_date ,'%Y') = DATE_FORMAT(NOW() ,'%Y')
+        </if>
+        <if test='dimensionFlag == "2" '>
+            AND DATE_FORMAT(dataTable.create_date ,'%Y-%m') = DATE_FORMAT(NOW() ,'%Y-%m')
+        </if>
+        <if test='dimensionFlag == "3" '>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),interval 1 DAY) ,'%Y-%m-%d')
+        </if>
+        <if test='dimensionFlag == "4" '>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(NOW() ,'%Y-%m-%d')
+        </if>
+        <if test='dimensionFlag == "5" and queryStartTime != null and queryStartTime != ""'>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') >= #{queryStartTime}
+        </if>
+        <if test='dimensionFlag == "5" and queryEndTime != null and queryEndTime != ""'>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') <![CDATA[<=]]> #{queryEndTime}
+        </if>
+        GROUP BY warning_type_id
+        ORDER BY num DESC,typeId DESC
+    </select>
+
+    <select id="getEventNumByArea" resultType="com.chinatower.industry.vo.IndEventNumVO">
+        SELECT
+        province_id as provinceId,
+        city_id as cityId,
+        county_id as countyId,
+        region_name as regionName,
+        IFNULL(sum( warning_num ),0) as num,
+        IFNULL(sum( real_num ),0) as realNum
+        FROM vm_statistics_event_area dataTable
+        where 1=1
+        ${dataScope}
+        <if test='dimensionFlag == "1" '>
+            AND `year` = YEAR(NOW())
+        </if>
+        <if test='dimensionFlag == "2" '>
+            AND `year` = YEAR(NOW())
+            AND `month` = MONTH(NOW())
+        </if>
+        <if test='dimensionFlag == "3" '>
+            AND DATE_FORMAT(create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),interval 1 DAY) ,'%Y-%m-%d')
+        </if>
+        <if test='dimensionFlag == "4" '>
+            AND `year` = YEAR(NOW())
+            AND `month` = MONTH(NOW())
+            AND `day` = DAY(NOW())
+        </if>
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND create_date >= #{queryStartTime}
+        </if>
+        <if test='queryEndTime != null and queryEndTime != "" '>
+            AND create_date <![CDATA[<=]]> #{queryEndTime}
+        </if>
+        <if test="provinceId != null and provinceId != '' ">
+            AND dataTable.province_id = #{provinceId}
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND dataTable.city_id = #{cityId}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND dataTable.county_id = #{countyId}
+        </if>
+        GROUP BY province_id, city_id, county_id
+        order by num desc
+    </select>
+
+    <select id="getEventTrendYear" resultType="com.chinatower.industry.vo.IndEventTrendVO">
+        SELECT t1.label, IFNULL(t2.num, 0) AS num
+        FROM (SELECT 1 AS `year`, (DATE_FORMAT(NOW(), '%Y') - 9) AS label
+              UNION
+              SELECT 2 AS `year`, (DATE_FORMAT(NOW(), '%Y') - 8) AS label
+              UNION
+              SELECT 3 AS `year`, (DATE_FORMAT(NOW(), '%Y') - 7) AS label
+              UNION
+              SELECT 4 AS `year`, (DATE_FORMAT(NOW(), '%Y') - 6) AS label
+              UNION
+              SELECT 5 AS `year`, (DATE_FORMAT(NOW(), '%Y') - 5) AS label
+              UNION
+              SELECT 6 AS `year`, (DATE_FORMAT(NOW(), '%Y') - 4) AS label
+              UNION
+              SELECT 7 AS `year`, (DATE_FORMAT(NOW(), '%Y') - 3) AS label
+              UNION
+              SELECT 8 AS `year`, (DATE_FORMAT(NOW(), '%Y') - 2) AS label
+              UNION
+              SELECT 9 AS `year`, (DATE_FORMAT(NOW(), '%Y') - 1) AS label
+              UNION
+              SELECT 10 AS `year`, DATE_FORMAT(NOW(), '%Y') AS label) t1
+                 LEFT JOIN
+             (SELECT dataTable.year AS year, SUM(today_all) AS num
+              FROM vm_statistics_event_num_year dataTable
+              WHERE 1 = 1
+                    <if test="provinceId != null and provinceId != '' ">
+                        AND dataTable.province_id = #{provinceId}
+                    </if>
+                    <if test="cityId != null and cityId != '' ">
+                        AND dataTable.city_id = #{cityId}
+                    </if>
+                    <if test="countyId != null and countyId != '' ">
+                        AND dataTable.county_id = #{countyId}
+                    </if>
+                  ${dataScope}
+              GROUP BY dataTable.year
+              ORDER BY dataTable.year) t2 ON t1.label = t2.year
+        ORDER BY t1.label
+    </select>
+
+    <select id="getEventTrendMonth" resultType="com.chinatower.industry.vo.IndEventTrendVO">
+        SELECT t1.label, IFNULL(t2.num, 0) AS num,IFNULL(t2.realNum, 0) AS realNum
+        FROM (SELECT 1 AS `month`, '1' AS label
+              UNION
+              SELECT 2 AS `month`, '2' AS label
+              UNION
+              SELECT 3 AS `month`, '3' AS label
+              UNION
+              SELECT 4 AS `month`, '4' AS label
+              UNION
+              SELECT 5 AS `month`, '5' AS label
+              UNION
+              SELECT 6 AS `month`, '6' AS label
+              UNION
+              SELECT 7 AS `month`, '7' AS label
+              UNION
+              SELECT 8 AS `month`, '8' AS label
+              UNION
+              SELECT 9 AS `month`, '9' AS label
+              UNION
+              SELECT 10 AS `month`, '10' AS label
+              UNION
+              SELECT 11 AS `month`, '11' AS label
+              UNION
+              SELECT 12 AS `month`, '12' AS label) t1
+                 LEFT JOIN
+             (SELECT dataTable.month AS month, SUM(today_all) AS num,SUM(real_num) AS realNum
+              FROM vm_statistics_event_num_day dataTable
+            WHERE DATE_FORMAT(dataTable.create_date, '%Y') = DATE_FORMAT(NOW(), '%Y')
+                    <if test="provinceId != null and provinceId != '' ">
+                        AND dataTable.province_id = #{provinceId}
+                    </if>
+                    <if test="cityId != null and cityId != '' ">
+                        AND dataTable.city_id = #{cityId}
+                    </if>
+                    <if test="countyId != null and countyId != '' ">
+                        AND dataTable.county_id = #{countyId}
+                    </if>
+                  ${dataScope}
+              GROUP BY dataTable.month
+              ORDER BY dataTable.month) t2
+             ON t1.month = t2.month
+        ORDER BY t1.month
+    </select>
+
+    <select id="getEventTrendDay" resultType="com.chinatower.industry.vo.IndEventTrendVO">
+        SELECT t1.label, IFNULL(t2.num, 0) AS num,IFNULL(t2.realNum, 0) AS realNum
+        FROM (SELECT 1 AS `day`, '1' AS label
+              UNION
+              SELECT 2 AS `day`, '2' AS label
+              UNION
+              SELECT 3 AS `day`, '3' AS label
+              UNION
+              SELECT 4 AS `day`, '4' AS label
+              UNION
+              SELECT 5 AS `day`, '5' AS label
+              UNION
+              SELECT 6 AS `day`, '6' AS label
+              UNION
+              SELECT 7 AS `day`, '7' AS label
+              UNION
+              SELECT 8 AS `day`, '8' AS label
+              UNION
+              SELECT 9 AS `day`, '9' AS label
+              UNION
+              SELECT 10 AS `day`, '10' AS label
+              UNION
+              SELECT 11 AS `day`, '11' AS label
+              UNION
+              SELECT 12 AS `day`, '12' AS label
+              UNION
+              SELECT 13 AS `day`, '13' AS label
+              UNION
+              SELECT 14 AS `day`, '14' AS label
+              UNION
+              SELECT 15 AS `day`, '15' AS label
+              UNION
+              SELECT 16 AS `day`, '16' AS label
+              UNION
+              SELECT 17 AS `day`, '17' AS label
+              UNION
+              SELECT 18 AS `day`, '18' AS label
+              UNION
+              SELECT 19 AS `day`, '19' AS label
+              UNION
+              SELECT 20 AS `day`, '20' AS label
+              UNION
+              SELECT 21 AS `day`, '21' AS label
+              UNION
+              SELECT 22 AS `day`, '22' AS label
+              UNION
+              SELECT 23 AS `day`, '23' AS label
+              UNION
+              SELECT 24 AS `day`, '24' AS label
+              UNION
+              SELECT 25 AS `day`, '25' AS label
+              UNION
+              SELECT 26 AS `day`, '26' AS label
+              UNION
+              SELECT 27 AS `day`, '27' AS label
+              UNION
+              SELECT 28 AS `day`, '28' AS label
+              UNION
+              SELECT 29 AS `day`, '29' AS label
+              UNION
+              SELECT 30 AS `day`, '30' AS label
+              UNION
+              SELECT 31 AS `day`, '31' AS label) t1
+                 LEFT JOIN
+             (SELECT dataTable.day AS day, SUM(today_all) AS num,SUM(real_num) AS realNum
+              FROM vm_statistics_event_num_day dataTable
+              WHERE DATE_FORMAT(dataTable.create_date, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+                    <if test="provinceId != null and provinceId != '' ">
+                        AND dataTable.province_id = #{provinceId}
+                    </if>
+                    <if test="cityId != null and cityId != '' ">
+                        AND dataTable.city_id = #{cityId}
+                    </if>
+                    <if test="countyId != null and countyId != '' ">
+                        AND dataTable.county_id = #{countyId}
+                    </if>
+                  ${dataScope}
+              GROUP BY dataTable.day
+              ORDER BY dataTable.day) t2
+             ON t1.day = t2.day
+        ORDER BY t1.day
+    </select>
+
+    <select id="getEventTrendQuery" resultType="com.chinatower.industry.vo.IndEventTrendVO">
+        select CONCAT(
+        dataTable.year,'-',
+        dataTable.month,'-',
+        dataTable.day) as label,
+        IFNULL(sum(dataTable.today_all),0) AS num,
+        IFNULL(sum(dataTable.real_num), 0) AS realNum
+        from vm_statistics_event_num_day dataTable
+        where 1 = 1 ${dataScope}
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND dataTable.create_date >= #{queryStartTime}
+        </if>
+        <if test='queryEndTime != null and queryEndTime != "" '>
+            AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+        </if>
+        <if test="provinceId != null and provinceId != '' ">
+            AND dataTable.province_id = #{provinceId}
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND dataTable.city_id = #{cityId}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND dataTable.county_id = #{countyId}
+        </if>
+        GROUP BY  DATE_FORMAT(dataTable.create_date,'%Y-%m-%d')
+        ORDER BY  DATE_FORMAT(dataTable.create_date,'%Y-%m-%d')
+    </select>
+
+    <select id="getEventNumByHour" resultType="Map"
+            parameterType="com.chinatower.industry.vo.IndAnalysisVO">
+        SELECT t1.label,IFNULL(t2.num,0) AS num,IFNULL(t2.realNum,0) AS realNum FROM (
+        SELECT 0 AS `hour`,'0:00-1:00' AS label UNION
+        SELECT 1 AS `hour`,'1:00-2:00' AS label UNION
+        SELECT 2 AS `hour`,'2:00-3:00' AS label UNION
+        SELECT 3 AS `hour`,'3:00-4:00' AS label UNION
+        SELECT 4 AS `hour`,'4:00-5:00' AS label UNION
+        SELECT 5 AS `hour`,'5:00-6:00' AS label UNION
+        SELECT 6 AS `hour`,'6:00-7:00' AS label UNION
+        SELECT 7 AS `hour`,'7:00-8:00' AS label UNION
+        SELECT 8 AS `hour`,'8:00-9:00' AS label UNION
+        SELECT 9 AS `hour`,'9:00-10:00' AS label UNION
+        SELECT 10 AS `hour`,'10:00-11:00' AS label UNION
+        SELECT 11 AS `hour`,'11:00-12:00' AS label UNION
+        SELECT 12 AS `hour`,'12:00-13:00' AS label UNION
+        SELECT 13 AS `hour`,'13:00-14:00' AS label UNION
+        SELECT 14 AS `hour`,'14:00-15:00' AS label UNION
+        SELECT 15 AS `hour`,'15:00-16:00' AS label UNION
+        SELECT 16 AS `hour`,'16:00-17:00' AS label UNION
+        SELECT 17 AS `hour`,'17:00-18:00' AS label UNION
+        SELECT 18 AS `hour`,'18:00-19:00' AS label UNION
+        SELECT 19 AS `hour`,'19:00-20:00' AS label UNION
+        SELECT 20 AS `hour`,'20:00-21:00' AS label UNION
+        SELECT 21 AS `hour`,'21:00-22:00' AS label UNION
+        SELECT 22 AS `hour`,'22:00-23:00' AS label UNION
+        SELECT 23 AS `hour`,'23:00-24:00' AS label) t1
+        LEFT JOIN
+        (SELECT warning_hour, SUM(warning_num) AS num,SUM(real_num) AS realNum
+        FROM vm_statistics_event_hour dataTable
+        WHERE 1 = 1 ${dataScope}
+        <if test="provinceId != null and provinceId != '' ">
+            AND province_id = #{provinceId}
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND city_id = #{cityId}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND county_id = #{countyId}
+        </if>
+        <if test='dimensionFlag == "1" '>
+            AND `year` = YEAR(NOW())
+        </if>
+        <if test='dimensionFlag == "2" '>
+            AND `year` = YEAR(NOW())
+            AND `month` = MONTH(NOW())
+        </if>
+        <if test='dimensionFlag == "3" '>
+            AND DATE_FORMAT(create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),interval 1 DAY) ,'%Y-%m-%d')
+        </if>
+        <if test='dimensionFlag == "4" '>
+            AND `year` = YEAR(NOW())
+            AND `month` = MONTH(NOW())
+            AND `day` = DAY(NOW())
+        </if>
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND create_date >= #{queryStartTime}
+        </if>
+        <if test='queryEndTime != null and queryEndTime != "" '>
+            AND create_date <![CDATA[<=]]> #{queryEndTime}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND county_id = #{countyId}
+        </if>
+        GROUP BY warning_hour
+        ORDER BY warning_hour) t2 ON t1.`hour` = t2.warning_hour
+        ORDER BY t1.`hour`
+    </select>
+
+    <select id="getTypeName" resultType="map">
+        select type_name as typeName, type_value as typeId
+        from sys_alarm_type
+        where
+         type_value in
+        <foreach collection="ids" item="typeId" open="(" close=")" separator=",">
+            #{typeId}
+        </foreach>
+    </select>
+
+
+    <select id="getAllEventAlarmNumYearMonth" resultType="java.util.Map">
+        SELECT sum(order_num) as orderNum,warning_source as warningSource
+        FROM vm_statistics_event_source dataTable
+        WHERE 1=1
+        ${dataScope}
+        <if test='dimensionFlag == "1" '>
+            AND DATE_FORMAT(dataTable.create_date ,'%Y') = DATE_FORMAT(NOW() ,'%Y')
+        </if>
+        <if test='dimensionFlag == "2" '>
+            AND DATE_FORMAT(dataTable.create_date ,'%Y-%m') = DATE_FORMAT(NOW() ,'%Y-%m')
+        </if>
+        <if test='dimensionFlag == "3" '>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),interval 1 DAY) ,'%Y-%m-%d')
+        </if>
+        <if test='dimensionFlag == "4" '>
+            AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(NOW() ,'%Y-%m-%d')
+        </if>
+        group by warning_source
+    </select>
+    <select id="getEventTrendYearSearch" resultType="java.util.Map">
+        select IFNULL(sum(dataTable.today_all),0)  sum, year label
+        from vm_statistics_event_num_year dataTable
+        where 1 = 1 ${dataScope}
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND DATE_FORMAT(create_date,'%Y') >= DATE_FORMAT(#{queryStartTime}, '%Y')
+        </if>
+        <if test='queryEndTime != null and queryEndTime != "" '>
+            AND DATE_FORMAT(create_date,'%Y') <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y')
+        </if>
+        <if test="provinceId != null and provinceId != '' ">
+            AND dataTable.province_id = #{provinceId}
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND dataTable.city_id = #{cityId}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND dataTable.county_id = #{countyId}
+        </if>
+        group by year
+    </select>
+    <select id="getEventTrendMonthSearch" resultType="java.util.Map">
+        select  IFNULL(sum(dataTable.today_all),0) sum, DATE_FORMAT(create_date, '%Y-%m') label
+        from vm_statistics_event_num_month dataTable
+        where 1 = 1 ${dataScope}
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND DATE_FORMAT(create_date,'%Y-%m') >= DATE_FORMAT(#{queryStartTime}, '%Y-%m')
+        </if>
+        <if test='queryEndTime != null and queryEndTime != "" '>
+            AND DATE_FORMAT(create_date,'%Y-%m') <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m')
+        </if>
+        <if test="provinceId != null and provinceId != '' ">
+            AND dataTable.province_id = #{provinceId}
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND dataTable.city_id = #{cityId}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND dataTable.county_id = #{countyId}
+        </if>
+        group by label
+    </select>
+    <select id="getEventTrendDaySearch" resultType="java.util.Map">
+        select  IFNULL(sum(dataTable.today_all),0)  sum, DATE_FORMAT(create_date,'%Y-%m-%d') label
+        from vm_statistics_event_num_day dataTable
+        where 1 = 1 ${dataScope}
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND DATE_FORMAT(create_date,'%Y-%m-%d') >= DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d')
+        </if>
+        <if test='queryEndTime != null and queryEndTime != "" '>
+            AND DATE_FORMAT(create_date,'%Y-%m-%d') <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+        </if>
+        <if test="provinceId != null and provinceId != '' ">
+            AND dataTable.province_id = #{provinceId}
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND dataTable.city_id = #{cityId}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND dataTable.county_id = #{countyId}
+        </if>
+        group by label
+    </select>
+
+</mapper>

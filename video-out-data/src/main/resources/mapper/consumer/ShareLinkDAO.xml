@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.consumer.dao.ShareLinkDAO">
+
+    <select id="getShareLinkInfoByShortUrl" resultType="com.chinatower.platform.consumer.item.ShareLinkVO">
+        select long_url, domain
+        from vm_share_link_t
+        where short_url = #{shortUrl}
+        limit 1
+    </select>
+
+    <insert id="save" parameterType="com.chinatower.platform.consumer.item.ShareLinkVO">
+        insert into vm_share_link_t
+        (long_url, short_url, domain, create_time)
+        values
+        (#{entity.longUrl}, #{entity.shortUrl}, #{entity.domain}, #{entity.createTime})
+    </insert>
+</mapper>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.node.mapper.NodeMapper">
+    <sql id="SysUser_clonum">
+        user_id, dept_id,user_type,user_name,nick_name,email,phonenumber,sex,avatar,password,status,del_flag,login_ip,login_date,create_by,
+        create_time,update_by,update_time,remark,login_fail_num,enterprise_id,tenant_id,is_tenant_admin,user_source,tel_phone,pwd_update_time
+    </sql>
+
+    <select id="selectNodeByTenantId"  resultType="com.chinatower.platform.project.node.entity.PlatFormVO">
+        SELECT DISTINCT
+            t.*
+        FROM
+            (
+                SELECT
+                    t1.accept_node AS platformCode,
+                    t2.platform_name,
+                    t2.general_url,
+                    t2.platform_level,
+                    t2.program_url
+                FROM
+                    vm_order_customer t1
+                        LEFT JOIN vm_platform_data_config t2 ON t1.accept_node = t2.platform_code
+                WHERE
+                    t1.tenant_id = #{tenantId}
+
+                UNION ALL
+
+                SELECT
+                    t1.accept_node AS platformCode,
+                    t2.platform_name,
+                    t2.general_url,
+                    t2.platform_level,
+                    t2.program_url
+                FROM
+                    vm_order_customer_his t1
+                        LEFT JOIN vm_platform_data_config t2 ON t1.accept_node = t2.platform_code
+                WHERE
+                    t1.tenant_id = #{tenantId}
+            ) t;
+    </select>
+
+    <select id="selectUserByUserName" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select
+        <include refid="SysUser_clonum"></include>
+        from sys_user where user_name=#{userName} and DEL_FLAG = '0' and STATUS = '0'
+    </select>
+
+    <select id="validateSwitchUser" parameterType="com.chinatower.platform.project.node.entity.SwitchUserVO" resultType="java.lang.Long">
+        SELECT
+            count(*)
+        FROM
+            sys_user u
+        WHERE
+            u.user_type = '2'
+          AND u.is_tenant_admin = 1
+          AND u.USER_NAME = #{userName}
+            ${dataScope}
+    </select>
+    <select id="selectUserByUserId" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select
+        <include refid="SysUser_clonum"></include>
+        from sys_user where user_id=#{userId}
+    </select>
+
+    <select id="getDeptById" resultType="com.chinatower.platform.entity.admin.SysDept">
+        select * from sys_dept where dept_id = #{deptId}
+    </select>
+
+    <select id="getDeptByCurrentDeptId" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="com.chinatower.platform.entity.admin.SysDept">
+        SELECT * from sys_dept WHERE del_flag = '0'
+        <if test="deptLevelInt == 1">
+            and DEPT_LEVEL <![CDATA[<]]> 4 and  industry_code='999999'
+        </if>
+        <if test="deptLevelInt == 2">
+            and (PARENT_ID=#{deptId} or DEPT_ID=#{deptId})
+        </if>
+        <if test="deptLevelInt >= 3">
+            and  DEPT_ID=#{deptId}
+        </if>
+    </select>
+
+    <select id="getTenantByTowerDeptId" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT
+        c.tenant_id
+        FROM
+        vm_order_customer c
+        WHERE
+        c.business_org
+        <foreach collection="deptIds"  item="item" index="index" open="in (" close=")" separator=",">
+            #{item.deptId}
+        </foreach>
+        UNION
+
+        SELECT
+        c.tenant_id
+        FROM
+        vm_order_customer_his c
+        WHERE
+        c.business_org
+        <foreach collection="deptIds"  item="item" index="index" open="in (" close=")" separator=",">
+            #{item.deptId}
+        </foreach>
+    </select>
+</mapper>

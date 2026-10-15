@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.event.mapper.UavAlarmSourceMapper">
+
+    <resultMap id="UavAlarmSourceMap" type="com.chinatower.event.entity.vo.UavAlarmSourceVo">
+        <id property="deviceCode" column="deviceCode"/>
+        <result property="deviceName" column="deviceName"/>
+        <result property="manufacturerCode" column="manufacturerCode"/>
+        <result property="deviceModelCode" column="deviceModelCode"/>
+        <result property="location" column="location"/>
+        <result property="longitude" column="longitude"/>
+        <result property="latitude" column="latitude"/>
+        <collection property="uavNestDeviceList" ofType="com.chinatower.event.entity.vo.UavNestDeviceVo">
+            <result property="uavNestCode" column="uavNestCode"/>
+            <result property="uavNestName" column="uavNestName"/>
+            <result property="modelCode" column="modelCode"/>
+            <result property="deviceModel" column="deviceModel"/>
+            <result property="uaLongitude" column="uaLongitude"/>
+            <result property="uaLatitude" column="uaLatitude"/>
+        </collection>
+    </resultMap>
+
+    <select id="findUavAlarmSourceByDeviceCode" parameterType="String" resultMap="UavAlarmSourceMap">
+        SELECT
+            t.device_code AS deviceCode,
+            t.device_name AS deviceName,
+            t.manufacturer_code AS manufacturerCode,
+            model.model_name AS deviceModelCode,
+            t.location AS location,
+            t.longitude AS longitude,
+            t.latitude AS latitude,
+            n.device_code AS uavNestCode,
+            n.device_name AS uavNestName,
+            nestM.model_name AS deviceModel,
+            n.manufacturer_code as modelCode,
+            n.longitude AS uaLongitude,
+            n.latitude AS uaLatitude
+        FROM vm_uav_device_info_t t
+        LEFT JOIN vm_uav_nest_device_info n ON n.device_code = t.uav_nest_code
+        LEFT JOIN vm_uav_device_model_t model ON t.model_code = model.model_code and model.delete_flag = 0
+        LEFT JOIN vm_uav_nest_device_model_t nestM ON n.model_code = nestM.model_code and nestM.delete_flag = 0
+        WHERE t.device_code = #{deviceCode}
+    </select>
+    
+    <select id="getUavDevcieAlias" resultType="java.lang.String" parameterType="com.chinatower.event.entity.vo.OrderInfoVO">
+        SELECT
+            rel.device_name
+        FROM
+            vm_tenant_device_common_rel_t rel
+        WHERE
+            rel.delete_flag = '0'
+            AND rel.device_type = 1
+            AND rel.tenant_id = #{tenantId} AND rel.device_code = #{deviceCode} AND rel.industry_code = #{tradeId}
+        LIMIT 1
+    </select>
+
+</mapper>

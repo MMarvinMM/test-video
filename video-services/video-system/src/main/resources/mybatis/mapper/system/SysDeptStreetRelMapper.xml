@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysDeptStreetRelMapper">
+
+    <resultMap type="com.chinatower.platform.project.system.domain.SysDeptStreetRel" id="DeptStreetRelResult">
+        <result property="tenantId"    column="tenant_id"    />
+        <result property="deptId"    column="DEPT_ID"    />
+        <result property="provinceCode"    column="province_code"    />
+        <result property="cityCode"    column="city_code"    />
+        <result property="countyCode"    column="county_code"    />
+        <result property="streetAreaCode"    column="STREET_AREA_CODE"    />
+        <result property="appVerCode"    column="app_ver_code"    />
+    </resultMap>
+
+    <sql id="selectDeptStreetRelVo">
+        select tenant_id,DEPT_ID, province_code,city_code,county_code,STREET_AREA_CODE,app_ver_code
+        from sys_dept_street_rel
+    </sql>
+
+    <select id="selectStreet" resultType="com.chinatower.platform.project.system.domain.vo.SysDeptStreetVO">
+        SELECT * from sys_dept_street_rel r WHERE r.industry_code=#{industryCode} and r.tenant_id=#{tenantId}
+        <if test="deptId != null and deptId != ''">
+            AND r.DEPT_ID = #{deptId}
+        </if>
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND r.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        ${dataScope}
+    </select>
+    <select id="selectStreetByDeptIds" resultType="com.chinatower.system.api.model.AreaDataVO">
+        SELECT DISTINCT PROVINCE_CODE,CITY_CODE,COUNTY_CODE,STREET_AREA_CODE as streetCode from sys_dept_street_rel r WHERE  r.tenant_id=#{tenantId}
+        <if test="industryCode != null and industryCode !=''">
+            and r.industry_code=#{industryCode}
+        </if>
+        <if test="deptIds != null">
+            and DEPT_ID IN
+            <foreach collection="deptIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectDeptStreetRelList" parameterType="com.chinatower.system.api.model.SysDeptStreetRelVO" resultMap="DeptStreetRelResult">
+        <include refid="selectDeptStreetRelVo"/>
+        <where>
+            <if test="tenantId != null  and tenantId != ''"> and tenant_id = #{tenantId}</if>
+            <if test="deptId != null  and deptId != ''"> and DEPT_ID = #{deptId}</if>
+            <if test="provinceCode != null  and provinceCode != ''"> and PROVINCE_CODE = #{provinceCode}</if>
+            <if test="cityCode != null  and cityCode != ''"> and CITY_CODE = #{cityCode}</if>
+            <if test="countyCode != null  and countyCode != ''"> and COUNTY_CODE = #{countyCode}</if>
+            <if test="streetAreaCode != null  and streetAreaCode != ''"> and STREET_AREA_CODE = #{streetAreaCode}</if>
+            <if test="appVerCode != null  and appVerCode != ''"> and app_ver_code = #{appVerCode}</if>
+        </where>
+    </select>
+
+
+
+    <delete id="deleteDeptStreetRelByOrgId" parameterType="java.lang.String">
+        delete from sys_dept_street_rel where DEPT_ID = #{deptId}
+    </delete>
+
+    <delete id="deleteDeptStreetRel" parameterType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        delete from sys_dept_street_rel where DEPT_ID = #{deptId}
+        <if test="provinceCode != null  and provinceCode != ''"> and province_code = #{provinceCode}</if>
+        <if test="cityCode != null  and cityCode != ''"> and city_code = #{cityCode}</if>
+        <if test="countyCode != null  and countyCode != ''"> and county_code = #{countyCode}</if>
+        <if test="streetAreaCode != null  and streetAreaCode != ''"> and STREET_AREA_CODE = #{streetAreaCode}</if>
+    </delete>
+
+    <insert id="insertBatchDeptStreetRel" parameterType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        insert into sys_dept_street_rel  (tenant_id,DEPT_ID,STREET_AREA_CODE,province_code,city_code,county_code,
+        app_ver_code) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.tenantId},#{item.deptId},#{item.streetAreaCode},#{item.provinceCode},#{item.cityCode},
+            #{item.countyCode},#{item.appVerCode})
+        </foreach>
+
+    </insert>
+
+    <insert id="insertBatchDeptStreetRelTenant" parameterType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        insert into sys_dept_street_rel  (tenant_id,DEPT_ID,STREET_AREA_CODE,province_code,city_code,county_code,
+        app_ver_code,industry_code) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.tenantId},#{item.deptId},#{item.streetAreaCode},#{item.provinceCode},#{item.cityCode},
+            #{item.countyCode},#{item.appVerCode},#{item.industryCode})
+        </foreach>
+    </insert>
+
+    <insert id="insertBatchDeptStreetRelNew" parameterType="com.chinatower.system.api.model.SysDeptStreetRelVO">
+        insert into sys_dept_street_rel  (tenant_id,DEPT_ID,STREET_AREA_CODE,province_code,city_code,county_code,
+            industry_code,app_ver_code) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.tenantId},#{item.deptId},#{item.streetAreaCode},#{item.provinceCode},#{item.cityCode},
+            #{item.countyCode},#{item.industryCode},#{item.appVerCode})
+        </foreach>
+    </insert>
+
+    <select id="getSysProvinceTown" parameterType="java.lang.String" resultType="com.chinatower.system.api.model.SysAreaVO">
+        select b.AREA_PARENT_CODE provinceCode, b.AREA_CODE cityCode ,a.AREA_CODE regionCode
+        from sys_area b
+        left join sys_area a on a.AREA_PARENT_CODE = b.AREA_CODE where a.AREA_CODE IN
+        <foreach collection="regionCodeList" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getSysStreet" parameterType="java.lang.String" resultType="com.chinatower.system.api.model.SysArea">
+        select a.AREA_PARENT_CODE,a.AREA_CODE
+        from sys_area a
+        where 1 = 1
+        <if test='regionCodeList != null and regionCodeList.size() > 0 '>
+            and a.AREA_PARENT_CODE IN
+            <foreach collection="regionCodeList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="selectDeptStreet" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT r.DEPT_ID,r.PROVINCE_CODE as provinceId,r.CITY_CODE as cityId,r.COUNTY_CODE as countyId,r.STREET_AREA_CODE as townCode
+        from sys_dept_street_rel r WHERE r.industry_code=#{industryCode} and r.tenant_id=#{tenantId}
+        <if test="deptId != null and deptId != ''">
+            and  r.DEPT_ID=#{deptId}
+        </if>
+        ${dataScope}
+    </select>
+
+</mapper>

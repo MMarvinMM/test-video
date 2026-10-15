@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.chinatower.emergency.mapper.EmergencyAttachMapper">
+
+    <select id="selectAllEmergencyAttaches" resultType="com.chinatower.emergency.dto.EmergencyAttachVO">
+        SELECT
+            *
+        FROM
+            vm_emergency_attach
+        WHERE 1=1
+        <if test='businessCode!= null and businessCode!=""'>
+            AND business_code = #{businessCode}
+        </if>
+        <if test='businessType!= null and businessType!=""'>
+            AND business_type = #{businessType}
+        </if>
+        <if test="businessCodeList != null and businessCodeList.size() > 0 ">
+            AND business_code IN
+            <foreach collection="businessCodeList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <insert id="insertEmergencyAttach">
+        INSERT INTO vm_emergency_attach (business_code, business_type, origin_url, file_id, file_suffix, record_type, file_name, file_size, create_time, creator)
+        VALUES
+        <foreach collection="emergencyAttachList" item="item" index="index" separator=",">
+            (#{item.businessCode}, #{item.businessType}, #{item.originUrl}, #{item.fileId}, #{item.fileSuffix}, #{item.recordType}, #{item.fileName}, #{item.fileSize}, now(), #{item.creator})
+        </foreach>
+    </insert>
+
+    <delete id="deleteEmergencyAttach">
+        DELETE FROM
+            vm_emergency_attach
+        WHERE
+            business_type = #{businessType}
+            <if test='businessCode!= null and businessCode!=""'>
+                AND business_code = #{businessCode}
+            </if>
+            <if test="businessCodeList != null and businessCodeList.size() > 0 ">
+                AND business_code IN
+                <foreach collection="businessCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+    </delete>
+
+</mapper>

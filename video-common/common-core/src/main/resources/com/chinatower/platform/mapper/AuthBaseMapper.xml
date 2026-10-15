@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.platform.mapper.AuthBaseMapper" >
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysRole" id="SysRoleResult">
+        <id property="roleId" column="role_id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleKey" column="role_key"/>
+        <result property="roleSort" column="role_sort"/>
+        <result property="dataScope" column="data_scope"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="tenantName" column="tenant_name"/>
+        <result property="provinceName" column="province_name"/>
+        <result property="cityName" column="city_name"/>
+        <result property="tradeInfo" column="trade_info"/>
+        <result property="tradeId" column="trade_id"/>
+    </resultMap>
+    <resultMap type="com.chinatower.platform.entity.admin.SysUser" id="SysUserResult">
+        <id     property="userId"       column="user_id"      />
+        <result property="deptId"       column="dept_id"      />
+        <result property="userType"       column="user_type"  />
+        <result property="userName"     column="user_name"    />
+        <result property="nickName"     column="nick_name"    />
+        <result property="email"        column="email"        />
+        <result property="phonenumber"  column="phonenumber"  />
+        <result property="sex"          column="sex"          />
+        <result property="avatar"       column="avatar"       />
+        <result property="password"     column="password"     />
+        <result property="status"       column="status"       />
+        <result property="delFlag"      column="del_flag"     />
+        <result property="loginIp"      column="login_ip"     />
+        <result property="loginDate"    column="login_date"   />
+        <result property="createBy"     column="create_by"    />
+        <result property="createTime"   column="create_time"  />
+        <result property="updateBy"     column="update_by"    />
+        <result property="updateTime"   column="update_time"  />
+        <result property="remark"       column="remark"       />
+        <result property="loginFailNum" column="login_fail_num" />
+        <result property="telPhone"    column="tel_phone"    />
+        <result property="userSource"   column="user_source"/>
+        <result property="enterpriseId" column="enterprise_id" />
+        <result property="tenantId" column="tenant_id" />
+        <result property="tenantName" column="tenant_name" />
+        <result property="tradeInfo" column="trade_info" />
+        <result property="isTenantAdmin" column="is_tenant_admin"/>
+        <association property="dept" column="dept_id" javaType="com.chinatower.platform.entity.admin.SysDept" resultMap="deptResult" />
+        <collection  property="roles"   javaType="java.util.List"        resultMap="RoleResult" />
+    </resultMap>
+    <resultMap id="deptResult" type="com.chinatower.platform.entity.admin.SysDept">
+        <id     property="deptId"   column="dept_id"     />
+        <result property="parentId" column="parent_id"   />
+        <result property="deptName" column="dept_name"   />
+        <result property="parentName" column="parent_name"   />
+        <result property="orderNum" column="order_num"   />
+        <result property="leader"   column="leader"      />
+        <result property="status"   column="dept_status" />
+        <result property="deptLevel"   column="dept_level" />
+        <result property="ancestors"   column="ancestors" />
+    </resultMap>
+
+    <resultMap id="RoleResult" type="com.chinatower.platform.entity.admin.SysRole">
+        <id     property="roleId"       column="role_id"        />
+        <result property="roleName"     column="role_name"      />
+        <result property="roleKey"      column="role_key"       />
+        <result property="roleSort"     column="role_sort"      />
+        <result property="dataScope"     column="data_scope"    />
+        <result property="status"       column="role_status"    />
+    </resultMap>
+
+    <select id="getTowerUserAreas" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT
+            area.dept_id
+        FROM
+            sys_dept area
+        WHERE
+                area.del_flag = 0 and area.tenant_id is null and
+
+                area.dept_level > 2
+                AND area.dept_id = ( SELECT LEFT ( vuser.dept_id, 6 ) FROM sys_user vuser WHERE vuser.user_id = #{userId} )
+           OR (
+                area.dept_level = 2 and area.tenant_id is null and area.dept_id like CONCAT((SELECT LEFT ( vuser.dept_id, 4 ) FROM sys_user vuser WHERE vuser.user_id = #{userId}),'%')
+            )
+    </select>
+
+    <select id="getTowerByAreaLevel"  resultType="java.lang.String">
+
+        SELECT sa.AREA_CODE from  sys_area sa LEFT JOIN sys_area_manage_rel samr ON samr.area_code=sa.AREA_CODE WHERE samr.dept_code IN
+        (
+            SELECT
+            area.dept_id
+            FROM
+            sys_dept area
+            WHERE
+            area.del_flag = 0 and area.tenant_id is null and
+
+            area.dept_level > 2
+            AND area.dept_id = ( SELECT LEFT ( vuser.dept_id, 6 ) FROM sys_user vuser WHERE vuser.user_id = #{userId} )
+            OR (
+            area.dept_level = 2 and area.tenant_id is null and area.dept_id like CONCAT((SELECT LEFT ( vuser.dept_id, 4 ) FROM sys_user vuser WHERE vuser.user_id = #{userId}),'%')
+            )
+        ) and (sa.area_level = #{areaLevel}
+            <if test='areaLevel == "3"'>
+                or (sa.area_level = 4 and sa.area_code REGEXP  '^110|^500|^120|^310')
+            </if>
+        )
+
+    </select>
+
+    <select id="getTenantByTowerDeptId" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT
+            c.tenant_id
+        FROM
+            vm_order_customer c
+        WHERE
+            c.business_org
+        <foreach collection="deptIds"  item="item" index="index" open="in (" close=")" separator=",">
+                #{item.deptId}
+        </foreach>
+        UNION
+
+        SELECT
+            c.tenant_id
+        FROM
+            vm_order_customer_his c
+        WHERE
+            c.business_org
+        <foreach collection="deptIds"  item="item" index="index" open="in (" close=")" separator=",">
+            #{item.deptId}
+        </foreach>
+    </select>
+    <select id="getDeptByCurrentDeptId" parameterType="com.chinatower.platform.entity.admin.SysDept" resultType="com.chinatower.platform.entity.admin.SysDept">
+        SELECT * from sys_dept WHERE del_flag = '0'
+        <if test="deptLevelInt == 1">
+            and DEPT_LEVEL <![CDATA[<]]> 4 and  industry_code='999999'
+        </if>
+        <if test="deptLevelInt == 2">
+            and (PARENT_ID=#{deptId} or DEPT_ID=#{deptId})
+        </if>
+        <if test="deptLevelInt >= 3">
+            and  DEPT_ID=#{deptId}
+        </if>
+    </select>
+    <select id="getDeptById" resultType="com.chinatower.platform.entity.admin.SysDept">
+        select * from sys_dept where dept_id = #{deptId}
+    </select>
+    <select id="getTowerUserAreaPath" resultType="java.lang.String">
+        select distinct area_path from sys_management_area_t WHERE delete_flag = '0' and area_code in
+        <foreach collection="areaCodes" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getTowerUserMgmtAreas" resultType="java.lang.String">
+        select distinct area_code from sys_management_area_t WHERE delete_flag = '0' and
+        <foreach collection="areaPaths" item="item" index="index" open="(" close=")" separator="or">
+            area_path like CONCAT(#{item},'%')
+        </foreach>
+    </select>
+
+    <select id="getOrgDevices" resultType="string" parameterType="string">
+        select distinct device_code from vm_organ_device_rel_t
+        WHERE delete_flag = '0' and industry_code = #{industryCode}
+        <choose>
+            <when test="deptIds != null and deptIds.size() > 0 ">
+                and dept_id in
+                <foreach collection="deptIds" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                and dept_id in ('')
+            </otherwise>
+        </choose>
+        <if test="alarmSource!= null and alarmSource != ''">
+            and FIND_IN_SET(device_type,#{alarmSource})
+        </if>
+    </select>
+
+<!--    <select id="getDevideCodes" resultType="string" parameterType="string">-->
+<!--        SELECT-->
+<!--            distinct c.device_code-->
+<!--        FROM-->
+<!--            vm_order_customer a-->
+<!--                JOIN vm_order_devices c ON a.order_code = c.order_code-->
+<!--                JOIN vm_organ_device_rel_t d ON c.device_code = d.device_code-->
+<!--        WHERE-->
+<!--            a.tenant_id = #{tenantId}-->
+<!--          AND a.ord_status IN (0, 1, 2)-->
+<!--          AND d.delete_flag = '0'-->
+<!--          AND d.device_type = 4-->
+<!--        <if test="deptIdStr!= null and deptIdStr != '' ">-->
+<!--          ${deptIdStr}-->
+<!--        </if>-->
+<!--    </select>-->
+<!--    <select id="getSensorCodes" resultType="string" parameterType="string">-->
+<!--        SELECT-->
+<!--            distinct c.device_code-->
+<!--        FROM-->
+<!--            vm_order_customer a-->
+<!--                JOIN vm_order_sensor_devices c ON a.order_code = c.order_code-->
+<!--                JOIN vm_organ_device_rel_t d ON c.device_code = d.device_code-->
+<!--        WHERE-->
+<!--            a.tenant_id = #{tenantId}-->
+<!--          AND a.ord_status IN (0, 1, 2)-->
+<!--          AND d.delete_flag = '0'-->
+<!--          AND d.device_type = 8-->
+<!--        <if test="deptIdStr!= null and deptIdStr != '' ">-->
+<!--            ${deptIdStr}-->
+<!--        </if>-->
+<!--    </select>-->
+
+<!--    <select id="getSatelliteCodes" resultType="string" parameterType="string">-->
+<!--        SELECT-->
+<!--        distinct c.street_code-->
+<!--        FROM-->
+<!--        vm_order_customer a-->
+<!--        JOIN vm_order_services_rel c ON a.order_code = c.order_code-->
+<!--        JOIN vm_organ_street_rel_t d ON c.tenant_id = d.tenant_id and c.provice_code = d.province_code and c.city_code = d.city_code and c.county_code = d.county_code and c.street_code = d.street_code-->
+<!--        WHERE-->
+<!--        a.tenant_id = #{tenantId}-->
+<!--        AND a.ord_status IN (0, 1, 2)-->
+<!--        AND d.delete_flag = '0'-->
+<!--        AND d.category_code = 9-->
+<!--        AND c.service_code = '9'-->
+<!--        <if test="deptIdStr!= null and deptIdStr != '' ">-->
+<!--            ${deptIdStr}-->
+<!--        </if>-->
+<!--    </select>-->
+
+<!--    <select id="getPersonCodes" resultType="string" parameterType="string">-->
+<!--        SELECT-->
+<!--        distinct a.STREET_AREA_CODE-->
+<!--        FROM-->
+<!--        sys_dept_street_rel a-->
+<!--        WHERE-->
+<!--        a.tenant_id = #{tenantId}-->
+<!--        <if test="deptIdStr!= null and deptIdStr != '' ">-->
+<!--            ${deptIdStr}-->
+<!--        </if>-->
+<!--    </select>-->
+
+    <select id="selectUserById" parameterType="java.lang.String" resultMap="SysUserResult">
+        select u.user_id, u.dept_id, u.user_name, u.user_type, u.nick_name, u.email, u.avatar, u.phonenumber,
+        u.tel_phone, u.sex, u.status, u.user_source, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time,
+        u.remark, u.login_fail_num, u.enterprise_id, u.tenant_id, u.is_tenant_admin,
+        d.parent_id, d.dept_name, d.parent_name, d.dept_level, d.order_num, d.leader, d.status as dept_status, d.ancestors,
+        st.tenant_name, st.trade_info
+        from sys_user u
+		    left join sys_dept d on u.dept_id = d.dept_id
+		    left join sys_tenant_info st on u.tenant_id = st.tenant_id
+        where u.del_flag = '0' AND u.user_id = #{userId}
+    </select>
+
+    <select id="selectRoleListByUserId" parameterType="java.lang.String" resultMap="SysRoleResult">
+		select r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.tenant_id,
+                        r.status, r.del_flag, r.create_time, r.remark, r.role_type, r.create_by
+        from sys_role r
+	        left join sys_user_role ur on ur.role_id = r.role_id
+	        left join sys_user u on u.user_id = ur.user_id
+	    where u.user_id = #{userId}
+	</select>
+
+    <!--获取登录账号数据权限(返回liststring)-->
+<!--    <select id="getPermissionsForString" resultType="java.lang.String">-->
+<!--        SELECT-->
+<!--        DISTINCT-->
+<!--        i.device_code AS deviceCode-->
+<!--        FROM-->
+<!--        vm_device_info_t i-->
+<!--        LEFT JOIN vm_organ_device_rel_t t ON t.device_code = i.device_code-->
+<!--        LEFT JOIN sys_user u ON u.dept_id = t.dept_id-->
+<!--        LEFT JOIN sys_area a1 ON a1.AREA_CODE = i.province_id-->
+<!--        LEFT JOIN sys_area a2 ON a2.AREA_CODE = i.city_id-->
+<!--        LEFT JOIN sys_area a3 ON a3.AREA_CODE = i.county_id-->
+<!--        AND u.tenant_id = t.tenant_id-->
+<!--        WHERE-->
+<!--        u.user_id = #{userId}-->
+<!--        AND i.province_id IS NOT NULL-->
+<!--        AND u.del_flag = '0'-->
+<!--        AND t.delete_flag = '0'-->
+<!--        <if test="dept != null and dept != ''">-->
+<!--            ${dept}-->
+<!--        </if>-->
+<!--    </select>-->
+    <select id="getParentDeptId" resultType="java.lang.String">
+        SELECT a.DEPT_ID FROM sys_dept a WHERE a.TENANT_ID = #{tenantId} AND a.DEPT_LEVEL = '1' AND a.DEL_FLAG = '0'
+    </select>
+
+    <select id="getRootOrgsByTenantId" resultType="string" parameterType="string">
+        select dept_id
+        from sys_dept
+        where tenant_id = #{tenantId}
+        <if test="orgId != null and orgId != ''">
+            and parent_id = #{orgId}
+        </if>
+    </select>
+
+    <select id="selectCustomTanentDept" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="java.lang.String">
+        SELECT DISTINCT d.DEPT_ID from sys_dept d
+        LEFT JOIN sys_role_dept rd ON d.DEPT_ID=rd.DEPT_ID
+        LEFT JOIN sys_user_role r ON r.ROLE_ID = rd.ROLE_ID
+        WHERE d.DEL_FLAG = 0 AND d.INDUSTRY_CODE = #{industryCode}  AND r.user_id = #{userId}
+    </select>
+    <select id="selectAllTanentDept" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="java.lang.String">
+        SELECT d.DEPT_ID  from sys_dept d where DEL_FLAG=0 and TENANT_ID=#{tenantId} AND d.INDUSTRY_CODE = #{industryCode}
+    </select>
+    <select id="selectTenantChildDept" resultType="java.lang.String">
+        SELECT DEPT_ID from sys_dept WHERE del_flag = '0' and DEPT_ID like concat(#{deptId},'%')
+    </select>
+
+    <select id="getOrgnStreetVO" resultType="com.chinatower.platform.entity.admin.OrganStreetVO">
+        select province_code provinceCode,city_code cityCode,county_code countyCode from vm_organ_street_rel_t where industry_code = #{industryCode} and dept_id
+        <foreach collection="deptIds" item="item" index="index" separator="," open="IN (" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getStreetByRadarVO" resultType="com.chinatower.platform.entity.admin.OrganStreetVO">
+        SELECT DISTINCT
+        ot.province_id AS provinceCode,
+        ot.city_id AS cityCode,
+        ot.county_id AS countyCode
+        FROM
+        vm_organ_device_rel_t od
+        LEFT JOIN vm_iot_device_t ot ON ot.device_code = od.device_code
+        WHERE od.industry_code = #{industryCode} and ot.category_code = '1' and od.device_type = '10' and od.dept_id
+        <foreach collection="deptIds" item="item" index="index" separator="," open="IN (" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getUserIdsByDeptId" resultType="java.lang.String">
+        SELECT user_id from sys_user WHERE DEPT_ID LIKE concat('%',#{deptId},'%')
+    </select>
+
+    <select id="selectScreenDataConfigCount" resultType="com.chinatower.platform.model.vo.ScreenDataConfigCountVO">
+        select id from vm_screen_data_config_count where tenant_id = #{tenantId} and industry_code = #{industryCode}
+        and screen_id = #{screenId} and screen_type = #{screenType} and app_ver_code = #{appVerCode} and is_customize = '1'
+    </select>
+
+    <select id="selectScreenDataConfigCameraByConfigId" resultType="string">
+        SELECT DISTINCT
+            sdc.data_code
+        FROM
+            vm_screen_data_config sdc
+            left join vm_order_devices od on sdc.data_code = od.device_code
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type = '0'
+            AND od.delete_flag = '0' AND od.ord_status in (0,1,2)
+            AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigIotByConfigId" resultType="string">
+        SELECT DISTINCT
+            sdc.data_code
+        FROM
+            vm_screen_data_config sdc
+            left join vm_order_sensor_devices od on sdc.data_code = od.device_code
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type =  '1'
+          AND od.delete_flag = '0' AND od.ord_status in (0,1,2) AND od.category_code = '2'
+          AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigRadarByConfigId" resultType="string">
+        SELECT DISTINCT
+            sdc.data_code
+        FROM
+            vm_screen_data_config sdc
+            left join vm_order_sensor_devices od on sdc.data_code = od.device_code
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type = '2'
+          AND od.delete_flag = '0' AND od.ord_status in (0,1,2) AND od.category_code = '1'
+          AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigSpeakerByConfigId" resultType="string">
+        SELECT DISTINCT
+            sdc.data_code
+        FROM
+            vm_screen_data_config sdc
+            left join vm_order_horn_devices od on sdc.data_code = od.device_code
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type = '3'
+          AND od.delete_flag = '0' AND od.ord_status in (0,1,2)
+          AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigUavByConfigId" resultType="string">
+        SELECT DISTINCT
+            sdc.data_code
+        FROM
+            vm_screen_data_config sdc
+            left join vm_order_uav_devices od on sdc.data_code = od.device_code
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type = '4'
+          AND od.delete_flag = '0' AND od.ord_status in (0,1,2)
+          AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigUavNestByConfigId" resultType="string">
+        SELECT DISTINCT
+            od.device_code
+        FROM
+            vm_order_uav_nest_devices od
+        WHERE
+            od.delete_flag = '0'
+          AND od.ord_status IN ( 0, 1, 2 )
+          AND od.tenant_id = #{tenantId}
+          AND od.industry_code = #{industryCode}
+          AND od.app_ver_code = #{appVerCode}
+    </select>
+
+    <select id="selectScreenDataConfigRecorderByConfigId" resultType="string">
+        SELECT DISTINCT
+            sdc.data_code
+        FROM
+            vm_screen_data_config sdc
+            left join vm_order_recorder_devices od on sdc.data_code = od.device_code
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type = '5'
+          AND od.delete_flag = '0' AND od.ord_status in (0,1,2)
+          AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigGridByConfigId" resultType="string">
+        SELECT DISTINCT
+            sdc.data_code
+        FROM
+            vm_screen_data_config sdc
+            left join bm_grid bg on sdc.data_code = bg.grid_id
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type = '6'
+          AND bg.delete_flag = '0'
+          AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigGridOperatorByConfigId" resultType="string">
+        SELECT DISTINCT
+            sdc.data_code
+        FROM
+            vm_screen_data_config sdc
+            left join bm_gridkeeper bg on sdc.data_code = bg.keeper_id
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type = '7'
+          AND bg.delete_flag = '0'
+          AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigResourceByConfigId" resultType="string">
+        SELECT DISTINCT
+            sdc.data_code
+        FROM
+            vm_screen_data_config sdc
+            left join resource_conf rc on sdc.data_code = rc.RESOURCE_ID
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type = '8'
+          AND rc.delete_flag = '0'
+          AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="selectScreenDataConfigAlarmTypeByConfigId" resultType="com.chinatower.platform.model.vo.ScreenDataConfigParticipationVO">
+        SELECT DISTINCT
+            sdc.data_source as source,
+            sdc.data_code as code
+        FROM
+            vm_screen_data_config sdc
+        WHERE
+            sdc.delete_flag = '0' AND sdc.data_type = '9'
+            AND sdc.screen_data_config_id = #{id}
+    </select>
+
+    <select id="devByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.platform.model.vo.ScreenDataConfigCountVO">
+        select count(*) from
+        vm_order_devices where
+        tenant_id = #{tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{industryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="uavByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.platform.model.vo.ScreenDataConfigCountVO">
+        select count(*)
+        from vm_order_uav_devices where
+        tenant_id = #{tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{industryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="iotDevByTenantIdCount" resultType="java.lang.Integer" parameterType="com.chinatower.platform.model.vo.ScreenDataConfigCountVO">
+        select  count(*)
+        from vm_order_sensor_devices
+        where tenant_id = #{tenantId}
+        and ord_status in (0, 1, 2)
+        and industry_code = #{industryCode}
+        and category_code = #{categoryCode}
+        and delete_flag = 0
+    </select>
+
+    <select id="findAlarmTypeByOrder" resultType="com.chinatower.platform.model.vo.ScreenDataConfigParticipationVO"
+            parameterType="com.chinatower.platform.model.vo.ScreenDataConfigCountVO">
+        SELECT DISTINCT
+            sat.type_value AS code,
+            IFNULL(sat.alarm_source,'1') as source
+        FROM
+            vm_order_algorithms voa
+            inner join vm_algorithm_info_t ai on voa.algorithm_code = ai.algorithm_code
+            inner join vm_algorithm_alarm aa on ai.algo_min_type_code = aa.algo_min_type
+            inner join sys_alarm_type sat ON aa.alarm_type = sat.type_value
+            left join sys_dict_data dict on sat.alarm_source = dict.DICT_VALUE and dict.DICT_TYPE = 'warning_source_common'
+        WHERE sat.delete_flag = 0
+          and sat.alarm_source = '1'
+          and ai.delete_flag = 0
+          and aa.delete_flag = 0
+          and voa.delete_flag = 0
+          and sat.alarm_source = '1'
+          and voa.tenant_id = #{tenantId}
+          and voa.ord_status in (0, 1, 2)
+          and voa.industry_code = #{industryCode}
+        ORDER BY aa.alarm_type
+    </select>
+
+    <select id="findAlarmTypeBySource" resultType="com.chinatower.platform.model.vo.ScreenDataConfigParticipationVO"
+            parameterType="com.chinatower.platform.model.vo.ScreenDataConfigCountVO">
+        SELECT DISTINCT
+        sat.type_value AS code,
+        sat.alarm_source as source
+        FROM sys_alarm_type sat
+        left join sys_dict_data data on sat.alarm_source = data.DICT_VALUE and data.DICT_TYPE = 'warning_source_common'
+        WHERE sat.delete_flag = 0
+        and sat.alarm_source in
+        <foreach collection="alarmSources" item="alarmSource" open="(" separator="," close=")">
+            #{alarmSource}
+        </foreach>
+        and ((sat.tenant_id is null and industry_code is null) or (sat.tenant_id = #{tenantId} and industry_code = #{industryCode}))
+    </select>
+
+    <select id="getThirdPartyAlarmTypes" resultType="com.chinatower.platform.model.vo.ScreenDataConfigParticipationVO">
+        SELECT
+        '11' AS source,
+        t.alarm_type AS code
+        FROM
+        vm_third_party_alarm t
+        WHERE
+        t.delete_flag = 0
+        <if test="tenantId != null and tenantId != '' ">
+            AND t.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != '' ">
+            AND t.industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="selectDeptAlarmTypeConfigList" resultType="com.chinatower.platform.model.vo.ScreenDataConfigParticipationVO">
+        SELECT distinct
+            warning_source AS source,
+            type_value AS code
+        FROM
+            vm_organ_alarm_type_rel_t
+        WHERE
+            delete_flag = 0 and tenant_id = #{tenantId} and industry_code = #{industryCode} and
+            dept_id in
+        <foreach collection="deptIdSet" item="deptId" open="(" separator="," close=")">
+            #{deptId}
+        </foreach>
+    </select>
+
+    <select id="getOrgLayers" resultType="string" parameterType="string">
+        select distinct layer_id from vm_organ_layer_rel_t
+        WHERE delete_flag = '0' and industry_code = #{industryCode}
+        <choose>
+            <when test="deptIds != null and deptIds.size() > 0 ">
+                and dept_id in
+                <foreach collection="deptIds" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                and dept_id in ('')
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="getRootAreaInfo" resultType="com.chinatower.platform.entity.admin.SysArea">
+        select AREA_CODE, AREA_NAME from sys_area where AREA_LEVEL = 1 and DEL_FLAG = 0 limit 1
+    </select>
+
+    <select id="getRootDeptInfo" resultType="com.chinatower.platform.entity.admin.SysDept">
+        select DEPT_ID, DEPT_NAME from sys_dept where PARENT_ID = '0' and DEL_FLAG = 0 limit 1
+    </select>
+    <select id="getConfigByType" resultType="java.lang.String">
+        select CONFIG_VALUE from sys_config where config_key = #{type}
+    </select>
+</mapper>
+

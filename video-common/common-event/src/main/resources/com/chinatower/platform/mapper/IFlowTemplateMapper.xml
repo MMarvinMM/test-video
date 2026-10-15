@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IFlowTemplateMapper">
+
+    <select id="selectFlowTemplate" parameterType="com.chinatower.event.entity.dto.VmFlowTemplateModel"
+            resultType="com.chinatower.event.entity.dto.FlowAlarmTemplateDto">
+        SELECT template_id,tenant_id,flow_name,init_source,app_ver_code,industry_code FROM vm_flow_template
+        WHERE delete_flag = 0 AND `status` = '1'
+        <if test="flowType != null and flowType != ''">
+            AND flow_type = #{flowType}
+        </if>
+        <if test="flowType == '1' and industryCode == null">
+            AND app_ver_code is null AND industry_code is null
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            AND app_ver_code = #{appVerCode}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND industry_code = #{industryCode}
+        </if>
+        <if test="initSource != null and initSource != ''">
+            AND init_source like CONCAT('%', #{initSource}, '%')
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND tenant_id = #{tenantId}
+        </if>
+
+    </select>
+    <select id="selectFlowTemplateByAlarmType" parameterType="com.chinatower.event.entity.dto.FlowAlarmTemplateDto"
+            resultType="com.chinatower.event.entity.dto.FlowAlarmTemplateDto">
+        SELECT ft.template_id,ft.tenant_id,ft.flow_name,ft.init_source,afc.app_ver_code,afc.industry_code,tat.alarm_flow_id
+        FROM vm_flow_template ft
+        INNER JOIN vm_flow_template_alarm_type tat ON ft.template_id = tat.template_id
+        INNER JOIN vm_alarm_flow_config afc on afc.id = tat.alarm_flow_id
+        WHERE ft.delete_flag = 0 and afc.delete_flag = 0
+        AND tat.delete_flag = 0 AND  tat.warning_source = #{warningSource} AND tat.alarm_type = #{alarmType}
+        AND afc.tenant_id = #{tenantId}
+        <if test="appVerCode != null and appVerCode != ''">
+            AND afc.app_ver_code = #{appVerCode}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND afc.industry_code = #{industryCode}
+        </if>
+        limit 1
+    </select>
+
+    <select id="selectFlowTemplateByIndustryAndWarningSource"
+            resultType="com.chinatower.event.entity.dto.FlowAlarmTemplateDto">
+        SELECT ft.template_id,ft.tenant_id,ft.flow_name,ft.init_source,fti.app_ver_code,fti.industry_code
+        FROM vm_flow_template_industry fti
+        INNER JOIN vm_flow_template ft ON fti.template_id = ft.template_id
+        WHERE fti.app_ver_code = #{appVerCode} AND fti.industry_code = #{industryCode}
+        AND fti.warning_source like CONCAT(CONCAT('%', #{warningSource}),'%')
+            AND fti.delete_flag = 0 AND fti.status = '1'
+    </select>
+    <select id="getFlowOverdueRemindByAttrId" resultType="com.chinatower.event.entity.dto.FlowOverdueRemind"
+            parameterType="java.lang.String">
+        SELECT
+            time_limit_remind timeLimitRemind,
+            time_limit_remind_name timeLimitRemindName,
+            overdue_remind_sign overdueRemindSign
+        FROM
+            vm_flow_link_overdue_remind
+        WHERE
+            attr_id = #{attrId}
+	    and delete_flag = '0'
+    </select>
+    <select id="getAttrId" resultType="java.lang.String">
+        SELECT id from vm_flow_link_attr where alarm_flow_id =#{alarmFlowId} and  link_id =#{linkId}
+    </select>
+
+</mapper>

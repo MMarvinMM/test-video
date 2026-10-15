@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IDeviceMapper">
+
+    <select id="queryAlarmOrderByDevice" resultType="com.chinatower.event.entity.dto.AlarmOrderByDeviceDTO">
+        select
+        <if test='(param.isTrade != null and param.isTrade != "" and param.isTrade == "1") or (param.modelId != null and param.modelId != "")'>
+            d.location,d.model_code,d.longitude,d.latitude,d.height,d.model_code,
+        </if>
+        c.device_code, c.channel_code
+        from vm_order_devices c
+        <if test='(param.deviceLabelId != null and param.deviceLabelId !="") or (param.deviceLabelIdList != null and param.deviceLabelIdList.size() > 0)'>
+            left join vm_device_labels_rel dlr on dlr.tenant_id = c.tenant_id and dlr.device_code = c.device_code
+            left join vm_tenant_label_config tlc on tlc.label_id = dlr.label_id
+        </if>
+        <if test='(param.orgId != null and param.orgId !="") or (param.orgIdList != null and param.orgIdList.size() > 0)'>
+            left join vm_organ_device_rel_t odr on odr.tenant_id = c.tenant_id and odr.device_code = c.device_code and odr.delete_flag = '0'
+        </if>
+        <if test='(param.isTrade != null and param.isTrade != "" and param.isTrade == "1") or (param.modelId != null and param.modelId != "") or (param.modelIds != null and param.modelIds.size() > 0) or (param.deviceName != null and param.deviceName != "")'>
+            left join vm_device_info_t d on c.device_code = d.device_code
+        </if>
+        where c.tenant_id = #{param.tenantId}
+        <if test='param.deviceLabelId != null and param.deviceLabelId !=""'>
+            and tlc.label_id = #{param.deviceLabelId,jdbcType=CHAR}
+        </if>
+        <if test='param.deviceLabelIdList != null and param.deviceLabelIdList.size() > 0'>
+            and tlc.label_id in
+            <foreach collection="param.deviceLabelIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.orgId != null and param.orgId !=""'>
+            and odr.dept_id = #{param.orgId,jdbcType=CHAR}
+        </if>
+        <if test='param.orgIdList != null and param.orgIdList.size() > 0'>
+            and odr.dept_id in
+            <foreach collection="param.orgIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.modelId != null and param.modelId != ""'>
+            and d.model_code = #{param.modelId,jdbcType=CHAR}
+        </if>
+        <if test='param.modelIds != null and param.modelIds.size() > 0'>
+            and d.model_code in
+            <foreach collection="param.modelIds" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <!--APP根据设备名称查询-->
+        <if test='param.deviceName != null and param.deviceName != ""'>
+            and (c.device_name like CONCAT('%', #{param.deviceName}, '%') or d.device_name like CONCAT('%', #{param.deviceName}, '%'))
+        </if>
+    </select>
+
+    <select id="getGridKeeperByGridId" resultType="java.lang.String">
+        SELECT GROUP_CONCAT(b.nick_name)
+        FROM
+        bm_gridkeeper a
+        LEFT JOIN sys_user b ON a.staff_id = b.user_id
+        LEFT JOIN bm_grid_keeper_ref d ON a.keeper_id = d.keeper_id and d.delete_flag = '0'
+        WHERE d.grid_id = #{gridId} and a.delete_flag = '0'
+    </select>
+
+    <select id="getUserInfoByUserIds" resultType="com.chinatower.event.entity.vo.SysUserVO">
+        select DISTINCT su.user_id, su.dept_id, su.user_name, su.user_type, su.nick_name, su.email, su.avatar, su.phonenumber,su.telephone as telPhone,
+        su.sex, su.status, su.del_flag, su.login_ip, su.login_date, su.create_by, su.remark, su.login_fail_num,
+        su.enterprise_id, su.tenant_id, su.is_tenant_admin, sd.dept_name from sys_user su left join sys_dept sd on su.dept_id = sd.dept_id
+        WHERE su.del_flag = '0' and su.STATUS = '0'
+        <if test='userIdList != null and userIdList != ""'>
+            AND su.user_id in
+            <foreach collection="userIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="queryDevice"  resultType="com.chinatower.device.entity.vo.DeviceSiteVO"
+            parameterType="java.util.List">
+        SELECT
+        a.latitude,
+        a.longitude,
+        a.location,
+        a.province_id,
+        a.city_id,
+        a.county_id,
+        a.height,
+        a.model_code AS modelId,
+        p.area_name AS provinceName,
+        ci.area_name AS cityName,
+        co.area_name AS countyName,
+        a.alarm_location,
+        t.focus_range as focusRange,
+        t.verti_down_neg as vertiDownNeg,
+        a.device_name
+        FROM vm_device_info_t a left join vm_device_model_t t on
+        a.device_model_code = t.device_model_code and a.model_code = t.mfgr_code
+        LEFT JOIN sys_area p ON a.province_id = p.area_code
+        LEFT JOIN sys_area ci ON a.city_id = ci.area_code
+        LEFT JOIN sys_area co ON a.county_id = co.area_code
+        WHERE a.delete_flag = '0'
+        and a.device_code in
+        <foreach collection="deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+            #{deviceCode}
+        </foreach>
+        LIMIT 1
+    </select>
+
+    <select id="queryIotDevice"  resultType="com.chinatower.device.entity.vo.DeviceSiteVO"
+            parameterType="java.util.List">
+        SELECT
+        a.latitude,
+        a.longitude,
+        a.location,
+        a.province_id,
+        a.city_id,
+        a.county_id,
+        a.height,
+        a.model_code AS modelId,
+        a.device_code,
+        a.device_name,
+        a.device_model_code AS deviceModelCode,
+        p.area_name AS provinceName,
+        ci.area_name AS cityName,
+        co.area_name AS countyName
+        FROM vm_iot_device_t a left join vm_iot_device_model_t t on
+        a.device_model_code = t.device_model_code and a.model_code = t.mfgr_code
+        LEFT JOIN sys_area p ON a.province_id = p.area_code
+        LEFT JOIN sys_area ci ON a.city_id = ci.area_code
+        LEFT JOIN sys_area co ON a.county_id = co.area_code
+        WHERE a.delete_flag = '0'
+        and a.device_code in
+        <foreach collection="deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+            #{deviceCode}
+        </foreach>
+        LIMIT 1
+    </select>
+
+    <select id="selectVideoPreById" parameterType="java.util.List" resultType="com.chinatower.video.api.entity.VideoPresetDO">
+        SELECT
+            preset_id AS presetId,
+            preset_name AS presetName
+        FROM
+            vm_video_preset
+        WHERE preset_id in
+        <foreach collection="presetIdList" item="presetId" index="index" open="(" close=")" separator=",">
+            #{presetId}
+        </foreach>
+        <if test='deviceCodes != null and deviceCodes.size() >0 '>
+            AND device_code in
+            <foreach collection="deviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY
+            update_time DESC
+    </select>
+
+    <select id="getDeviceRel" resultType="com.chinatower.event.entity.vo.TenantDeviceEventRelVO"
+            parameterType="com.chinatower.event.entity.dto.TenantDeviceRelDTO">
+        select b.device_code as deviceCode,b.device_name as deviceName,b.channel_code as channelCode,b.channel_name as channelName,b.tenant_id as tenantId
+        from vm_tenant_device_channel_rel_t b
+        where b.delete_flag = '0'
+        <if test='deviceCode != null and deviceCode != "" '>
+            AND b.device_code = #{deviceCode}
+        </if>
+        <if test='tenantId != null and tenantId != "" '>
+            AND b.tenant_id = #{tenantId}
+        </if>
+        <if test='channelCode != null and channelCode != "" '>
+            AND b.channel_code = #{channelCode}
+        </if>
+
+        <if test='deviceCodes != null and deviceCodes != "" '>
+            AND b.device_code in
+            <foreach collection="deviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        <if test='channelCodes != null and channelCodes != "" '>
+            AND b.channel_code in
+            <foreach collection="channelCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="queryPresetInfoBatch" resultType="com.chinatower.video.api.entity.PresetDTO">
+        SELECT
+        preset_id,preset_name,device_code
+        FROM
+        vm_video_preset
+        WHERE
+        delete_flag = 0
+        AND (device_code,preset_id) in
+        (
+        <foreach collection="list" item="param" separator=",">
+            (#{param.deviceCode},#{param.presetId})
+        </foreach>
+        )
+    </select>
+
+    <select id="queryChannelInfoBatch" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        SELECT
+        dev.channel_code,
+        ( CASE WHEN length( IFNULL( t.channel_name, '' )) = 0 THEN dev.channel_name ELSE t.channel_name END ) AS channelName
+        FROM
+        vm_channel_info_t dev
+        LEFT JOIN (
+        SELECT DISTINCT
+        tdr.device_code,
+        tdr.channel_code,
+        tdr.channel_name
+        FROM
+        vm_tenant_device_channel_rel_t tdr
+        WHERE
+        ( tdr.device_code, tdr.channel_code, tdr.tenant_id, tdr.industry_code ) IN
+        (
+        <foreach collection="list" item="param" separator=",">
+            (#{param.deviceCode},#{param.channelCode},#{param.tenantId},#{param.industryCode})
+        </foreach>
+        )
+        ) t ON t.device_code = dev.device_code
+        AND t.channel_code = dev.channel_code
+        WHERE
+        dev.delete_flag = '0'
+        AND ( dev.device_code, dev.channel_code ) IN
+        (
+        <foreach collection="list" item="param" separator=",">
+            (#{param.deviceCode},#{param.channelCode})
+        </foreach>
+        )
+    </select>
+</mapper>

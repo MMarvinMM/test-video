@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.AlarmRecycleDAO">
+    <select id="countRecycleNum" resultType="java.lang.Integer">
+        select count(*) from vm_warning_intercept_t
+        WHERE delete_flag = '0' AND judge_result IS NULL
+        AND alarm_time <![CDATA[<=]]> #{alarmTime}
+    </select>
+
+    <delete id="delRecycleAlarm">
+        delete from vm_warning_intercept_t
+        WHERE delete_flag = '0' AND judge_result IS NULL
+        AND alarm_time <![CDATA[<=]]> #{alarmTime}
+    </delete>
+
+    <insert id="addHisRecycleAlarm">
+        insert into vm_warning_intercept_t_his
+        SELECT
+            id,
+            warning_order_id,
+            warning_source,
+            task_id,
+            warning_type_id,
+            alarm_time,
+            tenant_id,
+            tenant_name,
+            province_code,
+            province_name,
+            city_code,
+            city_name,
+            county_code,
+            county_name,
+            longitude,
+            latitude,
+            alarm_body,
+            channel_code,
+            channel_name,
+            device_code,
+            device_name,
+            ptz_p,
+            ptz_t,
+            ptz_z,
+            address,
+            alarm_code,
+            algorithm_code,
+            emergency_level,
+            customer_code,
+            grid_id,
+            grid_code,
+            grid_name,
+            video_url,
+            file_img_url_src,
+            file_img_url_icon,
+            judge_result,
+            create_time,
+            modifier_date,
+            delete_flag,
+            importance_level,
+            intercept,
+            prevAlarmTime,
+            this_thresh,
+            thresh,
+            alarmInterval,
+            alarmInterval_type,
+            algorithm_time,
+            flow_id,
+            alarm_param,
+            alarm_param_value,
+            extra_field,
+            app_ver_code,
+            msg_type,
+            notice_resource,
+            confidence_level,
+            confidence_level_min,
+            comp_confidence_level,
+            front_alarm_pic_url,
+            front_alarm_vedio_url,
+            hori_azimuth_angle,
+            msg_id,
+            camera_alarm_type,
+            is_second_judge,
+            second_judge_result,
+            town_code,
+            town_name
+        FROM
+            vm_warning_intercept_t
+        WHERE
+            delete_flag = '0'
+            AND judge_result IS NULL
+            AND alarm_time <![CDATA[<=]]> #{alarmTime}
+    </insert>
+
+</mapper>

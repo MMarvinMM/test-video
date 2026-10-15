@@ -1,0 +1,42 @@
+#测试环境
+video:
+  nacos:
+    ip: 10.43.86.5
+    port: 8848
+    namespace: 62e81fad-8d13-43aa-8404-6aa8ef7a2309
+
+spring:
+  #spring cloud
+  cloud:
+    nacos:
+      #nacos注册中心地址
+      discovery:
+        server-addr: ${video.nacos.ip}:${video.nacos.port}
+        namespace: ${video.nacos.namespace}
+      #nacos配置中心
+      config:
+        # 配置文件的环境
+        group: ${spring.profiles.active}
+        # 配置文件的格式
+        file-extension: yaml
+        # 配置中心的地址
+        server-addr: ${video.nacos.ip}:${video.nacos.port}
+        # 配置文件prefix
+        prefix: ${spring.application.name}
+        #命名空间
+        namespace: ${video.nacos.namespace}
+        #关闭动态刷新，默认开启
+    #        refresh:
+    #         enabled: false
+hwobs:
+  enable: true
+  expires: 600
+  endPoint: obs.cn-north-4.myhuaweicloud.com
+  bucketList:
+    - ak: 9Z8MVPQI4IG1CXHEUPV5
+      sk: 5yDN2ZLG4u59QHzwVbCryyFscDUNgB6oc4TmXwYN
+      bucketName: slw-base-video-test
+    - ak: 9Z8MVPQI4IG1CXHEUPV5
+      sk: 5yDN2ZLG4u59QHzwVbCryyFscDUNgB6oc4TmXwYN
+      bucketName: video-platform
+  suffixRules: jpg,bmp,pcx,tif,gif,jpeg,tga,exif,fpx,svg,psd,cdr,pcd,dxf,ufo,eps,ai,png,hdri,raw,wmf,flic,emf,ico,xlsx,xls,pdf,doc,docx

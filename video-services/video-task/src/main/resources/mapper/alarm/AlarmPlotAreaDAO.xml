@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.AlarmPlotAreaDAO">
+
+    <select id="getTaskIdForAlarmTime" resultType="java.util.Map" parameterType="java.util.List">
+        SELECT
+            dataTable.tenant_id AS 'tenantId',
+            dataTable.province_code AS 'provinceCode',
+            dataTable.city_code AS 'cityCode',
+            dataTable.county_code AS 'countyCode',
+            dataTable.device_code AS 'deviceCode',
+            dataTable.industry_code AS 'industryCode',
+            dataTable.task_id AS 'taskId'
+        FROM
+            ${param.tableName} AS dataTable
+        WHERE
+            dataTable.delete_flag = '0' AND dataTable.task_id IS NOT NULL
+        <if test="param.alarmTimeStart != null">
+            and dataTable.alarm_time <![CDATA[>=]]> #{param.alarmTimeStart}
+        </if>
+        <if test="param.alarmTimeEnd != null">
+            and dataTable.alarm_time <![CDATA[<=]]> #{param.alarmTimeEnd}
+        </if>
+        GROUP BY
+            dataTable.tenant_id,
+            dataTable.industry_code,
+            dataTable.province_code,
+            dataTable.city_code,
+            dataTable.county_code,
+            dataTable.device_code,
+            dataTable.task_id
+    </select>
+
+
+    <select id="getLayerPolygon" resultType="java.util.Map">
+        SELECT
+            c.industry_code AS 'industryCode',
+            a.task_id AS 'taskId',
+            l.id AS 'layerId',
+            l.custom_name AS 'layerName',
+            c.feature_id AS 'featureId'
+        FROM
+            vm_algorithm_config a
+            LEFT JOIN vm_polygon_patch_algo_area_rela p ON a.config_id = p.config_id
+            LEFT JOIN vm_polygon_patch_config c ON c.polygon_id = p.polygon_id
+            AND c.monitor_area_id = p.monitor_area_id
+            LEFT JOIN sys_layer l ON l.id = c.layer_id
+        WHERE
+            a.delete_flag = 0 AND p.delete_flag = 0 AND c.delete_flag = 0
+            AND a.task_id in
+            <foreach collection="taskIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+    </select>
+
+    <insert id="addAlarmPlotArea" parameterType="com.chinatower.platform.modules.alarm.entity.AlarmPlotAreaDto">
+        INSERT INTO vm_statistics_event_plot_area(tenant_id, province_id, city_id, county_id, device_code, plot_area_sum, create_date, industry_code) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.tenantId},#{item.provinceId},#{item.cityId},#{item.countyId},#{item.deviceCode},#{item.plotAreaSum},NOW(),#{item.industryCode})
+        </foreach>
+    </insert>
+
+    <delete id="deleteAlarmPlotArea">
+        DELETE
+        FROM vm_statistics_event_plot_area
+        WHERE DATE_FORMAT(create_date, '%Y-%m-%d') = #{handleDate}
+    </delete>
+
+</mapper>

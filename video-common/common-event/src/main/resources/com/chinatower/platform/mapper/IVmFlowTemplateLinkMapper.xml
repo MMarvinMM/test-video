@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IVmFlowTemplateLinkMapper">
+
+    <select id="getStartFlowLinkByCondition" parameterType="com.chinatower.event.entity.dto.FlowAlarmTemplateDto"
+            resultType="com.chinatower.platform.entity.IIVmFlowTemplateLinkDto">
+        <!-- 有流程配置 -->
+        <if test="alarmFlowId != null and alarmFlowId != ''">
+            SELECT  ftl.flow_id,ftl.template_id,ftl.cur_link,ftl.link_type,ftl.pre_link,ftl.next_link,
+                   if(flic.link_alias is null,flc.link_name,flic.link_alias) linkName,
+            flic.alarm_flow_id,afc.alarm_flow_name,flic.msg_notify_type,flic.user_type,flic.id as attr_id,flic.id as flowAttrId,
+            ftl.real_link_type realLinkType,
+            <if test="gridFlag != null and gridFlag != ''">
+                (select group_concat(DISTINCT(role_id)) from vm_flow_link_role as flr WHERE flr.link_id = flic.link_id and
+                flr.attr_id = flic.id and flr.grid_sign ='0') as roleId,
+                (select group_concat(DISTINCT(user_id)) from vm_flow_link_user as flu WHERE flu.link_id = flic.link_id and
+                flu.attr_id = flic.id and flu.grid_sign ='0') as userId,
+            </if>
+            <if test="gridFlag == null or gridFlag == ''">
+                (select group_concat(DISTINCT(role_id)) from vm_flow_link_role as flr WHERE flr.link_id = flic.link_id and
+                flr.attr_id = flic.id) as roleId,
+                (select group_concat(DISTINCT(user_id)) from vm_flow_link_user as flu WHERE flu.link_id = flic.link_id and
+                flu.attr_id = flic.id ) as userId,
+            </if>
+                   flic.data_filter_permiss dataFilterPermiss
+            FROM vm_flow_template_link ftl
+            INNER JOIN vm_flow_link_config flc ON ftl.cur_link = flc.link_id
+            INNER JOIN vm_alarm_flow_config afc ON ftl.template_id = afc.template_id
+            LEFT JOIN vm_flow_link_attr flic ON ftl.cur_link = flic.link_id and flic.alarm_flow_id=afc.id
+            WHERE afc.id = #{alarmFlowId} AND ftl.link_type = '1'
+        </if>
+        <!-- 没有流程配置 -->
+        <if test="alarmFlowId == null and templateId != null">
+            SELECT ftl.flow_id,ftl.template_id,ftl.cur_link,ftl.link_type,ftl.pre_link,ftl.next_link,flc.link_name,flic.msg_notify_type,
+            ftl.cur_link as realLinkType,
+            <if test="gridFlag != null and gridFlag != ''">
+                flic.role_id as roleId,
+            </if>
+            <if test="gridFlag == null or gridFlag == ''">
+                (select CONCAT(IFNULL(flic.role_id,''), ',', IFNULL(flic.grid_sign_role,''))) as roleId,
+            </if>
+                   flic.data_filter_permiss dataFilterPermiss
+            FROM vm_flow_template_link ftl
+            INNER JOIN vm_flow_link_config flc ON ftl.cur_link = flc.link_id
+            LEFT JOIN vm_flow_link_industry_config flic ON ftl.cur_link = flic.link_id
+            <if test="signFlag == null || signFlag != 1">
+                AND flic.industry_code is null
+            </if>
+            WHERE ftl.delete_flag = '0' and flic.delete_flag='0'
+            <!-- 标识该流程模板是否为行业默认模板   1 是 0否 -->
+            <if test="signFlag == 1">
+                AND flic.industry_code = #{industryCode} AND flic.app_ver_code = #{appVerCode} AND flic.delete_flag = '0'
+            </if>
+            and ftl.template_id = #{templateId} AND ftl.link_type = '1'
+        </if>
+    </select>
+
+    <select id="getFlowLinkByCondition" parameterType="com.chinatower.platform.entity.IVmFlowLinkSearchDto"
+            resultType="com.chinatower.platform.entity.IIVmFlowTemplateLinkDto">
+        <!-- 有流程配置 -->
+        <if test="alarmFlowId != null and alarmFlowId != ''">
+            SELECT ftl.flow_id,ftl.template_id,ftl.cur_link,ftl.link_type,ftl.pre_link,ftl.next_link,flc.link_name,
+            flic.alarm_flow_id,afc.alarm_flow_name,flic.msg_notify_type,flic.user_type,flic.id as
+            attr_id,flic.notify_admin_flag,flic.leader_flag
+            FROM vm_flow_template_link ftl
+            INNER JOIN vm_flow_link_config flc ON ftl.cur_link = flc.link_id
+            INNER JOIN vm_alarm_flow_config afc ON ftl.tecmplate_id = afc.template_id
+            LEFT JOIN vm_flow_link_attr flic ON ftl.cur_link = flic.link_id and flic.alarm_flow_id=afc.id
+            WHERE afc.id = #{alarmFlowId}
+            <if test="linkId != null and linkId != ''">
+                AND ftl.cur_link = #{linkId}
+            </if>
+            <if test="realLinkType != null and realLinkType != ''">
+                AND ftl.real_link_type = #{realLinkType} and ftl.link_type='1'
+            </if>
+        </if>
+        <!-- 没有流程配置 -->
+        <if test="alarmFlowId == null and templateId != null">
+            SELECT ftl.flow_id,ftl.template_id,ftl.cur_link,ftl.link_type,ftl.pre_link,ftl.next_link,flc.link_name,flic.msg_notify_type,flic.role_id,flic.notify_admin_flag,flic.leader_flag,'2' as userType
+            FROM vm_flow_template_link ftl
+            INNER JOIN vm_flow_link_config flc ON ftl.cur_link = flc.link_id
+            LEFT JOIN vm_flow_link_industry_config flic ON ftl.cur_link = flic.link_id
+            <if test="signFlag == null || signFlag != 1">
+                AND flic.industry_code is null
+            </if>
+            WHERE ftl.delete_flag = 0
+            <!-- 标识该流程模板是否为行业默认模板   1 是 0否 -->
+            <if test="signFlag == 1">
+                AND flic.industry_code = #{industryCode} AND flic.app_ver_code = #{appVerCode} AND flic.delete_flag = '0'
+            </if>
+             and ftl.template_id = #{templateId}
+            <if test="linkId != null and linkId != ''">
+                AND ftl.cur_link = #{linkId}
+            </if>
+            <if test="realLinkType != null and realLinkType != ''">
+                AND ftl.real_link_type = #{realLinkType} and ftl.link_type='1'
+            </if>
+        </if>
+
+    </select>
+    <select id="getFlowLinkByTemplateId" resultType="com.chinatower.platform.entity.IIVmFlowTemplateLinkDto">
+        select distinct template_id from vm_flow_template_industry where template_id = #{templateId} and industry_code = #{industryCode} AND app_ver_code = #{appVerCode}
+                                                                     AND delete_flag = '0' AND status = '1'
+    </select>
+</mapper>

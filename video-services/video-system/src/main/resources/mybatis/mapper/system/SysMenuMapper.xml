@@ -1,0 +1,929 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysMenuMapper">
+
+	<resultMap type="com.chinatower.platform.project.system.domain.SysMenu" id="SysMenuResult">
+		<id     property="menuId"         column="menu_id"        />
+		<result property="menuName"       column="menu_name"      />
+		<result property="parentName"     column="parent_name"    />
+		<result property="parentId"       column="parent_id"      />
+		<result property="orderNum"       column="order_num"      />
+		<result property="path"           column="path"           />
+		<result property="component"      column="component"      />
+		<result property="permUrl"        column="perm_url"      />
+		<result property="isFrame"        column="is_frame"       />
+		<result property="menuType"       column="menu_type"      />
+		<result property="visible"        column="visible"        />
+		<result property="status"        column="status"        />
+		<result property="perms"          column="perms"          />
+		<result property="icon"           column="icon"           />
+		<result property="creator"       column="CREATE_BY"      />
+		<result property="createTime"     column="create_time"    />
+		<result property="updateTime"     column="update_time"    />
+		<result property="modifier"       column="UPDATE_BY"      />
+		<result property="remark"         column="remark"         />
+		<result property="menuClassify"         column="menu_classify"         />
+		<result property="menuApply"         column="menu_apply"         />
+	</resultMap>
+	<resultMap type="com.chinatower.platform.project.system.domain.SysMenu" id="SysMenuResultChild">
+		<id     property="menuId"         column="menu_id"        />
+		<result property="menuName"       column="menu_name"      />
+		<result property="parentName"     column="parent_name"    />
+		<result property="parentId"       column="parent_id"      />
+		<result property="orderNum"       column="order_num"      />
+		<result property="path"           column="path"           />
+		<result property="component"      column="component"      />
+		<result property="permUrl"        column="perm_url"      />
+		<result property="isFrame"        column="is_frame"       />
+		<result property="menuType"       column="menu_type"      />
+		<result property="visible"        column="visible"        />
+		<result property="status"        column="status"        />
+		<result property="perms"          column="perms"          />
+		<result property="icon"           column="icon"           />
+		<result property="creator"       column="CREATE_BY"      />
+		<result property="createTime"     column="create_time"    />
+		<result property="updateTime"     column="update_time"    />
+		<result property="modifier"       column="UPDATE_BY"      />
+		<result property="remark"         column="remark"         />
+		<result property="menuClassify"         column="menu_classify"         />
+		<result property="menuApply"         column="menu_apply"         />
+		<result property="paramMenuClassify" column="paramMenuClassify"/>
+		<result property="paramMenuName" column="paramMenuName"/>
+		<result property="paramVisible" column="paramVisible"/>
+		<result property="paramMenuApply" column="paramMenuApply"/>
+		<association property="children" column="{menuClassify=paramMenuClassify,menuName=paramMenuName,visible=paramVisible,menuApply=paramMenuApply,parentId=menu_id}" select="com.chinatower.platform.project.system.mapper.SysMenuMapper.selectMenuListChild"/>
+	</resultMap>
+
+
+	<sql id="selectMenuVo">
+        select menu_id, menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, IFNULL(perms,'') as perms, icon, create_time, remark,perm_url,menu_classify,menu_apply,`status`
+		from sys_menu
+    </sql>
+
+	<sql id="selectMenuFileVo">
+        select m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, m.component, m.is_frame, m.menu_type,
+		m.visible, IFNULL(m.perms,'') as perms, m.icon, m.create_time, m.remark,m.perm_url,m.menu_classify,m.menu_apply,m.`status`,
+		m.file_url
+		from sys_menu m
+    </sql>
+
+	<select id="selectChilds" parameterType="Long" resultMap="SysMenuResult">
+		select * from sys_menu WHERE MENU_ID=#{menuId} OR PARENT_ID=#{menuId} OR MENU_ID IN(SELECT MENU_ID from sys_menu WHERE PARENT_ID=#{menuId})
+	</select>
+	<update id="batchUpdateMenuVisible">
+		update sys_menu set visible=#{status} where MENU_ID
+		<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+			#{item}
+		</foreach>
+	</update>
+
+	<update id="batchUpdateMenuStatus">
+		update sys_menu set `status`=#{status} where MENU_ID
+		<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+			#{item}
+		</foreach>
+	</update>
+    <select id="selectMenuList" parameterType="com.chinatower.platform.project.system.domain.SysMenu" resultMap="SysMenuResult">
+		select m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, m.component, m.is_frame, m.menu_type,
+		m.visible, IFNULL(m.perms,'') as perms, m.icon, m.create_time, m.remark,m.perm_url,m.menu_classify,m.menu_apply,m.`status`,
+		m.file_url, i.industry_name, m.industry_code
+		from sys_menu m
+		LEFT JOIN sys_industry_conf i on m.industry_code = i.industry_code and i.accept_node = #{acceptNode}  and i.delete_flag = 0
+		<where>
+			<if test="menuName != null and menuName != ''">
+				AND m.menu_name like CONCAT(CONCAT('%', #{menuName}),'%')
+			</if>
+			<if test="visible != null and visible != ''">
+				AND m.visible = #{visible}
+			</if>
+			<if test="status != null and status != ''">
+				AND m.status = #{status}
+			</if>
+			<if test="menuClassifyList != null">
+				AND
+				<foreach collection="menuClassifyList" item="item" index="index" open="(" close=")" separator="or">
+					m.menu_classify like concat('%',#{item},'%')
+				</foreach>
+			</if>
+			<if test="menuClassifyEq != null and menuClassifyEq != ''">
+				AND m.menu_classify=#{menuClassifyEq}
+			</if>
+			<if test="menuApply != null and menuApply != ''">
+				AND m.menu_apply = #{menuApply}
+			</if>
+			<if test="industryCode != null and industryCode != ''">
+				AND m.industry_code = #{industryCode}
+			</if>
+			<if test=" parentIds != null and parentIds.size() != 0 ">
+				AND m.parent_id in
+				<foreach collection="parentIds" item="item" index="index" open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+			</if>
+			<if test="notInFlag != null and notInFlag == 1">
+				AND m.menu_id not in
+				<foreach collection="parentIds" item="item" index="index" open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+			</if>
+		</where>
+		order by m.parent_id,m.order_num
+	</select>
+	<sql id="treeselectByRoleScopeSql">
+		SELECT <include refid="treeselectByRoleScopeSql_select"></include>
+		FROM
+		sys_menu m
+		LEFT JOIN sys_industry_auth      ia ON ia.menu_id = m.menu_id
+		inner JOIN sys_role_industry_auth ri ON ri.auth_id = ia.auth_id
+		LEFT JOIN sys_role           r  ON r.role_id  = ri.role_id
+		LEFT JOIN sys_user_role          ur ON ur.role_id = r.role_id
+		WHERE
+		m.`status`='0' AND ia.industry_code=#{user.industryCode}
+		<include refid="treeselectByRoleScopeSql_where"></include>
+	</sql>
+	<sql id="treeselectByRoleScopeSql_select">DISTINCT
+		m.menu_id,
+		m.parent_id,
+		m.menu_name,
+		m.path,
+		m.component,
+		m.visible,
+		IFNULL( m.perms, '' ) AS perms,
+		m.is_frame,
+		m.menu_type,
+		m.icon,
+		m.order_num,
+		m.create_time,
+		m.remark,
+		m.menu_classify,
+		m.menu_apply,
+		m.`status`
+	</sql>
+	<sql id="treeselectByRoleScopeSql_where">
+		<if test="user.userId !=null and user.userId !=''">
+			and ur.user_id = #{user.userId}
+		</if>
+		<if test="user.userType != null and user.userType != ''">
+			and m.menu_classify like concat('%',#{user.userType},'%')
+		</if>
+		<if test="user.industryCode !=null and user.industryCode !=''">
+			and ia.industry_code = #{user.industryCode}
+		</if>
+		<if test="user.appVerCode !=null and user.appVerCode !=''">
+			and ia.app_ver_code = #{user.appVerCode}
+		</if>
+	</sql>
+
+
+	<select id="treeselectByRoleScope" resultMap="SysMenuResult">
+		select * from (
+			select
+				DISTINCT me.menu_id,
+				me.parent_id,
+				me.menu_name,
+				me.path,
+				me.component,
+				me.visible,
+				IFNULL(me.perms, '' ) AS perms,
+				me.is_frame,
+				me.menu_type,
+				me.icon,
+				me.order_num,
+				me.create_time,
+				me.remark,
+				me.menu_classify,
+				me.menu_apply,
+				me.`status`
+			from sys_menu me INNER JOIN (<include refid="treeselectByRoleScopeSql"/> ) a ON a.PARENT_ID = me.MENU_ID and me.MENU_TYPE='M'
+
+			union
+
+				<include refid="treeselectByRoleScopeSql"/>
+		) m
+
+		order by m.parent_id, m.order_num
+	</select>
+
+	<select id="selectMenuTreeAll" resultMap="SysMenuResult">
+		select distinct m.menu_id, m.parent_id, m.menu_name, m.path,m.`status`, m.component, m.visible, IFNULL(m.perms,'') as perms, m.is_frame, m.menu_type, m.icon, m.order_num, m.create_time,m.remark,m.menu_classify,menu_apply
+		from sys_menu m where (m.menu_type in ('M', 'C') and m.visible = '0'  and m.`status`='0') or m.path='/indexPermission'
+		order by m.parent_id, m.order_num
+	</select>
+
+	<select id="selectMenuTreeAllByAdmin" resultMap="SysMenuResult">
+		select distinct m.menu_id, m.parent_id, m.menu_name, m.path,m.`status`, m.component, m.visible, IFNULL(m.perms,'') as perms, m.is_frame, m.menu_type, m.icon, m.order_num, m.create_time,m.remark,m.menu_classify,menu_apply
+		from sys_menu m where (m.menu_type in ('M', 'C') and m.visible = '0'  and m.`status`='0'
+		<if test="list != null and list != ''">
+			and m.menu_apply
+			<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		 ) or m.path='/indexPermission'
+		order by m.parent_id, m.order_num
+	</select>
+
+
+	<select id="selectMenuTreeAllByApp" resultMap="SysMenuResult">
+		select distinct m.menu_id, m.parent_id, m.menu_name,m.`status`, m.path, m.component, m.visible, IFNULL(m.perms,'') as perms, m.is_frame, m.menu_type, m.icon, m.order_num, m.create_time,m.remark,m.menu_classify,m.file_url
+		from sys_menu m where  m.menu_type in ('M', 'C') and m.visible = '0'  and m.`status`='0'
+		<if test="list != null and list != ''">
+			and m.menu_apply
+			<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		order by m.parent_id, m.order_num
+	</select>
+
+    <select id="selectMenuTreeByUserId" parameterType="String" resultMap="SysMenuResult">
+		select * from (
+		select DISTINCT me.menu_id,
+		me.parent_id,
+		me.menu_name,
+		me.path,
+		me.component,
+		me.visible,
+		IFNULL( me.perms, '' ) AS perms,
+		me.is_frame,
+		me.menu_type,
+		me.icon,
+		me.order_num,
+		me.create_time,
+		me.remark,
+		me.menu_classify,
+		me.menu_apply,me.`status`,me.FILE_URL from sys_menu me
+		inner join (
+		SELECT DISTINCT
+		m.menu_id,
+		m.parent_id,
+		m.menu_name,
+		m.path,
+		m.component,
+		m.visible,
+		IFNULL( m.perms, '' ) AS perms,
+		m.is_frame,
+		m.menu_type,
+		m.icon,
+		m.order_num,
+		m.create_time,
+		m.remark,
+		m.menu_classify,
+		m.menu_apply,
+		m.`status`,
+		m.file_url
+		FROM
+		sys_menu m
+		inner JOIN
+		(SELECT
+		ria.role_id,
+		ia.menu_id
+		FROM
+		sys_role_industry_auth ria
+		INNER JOIN sys_industry_auth ia ON ria.auth_id = ia.auth_id
+		WHERE 1=1
+		<if test="industryCode != null and industryCode != ''">
+			and ia.industry_code = #{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			and ia.app_ver_code = #{appVerCode}
+		</if>
+		) tmp  ON tmp.menu_id = m.menu_id
+		LEFT JOIN sys_role r ON r.role_id = tmp.role_id
+		LEFT JOIN sys_user_role ur ON ur.role_id = tmp.role_id
+		where ur.user_id = #{userId} and ((m.menu_type in ('M', 'C') and m.visible = '0' AND r.status = 0  and m.`status`='0'
+
+		<if test='userType != null and userType == "0"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '0', '%')
+		</if>
+		<if test='userType != null and userType == "2"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '0', '%')
+		</if>
+		<if test="list != null and list != ''">
+			and m.menu_apply
+			<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if> ) or (m.path='/indexPermission') )
+		) a on a.parent_id = me.menu_id and me.MENU_TYPE = 'M'
+		union
+		SELECT DISTINCT
+		m.menu_id,
+		m.parent_id,
+		m.menu_name,
+		m.path,
+		m.component,
+		m.visible,
+		IFNULL( m.perms, '' ) AS perms,
+		m.is_frame,
+		m.menu_type,
+		m.icon,
+		m.order_num,
+		m.create_time,
+		m.remark,
+		m.menu_classify,
+		m.menu_apply,
+		m.`status`,
+		m.file_url
+		FROM
+		sys_menu m
+		inner JOIN
+		(SELECT
+		ria.role_id,
+		ia.menu_id
+		FROM
+		sys_role_industry_auth ria
+		INNER JOIN sys_industry_auth ia ON ria.auth_id = ia.auth_id
+		WHERE 1=1
+		<if test="industryCode != null and industryCode != ''">
+			and ia.industry_code = #{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			and ia.app_ver_code = #{appVerCode}
+		</if>
+		) tmp  ON tmp.menu_id = m.menu_id
+		LEFT JOIN sys_role r ON r.role_id = tmp.role_id
+		LEFT JOIN sys_user_role ur ON ur.role_id = tmp.role_id
+		where ur.user_id = #{userId} and ((m.menu_type in ('M', 'C') and m.visible = '0' AND r.status = 0  and m.`status`='0'
+
+		<if test='userType != null and userType == "0"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '0', '%')
+		</if>
+		<if test='userType != null and userType == "2"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '1', '%')
+		</if>
+		<if test="list != null and list != ''">
+			 and m.menu_apply
+			<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if> ) or (m.path='/indexPermission') )) m
+		order by m.parent_id, m.order_num
+	</select>
+
+	<select id="selectParentMenuByMenuType"  parameterType="String" resultMap="SysMenuResult">
+		SELECT DISTINCT
+		m.menu_id,
+		m.parent_id,
+		m.menu_name,
+		m.path,
+		m.component,
+		m.visible,
+		IFNULL( m.perms, '' ) AS perms,
+		m.is_frame,
+		m.menu_type,
+		m.icon,
+		m.order_num,
+		m.create_time,
+		m.remark,
+		m.menu_classify,
+		m.menu_apply,
+		m.`status`,
+		m.file_url
+		FROM
+		sys_menu m
+		inner JOIN
+		(SELECT
+		ria.role_id,
+		ia.menu_id
+		FROM
+		sys_role_industry_auth ria
+		INNER JOIN sys_industry_auth ia ON ria.auth_id = ia.auth_id
+		WHERE 1=1
+		<if test="industryCode != null and industryCode != ''">
+			and ia.industry_code = #{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			and ia.app_ver_code = #{appVerCode}
+		</if>
+		) tmp on tmp.menu_id = m.menu_id
+		LEFT JOIN sys_role r ON r.role_id = tmp.role_id
+		<if test="userId !=null and userId != ''">
+			LEFT JOIN sys_user_role ur ON ur.role_id = tmp.role_id
+		</if>
+		where
+		 ((m.menu_type = #{menuType} and m.visible = '0' AND r.status = 0  and m.`status`='0'
+
+		<if test='userType != null and userType == "0"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '0', '%')
+		</if>
+		<if test='userType != null and userType == "2"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '1', '%')
+		</if>
+		<if test="list != null and list != ''">
+			and m.menu_apply
+			<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if> ) or (m.path='/indexPermission') )
+		<if test="userId !=null and userId != ''">
+			and ur.user_id = #{userId}
+		</if>
+		<if test="parentIds != null">
+			and m.menu_id
+			<foreach collection="parentIds" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+
+	</select>
+
+	<select id="selectMenuListByRoleId"  resultType="java.lang.String">
+		SELECT
+		    m.menu_id,
+		    m.parent_id
+		FROM
+			sys_menu m
+		LEFT JOIN sys_industry_auth      ia ON ia.menu_id = m.menu_id
+		inner JOIN sys_role_industry_auth ri ON ri.auth_id = ia.auth_id
+		WHERE
+			ri.role_id = #{roleId} AND ia.industry_code=#{industryCode}  AND ia.app_ver_code=#{appVerCode}  and m.`status`='0'
+	</select>
+
+	<select id="selectCheckMenuListByRoleId" parameterType="Long" resultMap="SysMenuResult">
+		SELECT DISTINCT
+		    m.menu_id,
+		    m.parent_id,
+		    m.menu_name,
+		    m.path,
+		    m.component,
+		    m.visible,
+		    IFNULL( m.perms, '' ) AS perms,
+		    m.is_frame,
+		    m.menu_type,
+		    m.icon,
+		    m.order_num,
+		    m.create_time,
+		    m.remark,
+		    m.menu_classify,
+		    m.menu_apply,
+			m.`status`
+		FROM
+		    sys_menu m
+		    LEFT JOIN sys_industry_auth      ia ON ia.menu_id = m.menu_id
+		    inner JOIN sys_role_industry_auth ri ON ri.auth_id = ia.auth_id
+		WHERE
+		    ri.role_id = #{roleId}  and m.`status`='0'
+		ORDER BY
+		    m.parent_id,
+		    m.order_num
+	</select>
+
+	<select id="selectMenuPerms" resultType="String">
+		SELECT DISTINCT
+		    m.perms
+		FROM
+		    sys_menu m
+		    LEFT JOIN sys_industry_auth      ia ON ia.menu_id = m.menu_id
+		    inner JOIN sys_role_industry_auth ri ON ri.auth_id = ia.auth_id
+		    LEFT JOIN sys_role           r  ON r.role_id  = ri.role_id
+		    LEFT JOIN sys_user_role          ur ON ur.role_id = r.role_id
+	</select>
+
+	<select id="selectMenuPermsByUserId" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="String">
+        SELECT DISTINCT
+            m.perms
+        FROM
+            sys_role r
+            LEFT JOIN sys_user_role          ur ON ur.role_id = r.role_id
+            LEFT JOIN sys_user           u  ON u.user_id  = ur.user_id
+            LEFT JOIN sys_role_industry_auth ri ON ri.role_id = r.role_id
+            inner JOIN sys_industry_auth      ia ON ia.auth_id = ri.auth_id
+            LEFT JOIN sys_menu               m  ON m.MENU_ID  = ia.menu_id
+		where r.del_flag = '0' and ur.user_id = #{userId}  AND ia.industry_code=#{industryCode} AND ia.app_ver_code=#{appVerCode}  and m.`status`='0' and m.visible = '0'
+		and m.menu_apply
+		<foreach collection="clientType" item="item" index="index" open=" in (" close=")" separator=",">
+			#{item}
+		</foreach>
+	</select>
+
+	<select id="selectAllMenuPermsByUser" parameterType="com.chinatower.platform.entity.admin.SysUser" resultType="String">
+		SELECT DISTINCT
+		concat_ws(',', a.perms, b.perms, c.perms) AS perms
+		FROM sys_user_role ur
+		JOIN sys_role r
+		ON r.role_id = ur.role_id
+		AND r.del_flag = '0'
+		JOIN sys_role_industry_auth ria
+		ON ria.role_id = r.role_id
+		JOIN sys_industry_auth ia
+		ON ia.auth_id = ria.auth_id
+		AND ia.industry_code = #{industryCode}
+		AND ia.app_ver_code = #{appVerCode}
+		JOIN sys_menu a
+		ON a.menu_id = ia.menu_id
+		AND a.status = '0'
+		AND (a.visible = '0' OR a.industry_code = '660000')
+		AND a.menu_apply
+		<foreach collection="clientType" item="item" index="index" open=" in (" close=")" separator=",">
+			#{item}
+		</foreach>
+		LEFT JOIN sys_menu b
+		ON b.menu_id = a.parent_id
+		AND b.status = '0'
+		AND (b.visible = '0' OR b.industry_code = '660000')
+		AND b.menu_apply
+		<foreach collection="clientType" item="item" index="index" open=" in (" close=")" separator=",">
+			#{item}
+		</foreach>
+		LEFT JOIN sys_menu c
+		ON c.menu_id = b.parent_id
+		AND c.status = '0'
+		AND (c.visible = '0' OR c.industry_code = '660000')
+		AND c.menu_apply
+		<foreach collection="clientType" item="item" index="index" open=" in (" close=")" separator=",">
+			#{item}
+		</foreach>
+		WHERE ur.user_id = #{userId}
+	</select>
+
+	<select id="selectMenuById" parameterType="Long" resultMap="SysMenuResult">
+		select m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, m.component, m.is_frame, m.menu_type,
+			   m.visible, IFNULL(m.perms,'') as perms, m.icon, m.create_time, m.remark,m.perm_url,m.menu_classify,m.menu_apply,m.`status`,
+			   m.file_url, i.industry_name as industryName, m.industry_code
+		from sys_menu m
+				 LEFT JOIN sys_industry_conf i on m.industry_code = i.industry_code and i.delete_flag = 0
+				<if test="configValue !=null and configValue != ''">
+					and i.accept_node = #{configValue}
+				</if>
+		where m.menu_id = #{menuId}
+	</select>
+	<select id="selectByParentId" parameterType="Long" resultMap="SysMenuResult">
+		<include refid="selectMenuFileVo"/>
+		where m.PARENT_ID = #{parentId}
+	</select>
+
+	<select id="hasChildByMenuId" resultType="Integer">
+	    select count(1) from sys_menu where parent_id = #{menuId}
+	</select>
+
+	<select id="checkMenuNameUnique" parameterType="com.chinatower.platform.project.system.domain.SysMenu" resultMap="SysMenuResult">
+		<include refid="selectMenuVo"/>
+		where menu_name=#{menuName} and parent_id = #{parentId}
+	</select>
+
+	<update id="updateMenu" parameterType="com.chinatower.platform.project.system.domain.SysMenu">
+		update sys_menu
+		<set>
+			<if test="menuName != null and menuName != ''">menu_name = #{menuName},</if>
+			<if test="parentId != null ">parent_id = #{parentId},</if>
+			<if test="orderNum != null and orderNum != ''">order_num = #{orderNum},</if>
+			<if test="path != null and path != ''">path = #{path},</if>
+			<if test="component != null ">component = #{component},</if>
+			<if test="permUrl != null ">perm_url = #{permUrl},</if>
+			<if test="isFrame != null and isFrame != ''">is_frame = #{isFrame},</if>
+			<if test="menuType != null and menuType != ''">menu_type = #{menuType},</if>
+			<if test="visible != null">visible = #{visible},</if>
+			<if test="perms !=null">perms = #{perms},</if>
+			<if test="icon !=null and icon != ''">icon = #{icon},</if>
+			<if test="remark != null">remark = #{remark},</if>
+			<if test="menuClassify != null and menuClassify != ''">menu_classify = #{menuClassify},</if>
+			<if test="menuApply != null and menuApply != ''">menu_apply = #{menuApply},</if>
+			<if test="modifier != null and modifier != ''">UPDATE_BY = #{modifier},</if>
+			<if test="status != null and status != ''">status = #{status},</if>
+			<if test="fileUrl != null and fileUrl != ''">file_url = #{fileUrl},</if>
+			industry_code = #{industryCode},
+			update_time = #{updateTime}
+		</set>
+		where menu_id = #{menuId}
+	</update>
+	<update id = "updateMenuByParentId">
+		update sys_menu
+		<set>
+			<if test="menuName != null and menuName != ''">menu_name = #{menuName},</if>
+			<if test="orderNum != null and orderNum != ''">order_num = #{orderNum},</if>
+			<if test="path != null and path != ''">path = #{path},</if>
+			<if test="component != null ">component = #{component},</if>
+			<if test="permUrl != null ">perm_url = #{permUrl},</if>
+			<if test="isFrame != null and isFrame != ''">is_frame = #{isFrame},</if>
+			<if test="menuType != null and menuType != ''">menu_type = #{menuType},</if>
+			<if test="visible != null">visible = #{visible},</if>
+			<if test="perms !=null">perms = #{perms},</if>
+			<if test="icon !=null and icon != ''">icon = #{icon},</if>
+			<if test="remark != null and remark != ''">remark = #{remark},</if>
+			<if test="menuClassify != null and menuClassify != ''">menu_classify = #{menuClassify},</if>
+			<if test="menuApply != null and menuApply != ''">menu_apply = #{menuApply},</if>
+			<if test="modifier != null and modifier != ''">UPDATE_BY = #{modifier},</if>
+			<if test="status != null and status != ''">status = #{status},</if>
+			<if test="fileUrl != null and fileUrl != ''">file_url = #{fileUrl},</if>
+			<if test="industryCode != null and industryCode != ''">industry_code = #{industryCode},</if>
+			update_time = #{updateTime}
+		</set>
+		where parent_id = #{parentId}
+	</update>
+
+	<insert id="insertMenu" parameterType="com.chinatower.platform.project.system.domain.SysMenu" useGeneratedKeys="true" keyProperty="menuId">
+		insert into sys_menu(
+            <if test="parentId != null and parentId != 0">parent_id,</if>
+            <if test="menuName != null and menuName != ''">menu_name,</if>
+            <if test="orderNum != null and orderNum != ''">order_num,</if>
+            <if test="path != null and path != ''">path,</if>
+            <if test="component != null and component != ''">component,</if>
+			<if test="permUrl != null and permUrl != ''">perm_url,</if>
+            <if test="isFrame != null and isFrame != ''">is_frame,</if>
+            <if test="menuType != null and menuType != ''">menu_type,</if>
+            <if test="visible != null">visible,</if>
+            <if test="perms !=null and perms != ''">perms,</if>
+            <if test="icon != null and icon != ''">icon,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+			<if test="menuClassify != null and menuClassify != ''">menu_classify,</if>
+			<if test="menuApply != null and menuApply != ''">menu_apply,</if>
+            <if test="creator != null and creator != ''">CREATE_BY,</if>
+			<if test="status != null and status != ''">status,</if>
+			<if test="fileUrl != null and fileUrl != ''">file_url,</if>
+			<if test="industryCode != null and industryCode != ''">industry_code,</if>
+            create_time
+		)values(
+            <if test="parentId != null and parentId != 0">#{parentId},</if>
+            <if test="menuName != null and menuName != ''">#{menuName},</if>
+            <if test="orderNum != null and orderNum != ''">#{orderNum},</if>
+            <if test="path != null and path != ''">#{path},</if>
+            <if test="component != null and component != ''">#{component},</if>
+			<if test="permUrl != null and permUrl != ''">#{permUrl},</if>
+            <if test="isFrame != null and isFrame != ''">#{isFrame},</if>
+            <if test="menuType != null and menuType != ''">#{menuType},</if>
+            <if test="visible != null">#{visible},</if>
+            <if test="perms !=null and perms != ''">#{perms},</if>
+            <if test="icon != null and icon != ''">#{icon},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+			<if test="menuClassify != null and menuClassify != ''">#{menuClassify},</if>
+			<if test="menuApply != null and menuApply != ''">#{menuApply},</if>
+            <if test="creator != null and creator != ''">#{creator},</if>
+			<if test="status != null and status != ''">#{status},</if>
+			<if test="fileUrl != null and fileUrl != ''">#{fileUrl},</if>
+			<if test="industryCode != null and industryCode != ''">#{industryCode},</if>
+            #{createTime}
+		)
+	</insert>
+
+	<delete id="deleteMenuById" parameterType="Long">
+	    delete from sys_menu where menu_id
+		<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+		#{item}
+	</foreach>
+
+	</delete>
+
+	<select id="selectAllMenuId"  resultType="java.lang.Long">
+		select menu_id from sys_menu where menu_id = #{menuId} or (PARENT_ID = #{menuId} ) or (PARENT_ID IN(select menu_id where PARENT_ID = #{menuId}))
+	</select>
+
+<!--	<select id="selectMenuById" parameterType="Long" resultMap="SysMenuResult">-->
+<!--		<include refid="selectMenuVo"/>-->
+<!--		where parent_id = #{parentId}-->
+<!--	</select>-->
+	<select id="tanentMenuTreeselect" parameterType="com.chinatower.platform.project.system.domain.dto.RoleDTO" resultMap="SysMenuResult">
+		SELECT
+			m.*
+		FROM
+			sys_menu m
+		LEFT JOIN sys_industry_auth ia ON ia.menu_id = m.menu_id
+		inner JOIN sys_role_industry_auth ri ON ri.auth_id = ia.auth_id
+		WHERE
+		ri.role_id = #{roleId}  and m.`status`='0'
+		<if test="industryCode != null and industryCode != ''">
+			AND ia.industry_code = #{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			AND ia.app_ver_code = #{appVerCode}
+		</if>
+		<if test="tenantId != null and tenantId != ''">
+			AND ia.tenant_id = #{tenantId}
+		</if>
+
+	</select>
+	<select id="selectAllMenu" resultType="com.chinatower.platform.project.system.domain.SysMenu">
+		<include refid="selectMenuFileVo"/>
+	</select>
+
+
+	<select id="selectMenuClassifyInfo"  resultType="com.chinatower.platform.project.system.domain.SysMenu">
+		SELECT
+		t1.id,
+		t1.classify_name,
+		t1.menu_id
+		FROM
+		sys_menu_classify_t t1
+		left join sys_menu t2 on t1.menu_id = t2.menu_id
+		left join sys_dict_data t3 on t2.menu_name = t3.DICT_VALUE
+		WHERE
+		t1.delete_flag = 0 and t3.status = '0'	and t3.dict_type = 'large_print_app_menu_list'
+		<if test="menuIdList != null and menuIdList.size() > 0">
+			AND t1.menu_id in
+			<foreach collection="menuIdList" item="item" index="index" open="(" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		order by t3.dict_sort,t1.id
+	</select>
+
+
+	<select id="selectMenuByUserRole"  resultType="com.chinatower.platform.project.system.domain.vo.SysMenuTreeVO">
+		SELECT
+		distinct
+		m.menu_id id,
+		m.parent_id pid,
+		m.menu_name label,
+		m.menu_apply applyType,
+		m.menu_type,
+		m.order_num
+		FROM
+		sys_menu m
+		LEFT JOIN sys_industry_auth      ia ON ia.menu_id = m.menu_id
+		inner JOIN sys_role_industry_auth ri ON ri.auth_id = ia.auth_id
+		WHERE
+		m.`status`='0'
+		<if test="roleIdList != null and roleIdList.size() > 0">
+			and ri.role_id IN
+			<foreach item="roleId" index="index" collection="roleIdList" open="(" separator="," close=")">
+				#{roleId}
+			</foreach>
+		</if>
+		<if test="idList != null and idList.size() > 0">
+			and m.menu_id IN
+			<foreach item="menuId" index="index" collection="idList" open="(" separator="," close=")">
+				#{menuId}
+			</foreach>
+		</if>
+		<if test="menuType != null and menuType != ''">
+			and m.menu_type=#{menuType}
+		</if>
+		<if test="industryCode != null and industryCode != ''">
+			and ia.industry_code=#{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			and ia.app_ver_code=#{appVerCode}
+		</if>
+	</select>
+	<select id="findThirdMenuByTenantIndustryAppVerCode"
+			resultType="com.chinatower.platform.project.system.domain.dto.SysThirdMenuDTO">
+		SELECT t1.*,t2.custom_name customName
+		FROM sys_third_menu t1 LEFT JOIN sys_third_menu_tenant t2 ON t1.menu_id = t2.third_menu_id
+		where t1.delete_flag = 0 AND t1.visible = '0' AND t1.status = '0'
+		AND t2.tenant_id = #{tenantId} AND t2.industry_code = #{industryCode} AND t2.app_ver_code = #{appVerCode}
+	</select>
+    <select id="findById" resultType="com.chinatower.platform.project.system.domain.dto.SysThirdMenuDTO">
+		SELECT t1.* FROM sys_third_menu t1 WHERE t1.delete_flag = 0 and t1.menu_id = #{menuId}
+	</select>
+
+	<select id="selectMenuTreeAllByAdminNoVisible" resultMap="SysMenuResult">
+		select distinct m.menu_id, m.parent_id, m.menu_name, m.path,m.`status`, m.component, m.visible, IFNULL(m.perms,'') as perms, m.is_frame, m.menu_type, m.icon, m.order_num, m.create_time,m.remark,m.menu_classify,menu_apply
+		from sys_menu m where (m.menu_type in ('M', 'C') and m.`status`='0'
+		<if test="list != null and list != ''">
+			and m.menu_apply
+			<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		) or m.path='/indexPermission'
+		order by m.parent_id, m.order_num
+	</select>
+
+	<select id="selectMenuTreeAllByAppNoVisible" resultMap="SysMenuResult">
+		select distinct m.menu_id, m.parent_id, m.menu_name,m.`status`, m.path, m.component, m.visible, IFNULL(m.perms,'') as perms, m.is_frame, m.menu_type, m.icon, m.order_num, m.create_time,m.remark,m.menu_classify,m.file_url
+		from sys_menu m where  m.menu_type in ('M', 'C') and m.`status`='0'
+		<if test="list != null and list != ''">
+			and m.menu_apply
+			<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if>
+		order by m.parent_id, m.order_num
+	</select>
+
+
+	<select id="selectMenuTreeByUserIdNoVisible" parameterType="String" resultMap="SysMenuResult">
+		select * from (
+		select DISTINCT me.menu_id,
+		me.parent_id,
+		me.menu_name,
+		me.path,
+		me.component,
+		me.visible,
+		IFNULL( me.perms, '' ) AS perms,
+		me.is_frame,
+		me.menu_type,
+		me.icon,
+		me.order_num,
+		me.create_time,
+		me.remark,
+		me.menu_classify,
+		me.menu_apply,me.`status`,me.FILE_URL from sys_menu me
+		inner join (
+		SELECT DISTINCT
+		m.menu_id,
+		m.parent_id,
+		m.menu_name,
+		m.path,
+		m.component,
+		m.visible,
+		IFNULL( m.perms, '' ) AS perms,
+		m.is_frame,
+		m.menu_type,
+		m.icon,
+		m.order_num,
+		m.create_time,
+		m.remark,
+		m.menu_classify,
+		m.menu_apply,
+		m.`status`,
+		m.file_url
+		FROM
+		sys_menu m
+		inner JOIN
+		(SELECT
+		ria.role_id,
+		ia.menu_id
+		FROM
+		sys_role_industry_auth ria
+		INNER JOIN sys_industry_auth ia ON ria.auth_id = ia.auth_id
+		WHERE 1=1
+		<if test="industryCode != null and industryCode != ''">
+			and ia.industry_code = #{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			and ia.app_ver_code = #{appVerCode}
+		</if>
+		) tmp  ON tmp.menu_id = m.menu_id
+		LEFT JOIN sys_role r ON r.role_id = tmp.role_id
+		LEFT JOIN sys_user_role ur ON ur.role_id = tmp.role_id
+		where ur.user_id = #{userId} and ((m.menu_type in ('M', 'C') AND r.status = 0  and m.`status`='0'
+		<if test='userType != null and userType == "0"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '0', '%')
+		</if>
+		<if test='userType != null and userType == "2"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '0', '%')
+		</if>
+		<if test="list != null and list != ''">
+			and m.menu_apply
+			<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if> ) or (m.path='/indexPermission') )
+		) a on a.parent_id = me.menu_id and me.MENU_TYPE = 'M'
+		union
+		SELECT DISTINCT
+		m.menu_id,
+		m.parent_id,
+		m.menu_name,
+		m.path,
+		m.component,
+		m.visible,
+		IFNULL( m.perms, '' ) AS perms,
+		m.is_frame,
+		m.menu_type,
+		m.icon,
+		m.order_num,
+		m.create_time,
+		m.remark,
+		m.menu_classify,
+		m.menu_apply,
+		m.`status`,
+		m.file_url
+		FROM
+		sys_menu m
+		inner JOIN
+		(SELECT
+		ria.role_id,
+		ia.menu_id
+		FROM
+		sys_role_industry_auth ria
+		INNER JOIN sys_industry_auth ia ON ria.auth_id = ia.auth_id
+		WHERE 1=1
+		<if test="industryCode != null and industryCode != ''">
+			and ia.industry_code = #{industryCode}
+		</if>
+		<if test="appVerCode != null and appVerCode != ''">
+			and ia.app_ver_code = #{appVerCode}
+		</if>
+		) tmp  ON tmp.menu_id = m.menu_id
+		LEFT JOIN sys_role r ON r.role_id = tmp.role_id
+		LEFT JOIN sys_user_role ur ON ur.role_id = tmp.role_id
+		where ur.user_id = #{userId} and ((m.menu_type in ('M', 'C') AND r.status = 0  and m.`status`='0'
+		<if test='userType != null and userType == "0"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '0', '%')
+		</if>
+		<if test='userType != null and userType == "2"'>
+			and m.MENU_CLASSIFY like CONCAT('%', '1', '%')
+		</if>
+		<if test="list != null and list != ''">
+			and m.menu_apply
+			<foreach collection="list" item="item" index="index" open=" in (" close=")" separator=",">
+				#{item}
+			</foreach>
+		</if> ) or (m.path='/indexPermission') )) m
+		order by m.parent_id, m.order_num
+	</select>
+
+	<!-- 批量查询菜单信息 -->
+	<select id="selectMenusByIds" resultType="com.chinatower.platform.project.system.domain.SysMenu">
+		select menu_id, menu_name
+		from sys_menu
+		where menu_id
+		<foreach collection="menuIds" item="item" index="index" open=" in (" close=")" separator=",">
+			#{item}
+		</foreach>
+	</select>
+</mapper>

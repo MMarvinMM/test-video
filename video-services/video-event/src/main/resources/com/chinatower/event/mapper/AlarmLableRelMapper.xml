@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.event.mapper.AlarmLableRelMapper">
+
+
+    <select id="getTagsByWaringId" resultType="com.chinatower.event.entity.dto.AlarmLableRelDTO">
+        SELECT
+            rel.lable_rel_id,
+            rel.lable_id,
+            rel.lable_name,
+            rel.waring_order_id
+        FROM
+            vm_alarm_lable_rel rel
+        WHERE
+            rel.waring_order_id = #{waringOrderId}
+        ORDER BY
+            rel.create_time
+    </select>
+
+    <delete id="deleteAlarmLableRel" >
+        delete from vm_alarm_lable_rel WHERE waring_order_id  = #{waringOrderId}
+    </delete>
+
+    <delete id="deleteLableRelBatch" >
+        delete from vm_alarm_lable_rel WHERE
+            waring_order_id in
+            <foreach collection="waringOrderIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            and lable_id in
+            <foreach collection="lableIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+
+    </delete>
+
+
+    <select id="getAlarmLableByIds" resultType="com.chinatower.event.entity.dto.AlarmLableRelDTO">
+
+        select rel.lable_id,rel.lable_name,rel.waring_order_id,rel.table_time,rel.lable_rel_id
+        from vm_alarm_lable_rel rel
+        <where>
+            <if test='waringOrderId != null and waringOrderId != ""'>
+                AND rel.waring_order_id = #{waringOrderId}
+            </if>
+            <if test='idList != null and idList.size() != 0'>
+                and rel.lable_id in
+                <foreach collection="idList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+
+    </select>
+
+
+    <select id="getAlarmLableByOrdId" resultType="com.chinatower.event.entity.dto.AlarmLableRelDTO">
+
+        select rel.lable_id,rel.lable_name,rel.waring_order_id,rel.table_time,rel.lable_rel_id
+        from vm_alarm_lable_rel rel
+        <where>
+            <if test='ordIdList != null and ordIdList.size() != 0'>
+                and rel.waring_order_id in
+                <foreach collection="ordIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+
+</mapper>

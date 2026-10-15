@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysMessagePermissionMapper">
+
+    <resultMap type="com.chinatower.platform.project.system.domain.SysMessagePermission" id="SysResult">
+    	<id     property="permissionId"      column="permission_id"      />
+        <result property="userId"    column="user_id"    />
+        <result property="permissionType"     column="permission_type"     />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectVo">
+        SELECT
+        permission_id,
+        user_id,
+        permission_type,
+        create_by,
+        create_time
+        FROM
+        sys_message_permission
+    </sql>
+
+    <!-- 查询条件 -->
+	<sql id="sqlwhereSearch">
+		<where>
+			<if test="userId !=null">
+				and user_id = #{userId}
+			</if>
+		</where>
+	</sql>
+
+    <select id="selectPermission" parameterType="Long" resultMap="SysResult">
+        <include refid="selectVo"/>
+        where  user_id = #{userId}
+    </select>
+
+
+</mapper>

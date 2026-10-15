@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysTenantInfoMapper">
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysTenantInfo" id="SysTenantInfoResult">
+        <result property="id"    column="id"    />
+        <result property="tenantId"    column="tenant_id"    />
+        <result property="tenantName"    column="tenant_name"    />
+        <result property="tenantDesc"    column="tenant_desc"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="provinceId"    column="province_id"    />
+        <result property="cityId"    column="city_id"    />
+        <result property="countyId"    column="county_id"    />
+        <result property="provinceName"    column="province_name"    />
+        <result property="cityName"    column="city_name"    />
+        <result property="countyName"    column="county_name"    />
+
+        <result property="isOperation"    column="is_operation"    />
+        <result property="status"    column="status"    />
+
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectSysTenantInfoVo">
+        select
+            t.id,
+            t.tenant_id,
+            t.tenant_name,
+            t.tenant_desc,
+            t.trade_info,
+            t.del_flag,
+            t.create_by,
+            t.create_time,
+            t.update_by,
+            t.update_time,
+        t.province_id,
+        t.city_id,
+        t.county_id,
+            t.is_operation,
+            t.status,
+            p.AREA_NAME as province_name,
+            c.AREA_NAME as city_name,
+            co.AREA_NAME as county_name
+        from sys_tenant_info t
+        left join sys_area p
+        on t.province_id = p.AREA_CODE
+        left join sys_area c
+        on t.city_id= c.AREA_CODE
+        left join sys_area co
+        on t.county_id= co.AREA_CODE
+    </sql>
+
+    <select id="selectSysTenantInfoList" parameterType="com.chinatower.system.api.request.tenant.QuTenantInfoRequest" resultMap="SysTenantInfoResult">
+        select DISTINCT
+            t.id,
+            t.tenant_id,
+            t.tenant_name,
+            t.tenant_desc,
+            t.trade_info,
+            t.del_flag,
+            t.create_by,
+            t.create_time,
+            t.update_by,
+            t.update_time,
+            t.province_id,
+            t.city_id,
+            t.county_id,
+            t.is_operation,
+            t.status,
+            p.AREA_NAME as province_name,
+            c.AREA_NAME as city_name,
+            co.AREA_NAME as county_name
+        from sys_tenant_info t
+        left join sys_area p
+        on t.province_id = p.AREA_CODE
+        left join sys_area c
+        on t.city_id= c.AREA_CODE
+        left join sys_area co
+        on t.county_id= co.AREA_CODE
+        <if test="platformCode != null  and platformCode != ''">
+        LEFT JOIN vm_order_customer t1 ON t.tenant_id = t1.tenant_id
+        </if>
+        <where>
+            t.del_flag = '0'
+            <if test="platformCode != null  and platformCode != ''"> AND t1.ord_status IN ( 0, 1, 2 ) AND t1.accept_node = #{platformCode} </if>
+            <if test="tenantId != null  and tenantId != ''"> and t.tenant_id like concat('%', #{tenantId}, '%')</if>
+            <if test="tenantName != null  and tenantName != ''"> and t.tenant_name like concat('%', #{tenantName}, '%')</if>
+            <if test="provinceCode != null  and provinceCode != ''"> and t.province_id = #{provinceCode}</if>
+            <if test="cityCode != null  and cityCode != ''"> and t.city_id = #{cityCode}</if>
+            <if test="countyCode != null  and countyCode != ''"> and t.county_id = #{countyCode}</if>
+            ${dataScope}
+        </where>
+    </select>
+
+    <select id="selectSysTenantInfoById" parameterType="Long" resultMap="SysTenantInfoResult">
+        <include refid="selectSysTenantInfoVo"/>
+        where t.id = #{id}
+    </select>
+
+    <select id="selectTenantUserByKeyword" parameterType="com.chinatower.platform.project.system.domain.dto.SwithUserDTO" resultType="com.chinatower.platform.project.system.domain.vo.TenantUserSelectVO">
+        SELECT DISTINCT
+            u.USER_NAME,
+            t.TENANT_ID,
+            t.TENANT_NAME
+        FROM
+        sys_user u
+        LEFT JOIN sys_tenant_info t ON u.TENANT_ID = t.TENANT_ID
+        WHERE u.user_type='2'  and is_tenant_admin=1
+        and   t.del_flag = '0' and u.DEL_FLAG = '0'
+        and (u.USER_NAME LIKE CONCAT( '%', #{keyword}, '%' )
+        OR t.tenant_name LIKE CONCAT( '%', #{keyword}, '%' )
+        OR u.tenant_id LIKE CONCAT('%',#{keyword},'%'))
+        ${dataScope}
+    </select>
+
+    <delete id="deleteSysTenantInfoByIds" parameterType="String">
+        delete from sys_tenant_info where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectAllSysTenantInfo" resultMap="SysTenantInfoResult">
+        <include refid="selectSysTenantInfoVo"/>
+        where t.del_flag = '0'
+    </select>
+
+    <select id="selectTenantInfoByTenantId" parameterType="string" resultMap="SysTenantInfoResult">
+        <include refid="selectSysTenantInfoVo"/>
+        where t.del_flag = '0'
+        <if test="tenantId != null  and tenantId != ''"> and t.tenant_id = #{tenantId}</if>
+    </select>
+    <select id="selectCountByTenantId" parameterType="string" resultType="int">
+        select count(*) from sys_tenant_info where del_flag = '0' and tenant_id = #{tenantId}
+    </select>
+    <select id="selectByTenantId" parameterType="string" resultType="com.chinatower.platform.entity.admin.SysTenantInfo">
+        select * from sys_tenant_info where del_flag = '0' and tenant_id = #{tenantId}
+    </select>
+
+    <!--铁塔视角使用 查看铁塔人员有权限的租户-->
+    <select id="selectTenantByDeptIds" parameterType="list" resultMap="SysTenantInfoResult">
+        select t.tenant_id, t.tenant_name, t.tenant_desc,
+            std.dept_id
+            from sys_tenant_info t, sys_dept std
+            where t.del_flag = '0' and t.tenant_id = std.tenant_id
+        <if test="deptIds != null">
+            and std.dept_id in
+            <trim suffixOverrides=" OR std.dept_id in()">
+                <foreach collection="deptIds" item="deptId" index="index" open="(" close=")">
+                    <if test="index != 0">
+                        <choose>
+                            <when test="index % 1000 == 999">) OR std.dept_id in (</when>
+                            <otherwise>,</otherwise>
+                        </choose>
+                    </if>
+                    #{deptId,jdbcType=VARCHAR}
+                </foreach>
+            </trim>
+        </if>
+    </select>
+
+    <select id="selectByTenantNameAuser"  parameterType="com.chinatower.platform.entity.admin.SysTenantInfo" resultMap="SysTenantInfoResult">
+        select a.tenant_id,a.tenant_name,b.user_id as id from  sys_tenant_info a left join sys_user b on a.tenant_id=b.tenant_id
+          where a.tenant_name like  CONCAT(CONCAT('%', #{tenantName}),'%') and b.is_tenant_admin='1'  ${dataScope}
+    </select>
+
+    <select id="selectByTenantIdAuser"  parameterType="com.chinatower.platform.entity.admin.SysTenantInfo" resultType="com.chinatower.system.api.resp.tenant.SysTenantInfoBaseResponse">
+        select a.tenant_id tenantId,a.tenant_name tenantName,b.user_id as id from  sys_tenant_info a left join sys_user b on a.tenant_id=b.tenant_id
+          where a.tenant_id like  CONCAT(CONCAT('%', #{tenantId}),'%') and b.is_tenant_admin='1' and b.DEL_FLAG = '0' ${dataScope}
+    </select>
+    <!--<update id="updateTradeInfoByTenantId">
+        update sys_tenant_info set trade_info = #{newTradeInfo} where tenant_id = #{tenantId}
+    </update>-->
+
+    <select id="selectTenantTradeByTenantId"  resultType="com.chinatower.platform.entity.admin.SysTenantTrade">
+        SELECT DISTINCT a.* from (
+             SELECT DISTINCT
+                 a.industry_code,
+                 a.app_ver_code,
+                 b.tenant_id
+             FROM
+                 vm_order_package b
+                     LEFT JOIN sys_industry_ver_conf a ON a.industry_code = b.industry_code AND a.app_ver_code = b.app_ver_code
+                     LEFT JOIN sys_industry_conf f ON a.industry_code = f.industry_code and f.delete_flag = 0
+             WHERE a.delete_flag = 0 and a.accept_node = #{platformCode}  and f.accept_node = #{platformCode}
+
+             UNION
+
+             SELECT DISTINCT
+                 a.industry_code,
+                 a.app_ver_code,
+                 c.tenant_id
+             FROM
+                 vm_order_package_his c
+                     LEFT JOIN sys_industry_ver_conf a ON a.industry_code = c.industry_code AND a.app_ver_code = c.app_ver_code
+                     LEFT JOIN sys_industry_conf f ON a.industry_code = f.industry_code and f.delete_flag = 0
+             WHERE   a.delete_flag = 0  and a.accept_node = #{platformCode}  and f.accept_node = #{platformCode}
+         ) a
+    </select>
+
+    <select id="selectAppVerCodeByTenId" resultType="com.chinatower.system.api.resp.SysIndustryViewRelResponse">
+
+        SELECT DISTINCT a.* from (
+
+        SELECT DISTINCT
+            a.industry_code,
+            f.industry_name,
+            a.app_ver_code,
+            a.app_ver_name,
+            a.img_url
+        FROM
+            sys_industry_ver_conf a
+        LEFT JOIN sys_industry_conf f ON a.industry_code = f.industry_code and a.accept_node = f.accept_node and f.delete_flag = 0
+        LEFT JOIN vm_order_package b ON a.industry_code = b.industry_code and a.accept_node = b.accept_node AND a.app_ver_code = b.app_ver_code
+        WHERE
+            b.tenant_id = #{tenantId} and a.delete_flag = 0
+        <if test="acceptNode != null and acceptNode != ''">
+            and a.accept_node = #{acceptNode}
+        </if>
+
+        UNION
+
+        SELECT DISTINCT
+            a.industry_code,
+            f.industry_name,
+            a.app_ver_code,
+            a.app_ver_name,
+            a.img_url
+        FROM
+            sys_industry_ver_conf a
+        LEFT JOIN sys_industry_conf f ON a.industry_code = f.industry_code and a.accept_node = f.accept_node and f.delete_flag = 0
+        LEFT JOIN vm_order_package_his c ON a.industry_code = c.industry_code and a.accept_node = c.accept_node AND a.app_ver_code = c.app_ver_code
+            WHERE c.tenant_id = #{tenantId} and a.delete_flag = 0
+        <if test="acceptNode != null and acceptNode != ''">
+            and a.accept_node = #{acceptNode}
+        </if>
+        ) a
+
+    </select>
+
+    <select id="selectLocalizationAppVerCodeByTenId" resultType="com.chinatower.system.api.resp.SysIndustryViewRelResponse">
+        SELECT DISTINCT a.* from (
+        SELECT DISTINCT
+        a.industry_code,
+        f.industry_name,
+        a.app_ver_code,
+        a.app_ver_name
+        FROM
+        sys_localization_industry_ver_conf a
+        LEFT JOIN sys_localization_industry_conf f ON a.industry_code = f.industry_code and a.accept_node = f.accept_node and f.delete_flag = 0
+        LEFT JOIN vm_order_package b ON a.industry_code = b.industry_code AND a.app_ver_code = b.app_ver_code and a.accept_node = b.accept_node
+        WHERE
+        b.tenant_id = #{tenantId} and a.delete_flag = 0 AND a.`accept_node` = #{acceptNode}
+
+        UNION
+
+        SELECT DISTINCT
+        a.industry_code,
+        f.industry_name,
+        a.app_ver_code,
+        a.app_ver_name
+        FROM
+        sys_localization_industry_ver_conf a
+        LEFT JOIN sys_localization_industry_conf f ON a.industry_code = f.industry_code and a.accept_node = f.accept_node and f.delete_flag = 0
+        LEFT JOIN vm_order_package_his c ON a.industry_code = c.industry_code AND a.app_ver_code = c.app_ver_code and a.accept_node = c.accept_node
+        WHERE c.tenant_id = #{tenantId} and a.delete_flag = 0 AND a.`accept_node` = #{acceptNode}
+        ) a
+    </select>
+
+    <update id="deleteByTenantId">
+        update sys_tenant_info set del_flag = 1 where tenant_id = #{tenantId}
+    </update>
+
+    <update id="updateSysTenantById" parameterType="com.chinatower.platform.entity.admin.SysTenantInfo">
+        update sys_tenant_info
+        <set>
+            <if test="param.cityId != null and param.cityId != ''">city_id = #{param.cityId},</if>
+            <if test="param.provinceId != null and param.provinceId != ''">province_id = #{param.provinceId},</if>
+            update_by = #{param.updateBy}, update_time = #{param.updateTime}
+        </set>
+        where tenant_id = #{param.tenantId}
+    </update>
+
+    <insert id="insertSysTenant" parameterType="com.chinatower.platform.entity.admin.SysTenantInfo" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into sys_tenant_info(
+        tenant_id,
+        <if test="param.tenantName != null and param.tenantName != ''">tenant_name,</if>
+        <if test="param.deptId != null and param.deptId != ''">dept_id,</if>
+        <if test="param.provinceId != null and param.provinceId != ''">province_id,</if>
+        <if test="param.cityId != null and param.cityId != ''">city_id,</if>
+        <if test="param.tradeInfo != null and param.tradeInfo != ''">trade_info,</if>
+        <if test="param.delFlag != null and param.delFlag != ''">del_flag,</if>
+        create_by, create_time
+        )values(
+        #{param.tenantId},
+        <if test="param.tenantName != null and param.tenantName != ''">#{param.tenantName},</if>
+        <if test="param.deptId != null and param.deptId != ''">#{param.deptId},</if>
+        <if test="param.provinceId != null and param.provinceId != ''">#{param.provinceId},</if>
+        <if test="param.cityId != null and param.cityId != ''">#{param.cityId},</if>
+        <if test="param.tradeInfo != null and param.tradeInfo != ''">#{param.tradeInfo},</if>
+        <if test="param.delFlag != null and param.delFlag != ''">#{param.delFlag},</if>
+        #{param.createBy}, #{param.createTime}
+        )
+    </insert>
+</mapper>

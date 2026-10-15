@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.analysis.modules.statistic.dao.UserStatisticDAO">
+
+    <sql id="queryCriteria_clonum">
+        <if test='queryStartTime != null and queryStartTime != "" '>
+            AND DATE_FORMAT(dataTable.login_time,'%Y-%m-%d') <![CDATA[>=]]> DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d')
+            AND DATE_FORMAT(dataTable.login_time,'%Y-%m-%d') <![CDATA[<=]]> DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+        </if>
+        <if test="orgIdList != null and orgIdList.size() > 0 ">
+            AND(
+            <foreach collection="orgIdList" item="deptId" index="index" open="" close="" separator="or">
+                (dataTable.dept_id = #{deptId} OR dataTable.dept_id
+                IN ( SELECT t.dept_id FROM sys_dept t WHERE INSTR(ANCESTORS, #{deptId})>0 ) )
+            </foreach>
+            )
+        </if>
+        <if test="userIdList != null and userIdList.size()>0 ">
+            AND dataTable.user_id in
+            <foreach collection="userIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+
+        ${dataScope}
+    </sql>
+
+    <select id="getCustomNum"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+             st.tenant_name AS "tenantName",
+             COUNT(1) AS "userTotalNum",
+             SUM(case when dataTable.`STATUS` = '0' then 1 else 0 end) AS "startUserNum",
+             SUM(case when dataTable.`STATUS` = '1' then 1 else 0 end) AS "stopUserNum"
+        FROM
+            sys_user dataTable
+            JOIN (WITH RECURSIVE cte AS (SELECT 1 AS n
+            UNION ALL
+            SELECT n + 1
+            FROM cte
+            WHERE n <![CDATA[<]]> 50)
+            SELECT u.user_id,
+            SUBSTRING_INDEX(SUBSTRING_INDEX(u.dept_id, ',', n), ',', -1) AS dept_id
+            FROM sys_user u
+            JOIN cte ON cte.n <![CDATA[<=]]> LENGTH(u.dept_id) - LENGTH(REPLACE(u.dept_id, ',', '')) + 1
+            WHERE u.del_flag = '0') ud ON dataTable.user_id = ud.user_id
+            LEFT JOIN sys_dept sd ON ud.dept_id = sd.dept_id and sd.del_flag = '0'
+            LEFT JOIN sys_tenant_info st ON dataTable.tenant_id = st.tenant_id
+            LEFT JOIN sys_industry_conf ic ON ic.industry_code = sd.INDUSTRY_CODE AND ic.delete_flag = 0
+            <if test='localNode != null and localNode != ""'>
+                and	ic.accept_node =#{localNode}
+            </if>
+        WHERE
+            dataTable.del_flag = '0' AND dataTable.USER_TYPE = '2'
+            ${dataScope}
+    </select>
+
+
+    <select id="getCustom"  resultType="java.lang.String"
+            parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+        dataTable.USER_ID AS 'userId'
+        FROM
+        sys_user dataTable
+        JOIN (WITH RECURSIVE cte AS (SELECT 1 AS n
+        UNION ALL
+        SELECT n + 1
+        FROM cte
+        WHERE n <![CDATA[<]]> 50)
+        SELECT u.user_id,
+        SUBSTRING_INDEX(SUBSTRING_INDEX(u.dept_id, ',', n), ',', -1) AS dept_id
+        FROM sys_user u
+        JOIN cte ON cte.n <![CDATA[<=]]> LENGTH(u.dept_id) - LENGTH(REPLACE(u.dept_id, ',', '')) + 1
+        WHERE u.del_flag = '0') ud ON dataTable.user_id = ud.user_id
+        LEFT JOIN sys_dept sd ON ud.dept_id = sd.dept_id and sd.del_flag = '0'
+
+        LEFT JOIN sys_tenant_info st ON dataTable.tenant_id = st.tenant_id
+        LEFT JOIN sys_industry_conf ic ON ic.industry_code = sd.INDUSTRY_CODE AND ic.delete_flag = 0
+        <if test='localNode != null and localNode != ""'>
+            and	ic.accept_node =#{localNode}
+        </if>
+        WHERE
+        dataTable.del_flag = '0' AND dataTable.USER_TYPE = '2'
+        ${dataScope}
+    </select>
+
+
+    <select id="getCustomDeptNum"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT count(dept_id) as "deptNum"
+        FROM sys_dept
+        WHERE del_flag = '0' and `STATUS` = '0'
+          and dept_id LIKE CONCAT(#{deptId},'%')
+    </select>
+
+
+
+    <select id="getCustomNumByDept"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            (
+                SELECT
+                     cast(SUM( user_num ) as DECIMAL)
+                FROM
+                    vm_statistics_dept_user
+                WHERE
+                    dept_id LIKE CONCAT( dataTable.dept_id, '%' )) AS "userNum",
+            dataTable.dept_id AS "deptId",
+            dataTable.dept_name AS "deptName"
+        FROM
+            vm_statistics_dept_user dataTable
+        WHERE
+            dataTable.dept_id LIKE CONCAT(#{deptId},'%')
+        <if test="orgIdList != null and orgIdList.size() > 0 ">
+            AND(
+            <foreach collection="orgIdList" item="item" index="index" open="" close="" separator="or">
+                (dataTable.dept_id = #{item} OR dataTable.dept_id
+                IN ( SELECT t.dept_id FROM sys_dept t WHERE INSTR(ANCESTORS, #{item})>0 ) )
+            </foreach>
+            )
+        </if>
+
+        GROUP BY
+            dataTable.dept_id
+        HAVING  userNum !=0
+        ORDER BY
+            userNum DESC,CONVERT(dataTable.dept_name USING GBK)
+    </select>
+
+
+    <select id="getLoginNumByHour"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT t1.loginTimeSlot,IFNULL(t2.num,0) AS "loginCount" FROM (
+        SELECT 0 AS `hour`,'0:00-1:00' AS 'loginTimeSlot' UNION
+        SELECT 1 AS `hour`,'1:00-2:00' AS 'loginTimeSlot' UNION
+        SELECT 2 AS `hour`,'2:00-3:00' AS 'loginTimeSlot' UNION
+        SELECT 3 AS `hour`,'3:00-4:00' AS 'loginTimeSlot' UNION
+        SELECT 4 AS `hour`,'4:00-5:00' AS 'loginTimeSlot' UNION
+        SELECT 5 AS `hour`,'5:00-6:00' AS 'loginTimeSlot' UNION
+        SELECT 6 AS `hour`,'6:00-7:00' AS 'loginTimeSlot' UNION
+        SELECT 7 AS `hour`,'7:00-8:00' AS 'loginTimeSlot' UNION
+        SELECT 8 AS `hour`,'8:00-9:00' AS 'loginTimeSlot' UNION
+        SELECT 9 AS `hour`,'9:00-10:00' AS 'loginTimeSlot' UNION
+        SELECT 10 AS `hour`,'10:00-11:00' AS 'loginTimeSlot' UNION
+        SELECT 11 AS `hour`,'11:00-12:00' AS 'loginTimeSlot' UNION
+        SELECT 12 AS `hour`,'12:00-13:00' AS 'loginTimeSlot' UNION
+        SELECT 13 AS `hour`,'13:00-14:00' AS 'loginTimeSlot' UNION
+        SELECT 14 AS `hour`,'14:00-15:00' AS 'loginTimeSlot' UNION
+        SELECT 15 AS `hour`,'15:00-16:00' AS 'loginTimeSlot' UNION
+        SELECT 16 AS `hour`,'16:00-17:00' AS 'loginTimeSlot' UNION
+        SELECT 17 AS `hour`,'17:00-18:00' AS 'loginTimeSlot' UNION
+        SELECT 18 AS `hour`,'18:00-19:00' AS 'loginTimeSlot' UNION
+        SELECT 19 AS `hour`,'19:00-20:00' AS 'loginTimeSlot' UNION
+        SELECT 20 AS `hour`,'20:00-21:00' AS 'loginTimeSlot' UNION
+        SELECT 21 AS `hour`,'21:00-22:00' AS 'loginTimeSlot' UNION
+        SELECT 22 AS `hour`,'22:00-23:00' AS 'loginTimeSlot' UNION
+        SELECT 23 AS `hour`,'23:00-24:00' AS loginTimeSlot) t1
+        LEFT JOIN
+        (SELECT login_time_slot, SUM(login_count) AS num
+        FROM vm_statistics_custom_hour dataTable
+        <where>
+        <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY login_time_slot
+        ORDER BY login_time_slot) t2 ON t1.`hour` = t2.login_time_slot
+        ORDER BY t1.`hour`
+    </select>
+
+    <select id="getCustomNumByLoginTime"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT cc.assigned_date AS 'loginDate', IFNULL(t.loginTypeName, 'web_manage') AS "loginTypeName", IFNULL( sum( t.loginCount ), 0 ) AS "loginCount" FROM(
+            (SELECT date_format(assigned_date,'%Y/%m/%d') assigned_date
+            FROM
+                (SELECT adddate('2019-01-01',t3.i*1000 + t2.i*100 + t1.i*10 + t0.i) assigned_date
+                FROM
+                (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+                (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+                (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+                (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3
+                ) c
+        <where>
+            <if test=' queryStartTime != null and queryStartTime != "" '>
+                and assigned_date between  DATE_FORMAT(#{queryStartTime}, '%Y-%m-%d') and DATE_FORMAT(#{queryEndTime}, '%Y-%m-%d')
+            </if>
+        </where>
+            ) cc
+        LEFT JOIN
+            (SELECT
+                DATE_FORMAT( dataTable.login_time, '%Y/%m/%d' ) AS "loginDate",
+                dataTable.login_type_name AS "loginTypeName",
+                sum( dataTable.login_count ) AS "loginCount"
+            FROM
+                vm_statistics_custom_type dataTable
+        <where>
+                <include refid="queryCriteria_clonum"></include>
+        </where>
+            GROUP BY
+                dataTable.login_type_name,
+                dataTable.login_time ) t
+        ON date_format(t.loginDate,'%Y/%m/%d') = cc.assigned_date)
+        GROUP BY t.loginTypeName, cc.assigned_date
+        ORDER BY date_format(cc.assigned_date,'%Y/%m/%d')
+    </select>
+
+    <select id="getLoginTypeByPcOs" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            IF(dataTable.pc_system_name IS NULL OR dataTable.pc_system_name = '', 'Unknown', dataTable.pc_system_name) AS "pcOsName" ,
+            IFNULL(cast(SUM(dataTable.login_count) as decimal (10, 0)), 0) AS "loginCount"
+        FROM
+            vm_statistics_custom_pc_system AS dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY
+        <trim suffixOverrides=",">
+            <foreach collection="systemTypeList" item="item" separator=",">
+                pc_system_name LIKE concat('%', #{item}, '%')
+            </foreach>
+        </trim>
+        ORDER BY "loginCount" DESC
+    </select>
+
+    <select id="getLoginNumRank" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            dataTable.tenant_id as tenantId,
+            dataTable.tenant_name as tenantName,
+            dataTable.login_name AS loginUserName,
+            dataTable.user_id as userId,
+            IFNULL(dataTable.nick_name, '') AS loginName,
+            IFNULL(cast(SUM(dataTable.login_count) as decimal (10, 0)), 0) AS loginCount
+        FROM
+            vm_statistics_custom_duration AS dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY dataTable.user_id
+        ORDER BY "loginCount" DESC
+    </select>
+
+    <select id="getLoginDurationRank" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            a.user_id as userId,
+            a.tenant_id as tenantId,
+            a.loginName,
+            a.onlineTime
+        FROM
+        (
+            SELECT
+                dataTable.user_id,
+                dataTable.tenant_id,
+                dataTable.nick_name AS loginName,
+                <if test='endType != null and endType == 0'>
+                    cast(SUM(dataTable.online_time) as decimal (10, 0)) AS onlineTime
+                </if>
+                <if test='endType != null and endType == 1'>
+                    cast(SUM(IFNULL(dataTable.web_online_time,0)) as decimal (10, 0)) AS onlineTime
+                </if>
+                <if test='endType != null and endType == 2'>
+                    cast(SUM(IFNULL(dataTable.app_online_time,0)) as decimal (10, 0)) AS onlineTime
+                </if>
+                <if test='endType != null and endType == 3'>
+                    cast(SUM(IFNULL(dataTable.wx_online_time,0)) as decimal (10, 0)) AS onlineTime
+                </if>
+            FROM
+                vm_statistics_user_online_time dataTable
+        <where>
+                <include refid="queryCriteria_clonum"></include>
+                <if test='endType != null and endType == 1'>
+                  AND dataTable.web_online_time IS NOT NULL AND web_online_time !='0'
+                </if>
+                <if test='endType != null and endType == 2'>
+                    AND dataTable.app_online_time IS NOT NULL AND app_online_time !='0'
+                </if>
+                <if test='endType != null and endType == 3'>
+                    AND dataTable.wx_online_time IS NOT NULL AND wx_online_time !='0'
+                </if>
+        </where>
+            GROUP BY dataTable.user_id
+        ) a
+        WHERE
+            a.onlineTime <![CDATA[>=]]> 60
+    </select>
+
+    <select id="getLoginTypeByAppOs" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            IF(dataTable.app_system_name IS NULL OR dataTable.app_system_name = 'Unknown', '未知', dataTable.app_system_name) AS "appOsName" ,
+            IFNULL(cast(SUM(login_count) as decimal (10, 0)), 0) AS "loginCount"
+        FROM
+            vm_statistics_custom_app_system AS dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY dataTable.app_system_name
+        ORDER BY "loginCount" DESC, dataTable.app_system_name DESC
+    </select>
+
+    <select id="getLoginTypeByPcBrower" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            IF(dataTable.browser_name IS NULL OR dataTable.browser_name = 'Unknown', '未知', dataTable.browser_name) AS "browserName",
+            IFNULL(SUM(dataTable.login_count), 0) AS "loginCount"
+        FROM
+            vm_statistics_custom_pc_browser AS dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY dataTable.browser_name
+        ORDER BY "loginCount" DESC, dataTable.browser_name DESC
+    </select>
+
+    <select id="getLoginTypeByPhoneModel" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            IF(dataTable.iphone_model_name IS NULL OR dataTable.iphone_model_name = 'Unknown', '未知', dataTable.iphone_model_name) AS "phoneModelName",
+            IFNULL(SUM(dataTable.login_count), 0) AS "loginCount"
+        FROM
+            vm_statistics_custom_app_model AS dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY dataTable.iphone_model_name
+        ORDER BY "loginCount" DESC, dataTable.iphone_model_name DESC
+    </select>
+
+    <select id="getLoginTypeByAppVersion" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            IF(dataTable.version_name IS NULL OR dataTable.version_name = 'Unknown', '未知', dataTable.version_name) AS "versionName",
+            IFNULL(SUM(dataTable.login_count), 0) AS "loginCount"
+        FROM
+            vm_statistics_custom_app_version AS dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY dataTable.version_name
+        ORDER BY "loginCount" DESC, dataTable.version_name DESC
+    </select>
+
+    <select id="getLoginSuccessRate" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            IFNULL(dataTable.login_status, '') AS "loginStatus",
+            cast(SUM(login_count) as decimal (10, 0)) AS "loginCount"
+        FROM
+            vm_statistics_custom_success_rate AS dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY
+            dataTable.login_status
+        ORDER BY "loginCount" DESC
+    </select>
+
+    <select id="getLoginFailureRate" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            IFNULL(dataTable.login_cause, '') AS "loginCause",
+            IFNULL(cast(SUM( fail_cause_num ) AS DECIMAL ( 10, 0 )), 0) AS "failCauseNum"
+        FROM
+            vm_statistics_custom_fail_cause AS dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY "loginCause"
+        ORDER BY "failCauseNum" DESC
+    </select>
+
+    <select id="getCustomNumByLoginStyle"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.CustomVO">
+        SELECT
+            IFNULL(dataTable.login_type_name, '') AS 'loginTypeName',
+            sum( IFNULL( dataTable.login_count, 0 ) ) AS 'loginCount'
+        FROM
+            vm_statistics_custom_type dataTable
+        <where>
+            <include refid="queryCriteria_clonum"></include>
+        </where>
+        GROUP BY
+            dataTable.login_type_name
+        ORDER BY "loginCount" DESC
+    </select>
+</mapper>

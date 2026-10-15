@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.videorecordplan.mapper.ChannelVideoPlanMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.video.modules.videorecordplan.dataobject.ChannelVideoPlanDO">
+        <id column="record_plan_id" property="recordPlanId" />
+        <result column="record_plan_name" property="recordPlanName" />
+        <result column="record_plan_status" property="recordPlanStatus" />
+        <result column="start_date" property="startDate" />
+        <result column="end_date" property="endDate" />
+        <result column="is_all_day" property="isAllDay" />
+        <result column="stream_type" property="streamType" />
+        <result column="storage_day" property="storageDay" />
+        <result column="is_audio" property="isAudio" />
+        <result column="device_code" property="deviceCode" />
+        <result column="channel_code" property="channelCode" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="creator" property="creator" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier" property="modifier" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="order_code" property="orderCode" />
+        <result column="package_code" property="packageCode" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        record_plan_id, record_plan_name, record_plan_status, start_date, end_date, is_all_day, stream_type, storage_type, storage_day, is_audio, device_code, channel_code, tenant_id, creator, create_time, modifier, update_time, delete_flag, order_code, package_code
+    </sql>
+    <select id="getChannelVideoPlanList"  resultType="com.chinatower.video.api.entity.ChannelVideoPlanVO"
+            parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        SELECT
+        t1.record_plan_id,t1.record_plan_name,t1.record_plan_status,t1.start_date,t1.end_date,
+        t1.is_all_day,t1.stream_type,t1.storage_type,t1.storage_day,t1.is_audio,
+        t1.device_code,t1.channel_code,t1.tenant_id,t1.creator,
+        t1.create_time,t1.modifier,t1.update_time,t1.delete_flag
+        FROM
+        vm_channel_video_plan_t t1
+        WHERE
+        t1.delete_flag = 0
+        and t1.device_code in (select d.device_code from vm_order_devices d where delete_flag = 0 and d.ord_status in (0, 1, 2) AND d.tenant_id = t1.tenant_id)
+        and t1.record_plan_status = 1
+        <if test='deviceCode != null and deviceCode != "" '>
+            AND t1.device_code= #{deviceCode}
+        </if>
+        <if test='channelCode != null and channelCode != "" '>
+            AND t1.channel_code= #{channelCode}
+        </if>
+        <if test='isAllDay != null and isAllDay != "" '>
+            AND t1.is_all_day= #{isAllDay}
+        </if>
+        ORDER BY create_time desc
+    </select>
+
+
+    <select id="getChannelVideoPlanMergeList"  resultType="com.chinatower.video.api.entity.ChannelVideoPlanVO"
+            parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        SELECT
+        t1.record_plan_id,t1.record_plan_name,t1.record_plan_status,t1.start_date,t1.end_date,
+        t1.is_all_day,t1.stream_type,t1.storage_type,t1.storage_day,t1.is_audio,
+        t1.device_code,t1.channel_code,t1.creator,
+        t1.create_time,t1.modifier,t1.update_time,t1.delete_flag
+        FROM
+        vm_channel_video_plan_merge_t t1
+        WHERE
+        t1.delete_flag = 0
+        <if test='deviceCode != null and deviceCode != "" '>
+            AND t1.device_code= #{deviceCode}
+        </if>
+        <if test='channelCode != null and channelCode != "" '>
+            AND t1.channel_code= #{channelCode}
+        </if>
+
+        ORDER BY create_time desc
+    </select>
+
+
+    <select id="getMaxChannelVideoPlan"  resultType="com.chinatower.video.api.entity.ChannelVideoPlanVO"
+            parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        select min(start_date) as "startDate",
+        max(end_date) as "endDate",
+        max(is_all_day) as "isAllDay",
+        max(is_audio) as "isAudio",
+        max(storage_day) as "storageDay",
+        max(stream_type) as "streamType",
+        max(storage_type) as "storageType",
+        max(record_plan_status) as "recordPlanStatus"
+        from vm_channel_video_plan_t
+        where device_code = #{deviceCode} and channel_code = #{channelCode}
+        and delete_flag = 0
+        and record_plan_status = 1
+    </select>
+
+
+    <select id="getTimeSections"  resultType="com.chinatower.video.api.entity.TimeSectionVO"
+            parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        select
+        day_of_week as "dayOfWeek",
+        start_time as "startTime",
+        end_time as "endTime"
+        from vm_plan_time_section_t
+        where record_plan_id = #{recordPlanId}
+        and delete_flag = 0
+    </select>
+
+
+
+    <select id="getAllTimeSections"  resultType="com.chinatower.video.api.entity.TimeSectionVO"
+            parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        select
+        day_of_week as "dayOfWeek",
+        start_time as "startTime",
+        end_time as "endTime"
+        from vm_plan_time_section_t
+        where record_plan_id = #{recordPlanId}
+        and delete_flag = 0
+    </select>
+
+
+    <select id="getTimeSectionsList"  resultType="com.chinatower.video.api.entity.TimeSectionVO"
+            parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        select distinct a.start_time as "startTime",a.end_time as "endTime"
+        from vm_plan_time_section_t a
+        left join vm_channel_video_plan_t b
+        on a.record_plan_id = b.record_plan_id
+        where a.delete_flag = 0
+        and b.delete_flag = 0
+        and b.device_code = #{deviceCode}
+        and b.record_plan_status = 1
+        and b.channel_code = #{channelCode}
+        and a.day_of_week = #{dayOfWeek}
+    </select>
+    <insert id="saveChannelVideoPlanMerge" parameterType="com.chinatower.video.modules.videorecordplan.dataobject.ChannelVideoPlanDO" >
+        insert into vm_channel_video_plan_merge_t(
+        record_plan_id,record_plan_name,record_plan_status,start_date,end_date,is_all_day
+        ,stream_type,storage_day,is_audio,device_code,channel_code,creator
+        ,create_time,modifier,update_time,delete_flag)
+        values (
+        #{recordPlanId} ,#{recordPlanName} ,#{recordPlanStatus},#{startDate},#{endDate},#{isAllDay}
+        ,#{streamType}  ,#{storageDay},#{isAudio},#{deviceCode},#{channelCode},#{creator}
+        ,#{createTime} ,#{modifier} ,#{updateTime},#{deleteFlag}
+        )
+    </insert>
+
+    <insert id="saveTimeSectionsMerge" parameterType="com.chinatower.video.modules.videorecordplan.dataobject.PlanTimeSectionDO" >
+        insert into vm_plan_time_section_merge_t(
+        record_plan_id,day_of_week,start_time,end_time,creator
+        ,create_time,modifier,update_time,delete_flag,device_code)
+        values (
+        #{recordPlanId} ,#{dayOfWeek} ,#{startTime},#{endTime},#{creator}
+        ,#{createTime} ,#{modifier} ,#{updateTime},#{deleteFlag},#{deviceCode}
+        )
+    </insert>
+
+    <insert id="saveTimeSectionsMergeBatch" parameterType="com.chinatower.video.modules.videorecordplan.dataobject.PlanTimeSectionDO" >
+        insert into vm_plan_time_section_merge_t(
+        record_plan_id,day_of_week,start_time,end_time,creator
+        ,create_time,modifier,update_time,delete_flag,device_code)
+        values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (
+            #{item.recordPlanId} ,#{item.dayOfWeek} ,#{item.startTime},#{item.endTime},#{item.creator}
+            ,#{item.createTime} ,#{item.modifier} ,#{item.updateTime},#{item.deleteFlag},#{item.deviceCode}
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteTimeSections" parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        delete from vm_plan_time_section_merge_t where record_plan_id = #{recordPlanId} and device_code = #{deviceCode}
+
+    </delete>
+
+    <delete id="deleteChannelVideoPlan" parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        delete from vm_channel_video_plan_merge_t where record_plan_id = #{recordPlanId} and device_code = #{deviceCode}
+
+    </delete>
+    <update id="updateChannelVideoPlanMerge" parameterType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+        update vm_channel_video_plan_merge_t
+        <set>
+            <if test='startDate != null and startDate != ""'>
+                start_date = #{startDate, jdbcType=VARCHAR},
+            </if>
+            <if test='endDate != null and endDate != ""'>
+                end_date = #{endDate, jdbcType=VARCHAR},
+            </if>
+            <if test='isAllDay != null '>
+                is_all_day = #{isAllDay},
+            </if>
+            <if test='storageDay != null '>
+                storage_day = #{storageDay},
+            </if>
+            <if test='isAudio != null '>
+                is_audio = #{isAudio},
+            </if>
+            <if test='recordPlanStatus != null '>
+                record_plan_status = #{recordPlanStatus},
+            </if>
+            <if test='deleteFlag != null '>
+                delete_flag = #{deleteFlag},
+            </if>
+            <if test='streamType != null '>
+                stream_type = #{streamType},
+            </if>
+            update_time=NOW()
+        </set>
+        where record_plan_id = #{recordPlanId} and delete_flag = 0 and device_code = #{deviceCode}
+    </update>
+
+	<select id="queryRecordPlanMergeParam" resultType="com.chinatower.video.api.entity.ChannelVideoPlanVO">
+    select device_code, channel_code, tenant_id
+    from vm_record_plan_merge_param
+    order by id asc
+    </select>
+
+    <select id="queryVideoPlanList" resultType="com.chinatower.video.api.entity.ChannelVideoPlanVO"
+            parameterType="com.chinatower.video.api.entity.BatchDeleteChannelVideoPlanVO">
+        SELECT t1.id, t1.record_plan_id, t1.record_plan_status,device_code,channel_code
+        FROM vm_channel_video_plan_t t1
+        WHERE t1.delete_flag = 0 AND t1.tenant_id = #{tenantId} AND t1.industry_code =#{industryCode}
+        <if test="recordPlanIdList!= null and recordPlanIdList.size() > 0 ">
+            AND t1.record_plan_id in
+            <foreach collection="recordPlanIdList" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        ORDER BY t1.create_time DESC
+    </select>
+    
+    <select id="queryRecordPlanDate" resultType="com.chinatower.video.modules.videorecordplan.dto.ChannelVideoPlanDTO">
+        SELECT
+        cvp.record_plan_id,
+        CASE
+        WHEN DATE_FORMAT(NOW(), '%Y-%m-%d') &gt; cvp.end_date
+        THEN DATE_SUB(cvp.end_date, INTERVAL cvp.storage_day-1 DAY)
+        WHEN DATE_SUB(DATE_FORMAT(NOW(), '%Y-%m-%d'), INTERVAL cvp.storage_day-1 DAY) <![CDATA[<=]]> cvp.start_date
+        THEN cvp.start_date
+        ELSE DATE_SUB(DATE_FORMAT(NOW(), '%Y-%m-%d'), INTERVAL cvp.storage_day-1 DAY)
+        END AS start_date,
+        CASE
+        WHEN DATE_FORMAT(NOW(), '%Y-%m-%d') &gt; cvp.end_date
+        THEN cvp.end_date
+        ELSE DATE_FORMAT(NOW(), '%Y-%m-%d')
+        END AS end_date,
+        pts.day_of_week
+        FROM
+        vm_channel_video_plan_t cvp
+        LEFT JOIN vm_plan_time_section_t pts ON cvp.record_plan_id = pts.record_plan_id
+        AND pts.delete_flag = '0'
+        WHERE
+        cvp.delete_flag = '0'
+        AND cvp.app_ver_code = #{appVerCode}
+        AND cvp.industry_code = #{industryCode}
+        AND cvp.tenant_id = #{tenantId}
+        and cvp.device_code in
+        (select d.device_code from vm_order_devices d where delete_flag = '0' AND d.tenant_id = cvp.tenant_id and d.ord_status IN ( 0, 1, 2 ))
+        and (
+        <foreach item="item" index="index" collection="devices" open="(" separator="or" close=")">
+            ( cvp.device_code = #{item.deviceCode} AND cvp.channel_code = #{item.channelCode} )
+        </foreach>
+        )
+        and (
+        (
+        STR_TO_DATE( cvp.start_date, '%Y-%m-%d' ) <![CDATA[<=]]> STR_TO_DATE( #{lastDayOfMonth}, '%Y-%m-%d' ) AND
+        STR_TO_DATE(
+        cvp.end_date, '%Y-%m-%d' ) >= STR_TO_DATE( #{firstDayOfMonth}, '%Y-%m-%d' ) )OR(STR_TO_DATE( cvp.start_date, '%Y-%m-%d'
+        )
+        <![CDATA[<=]]> STR_TO_DATE( #{nextLastDayOfMonth}, '%Y-%m-%d' ) AND STR_TO_DATE( cvp.end_date, '%Y-%m-%d' ) >=
+        STR_TO_DATE(
+        #{nextFirstDayOfMonth}, '%Y-%m-%d' ))
+        )
+    </select>
+
+    <delete id="batchDelPlan" parameterType="java.util.List">
+        DELETE FROM vm_channel_video_plan_t WHERE id IN
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <delete id="batchDelTimeSec" parameterType="com.chinatower.video.api.entity.BatchDeleteChannelVideoPlanVO">
+        DELETE FROM vm_plan_time_section_t WHERE industry_code = #{industryCode} AND record_plan_id IN
+        <foreach item="item" index="index" collection="recordPlanIdList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <update id="batchUpdatePlan" parameterType="com.chinatower.video.api.entity.BatchStartOrEndRecordPlanVO">
+        UPDATE vm_channel_video_plan_t
+        SET record_plan_status = #{startEndStatus}, modifier = #{modifier}, update_time = NOW()
+        WHERE id IN
+        <foreach item="item" index="index" collection="IdList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+</mapper>

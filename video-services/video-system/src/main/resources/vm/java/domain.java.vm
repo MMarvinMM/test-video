@@ -1,0 +1,40 @@
+package ${packageName}.domain;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+    #foreach ($import in $importList)
+import ${import};
+#end
+import lombok.Data;
+/**
+ * ${functionName}对象 ${tableName}
+ * @author ${author}
+ * @date ${datetime}
+ */
+#set($Entity="BaseEntity")
+@ApiModel("${functionName}")
+@Data
+public class ${ClassName} extends ${Entity}{
+
+    private static final long serialVersionUID = 1L;
+#foreach ($column in $columns)
+#if(!$table.isSuperColumn($column.javaField))
+
+#if($column.list)
+#set($parentheseIndex=$column.columnComment.indexOf("（"))
+#if($parentheseIndex != -1)
+#set($comment=$column.columnComment.substring(0, $parentheseIndex))
+#else
+#set($comment=$column.columnComment)
+#end
+    @ApiModelProperty(value = "${comment}")
+#if($parentheseIndex != -1)
+#elseif($column.javaType == 'Date')
+#else
+#end
+#end
+    private $column.javaType $column.javaField;
+
+#end
+#end
+}

@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.UavDeviceDAO">
+
+    <insert id="insertDeviceBatch" parameterType="com.chinatower.sync.consumer.item.UavDeviceReport">
+        insert into vm_uav_device_info_t
+        (device_code, device_name, device_status, province_code, city_code, county_code, town_code, location, longitude,
+        latitude, area_code, adm_code, manufacturer_code, model_code, app_mod_flag, delete_flag, creator, create_time,
+        modifier, update_time, device_type, site_code, hanging_height, access_node, uav_nest_code, camera_model_code,
+        uav_code, takeoff_weight, rc_number, register_code, uav_mount_model, access_type, access_protocols)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode}, #{item.deviceName}, #{item.resourceStatus}, #{item.provinceCode}, #{item.cityCode},
+            #{item.countyCode}, #{item.townCode}, #{item.address}, #{item.longitude}, #{item.latitude}, #{item.dept},
+            #{item.adminArea}, #{item.manufacturer}, #{item.deviceModel}, #{item.appModFlag}, #{item.delFlag},
+            #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.deviceType},
+            #{item.siteId}, #{item.hangingHeight}, #{item.locationCode}, #{item.bindNestDeviceCode}, #{item.cameraType},
+            #{item.uavCode}, #{item.takeoffWeight}, #{item.rcNumber}, #{item.registerCode}, #{item.uavMountModel}, #{item.accessType}, #{item.accessProtocols})
+        </foreach>
+    </insert>
+
+    <update id="updateDeviceBatch" parameterType="com.chinatower.sync.consumer.item.UavDeviceReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_device_info_t
+            set device_name = #{item.deviceName},
+            device_status = #{item.resourceStatus},
+            device_type = #{item.deviceType},
+            province_code = #{item.provinceCode},
+            city_code = #{item.cityCode},
+            county_code = #{item.countyCode},
+            town_code = #{item.townCode},
+            location = #{item.address},
+            longitude = #{item.longitude},
+            latitude = #{item.latitude},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            manufacturer_code = #{item.manufacturer},
+            model_code = #{item.deviceModel},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.delFlag},
+            update_time = #{item.updateTime},
+            creator = #{item.createBy},
+            create_time = #{item.createTime},
+            site_code = #{item.siteId},
+            hanging_height = #{item.hangingHeight},
+            access_node = #{item.locationCode},
+            uav_nest_code = #{item.bindNestDeviceCode},
+            camera_model_code = #{item.cameraType},
+            uav_code = #{item.uavCode},
+            takeoff_weight = #{item.takeoffWeight},
+            rc_number = #{item.rcNumber},
+            register_code = #{item.registerCode},
+            uav_mount_model = #{item.uavMountModel},
+            access_type = #{item.accessType},
+            access_protocols = #{item.accessProtocols}
+            where device_code = #{item.deviceCode}
+            <if test='item.updateTime != null'>
+                and (update_time <![CDATA[<=]]> #{item.updateTime} or update_time is null)
+            </if>
+        </foreach>
+    </update>
+
+    <select id="queryDeviceAppModInfo" resultType="com.chinatower.sync.consumer.item.DeviceAppModVO">
+        select device_code, IFNULL(app_mod_flag, 0) appModFlag
+        from vm_uav_device_info_t
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateDeviceModBatch" parameterType="com.chinatower.sync.consumer.item.UavDeviceReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_device_info_t
+            set
+            device_status = #{item.resourceStatus},
+            device_type = #{item.deviceType},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            manufacturer_code = #{item.manufacturer},
+            model_code = #{item.deviceModel},
+            delete_flag = #{item.delFlag},
+            update_time = #{item.updateTime},
+            access_node = #{item.locationCode},
+            uav_nest_code = #{item.bindNestDeviceCode},
+            camera_model_code = #{item.cameraType},
+            hanging_height = #{item.hangingHeight},
+            uav_code = #{item.uavCode},
+            takeoff_weight = #{item.takeoffWeight},
+            rc_number = #{item.rcNumber},
+            register_code = #{item.registerCode},
+            uav_mount_model = #{item.uavMountModel},
+            access_type = #{item.accessType},
+            access_protocols = #{item.accessProtocols}
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <select id="queryUavMountYgIdList" resultType="java.lang.Long">
+        select yg_id
+        from `vm_uav_mount_model_t`
+        where `delete_flag` = 0 and yg_id in
+        <foreach collection="ygIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryUavCameraParamCodeList" resultType="java.lang.String">
+        select distinct camera_model_code
+        from `vm_uav_camera_lens_param`
+        where `delete_flag` = 0 and camera_model_code in
+        <foreach collection="modelCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryUavCameraModelCodeList" resultType="java.lang.String">
+        select model_code
+        from `vm_uav_camera_model_t`
+        where `delete_flag` = 0 and model_code in
+        <foreach collection="modelCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryUavCameraModelYgIdList" resultType="java.lang.Long">
+        select yg_id
+        from vm_uav_camera_model_t
+        where delete_flag = 0 and yg_id in
+        <foreach collection="modelIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="insertMountModelBatch" parameterType="com.chinatower.sync.consumer.item.UavMountModelReport">
+        insert into vm_uav_mount_model_t
+        (yg_id, model_code, model_name, manufacturer_code, mount_type, support_function,
+        creator, create_time, modifier, update_time, delete_flag)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.id}, #{item.dictCode}, #{item.dictLabel}, #{item.manufacturerCode}, #{item.mountType}, #{item.supportFunction},
+            #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.delFlag})
+        </foreach>
+    </insert>
+
+    <insert id="insertCameraModelBatch" parameterType="com.chinatower.sync.consumer.item.UavCameraModelReport">
+        insert into vm_uav_camera_model_t
+        (yg_id, model_code, model_name, manufacturer_code, domain, type, sub_type, range_of_pan, range_of_yaw,
+         support_function, creator, create_time, modifier, update_time, delete_flag)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.id}, #{item.dictCode}, #{item.dictLabel}, #{item.manufacturerCode}, #{item.domain}, #{item.type},
+             #{item.subType}, #{item.rangeOfPan}, #{item.rangeOfYaw}, #{item.supportFunction}, #{item.createBy},
+             #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.delFlag})
+        </foreach>
+    </insert>
+
+    <insert id="insertCameraParamBatch" parameterType="com.chinatower.sync.consumer.item.UavCameraParamReport">
+        insert into vm_uav_camera_lens_param
+        (yg_id,camera_model_code, lens_name, spectral_type, sensor_size, pixel_size,
+        focal_length_type, zoom_conversion_coefficient, actual_focal_length_range, equivalent_focal_length_range, optical_zoom_range,
+        digital_zoom_range, color_palette_style, supporting_feature, creator, create_time, modifier, update_time, delete_flag)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.id},#{item.deviceUavCameraDictCode}, #{item.lensName}, #{item.spectralType}, #{item.sensorSize},
+             #{item.pixelSize}, #{item.focalLengthType}, #{item.zoomConversionCoefficient},
+             #{item.actualFocalLengthRange}, #{item.equivalentFocalLengthRange}, #{item.opticalZoomRange}, #{item.digitalZoomRange},
+             #{item.colorPaletteStyle}, #{item.supportingFeature}, #{item.createBy}, #{item.createTime}, #{item.updateBy},
+             #{item.updateTime}, '0')
+        </foreach>
+    </insert>
+
+    <update id="updateMountModelBatch" parameterType="com.chinatower.sync.consumer.item.UavMountModelReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_mount_model_t
+            set model_code = #{item.dictCode},
+            model_name = #{item.dictLabel},
+            manufacturer_code = #{item.manufacturerCode},
+            mount_type = #{item.mountType},
+            support_function = #{item.supportFunction},
+            creator = #{item.createBy},
+            create_time = #{item.createTime},
+            modifier = #{item.updateBy},
+            update_time = #{item.updateTime},
+            delete_flag = #{item.delFlag}
+            where yg_id = #{item.id}
+        </foreach>
+    </update>
+
+    <update id="updateCameraParamBatch" parameterType="com.chinatower.sync.consumer.item.UavCameraParamReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_camera_lens_param
+            set
+            camera_model_code = #{item.deviceUavCameraDictCode},
+            lens_name = #{item.lensName},
+            spectral_type = #{item.spectralType},
+            sensor_size = #{item.sensorSize},
+            pixel_size = #{item.pixelSize},
+            focal_length_type = #{item.focalLengthType},
+            zoom_conversion_coefficient = #{item.zoomConversionCoefficient},
+            actual_focal_length_range = #{item.actualFocalLengthRange},
+            equivalent_focal_length_range = #{item.equivalentFocalLengthRange},
+            optical_zoom_range = #{item.opticalZoomRange},
+            digital_zoom_range = #{item.digitalZoomRange},
+            color_palette_style = #{item.colorPaletteStyle},
+            supporting_feature = #{item.supportingFeature},
+            creator = #{item.createBy},
+            create_time = #{item.createTime},
+            modifier = #{item.updateBy},
+            update_time = #{item.updateTime},
+            delete_flag = #{item.delFlag}
+            where yg_id = #{item.id}
+        </foreach>
+    </update>
+
+    <update id="updateCameraModelBatch" parameterType="com.chinatower.sync.consumer.item.UavCameraModelReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_camera_model_t
+            set model_code = #{item.dictCode},
+            model_name = #{item.dictLabel},
+            manufacturer_code = #{item.manufacturerCode},
+            domain = #{item.domain},
+            type = #{item.type},
+            sub_type = #{item.subType},
+            range_of_pan = #{item.rangeOfPan},
+            range_of_yaw = #{item.rangeOfYaw},
+            support_function = #{item.supportFunction},
+            creator = #{item.createBy},
+            create_time = #{item.createTime},
+            modifier = #{item.updateBy},
+            update_time = #{item.updateTime},
+            delete_flag = #{item.delFlag}
+            where yg_id = #{item.id}
+        </foreach>
+    </update>
+
+    <select id="queryExistUavYgIdList" resultType="java.lang.String">
+        select yg_id
+        from vm_uav_device_model_t
+        where yg_id in
+        <foreach collection="ygIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryUavCameraParamYgIdList" resultType="java.lang.Long">
+        select yg_id
+        from vm_uav_camera_lens_param
+        where yg_id in
+        <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <insert id="insertUavModelBatch" parameterType="com.chinatower.sync.consumer.item.UavModelReport">
+        insert into vm_uav_device_model_t(
+        `yg_id`, `model_code`, `model_name`, `manufacturer_code`, `domain`,
+        `type`, `sub_type`, `aircraft_category`, `aircraft_type`,
+        `weight`, `support_camera`, `max_fly_time`, `max_level_speed`, `match_nest`,
+        `creator`, `create_time`, `modifier`, `update_time`, `delete_flag`
+        ) values
+        <foreach collection="list"  item="item" separator=",">
+            (
+            #{item.id}, #{item.dictCode}, #{item.dictLabel}, #{item.manufacturerCode}, #{item.domain},
+            #{item.type}, #{item.subType}, #{item.aircraftCategory}, #{item.aircraftType},
+            #{item.weight}, #{item.supportCamera}, #{item.maxFlyTime}, #{item.maxLevelSpeed}, #{item.matchNest},
+            #{item.createBy}, #{item.createTime}, #{item.updateBy},#{item.updateTime}, #{item.delFlag}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateUavModelBatch">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_device_model_t set
+            model_code = #{item.dictCode},
+            model_name =  #{item.dictLabel},
+            manufacturer_code = #{item.manufacturerCode},
+            domain = #{item.domain},
+            type = #{item.type},
+            sub_type = #{item.subType},
+            aircraft_category = #{item.aircraftCategory},
+            aircraft_type = #{item.aircraftType},
+            weight = #{item.weight},
+            support_camera = #{item.supportCamera},
+            max_fly_time = #{item.maxFlyTime},
+            max_level_speed = #{item.maxLevelSpeed},
+            match_nest = #{item.matchNest},
+            creator = #{item.createBy},
+            create_time = #{item.createTime},
+            modifier = #{item.updateBy},
+            update_time = #{item.updateTime},
+            delete_flag = #{item.delFlag}
+            where yg_id = #{item.id}
+        </foreach>
+    </update>
+
+    <delete id="deleteUavModelBatch">
+        delete from vm_uav_device_model_t
+        where yg_id in
+        <foreach collection="ygIdList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <delete id="deleteUavCameraParamById">
+        delete from `vm_uav_camera_lens_param`
+        where yg_id in
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="getAllUavModelYgId" resultType="java.lang.String">
+        select yg_id
+        from `vm_uav_device_model_t`
+    </select>
+
+    <update id="updateDeviceStatusBatch" parameterType="com.chinatower.sync.consumer.item.UavDeviceStatusReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_device_info_t
+            set
+            device_status = #{item.deviceStatus}
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <update id="updateUavDeviceLocationInfo" parameterType="com.chinatower.sync.consumer.item.UavCameraModelReport">
+        <foreach collection="locationInfoList" item="param" separator=";">
+            update vm_uav_device_info_t
+            set province_code = #{param.provinceCode},
+            city_code = #{param.cityCode},
+            county_code = #{param.countyCode},
+            town_code = #{param.townCode},
+            location = #{param.address},
+            latitude = #{param.latitude},
+            longitude = #{param.longitude},
+            update_time = now()
+            where
+            device_code = #{param.deviceCode}
+            and delete_flag = '0'
+        </foreach>
+    </update>
+
+    <select id="queryBindNestCodeByUavDeviceCode" resultType="com.chinatower.sync.consumer.item.UavDeviceReport">
+        select device_code,uav_nest_code as bindNestDeviceCode from vm_uav_device_info_t
+        where device_code in
+        <foreach collection="deviceCodes" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+
+    <select id="queryUavMountRelYgIdList" resultType="java.lang.Long">
+        select yg_id
+        from `vm_uav_mount_model_rel_t`
+        where `delete_flag` = 0 and yg_id in
+        <foreach collection="ygIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <insert id="insertMountModelRelBatch">
+        insert into vm_uav_mount_model_rel_t
+        (yg_id, device_code, uav_mount_model, mount_sn, create_time)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.id}, #{item.deviceCode}, #{item.mountDictCode}, #{item.mountSn}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <update id="updateMountModelRelBatch">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_mount_model_rel_t
+            set device_code = #{item.deviceCode},
+            uav_mount_model = #{item.mountDictCode},
+            mount_sn = #{item.mountSn},
+            create_time = #{item.createTime},
+            update_time = #{item.updateTime},
+            delete_flag = #{item.delFlag}
+            where yg_id = #{item.id}
+        </foreach>
+    </update>
+</mapper>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.DeviceBroadcastDAO">
+
+    <insert id="insertDeviceBatch" parameterType="com.chinatower.sync.consumer.item.DeviceBroadcastReport">
+        insert into vm_horn_device_info_t
+        (device_code, device_name, device_status, province_code, city_code, county_code, town_code, location, longitude,
+        latitude, area_code, adm_code, manufacturer_code, model_code, height, app_mod_flag, delete_flag, creator, modifier,
+        create_time, update_time, device_type, site_code, site_name, broadcast_resource_code, access_node)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode}, #{item.deviceName}, #{item.onlineStatus}, #{item.provinceCode}, #{item.cityCode},
+            #{item.countyCode}, #{item.townCode}, #{item.address}, #{item.longitude}, #{item.latitude}, #{item.dept},
+            #{item.adminArea}, #{item.manufacturer}, #{item.deviceModel}, #{item.hangingHeight}, #{item.appModFlag},
+            #{item.delFlag}, #{item.createBy}, #{item.updateBy}, DATE_FORMAT(#{item.createTime}, '%Y-%m-%d %H:%i:%S'),
+            DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'), #{item.catalogType}, #{item.siteCode}, #{item.siteName},
+            #{item.broadcastResourceCode}, #{item.locationCode})
+        </foreach>
+    </insert>
+
+    <insert id="insertDeviceBatchByAIot" parameterType="com.chinatower.sync.consumer.item.DeviceBroadcastReport">
+        insert into vm_horn_device_info_t
+        (device_code, device_name, device_status, province_code, city_code, county_code, town_code, location, longitude,
+        latitude, area_code, adm_code, manufacturer_code, model_code, height, app_mod_flag, delete_flag, creator, modifier,
+        create_time, update_time, device_type, site_code, site_name, broadcast_resource_code, access_node, device_version, status_version)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.deviceCode}, #{item.deviceName}, #{item.onlineStatus}, #{item.provinceCode}, #{item.cityCode},
+            #{item.countyCode}, #{item.townCode}, #{item.address}, #{item.longitude}, #{item.latitude}, #{item.dept},
+            #{item.adminArea}, #{item.manufacturer}, #{item.deviceModel}, #{item.hangingHeight}, #{item.appModFlag},
+            #{item.delFlag}, #{item.createBy}, #{item.updateBy}, DATE_FORMAT(#{item.createTime}, '%Y-%m-%d %H:%i:%S'),
+            DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'), #{item.catalogType}, #{item.siteCode}, #{item.siteName},
+            #{item.broadcastResourceCode}, #{item.locationCode}, #{item.deviceVersion}, #{item.statusVersion})
+        </foreach>
+    </insert>
+
+    <update id="updateDeviceBatch" parameterType="com.chinatower.sync.consumer.item.DeviceBroadcastReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_horn_device_info_t
+            set device_name = #{item.deviceName},
+            device_status = #{item.onlineStatus},
+            <if test='item.catalogType != null and item.catalogType != ""'>
+                device_type = #{item.catalogType},
+            </if>
+            site_code = #{item.siteCode},
+            site_name= #{item.siteName},
+            province_code = #{item.provinceCode},
+            city_code = #{item.cityCode},
+            county_code = #{item.countyCode},
+            town_code = #{item.townCode},
+            location = #{item.address},
+            longitude = #{item.longitude},
+            latitude = #{item.latitude},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            manufacturer_code = #{item.manufacturer},
+            model_code = #{item.deviceModel},
+            height = #{item.hangingHeight},
+            app_mod_flag = #{item.appModFlag},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.delFlag},
+            access_node = #{item.locationCode},
+            broadcast_resource_code = #{item.broadcastResourceCode},
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S')
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <update id="updateDeviceBatchByAIot" parameterType="com.chinatower.sync.consumer.item.DeviceBroadcastReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_horn_device_info_t
+            set device_name = #{item.deviceName},
+            <if test='item.catalogType != null and item.catalogType != ""'>
+                device_type = #{item.catalogType},
+            </if>
+            site_code = #{item.siteCode},
+            site_name= #{item.siteName},
+            province_code = #{item.provinceCode},
+            city_code = #{item.cityCode},
+            county_code = #{item.countyCode},
+            town_code = #{item.townCode},
+            location = #{item.address},
+            longitude = #{item.longitude},
+            latitude = #{item.latitude},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            manufacturer_code = #{item.manufacturer},
+            model_code = #{item.deviceModel},
+            height = #{item.hangingHeight},
+            app_mod_flag = #{item.appModFlag},
+            modifier = #{item.updateBy},
+            delete_flag = #{item.delFlag},
+            access_node = #{item.locationCode},
+            broadcast_resource_code = #{item.broadcastResourceCode},
+            update_time = DATE_FORMAT(#{item.updateTime}, '%Y-%m-%d %H:%i:%S'),
+            device_version = #{item.deviceVersion}
+            where device_code = #{item.deviceCode} and (device_version is null or device_version <![CDATA[<]]> #{item.deviceVersion})
+        </foreach>
+    </update>
+
+    <select id="queryDeviceAppModInfo" resultType="com.chinatower.sync.consumer.item.DeviceAppModVO">
+        select device_code, IFNULL(app_mod_flag, 0) appModFlag
+        from vm_horn_device_info_t
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryDeviceAppModInfoForAIot" resultType="com.chinatower.sync.consumer.item.DeviceAppModVO">
+        select device_code, IFNULL(app_mod_flag, 0) appModFlag, IFNULL(device_version, 0) deviceVersion, IFNULL(status_version, 0) statusVersion
+        from vm_horn_device_info_t
+        where device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateDeviceModBatch" parameterType="com.chinatower.sync.consumer.item.DeviceBroadcastReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_horn_device_info_t
+            set
+            device_status = #{item.onlineStatus},
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            access_node = #{item.locationCode},
+            delete_flag = #{item.delFlag}
+            where device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+    <update id="updateDeviceModBatchByAIot" parameterType="com.chinatower.sync.consumer.item.DeviceBroadcastReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_horn_device_info_t
+            set
+            area_code = #{item.dept},
+            adm_code = #{item.adminArea},
+            access_node = #{item.locationCode},
+            delete_flag = #{item.delFlag},
+            device_version = #{item.deviceVersion}
+            where device_code = #{item.deviceCode} and (device_version is null or device_version <![CDATA[<]]> #{item.deviceVersion})
+        </foreach>
+    </update>
+
+    <update id="updateHornDeviceBatchByAIot" parameterType="com.chinatower.sync.consumer.item.HornStatusReport">
+        <foreach collection="list" item="item" separator=";">
+            update
+            vm_horn_device_info_t m
+            set
+            m.device_status = #{item.onlineStatus},
+            m.status_version = #{item.statusVersion},
+            m.update_time = now()
+            where m.device_code = #{item.deviceCode} and (status_version is null or status_version <![CDATA[<]]> #{item.statusVersion})
+        </foreach>
+    </update>
+
+</mapper>

@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.PgLayerCommonMapper">
+    <select id="getLayerTypeFields" resultType="com.chinatower.platform.entity.gis.SysGisFieldsDTO">
+        select f.abbreviation,
+               LOWER(f.code)    code,
+               f.name,
+               f.remark,
+               f.type,
+               f.chart_length   chartLength,
+               f.not_null_flag  notNullFlag,
+               f.filter_type    filterType,
+               f.filter_index   filterIndex,
+               f.result_index   resultIndex,
+               f.identify_index identifyIndex
+        from sys_layer_type_fields f
+        where f.abbreviation = #{abbreviation}
+          and f.delete_flag = 0
+    </select>
+
+    <select id="getLayerTypeDictFields" resultType="com.chinatower.platform.entity.gis.SysGisFieldsDictDTO">
+        select f.abbreviation,
+               LOWER(f.filter_type)    filterType,
+                f.filter_attr_key filterAttrKey,
+                f.filter_attr_value filterAttrValue
+        from sys_layer_type_attr_filter f
+        where f.abbreviation = #{abbreviation}
+    </select>
+
+
+    <select id="getLayerTbbhField" resultType="java.lang.String">
+        select tbbh_ref
+        from sys_layer_type t
+        where t.abbreviation = #{abbreviation}
+          and t.delete_flag = 0 limit 1
+    </select>
+    <select id="getLayerAreaField" resultType="java.lang.String">
+        select area_ref
+        from sys_layer_type t
+        where t.abbreviation = #{abbreviation}
+          and t.delete_flag = 0 limit 1
+    </select>
+
+
+    <select id="getLayerAreaFromSysLayer" resultType="java.lang.Double">
+        SELECT
+            layer_area
+        FROM
+            sys_layer
+        WHERE
+            id = #{layerID}
+          AND delete_flag = 0
+    </select>
+
+    <select id="getAbbreviationLayerName" resultType="java.lang.String">
+        select
+            layer_name
+        from sys_layer l
+                 left join sys_layer_type t on l.layer_type_id = t.id
+        where t.abbreviation = #{abbreviation}
+          AND l.tenant_id = #{tenantId}
+          AND l.industry_code = #{industryCode}
+          and l.delete_flag = 0
+          and l.nest_flag = 1
+          and l.category = 1
+            limit 1
+    </select>
+
+    <insert id="createTable">
+        ${sql}
+    </insert>
+
+    <insert id="editLayer">
+        ALTER TABLE ${layerName} RENAME TO ${bakLayerName};
+        create table IF NOT EXISTS ${layerName} (like ${bakLayerName} INCLUDING indexes including constraints including comments including defaults);
+    </insert>
+
+    <insert id="editBackLayer">
+        DROP table IF EXISTS ${layerName};
+        ALTER TABLE ${bakLayerName} RENAME TO ${layerName};
+    </insert>
+
+
+    <insert id="createTableView">
+        CREATE VIEW view_${tableName} AS
+        SELECT gid, geom, bsm, minx, miny, maxx, maxy ${fields}
+        FROM ${tableName}
+    </insert>
+
+    <insert id="saveBatch">
+        ${sql}
+    </insert>
+
+    <select id="getLayerArea" resultType="java.lang.Double">
+        select sum(${field})
+        from ${tableName}
+    </select>
+
+    <update id="updateCalarea">
+        update ${tableName}
+        set minx   = ST_X(st_astext(st_pointn(ST_ExteriorRing(ST_Envelope(geom)), 1))),
+            miny   = ST_Y(st_astext(st_pointn(ST_ExteriorRing(ST_Envelope(geom)), 1))),
+            maxx   = ST_X(st_astext(st_pointn(ST_ExteriorRing(ST_Envelope(geom)), 3))),
+            maxy   = ST_Y(st_astext(st_pointn(ST_ExteriorRing(ST_Envelope(geom)), 3))),
+            calarea=st_area(st_transform(geom, CAST((FLOOR((ST_X(st_centroid(geom)) + 1.5) / 3) + 4488) AS INTEGER)))
+        where calarea is null;
+    </update>
+
+    <update id="updateTewcCalarea">
+        UPDATE ${tewc}
+        set ${areaCode} = (${tewc}.calarea / tkq.calarea * tkq.${areaCode})
+        from ${tkq} as tkq
+        where
+            ${tewc}.bsm = tkq.bsm
+          and tkq.gid is not null
+    </update>
+
+    <delete id="deleteBadData">
+        delete
+        from ${tableName}
+        where ${mustFieldSql}
+    </delete>
+
+    <select id="inspectionRoute" resultType="java.lang.String"
+            parameterType="com.chinatower.gis.api.entity.layer.GetXjxlFeaturesByIdsReq">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        SELECT
+        'FeatureCollection' AS type,
+        '212' AS id,
+        array_to_json(array_agg(f)) AS features
+        FROM (
+        SELECT
+        'Feature' AS type
+        <if test="req.returnGeometry">
+            ,ST_AsGeoJSON(geom)::json as geometry
+        </if>
+        ,(
+        SELECT
+        row_to_json(t)
+        FROM (
+        SELECT
+        <if test="!req.returnAllCols">
+            ${baseFields}
+        </if>
+        <if test="req.returnAllCols">
+            ${allFields}
+        </if>
+        ) AS t
+        ) AS properties
+        FROM ${tableName}
+        <where>
+            <if test="req.bsm != null and req.bsm != ''">
+                and bsm like concat('%',#{req.bsm},'%')
+            </if>
+            <if test="req.tbbhs != null and req.tbbhs.size() > 0">
+                and bsm in
+                <foreach collection="req.tbbhs" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        <if test="offset != null">
+            limit ${size} offset ${offset}
+        </if>
+        ) AS f
+        ) AS fc
+    </select>
+
+    <select id="inspectionRouteCount" resultType="java.lang.Integer">
+        select
+        count(1)
+        from ${tableName}
+        <where>
+            <if test="req.tbbhs != null and req.tbbhs.size() > 0">
+                and bsm in
+                <foreach collection="req.tbbhs" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getXlsjFeatures" resultType="java.lang.String">
+        SELECT
+        row_to_json(fc)
+        FROM (
+        SELECT
+        'FeatureCollection' AS type,
+        '212' AS id,
+        array_to_json(array_agg(f)) AS features
+        FROM (
+        SELECT
+        'Feature' AS type
+        <if test="req.returnGeometry">
+            ,ST_AsGeoJSON(geom)::json as geometry
+        </if>
+        ,(
+        SELECT
+        row_to_json(t)
+        FROM (
+        SELECT ${baseFields}
+        ) AS t
+        ) AS properties
+        FROM ${tableName}
+        <where>
+            <if test="req.tbbh != null and req.tbbh != ''">
+                and ${tbbh} like concat('%',#{req.tbbh},'%')
+            </if>
+        </where>
+        limit ${size} offset ${offset}
+        ) AS f
+        ) AS fc
+    </select>
+    <select id="getXlsjFeaturesCount" resultType="java.lang.Integer">
+        select
+        count(1)
+        from ${tableName}
+        <where>
+            <if test="req.tbbh != null and req.tbbh != ''">
+                and tbbh like concat('%',#{req.tbbh},'%')
+            </if>
+        </where>
+    </select>
+
+    <update id="updateSRID">
+        UPDATE ${tableName}
+        SET geom = ST_SetSRID(geom, 4326)
+        WHERE calarea is null;
+    </update>
+
+    <insert id="createTableName">
+        CREATE SEQUENCE ${tableName}_gid_seq INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+        create table IF NOT EXISTS ${tableName}
+        (
+            like ${exploreLayerName} INCLUDING indexes including constraints including comments including defaults
+        );
+        alter table ${tableName}
+        alter column "gid" set default nextval('${tableName}_gid_seq');
+    </insert>
+
+    <insert id="calculateLayer">
+        insert into ${tableName}(gid, geom, bsm, layertype, properties, ${fields})
+        select gid, st_erase(geom, #{collectingLayerName}) geom, bsm, 'tewc', properties, ${fields}
+        FROM ${exploreLayerName};
+    </insert>
+
+    <update id="updateExpire">
+        UPDATE ${tableName}
+        set expire = (case when yxqz > now() then 0 else 1 end)
+        where gid is not null;
+    </update>
+
+    <select id="updateExpireTableName" resultType="java.lang.String">
+        SELECT
+            l.layer_name
+        FROM
+            sys_layer l
+            LEFT JOIN sys_layer_type t on l.layer_type_id = t.id
+        WHERE
+            l.delete_flag = '0'
+          AND t.abbreviation in ('tkq','ckq','tewc')
+    </select>
+
+    <select id="tableNameList" resultType="java.util.Map">
+        select
+            gid,minx,miny,maxx,maxy,layertype,bsm,properties,${fields}
+        from ${tableName}
+        <if test="bsm != null and bsm != ''">
+            where
+                bsm like concat('%',#{bsm},'%')
+        </if>
+        limit ${size} offset ${offset}
+    </select>
+
+    <select id="layerClassifyAreaStatistics" resultType="com.chinatower.common.core.dto.bdm.LayerSlzyStatisticsDTO">
+        select
+        sum(t.count) as count,
+        sum(t.mj) as area,
+        t.code,
+        t.value
+        from
+        (
+            <foreach collection="vo.tableNames" item="tableName" separator="UNION ALL">
+                select
+                       #{vo.code} as code,
+                       ${vo.code} as value,
+                       count(1) as count,
+                       sum(${vo.mj}) as mj
+                from ${tableName}
+                group by ${vo.code}
+            </foreach>
+        ) t
+        group by t.value,t.code
+        order by area desc
+    </select>
+</mapper>

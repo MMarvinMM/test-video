@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.GisPgMapper">
+
+
+    <select id="altitudeHeightQuery" resultType="java.lang.Integer">
+        SELECT
+            ST_Value(rast, ST_Transform(ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)), 4326),3857))
+        FROM
+            t_dem
+        WHERE
+            ST_Intersects(rast, ST_Transform(ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)), 4326),3857))
+    </select>
+
+    <select id="altitudeHeightQuerys" resultType="com.chinatower.gis.api.entity.AltitudesRes">
+        SELECT
+        ST_Value(dm.rast, ps.geom) altitudesHeight,
+        regexp_replace(st_astext(ST_Transform(ps.geom,4326),7), '^[A-Za-z]*', '') lonLat
+        FROM
+        t_dem AS dm, (
+        SELECT
+        (st_dumppoints(ST_Transform(ST_SetSRID(st_geomfromewkt(#{LonLat}), 4326),3857))).geom
+        ) AS ps
+        WHERE
+        ST_Intersects(dm.rast, ps.geom)
+    </select>
+
+    <select id="getCameraCoord" parameterType="com.chinatower.gis.api.entity.CamaraDeviceParamsInfoVO" resultType="com.chinatower.event.entity.vo.CameraCoordRes">
+        select * from get_camera_coord(#{longitude}, #{latitude}, #{height}, #{locationLongitude}, #{locationLatitude}, #{pageSize}, #{radius}) where difheight &lt; 0 limit 1
+    </select>
+
+    <select id="selectTableNameCount" resultType="java.lang.Integer">
+        select
+            count(1)
+        from layer_info
+        where
+            layer_name in
+        <foreach collection="tableNames" item="tableName" open="(" separator="," close=")">
+            #{tableName}
+        </foreach>
+    </select>
+
+    <select id="layerXztbDlbmAreaRes" resultType="com.chinatower.gis.api.entity.layer.LayerXztbDlbmAreaRes">
+        SELECT
+            (case
+                 when dlbm = '0101' then '水田'
+                 when dlbm = '0102' then '水浇地'
+                 when dlbm = '0103' then '旱地'
+                end	) as codeName,
+            dlbm as codeValue,
+            CAST(sum(${areaCode}) as DECIMAL(18,2)) as area
+        FROM ${tableName}
+        where dlbm in ('0101','0102','0103')
+        GROUP BY dlbm
+    </select>
+
+    <select id="layerXztbGddbAreaRes" resultType="com.chinatower.gis.api.entity.layer.LayerXztbGddbAreaChildRes">
+        SELECT
+            gddb as value,
+            CAST(sum(${areaCode}) as DECIMAL(18,2))  as area
+        FROM ${tableName}
+        where gddb is not null
+        and dlbm in ('0101','0102','0103')
+        GROUP BY gddb
+    </select>
+    <select id="layerAnnualChangesRes" resultType="com.chinatower.gis.api.entity.layer.LayerAnnualChangesRes">
+        SELECT
+            t.year,
+            t.area
+        FROM (
+            <foreach collection="tableNames" item="dto" separator="UNION ALL">
+                select
+                #{dto.year} as year,
+                CAST(sum(${areaCode}) as DECIMAL(18,2))  as area
+                from ${dto.tableName}
+                <if test='type == "1"'>
+                    where dlbm in ('0101','0102','0103')
+                </if>
+            </foreach>
+        )t
+    </select>
+
+    <select id="gisSlopeAspectRes" resultType="com.chinatower.gis.api.entity.gis.GisSlopeAspectRes">
+        SELECT
+            ST_Length(ST_MakeLine(ST_MakePoint(long1, lat1), ST_MakePoint(long2, lat2))) as path_length,
+            ST_Line_Interpolate_Point(ST_MakeLine(ST_MakePoint(long1, lat1), ST_MakePoint(long2, lat2)), 0.5) as midpoint
+        FROM (
+                 SELECT
+                     ST_Y(ST_Line_Interpolate_Point(ST_MakeLine(ST_MakePoint(long1, lat1), ST_MakePoint(long2, lat2)), 0.5)) - ST_Y(ST_MakePoint(long1, lat1)) as slope
+                 FROM (
+                          SELECT
+                              (long2 - long1) as long_diff,
+                              (lat2 - lat1) as lat_diff
+                          FROM your_table
+                      ) as coordinates
+             ) as slope_coefficients
+    </select>
+    
+    <select id="selectGlobalLinCao" resultType="com.chinatower.gis.api.entity.gis.GisFireCombustibleRes">
+        SELECT
+            cb.dl fuelModelNumber,
+            cb.mc_1h moistureOneHour,
+            cb.mc_10h moistureTenHour,
+            cb.mc_100h moistureHundredHour,
+            cb.mc_herb moistureLiveHerbaceous,
+            cb.mc_woody moistureLiveWoody,
+            cb.crownratio crownRatio,
+            cb.canheight canopyHeight,
+            cb.cancover canopyCover,
+            cb.cd plantsDensity,
+            cb.tvdi plantsDegreeOfDrought
+        FROM global_caodi cb
+        WHERE ST_Contains(cb.geom, ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)),4326))
+    </select>
+
+    <select id="gisVegetationDataRes" resultType="com.chinatower.gis.api.entity.gis.GisVegetationDataRes">
+        SELECT
+            cb.dl fuelModelNumber,
+            cb.cd plantsDensity,
+            cb.tvdi plantsDegreeOfDrought
+        FROM global_caodi cb,
+            (SELECT ST_Buffer(ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)), 4326)::geography, ${distance})::geometry) t2
+        WHERE
+            st_intersects ( t2.ST_Buffer, cb.geom )
+    </select>
+
+    <select id="selectFireLevel" resultType="java.lang.Integer">
+        SELECT
+            cb.firelevel
+        FROM firelevel_now cb
+        WHERE ST_Contains(cb.geom, ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)),4326))
+    </select>
+
+    <select id="selectGlobalLinZhong" resultType="java.lang.Integer">
+        SELECT
+            cb.dl
+        FROM global_lindi cb
+        WHERE ST_Contains(cb.geom, ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)),4326))
+    </select>
+
+    <select id="selectSlope" resultType="java.lang.Double">
+        SELECT
+            ST_Value(rast, ST_Transform(ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)), 4326),3857))
+        FROM
+            ${tableName}
+        WHERE
+            ST_Intersects(rast, ST_Transform(ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)), 4326),3857))
+    </select>
+    <select id="selectAspect" resultType="java.lang.Double">
+        SELECT
+            ST_Value(rast, ST_Transform(ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)), 4326),3857))
+        FROM
+            ${tableName}
+        WHERE
+            ST_Intersects(rast, ST_Transform(ST_SetSRID(ST_MakePoint(CAST(#{lon} AS double precision),CAST(#{lat} AS double precision)), 4326),3857))
+    </select>
+
+    <select id="polygonClipRasterStats" parameterType="com.chinatower.gis.api.entity.GisSdkReq" resultType="java.util.Map">
+        SELECT
+            (STATS).*
+        FROM
+            (
+            SELECT
+            ST_SUMMARYSTATS (
+            ST_CLIP (
+            ST_UNION (RAST),
+            ST_TRANSFORM (
+            ST_GEOMFROMTEXT (
+            #{wkt},
+            4326
+            ),
+            3857
+            )
+            ),
+            1,
+            TRUE
+            ) AS STATS
+            FROM
+            T_DEM
+            WHERE
+            ST_INTERSECTS (
+            RAST,
+            ST_TRANSFORM (
+            ST_GEOMFROMTEXT (
+            #{wkt},
+            4326
+            ),
+            3857
+            )
+            )
+            ) AS FOO;
+
+    </select>
+
+    <select id="profileAnalysisOne" resultType="com.chinatower.gis.api.entity.gis.profileAnalysisOneRes">
+        SELECT
+            samplelength,ST_NearestValue(rast,t3.samplepoint) as nearestValue
+        FROM
+            (
+                SELECT
+                    ST_LINEINTERPOLATEPOINT (LINE, N::FLOAT8 / ${sampleNum}) AS SAMPLEPOINT,st_length(LINE)*N::FLOAT8 / ${sampleNum} as samplelength
+                FROM
+                    (
+                        SELECT
+                            ST_TRANSFORM (
+                                    ST_GEOMFROMTEXT (
+                                            #{wkt},
+                                            4326
+                                    ),
+                                    3857
+                            ) AS LINE,
+                            GENERATE_SERIES(0, ${sampleNum}) AS N
+                    ) AS T1
+            ) as t3
+                inner JOIN T_DEM T2 ON ST_INTERSECTS (st_Envelope(T2.RAST), T3.SAMPLEPOINT);
+
+
+    </select>
+
+    <select id="profileAnalysisTwo" resultType="com.chinatower.gis.api.entity.gis.profileAnalysisTwoRes">
+        SELECT
+            keylength, ST_NearestValue(rast,t3.keypoint) nearestValue
+        FROM
+            (
+                select (SAMPLEPOINT).geom as keypoint,ST_LineLocatePoint(line,(SAMPLEPOINT).geom)*st_length(line) as keylength from (SELECT
+                    ST_DumpPoints(line) AS SAMPLEPOINT,line
+                    FROM
+                    (
+                    SELECT
+                    ST_TRANSFORM (
+                    ST_GEOMFROMTEXT (
+                    #{wkt},
+                    4326
+                    ),
+                    3857
+                    ) AS LINE
+                    ) AS T1) as t4
+            ) as t3
+                LEFT JOIN T_DEM T2 ON ST_INTERSECTS (st_Envelope(T2.RAST), T3.keypoint);
+
+
+    </select>
+
+    <select id="measureDistanceLow" parameterType="com.chinatower.gis.api.entity.GisSdkReq" resultType="java.lang.Double">
+        SELECT
+            sum(LINELENGTH / COS(MEANSLOP * (PI() / 180)))
+        FROM
+            (
+                SELECT
+                    ST_LENGTH (
+                            ST_INTERSECTION (ST_ENVELOPE (tslope.RAST), TLINE.LINE)
+                    ) AS LINELENGTH,
+                    (ST_SummaryStats(tslope.RAST)).mean as MEANSLOP
+                FROM
+                    (
+                    SELECT
+                    ST_TRANSFORM (
+                    ST_GEOMFROMTEXT (
+                    #{wkt},
+                    4326
+                    ),
+                    3857
+                    ) AS LINE
+                    ) AS TLINE
+                    inner JOIN t_slope tslope ON ST_INTERSECTS (ST_ENVELOPE (tslope.RAST), TLINE.LINE)
+            ) AS FOO
+
+    </select>
+
+    <select id="measureDistanceHigh" parameterType="com.chinatower.gis.api.entity.GisSdkReq" resultType="java.lang.Double">
+        SELECT
+            sum(samplelength/cos(ST_NearestValue(rast,t3.samplepoint)* (PI() / 180)))
+        FROM
+            (
+                SELECT
+                    ST_LINEINTERPOLATEPOINT (LINE, N::FLOAT8 / ${sampleNum}) AS SAMPLEPOINT,st_length(LINE)::FLOAT8 / ${sampleNum} as samplelength
+                FROM
+                    (
+                        SELECT
+                            ST_TRANSFORM (
+                                    ST_GEOMFROMTEXT (
+                                            #{wkt},
+                                            4326
+                                    ),
+                                    3857
+                            ) AS LINE,
+                            GENERATE_SERIES(0, ${sampleNum}) AS N
+                    ) AS T1
+            ) as  t3
+                inner JOIN t_slope T2 ON ST_INTERSECTS (st_Envelope(T2.RAST), T3.SAMPLEPOINT);
+
+    </select>
+
+    <select id="measureAreaLow" parameterType="com.chinatower.gis.api.entity.GisSdkReq" resultType="java.lang.Double">
+        SELECT
+            sum(polygonarea / COS(MEANSLOP * (PI() / 180)))
+        FROM
+            (
+                SELECT
+                    ST_area (ST_TRANSFORM (
+                            ST_INTERSECTION (ST_ENVELOPE (tslope.RAST), Tpolygon.polygon)
+                        ,4527)) AS polygonarea,
+                    (ST_SummaryStats(tslope.RAST)).mean as MEANSLOP
+                FROM
+                    (
+                    SELECT
+                    ST_TRANSFORM (
+                    ST_GEOMFROMTEXT (
+                    #{wkt},
+                    4326
+                    ),
+                    3857
+                    ) AS polygon
+                    ) AS Tpolygon
+                    inner JOIN t_slope tslope ON ST_INTERSECTS (ST_ENVELOPE (tslope.RAST), Tpolygon.polygon)
+            ) AS FOO
+
+    </select>
+
+    <select id="measureAreaHigh" parameterType="com.chinatower.gis.api.entity.GisSdkReq" resultType="java.lang.Double">
+        SELECT
+            sum(polygonarea / COS(MEANSLOP * (PI() / 180)))
+        FROM
+            (
+                SELECT
+                    ST_area (ST_TRANSFORM (
+                            ST_INTERSECTION (ST_ENVELOPE (tslope.RAST), Tpolygon.polygon)
+                        ,4527)) AS polygonarea,
+                    (ST_SummaryStats(ST_Clip(tslope.RAST,Tpolygon.polygon))).mean as MEANSLOP
+                FROM
+                    (
+                    SELECT
+                    ST_TRANSFORM (
+                    ST_GEOMFROMTEXT (
+                    #{wkt},
+                    4326
+                    ),
+                    3857
+                    ) AS polygon
+                    ) AS Tpolygon
+                    inner JOIN t_slope tslope ON ST_INTERSECTS (ST_ENVELOPE (tslope.RAST), Tpolygon.polygon)
+            ) AS FOO
+    </select>
+</mapper>

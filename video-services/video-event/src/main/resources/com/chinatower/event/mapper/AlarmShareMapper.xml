@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.event.mapper.AlarmShareMapper">
+
+    <insert id="addAlarmShare" parameterType="com.chinatower.event.entity.dto.AlarmShareDTO">
+        insert into vm_alarm_share (share_id,share_alarm,creator,create_time)
+        values (#{shareId},#{shareAlarm},#{creator},NOW())
+    </insert>
+
+
+    <select id="getByIds" resultType="com.chinatower.event.entity.dto.AlarmShareDTO">
+        select share_alarm as alarmShare,share_id as shareId
+        from vm_alarm_share
+        where  share_id = #{shareId} ORDER BY create_time limit 1
+    </select>
+</mapper>

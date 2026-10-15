@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.DeviceInfoMapper">
+
+    <select id="getDeviceChannelByDeviceCodeList" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        select a.device_code, a.diagnose_time, min(b.channel_code) as channelCode
+            from vm_device_info_t a
+        join vm_channel_info_t b on a.device_code = b.device_code
+        where a.delete_flag = 0
+            and b.delete_flag = 0
+            and a.device_code in
+        <foreach item="deviceCode"  collection="deviceCodeList" open="(" separator="," close=")">
+            #{deviceCode}
+        </foreach>
+        GROUP BY a.device_code
+    </select>
+
+    <update id="batchUpdateDiagnoseInfo">
+        <foreach collection="list" item="item" separator=";">
+            update vm_device_info_t
+                <set>
+                    diagnose_result = #{item.diagnoseResult},
+                    diagnose_time = #{item.diagnoseTime}
+                </set>
+            where device_code = #{item.deviceCode}
+                and IFNULL(diagnose_time, '1970-01-01') <![CDATA[<]]> #{item.diagnoseTime}
+        </foreach>
+    </update>
+
+    <select id="getDeviceFactorListByChannelList" resultType="com.chinatower.sync.consumer.entity.ChannelDetectionFactorDTO">
+        select a.device_code, a.channel_code, a.factor_code, a.factor_name, a.factor_value, a.diagnose_time
+            from vm_channel_detection_factor_t a
+        where a.channel_code in
+            <foreach item="channelCode" collection="channelCodeList" open="(" separator="," close=")">
+                    #{channelCode}
+            </foreach>
+            and a.delete_flag = 0
+    </select>
+
+    <delete id="deleteDeviceFactorListByChannelList">
+      delete from vm_channel_detection_factor_t
+        where channel_code in
+            <foreach item="channelCode" collection="channelCodeList" open="(" separator="," close=")">
+                    #{channelCode}
+            </foreach>
+    </delete>
+
+    <insert id="batchInsertDetection">
+        insert into vm_channel_detection_factor_t (device_code, channel_code, factor_code, factor_name, factor_value, diagnose_time)
+            values
+        <foreach collection="list" item="item" separator="," >
+            (
+            #{item.deviceCode},
+            #{item.channelCode},
+            #{item.factorCode},
+            #{item.factorName},
+            #{item.factorValue},
+            #{item.diagnoseTime}
+            )
+        </foreach>
+    </insert>
+    
+    <update id="batchUpdateChannelDiaFile">
+        <foreach collection="list" item="item" separator=";">
+            update vm_channel_info_t
+            <set>
+                <if test='item.diagnoseImageUrl !=null and item.diagnoseImageUrl != ""'>
+                    diagnose_image_url =
+                    <choose>
+                        <when test="item.diagnoseImageUrl == 'delFlag'">
+                            null
+                        </when>
+                        <otherwise>
+                            #{item.diagnoseImageUrl}
+                        </otherwise>
+                    </choose>
+                </if>
+                <if test='item.diagnoseVideoUrl !=null and item.diagnoseVideoUrl != ""'>
+                    diagnose_video_url =
+                    <choose>
+                        <when test="item.diagnoseVideoUrl == 'delFlag'">
+                            null
+                        </when>
+                        <otherwise>
+                            #{item.diagnoseVideoUrl}
+                        </otherwise>
+                    </choose>
+                </if>
+            </set>
+            where channel_code = #{item.channelCode}
+        </foreach>
+
+    </update>
+</mapper>

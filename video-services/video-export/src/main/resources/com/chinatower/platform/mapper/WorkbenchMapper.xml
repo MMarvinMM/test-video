@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.WorkbenchMapper">
+    <select id="getEventNumByArea"  resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.AnalysisVO">
+        SELECT
+        province_id as "provinceId",
+        city_id as "cityId",
+        county_id as "countyId",
+        street_id as "streetId",
+        <choose>
+            <when test='areaBoxNum == 0'>
+                province_name as "regionName",
+                province_id as "areaCode",
+            </when>
+            <when test='areaBoxNum == 1'>
+                concat(province_name, city_name) as "regionName",
+                city_id as "areaCode",
+            </when>
+            <when test='areaBoxNum == 2'>
+                concat(province_name, city_name, county_name) as "regionName",
+                county_id as "areaCode",
+            </when>
+            <when test='areaBoxNum == 3'>
+                concat(province_name, city_name, county_name, street_name) as "regionName",
+                street_id as "areaCode",
+            </when>
+            <when test='areaBoxNum == null'>
+                region_name as "regionName",
+            </when>
+        </choose>
+        IFNULL(sum( warning_num ),0) as num
+        FROM
+        vm_statistics_event_area dataTable
+        where dataTable.county_id is not null
+        ${dataScope}
+        <if test='dimensionFlag == "1" '>
+            AND `year` = YEAR(CURDATE())
+        </if>
+        <if test='dimensionFlag == "2" '>
+            AND `year` = YEAR(CURDATE())
+            AND `month` = MONTH(CURDATE())
+        </if>
+        <if test='dimensionFlag == "3" '>
+            AND DATE_FORMAT(create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(CURDATE(),interval 1 DAY) ,'%Y-%m-%d')
+        </if>
+        <if test='dimensionFlag == "4" '>
+            AND `year` = YEAR(CURDATE())
+            AND `month` = MONTH(CURDATE())
+            AND `day` = DAY(CURDATE())
+        </if>
+        <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+            AND create_date >= #{queryStartTime} AND create_date <![CDATA[<=]]> #{queryEndTime}
+        </if>
+        <if test="provinceId != null and provinceId != '' ">
+            AND province_id = #{provinceId}
+        </if>
+        <if test="cityId != null and cityId != '' ">
+            AND city_id = #{cityId}
+        </if>
+        <if test="countyId != null and countyId != '' ">
+            AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+        </if>
+        <if test="areaBoxNum != null">
+            GROUP BY
+            <choose>
+                <when test='areaBoxNum == 0'>
+                    province_id
+                </when>
+                <when test='areaBoxNum == 1'>
+                    city_id
+                </when>
+                <when test='areaBoxNum == 2'>
+                    county_id
+                </when>
+                <when test='areaBoxNum == 3'>
+                    street_id
+                </when>
+            </choose>
+        </if>
+        <if test="areaBoxNum == null">
+            GROUP BY
+                province_id,
+                city_id,
+                county_id,
+                street_id
+        </if>
+        order by num desc
+    </select>
+
+    <select id="getInitDevTypeYearMonth" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.StatisticsVO">
+        SELECT dataTable.warning_type_id "typeId",SUM(dataTable.warning_num) num,
+        SUM(dataTable.ai_num) "aiNum", SUM(dataTable.judge_num) "judgeNum", SUM(dataTable.real_num) "realNum",
+        SUM(dataTable.false_num) "falseNum"
+        FROM vm_statistics_event_type dataTable
+        <where>
+            <if test='dimensionFlag == "1" '>
+                AND DATE_FORMAT(dataTable.create_date ,'%Y') = DATE_FORMAT(CURDATE() ,'%Y')
+            </if>
+            <if test='dimensionFlag == "2" '>
+                AND DATE_FORMAT(dataTable.create_date ,'%Y-%m') = DATE_FORMAT(CURDATE() ,'%Y-%m')
+            </if>
+            <if test='dimensionFlag == "3" '>
+                AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(CURDATE(),interval 1 DAY) ,'%Y-%m-%d')
+            </if>
+            <if test='dimensionFlag == "4" '>
+                AND DATE_FORMAT(dataTable.create_date,'%Y-%m-%d') = DATE_FORMAT(CURDATE() ,'%Y-%m-%d')
+            </if>
+            <if test='queryStartTime != null and queryStartTime != "" '>
+                AND dataTable.create_date >= #{queryStartTime}
+                AND dataTable.create_date <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            <if test="provinceId != null and provinceId != '' ">
+                AND LEFT(dataTable.county_id,2) = LEFT(#{provinceId},2)
+            </if>
+            <if test="cityId != null and cityId != '' ">
+                AND LEFT(dataTable.county_id,4) = LEFT(#{cityId},4)
+            </if>
+            <if test="countyId != null and countyId != '' ">
+                AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+            </if>
+            ${dataScope}
+        </where>
+        GROUP BY dataTable.warning_type_id
+        ORDER BY num DESC,"typeId" DESC
+    </select>
+
+
+
+    <select id="getAlarmType" resultType="java.util.Map">
+        SELECT type_value as "typeId",type_name as "typeName" FROM sys_alarm_type
+    </select>
+
+    <select id="getAlarmTypeById" resultType="java.lang.String">
+        SELECT type_name as "typeName" FROM sys_alarm_type
+        where type_value = #{typeId}
+        limit 1
+    </select>
+
+    <select id="getIndustryNameById" resultType="java.lang.String">
+            SELECT industry_name as "industryName" FROM sys_industry_conf
+        where industry_code = #{industryCode}
+    </select>
+
+
+    <select id="getEventNumByHour"  resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.AnalysisVO">
+        SELECT t1.label,IFNULL(t2.num,0) AS num FROM (
+        SELECT 0 AS `hour`,'0:00-1:00' AS label UNION
+        SELECT 1 AS `hour`,'1:00-2:00' AS label UNION
+        SELECT 2 AS `hour`,'2:00-3:00' AS label UNION
+        SELECT 3 AS `hour`,'3:00-4:00' AS label UNION
+        SELECT 4 AS `hour`,'4:00-5:00' AS label UNION
+        SELECT 5 AS `hour`,'5:00-6:00' AS label UNION
+        SELECT 6 AS `hour`,'6:00-7:00' AS label UNION
+        SELECT 7 AS `hour`,'7:00-8:00' AS label UNION
+        SELECT 8 AS `hour`,'8:00-9:00' AS label UNION
+        SELECT 9 AS `hour`,'9:00-10:00' AS label UNION
+        SELECT 10 AS `hour`,'10:00-11:00' AS label UNION
+        SELECT 11 AS `hour`,'11:00-12:00' AS label UNION
+        SELECT 12 AS `hour`,'12:00-13:00' AS label UNION
+        SELECT 13 AS `hour`,'13:00-14:00' AS label UNION
+        SELECT 14 AS `hour`,'14:00-15:00' AS label UNION
+        SELECT 15 AS `hour`,'15:00-16:00' AS label UNION
+        SELECT 16 AS `hour`,'16:00-17:00' AS label UNION
+        SELECT 17 AS `hour`,'17:00-18:00' AS label UNION
+        SELECT 18 AS `hour`,'18:00-19:00' AS label UNION
+        SELECT 19 AS `hour`,'19:00-20:00' AS label UNION
+        SELECT 20 AS `hour`,'20:00-21:00' AS label UNION
+        SELECT 21 AS `hour`,'21:00-22:00' AS label UNION
+        SELECT 22 AS `hour`,'22:00-23:00' AS label UNION
+        SELECT 23 AS `hour`,'23:00-24:00' AS label) t1
+        LEFT JOIN
+        (SELECT warning_hour, SUM(warning_num) AS num
+        FROM vm_statistics_event_hour dataTable
+        <where>
+            <if test='dimensionFlag == "1" '>
+                AND `year` = YEAR(CURDATE())
+            </if>
+            <if test='dimensionFlag == "2" '>
+                AND `year` = YEAR(CURDATE())
+                AND `month` = MONTH(CURDATE())
+            </if>
+            <if test='dimensionFlag == "3" '>
+                AND DATE_FORMAT(create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(CURDATE(),interval 1 DAY) ,'%Y-%m-%d')
+            </if>
+            <if test='dimensionFlag == "4" '>
+                AND `year` = YEAR(CURDATE())
+                AND `month` = MONTH(CURDATE())
+                AND `day` = DAY(CURDATE())
+            </if>
+            <if test='queryStartTime != null and queryStartTime != "" '>
+                AND create_date >= #{queryStartTime} AND create_date <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            <if test="provinceId != null and provinceId != '' ">
+                AND LEFT(dataTable.county_id,2) = LEFT(#{provinceId},2)
+            </if>
+            <if test="cityId != null and cityId != '' ">
+                AND LEFT(dataTable.county_id,4) = LEFT(#{cityId},4)
+            </if>
+            <if test="countyId != null and countyId != '' ">
+                AND (dataTable.county_id = #{countyId} or dataTable.province_id = #{countyId} or dataTable.city_id = #{countyId})
+            </if>
+            ${dataScope}
+        </where>
+        GROUP BY warning_hour
+        ORDER BY warning_hour) t2 ON t1.`hour` = t2.warning_hour
+        ORDER BY t1.`hour`
+    </select>
+
+    <select id="getAlarmByCode" resultType="String" parameterType="com.chinatower.analysis.api.entity.AnalysisVO">
+        select AREA_NAME
+        from sys_area
+        where DEL_FLAG = '0'
+        AND AREA_CODE = #{areaCode}
+    </select>
+
+    <select id="getAlarmByLevel" resultType="String" parameterType="com.chinatower.analysis.api.entity.AnalysisVO">
+        select AREA_LEVEL
+        from sys_area
+        where DEL_FLAG = '0'
+          AND AREA_CODE = #{areaCode}
+    </select>
+
+</mapper>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderServiceRelMapper">
+
+    <select id="getAreaInfo" resultType="com.chinatower.platform.entity.order.OrderServiceRelVO">
+        SELECT DISTINCT aa.AREA_CODE        AS countyCode,
+        aa.AREA_NAME       AS countyName,
+        aa.AREA_PARENT_CODE AS cityCode,
+        aa.AREA_PARENT_NAME AS cityName,
+        bb.AREA_PARENT_CODE AS proviceCode,
+        bb.AREA_PARENT_NAME AS provinceName
+        FROM sys_area aa
+        LEFT JOIN sys_area bb ON aa.AREA_PARENT_CODE = bb.AREA_CODE
+        WHERE aa.DEL_FLAG = '0'
+        and aa.AREA_CODE in
+        <foreach item="areaCode" index="index" collection="areaCodes" open="(" separator="," close=")">
+            #{areaCode}
+        </foreach>
+    </select>
+
+    <update id="cancelByOrderCode">
+        update vm_order_services_rel
+        set ord_status = 3, update_time = now()
+        where order_code = #{orderCode} and ord_status in (0,1,2);
+    </update>
+</mapper>

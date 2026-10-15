@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.videopreset.mapper.VideoPresetMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.video.modules.videopreset.dataobject.VideoPresetDO">
+        <id column="id" property="id"/>
+        <result column="preset_id" property="presetId"/>
+        <result column="preset_name" property="presetName"/>
+        <result column="preset_code" property="presetCode"/>
+        <result column="move_speed" property="moveSpeed"/>
+        <result column="pan" property="pan"/>
+        <result column="tilt" property="tilt"/>
+        <result column="zoom" property="zoom"/>
+        <result column="img_url" property="imgUrl"/>
+        <result column="device_code" property="deviceCode"/>
+        <result column="channel_code" property="channelCode"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="user_code" property="userCode"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="order_code" property="orderCode"/>
+        <result column="delete_flag" property="deleteFlag"/>
+        <result column="creator" property="creator"/>
+        <result column="modifier" property="modifier"/>
+        <result column="industry_code" property="industryCode"/>
+        <result column="app_ver_code" property="appVerCode"/>
+        <result column="is_guard" property="isGuard"/>
+        <result column="stay_seconds" property="staySeconds"/>
+        <result column="snapshot_cycle" property="snapshotCycle"/>
+        <result column="snapshot_day" property="snapshotDay"/>
+        <result column="snapshot_time" property="snapshotTime"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, preset_id, preset_name, preset_code, move_speed, pan, tilt, zoom, img_url, device_code, channel_code, tenant_id,
+            user_code, create_time, order_code, delete_flag, is_guard, stay_seconds, industry_code, app_ver_code, update_time, creator,
+            modifier, modify_time, snapshot_cycle, snapshot_day, snapshot_time, is_algorithm_identify, algorithm_code
+    </sql>
+    <delete id="deleteVideoPresetByCompositeKeys">
+        DELETE FROM
+            vm_video_preset
+        WHERE
+            preset_id = #{presetId}
+          AND
+            device_code = #{deviceCode}
+    </delete>
+    <delete id="deleteBatchVideoPresetByCompositeKeys">
+        DELETE FROM vm_video_preset
+        WHERE preset_id IN
+        <foreach collection="presets" index="index" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        AND
+            device_code = #{deviceCode}
+    </delete>
+
+    <select id="getImgUrl" resultType="java.lang.String">
+        SELECT description
+        FROM vm_enum_info_t
+        WHERE delete_flag = '1'
+          AND enum_type_id = '88'
+          AND enum_code = '1'
+    </select>
+    <select id="selectPTZByIdList" resultType="com.chinatower.video.api.entity.AlgorithmParamPresetVO">
+        SELECT preset_id presetId,pan,tilt,zoom
+        FROM vm_video_preset
+        WHERE delete_flag = 0
+        <if test='industryCode != null and industryCode != "" '>
+            AND industry_code = #{industryCode}
+        </if>
+          /*AND preset_id in*/
+            AND (preset_id, device_code) in
+        <foreach collection="pos" index="index" open="(" close=")" separator="," item="p">
+            (#{p.id}, #{p.deviceCodes})
+        </foreach>
+    </select>
+
+    <select id="getPresetImg" resultType="com.chinatower.video.modules.videopreset.dataobject.VideoPresetDO">
+        SELECT img_url,pan,tilt,zoom from vm_video_preset where delete_flag=0
+        <if test='channelCode != null and channelCode !=""'>
+            and channel_code = #{channelCode}
+        </if>
+        <if test='presetId != null and presetId !=0'>
+            and preset_id = #{presetId}
+        </if>
+        <if test='tenantId != null and tenantId !=""'>
+            and tenant_id = #{tenantId}
+        </if>
+        ORDER BY update_time desc LIMIT 1
+    </select>
+
+    <update id="updateByPresetId" parameterType="com.chinatower.video.api.entity.PresetDTO">
+        update vm_video_preset
+        SET pan=#{pan},
+            tilt=#{tilt},
+            zoom=#{zoom}
+        where
+            preset_id = #{presetId}
+        AND
+            device_code = #{deviceCode}
+    </update>
+
+    <update id="saveGuard" parameterType="com.chinatower.video.api.entity.GuardDTO">
+        UPDATE vm_video_preset
+        SET delete_flag = 0,
+            is_guard = '1',
+            update_time = now(),
+            user_code = #{userCode},
+            preset_name = #{guardName},
+            stay_seconds = #{staySeconds}
+        WHERE
+            preset_id = #{presetId}
+        AND
+            device_code = #{deviceCode}
+    </update>
+
+    <update id="resetPreset" parameterType="com.chinatower.video.api.entity.GuardDTO">
+        UPDATE vm_video_preset
+        SET is_guard = '0',
+            update_time = now(),
+            stay_seconds = null
+        WHERE preset_id != #{presetId}
+          AND device_code = #{deviceCode}
+    </update>
+
+    <select id="hasOtherUserGuard" parameterType="com.chinatower.video.api.entity.GuardDTO" resultType="java.lang.Integer">
+        SELECT
+            count(DISTINCT t1.device_code)
+        FROM
+            vm_video_preset t1
+        LEFT JOIN vm_order_devices t2 ON t1.device_code = t2.device_code
+        and t1.tenant_id = t2.tenant_id
+        WHERE
+            t1.is_guard = '1'
+        AND t1.delete_flag = 0
+        AND t2.ord_status IN (0, 1, 2)
+        AND t1.tenant_id != #{tenantId}
+        AND t1.device_code = #{deviceCode}
+    </select>
+
+    <update id="stopGuard" parameterType="com.chinatower.video.api.entity.GuardDTO">
+        UPDATE vm_video_preset
+          SET is_guard = '2'
+        WHERE preset_id = #{presetId}
+          AND device_code = #{deviceCode}
+    </update>
+
+    <update id="updateAlgorithmImg" parameterType="com.chinatower.video.modules.videopreset.dataobject.VideoPresetDO">
+        update vm_algorithm_config set img = #{imgUrl} where preset_id = #{presetId} AND delete_flag = '0' AND device_code = #{deviceCode}
+    </update>
+    <update id="updateVideoPresetByCompositeKeys">
+        UPDATE vm_video_preset
+        <set>
+            <if test='isAlgorithmIdentify != null and isAlgorithmIdentify == "1"'>
+                is_algorithm_identify = #{isAlgorithmIdentify},
+                algorithm_code = #{algorithmCode},
+                double_img_analysis = #{doubleImgAnalysis},
+            </if>
+            <if test='isAlgorithmIdentify != null and isAlgorithmIdentify == "0"'>
+                is_algorithm_identify = #{isAlgorithmIdentify},
+                algorithm_code = NULL,
+                double_img_analysis = NULL,
+            </if>
+            <if test="presetId != null">preset_id = #{presetId},</if>
+            <if test="presetName != null">preset_name = #{presetName},</if>
+            <if test="presetCode != null">preset_code = #{presetCode},</if>
+            <if test="moveSpeed != null">move_speed = #{moveSpeed},</if>
+            <if test="pan != null">pan = #{pan},</if>
+            <if test="tilt != null">tilt = #{tilt},</if>
+            <if test="zoom != null">zoom = #{zoom},</if>
+            <if test="imgUrl != null">img_url = #{imgUrl},</if>
+            <if test="deviceCode != null">device_code = #{deviceCode},</if>
+            <if test="channelCode != null">channel_code = #{channelCode},</if>
+            <if test="tenantId != null">tenant_id = #{tenantId},</if>
+            <if test="userCode != null">user_code = #{userCode},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="orderCode != null">order_code = #{orderCode},</if>
+            <if test="deleteFlag != null">delete_flag = #{deleteFlag},</if>
+            <if test="isGuard != null">is_guard = #{isGuard},</if>
+            <if test="staySeconds != null">stay_seconds = #{staySeconds},</if>
+            <if test="industryCode != null">industry_code = #{industryCode},</if>
+            <if test="appVerCode != null">app_ver_code = #{appVerCode},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="creator != null">creator = #{creator},</if>
+            <if test="modifier != null">modifier = #{modifier},</if>
+            <if test="modifyTime != null">modify_time = #{modifyTime},</if>
+            <if test="snapshotCycle != null">snapshot_cycle = #{snapshotCycle},</if>
+            <if test="snapshotDay != null">snapshot_day = #{snapshotDay},</if>
+            <if test="snapshotTime != null">snapshot_time = #{snapshotTime}</if>
+        </set>
+        WHERE
+            preset_id = #{presetId}
+        AND
+            device_code = #{deviceCode}
+    </update>
+
+    <select id="getPresetName" parameterType="com.chinatower.video.api.entity.AddPresetReq" resultType="java.lang.String">
+        SELECT
+            preset_name
+        FROM
+            vm_video_preset
+        WHERE
+            tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND device_code = #{deviceCode}
+          AND channel_code = #{channelCode}
+          AND preset_name LIKE CONCAT(#{presetName}, '%')
+          AND delete_flag = 0
+        ORDER BY
+            preset_name DESC
+    </select>
+    <select id="selectByCombinedIndex"
+            resultType="com.chinatower.video.modules.videopreset.dataobject.VideoPresetDO">
+        SELECT *
+        FROM vm_video_preset
+        WHERE preset_id = #{presetId} AND device_code = #{deviceCode}
+    </select>
+
+    <select id="getPresetId" resultType="java.lang.Integer">
+        SELECT id from vm_video_preset where delete_flag = 0 and preset_id = #{presetId} AND device_code = #{deviceCode}
+    </select>
+
+    <select id="selectByIdAndDeviceCode" resultType="com.chinatower.video.modules.videopreset.dataobject.VideoPresetDO">
+        SELECT
+        <include refid="Base_Column_List"/>
+        from vm_video_preset where preset_id = #{presetId} AND device_code = #{deviceCode}
+    </select>
+
+
+    <select id="getOtherGuardInfo" resultType="com.chinatower.video.api.entity.GuardDTO">
+        SELECT
+        device_code,channel_code,preset_id,preset_name as "guardName",stay_seconds
+        from vm_video_preset
+        where is_guard = '1'
+        AND preset_id != #{presetId}
+        AND device_code = #{deviceCode}
+    </select>
+    <select id="otherGuardList" resultType="com.chinatower.video.api.entity.GuardDTO">
+        SELECT
+            t1.*
+        FROM
+            vm_video_preset t1
+                LEFT JOIN vm_order_devices t2 ON t1.device_code = t2.device_code
+                and t1.tenant_id = t2.tenant_id
+        WHERE
+            t1.is_guard = '1'
+          AND t1.delete_flag = 0
+          AND t2.ord_status IN (0, 1, 2)
+          AND t1.tenant_id != #{tenantId}
+          AND t1.device_code = #{deviceCode}
+    </select>
+    <select id="queryGuardCount" resultType="com.chinatower.video.api.entity.GuardDTO">
+        SELECT
+            DISTINCT t1.device_code,
+                     t1.tenant_id,
+                     t1.user_code,
+                     t1.industry_code
+        FROM
+            vm_video_preset t1
+                LEFT JOIN vm_order_devices t2 ON t1.device_code = t2.device_code
+                and t1.tenant_id = t2.tenant_id
+        WHERE
+            t1.is_guard = '1'
+          AND t1.delete_flag = 0
+          AND t2.ord_status IN (0, 1, 2)
+          AND t1.device_code = #{deviceCode}
+    </select>
+
+    <select id="queryPresetInfoBatch" resultType="com.chinatower.video.api.entity.PresetDTO">
+        SELECT
+            preset_id,preset_name,device_code
+        FROM
+            vm_video_preset
+        WHERE
+            delete_flag = 0
+          AND (device_code,preset_id) in
+        (
+        <foreach collection="list" item="param" separator=",">
+            (#{param.deviceCode},#{param.presetId})
+        </foreach>
+        )
+    </select>
+
+    <select id="queryChannelInfoBatch" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        SELECT
+        dev.channel_code,
+        ( CASE WHEN length( IFNULL( t.channel_name, '' )) = 0 THEN dev.channel_name ELSE t.channel_name END ) AS channelName
+        FROM
+        vm_channel_info_t dev
+        LEFT JOIN (
+        SELECT DISTINCT
+        tdr.device_code,
+        tdr.channel_code,
+        tdr.channel_name
+        FROM
+        vm_tenant_device_channel_rel_t tdr
+        WHERE
+        ( tdr.device_code, tdr.channel_code, tdr.tenant_id, tdr.industry_code ) IN
+            (
+            <foreach collection="list" item="param" separator=",">
+                (#{param.deviceCode},#{param.channelCode},#{param.tenantId},#{param.industryCode})
+            </foreach>
+            )
+        ) t ON t.device_code = dev.device_code
+        AND t.channel_code = dev.channel_code
+        WHERE
+        dev.delete_flag = '0'
+        AND ( dev.device_code, dev.channel_code ) IN
+        (
+        <foreach collection="list" item="param" separator=",">
+            (#{param.deviceCode},#{param.channelCode})
+        </foreach>
+        )
+    </select>
+
+    <select id="queryDeviceInfoBatch" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        SELECT
+            device_code,
+            longitude,
+            latitude
+        FROM
+            vm_device_info_t
+        WHERE
+            device_code IN (
+                <foreach collection="list" item="param" separator=",">
+                    #{param.deviceCode}
+                </foreach>
+            )
+    </select>
+
+    <select id="queryPresetSnapshotList"
+            resultType="com.chinatower.video.modules.videopreset.dataobject.VideoPresetSnapshotVO">
+        select t.id,t.preset_id,t.device_code,vdi.device_name,t.channel_code,vci.channel_name,t.preset_name,t.snapshot_cycle,t.snapshot_day as snapshotDay,
+        CASE WHEN EXISTS(SELECT 1 FROM vm_order_algorithm_config WHERE order_code = vod.order_code AND delete_flag = 0 AND algorithm_type = 1) THEN val_cfg.algorithm_name ELSE val_ord.algorithm_name END algorithmName,
+        case when t.snapshot_cycle = 1 then '每天'
+             when t.snapshot_cycle = 2 then '每周'
+             when t.snapshot_cycle = 3 then '每月'
+        else '无' end snapshotCycleName,t.snapshot_time,
+        CASE WHEN EXISTS(SELECT 1 FROM vm_order_algorithm_config WHERE order_code = vod.order_code AND delete_flag = 0 AND algorithm_type = 1) THEN oac.algorithm_code ELSE oral.algorithm_code END algorithm_code,
+        t.tenant_id,t.creator,t.create_time,t.modifier,t.update_time,
+        t.double_img_analysis, CASE WHEN EXISTS(SELECT 1 FROM vm_order_algorithm_config WHERE order_code = vod.order_code AND delete_flag = 0 AND algorithm_type = 1) THEN val_cfg.extend_json ELSE val_ord.extend_json END extend_json
+        from vm_video_preset t
+        left join vm_channel_info_t vci on vci.channel_code = t.channel_code AND vci.device_code = t.device_code
+        left join vm_device_info_t vdi on vdi.device_code = t.device_code
+        left JOIN vm_order_devices vod ON vod.device_code = t.device_code and vod.tenant_id = t.tenant_id AND t.industry_code = vod.industry_code
+        left join vm_order_algorithm_config oac ON oac.tenant_id = vod.tenant_id AND oac.order_code = vod.order_code AND oac.device_code = vod.device_code AND oac.algorithm_code = t.algorithm_code AND oac.algorithm_type = 1 AND oac.delete_flag = 0
+        left join vm_order_algorithms oral ON oral.tenant_id = vod.tenant_id AND oral.order_code = vod.order_code AND oral.package_code = vod.package_code AND oral.algorithm_code = t.algorithm_code AND oral.delete_flag = 0 AND oral.ord_status IN (0,1,2)
+        left join vm_algorithm_info_t val_cfg on val_cfg.algorithm_code = oac.algorithm_code
+        left join vm_algorithm_info_t val_ord on val_ord.algorithm_code = oral.algorithm_code
+        where vod.ord_status in (0,1,2) and vod.delete_flag = 0 and t.snapshot_cycle != '0' and snapshot_time is not null and snapshot_time != ''
+        ${dataScope}
+        <if test='channelName!= null and channelName != "" '>
+            AND vci.channel_name like CONCAT('%',#{channelName},'%')
+        </if>
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND t.device_code like CONCAT('%',#{deviceCode},'%')
+        </if>
+        <if test='deviceName!= null and deviceName != "" '>
+            AND vdi.device_name like CONCAT('%',#{deviceName},'%')
+        </if>
+        <if test='presetName!= null and presetName != "" '>
+            AND t.preset_name like CONCAT('%',#{presetName},'%')
+        </if>
+        <if test='algorithmCodeList != null and algorithmCodeList.size() > 0'>
+            AND (CASE WHEN EXISTS(SELECT 1 FROM vm_order_algorithm_config WHERE order_code = vod.order_code AND delete_flag = 0 AND algorithm_type = 1) THEN oac.algorithm_code ELSE oral.algorithm_code END) in
+            <foreach collection="algorithmCodeList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <choose>
+            <when test="orderBy == 'createTime'">
+                order by t.create_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+            </when>
+            <when test="orderBy == 'updateTime'">
+                order by t.update_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+            </when>
+            <otherwise>
+                order by t.create_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <update id="updateDeviceRegistration">
+        UPDATE vm_device_registration
+        SET
+        registration_status = '0',
+        registration_switch = '0',
+        registration_info = NULL,
+        modifier = 'preset',
+        update_time = NOW()
+        WHERE device_code = #{deviceCode}
+        AND channel_code = #{channelCode}
+        AND preset_id = #{presetId}
+    </update>
+
+    <delete id="deleteRegistrationInfo" >
+        DELETE FROM vm_device_registration
+        WHERE device_code = #{deviceCode}
+            AND channel_code = #{channelCode}
+            AND preset_id = #{presetId}
+    </delete>
+    <update id="deletePresetSnapshotList">
+        UPDATE vm_video_preset set snapshot_cycle=0,snapshot_day = NULL,snapshot_time = NULL,algorithm_code = NULL,is_algorithm_identify='0'
+        where id in
+        <foreach collection="idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <update id="deletePresetSnapshot">
+            UPDATE vm_video_preset set snapshot_cycle=0,snapshot_day = NULL,snapshot_time = NULL,algorithm_code = NULL,is_algorithm_identify='0',double_img_analysis = NULL where id = #{id}
+    </update>
+
+    <update id="updatePresetSnapshotList">
+        <foreach collection="presetSnapshotList" item="item" index="index" open="" close="" separator=";">
+            UPDATE vm_video_preset
+            <set>
+                <if test='item.isAlgorithmIdentify != null and item.isAlgorithmIdentify == "1"'>
+                    is_algorithm_identify = #{item.isAlgorithmIdentify},
+                    algorithm_code = #{item.algorithmCode},
+                    double_img_analysis = #{item.doubleImgAnalysis},
+                </if>
+                <if test='item.isAlgorithmIdentify != null and item.isAlgorithmIdentify == "0"'>
+                    is_algorithm_identify = #{item.isAlgorithmIdentify},
+                    algorithm_code = NULL,
+                    double_img_analysis = NULL,
+                </if>
+                <if test='item.updateTime != null'>update_time = #{item.updateTime},</if>
+                <if test='item.modifier != null and item.modifier != ""'>modifier = #{item.modifier},</if>
+                <if test='item.snapshotCycle != null and item.snapshotCycle != ""'>snapshot_cycle = #{item.snapshotCycle},</if>
+                <if test='item.snapshotDay != null and item.snapshotDay != ""'>snapshot_day = #{item.snapshotDay},</if>
+                <if test='item.snapshotTime != null and item.snapshotTime != ""'>snapshot_time = #{item.snapshotTime}</if>
+            </set>
+            WHERE
+            preset_id = #{item.presetId}
+            AND
+            device_code = #{item.deviceCode}
+        </foreach>
+    </update>
+
+
+    <select id="getDeviceInfo" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        SELECT
+            device_code,
+            longitude,
+            latitude,
+            access_node
+        FROM
+            vm_device_info_t
+        WHERE
+            device_code = #{deviceCode}
+    </select>
+    <select id="getPresetSnapshotTime" resultType="java.lang.String">
+        SELECT snapshot_time FROM vm_video_preset WHERE device_code = #{deviceCode} and preset_id = #{presetId} and snapshot_cycle != '0'
+    </select>
+
+    <select id="getAiAlarmType" resultType="com.chinatower.event.dataobject.AlarmTypeDO">
+        SELECT DISTINCT
+            sat.alarm_type_id AS alarmTypeId,
+            sat.type_name AS typeName,
+            sat.icon AS icon,
+            sat.type_value AS typeValue,
+            sat.alarm_source AS alarmSource
+        FROM
+            vm_order_algorithms t1
+                INNER JOIN vm_algorithm_info_t t2 ON t1.algorithm_code = t2.algorithm_code
+                INNER JOIN vm_algorithm_alarm al ON t2.algo_min_type_code = al.algo_min_type
+                INNER JOIN sys_alarm_type sat ON al.alarm_type = sat.type_value
+        WHERE
+            sat.delete_flag = 0
+          AND sat.alarm_source = '1'
+          AND t2.delete_flag = 0
+          AND al.delete_flag = 0
+          AND t1.delete_flag = 0
+          AND t1.ord_status IN ( 0, 1, 2 )
+          AND t1.tenant_id = #{tenantId}
+          and t1.industry_code = #{industryCode}
+        ORDER BY
+            sat.alarm_type_id ASC
+    </select>
+
+    <!-- 根据租户、订单、设备查询受理节点(accept_node) -->
+    <select id="selectAcceptNodeByOrderDevice" resultType="java.lang.String">
+        SELECT accept_node
+        FROM vm_order_devices
+        WHERE delete_flag = 0
+          AND tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND device_code = #{deviceCode}
+        LIMIT 1
+    </select>
+
+    <!-- 校验摄像机与算法是否仍存在有效的订购关系（vm_order_devices + vm_order_algorithms，同一订单套餐下） -->
+    <select id="countValidOrderAlgorithmRelation" resultType="int">
+        SELECT COUNT(1)
+        FROM vm_order_devices vod
+        INNER JOIN vm_order_algorithms oral
+            ON oral.tenant_id = vod.tenant_id
+            AND oral.order_code = vod.order_code
+            AND oral.package_code = vod.package_code
+        WHERE vod.tenant_id = #{tenantId}
+            AND vod.industry_code = #{industryCode}
+            AND vod.device_code = #{deviceCode}
+            AND oral.algorithm_code = #{algorithmCode}
+            AND vod.delete_flag = 0
+            AND vod.ord_status IN (0, 1, 2)
+            AND oral.delete_flag = 0
+            AND oral.ord_status IN (0, 1, 2)
+    </select>
+</mapper>

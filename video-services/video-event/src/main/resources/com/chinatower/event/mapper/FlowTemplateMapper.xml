@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.FlowTemplateMapper">
+
+	<resultMap type="com.chinatower.event.dto.FlowTemplateModel" id="FlowTemplateResult">
+		<id property="flowId" column="template_id"/>
+		<result property="tenantId" column="tenant_id"/>
+		<result property="flowName" column="flow_name"/>
+		<result property="flowJson" column="flow_json"/>
+		<result property="flowType" column="flow_type"/>
+		<result property="createDate" column="create_time"/>
+		<result property="updateDate" column="update_time"/>
+		<result property="status" column="status"/>
+		<result property="creator" column="creator"/>
+		<result property="modifier" column="modifier"/>
+	</resultMap>
+
+	<insert id="addFlowTemplate" parameterType="com.chinatower.event.dto.FlowTemplateModel" keyColumn="template_id" keyProperty="flowId" useGeneratedKeys="true">
+		insert into vm_flow_template
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="tenantId != null and tenantId != ''">
+				tenant_id,
+			</if>
+			<if test="flowName != null and flowName != ''">
+				flow_name,
+			</if>
+			<if test="flowJson != null and flowJson != ''">
+				flow_json,
+			</if>
+			<if test="flowType != null and flowType != ''">
+				flow_type,
+			</if>
+			<if test="creator != null and creator != ''">
+				creator,
+			</if>
+			create_time,
+			<if test="modifier != null and modifier != ''">
+				modifier,
+			</if>
+			update_time,
+			<if test="industryCode != null and industryCode != ''">
+				industry_code,
+			</if>
+			<if test="appVerCode != null and appVerCode != ''">
+				app_ver_code,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="tenantId != null and tenantId != ''">
+				#{tenantId,jdbcType=VARCHAR},
+			</if>
+			<if test="flowName != null and flowName != ''">
+				#{flowName,jdbcType=VARCHAR},
+			</if>
+			<if test="flowJson != null and flowJson != ''">
+				#{flowJson,jdbcType=LONGVARCHAR},
+			</if>
+			<if test="flowType != null and flowType != ''">
+				#{flowType,jdbcType=DECIMAL},
+			</if>
+			<if test="creator != null and creator != ''">
+				#{creator,jdbcType=VARCHAR},
+			</if>
+			<choose>
+				<when test="createTime != null">
+					#{createTime},
+					#{modifier},
+					now(),
+				</when>
+				<otherwise>
+					NOW(),
+					'',
+					null,
+				</otherwise>
+			</choose>
+			<if test="industryCode != null and industryCode != ''">
+				#{industryCode,jdbcType=VARCHAR},
+			</if>
+			<if test="appVerCode != null and appVerCode != ''">
+				#{appVerCode,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+
+	<insert id="addFlowTemplateLink" parameterType="com.chinatower.event.dto.VmFlowTemplateLinkModel">
+		insert into vm_flow_template_link(template_id, cur_link, link_type, pre_link, next_link,real_link_type, creator, modifier, create_time, update_time)
+		values
+		<foreach collection="linkList" item="item" index="index" separator=",">
+			(#{item.templateId,jdbcType=BIGINT},
+			#{item.curLink,jdbcType=INTEGER},
+			#{item.linkType,jdbcType=VARCHAR},
+			#{item.preLink,jdbcType=VARCHAR},
+			#{item.nextLink,jdbcType=VARCHAR},
+			#{item.realLinkType,jdbcType=BIGINT},
+			#{item.creator,jdbcType=VARCHAR},
+			#{item.modifier,jdbcType=VARCHAR},
+			NOW(),
+			NOW())
+		</foreach>
+	</insert>
+
+	<select id="queryFlowTemplate" parameterType="com.chinatower.event.dto.FlowTemplateModel" resultType="com.chinatower.event.dto.FlowTemplateModel">
+		select template_id templateId,template_id flowId, tenant_id, flow_name, flow_json,flow_type, create_time, update_time, status, creator, modifier, app_ver_code, industry_code from vm_flow_template
+		<where>
+			delete_flag = 0
+			<if test="flowId != null and flowId != ''">
+				AND template_id = #{flowId}
+			</if>
+			<if test="templateId != null and templateId != ''">
+				AND template_id = #{templateId}
+			</if>
+			<!--<if test="tenantId != null and tenantId != ''">
+				AND (tenant_id = #{tenantId}
+				<if test="industryCode != null and industryCode != ''">
+					AND industry_code = #{industryCode}
+				</if>
+				<if test="appVerCode != null and appVerCode != ''">
+					AND app_ver_code = #{appVerCode}
+				</if>
+				<if test="(appVerCode != null and appVerCode != '') or (industryCode != null and industryCode != '')">
+					or template_id in (
+					select template_id from vm_flow_template_industry
+					where delete_flag = 0 and app_ver_code = #{appVerCode}
+					and industry_code = #{industryCode})
+				</if>
+				)
+			</if>-->
+			<if test="flowName != null and flowName != ''">
+				AND flow_name like CONCAT(CONCAT('%', #{flowName}),'%')
+			</if>
+			<if test="status != null and status != ''">
+				AND status = #{status}
+			</if>
+			and ( (delete_flag = 0 ${dataScope})
+			<if test="(appVerCode != null and appVerCode != '') or (industryCode != null and industryCode != '')">
+				or template_id in (
+				select template_id from vm_flow_template_industry
+				where delete_flag = 0 and app_ver_code = #{appVerCode}
+				and industry_code = #{industryCode})
+			</if>
+			)
+		</where>
+		<choose>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				order by create_time asc
+			</when>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				order by create_time desc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				order by update_time asc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				order by update_time desc
+			</when>
+			<otherwise>
+				order by create_time desc
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="countSameFlowTemplate" resultType="int">
+		select count(*) from vm_flow_template t1
+		<where>
+			<if test="flowId != null and flowId != ''">
+				AND t1.template_id != #{flowId}
+			</if>
+			<if test="tenantId != null and tenantId != ''">
+				AND (t1.tenant_id = #{tenantId}
+				<if test="industryCode != null and industryCode != ''">
+					AND t1.industry_code = #{industryCode}
+				</if>
+				<if test="appVerCode != null and appVerCode != ''">
+					AND t1.app_ver_code = #{appVerCode}
+				</if>
+				or t1.template_id in (
+				select template_id from vm_flow_template_industry
+				where delete_flag = 0 and app_ver_code = #{appVerCode}
+				and industry_code = #{industryCode}))
+			</if>
+			<if test="flowName != null and flowName != ''">
+				AND t1.flow_name = #{flowName}
+			</if>
+			AND t1.status = '1' AND t1.delete_flag = 0
+		</where>
+	</select>
+
+	<select id="queryByFlowIds" parameterType="java.util.List" resultMap="FlowTemplateResult">
+		select template_id, tenant_id, flow_name, flow_json, create_time, update_time, status, creator, modifier from vm_flow_template
+		where template_id in
+		<foreach collection="list" item="flowId" index="index" open="(" close=")" separator=",">
+			#{flowId}
+		</foreach>
+	</select>
+
+	<update id="modifyFlowTemplate" parameterType="com.chinatower.event.dto.FlowTemplateModel">
+		update vm_flow_template
+		<set>
+			<if test='tenantId != null and tenantId != ""'>
+				tenant_id = #{tenantId},
+			</if>
+			<if test='flowName != null and flowName != ""'>
+				flow_name = #{flowName},
+			</if>
+			<if test='flowJson != null and flowJson != ""'>
+				flow_json = #{flowJson},
+			</if>
+			<if test='status != null and status != ""'>
+				status = #{status},
+			</if>
+			<if test='modifier != null and modifier != ""'>
+				modifier = #{modifier},
+			</if>
+			update_time=NOW()
+		</set>
+		where template_id = #{flowId} AND delete_flag = 0
+	</update>
+
+	<update id="deleteFlowTemplate" parameterType="java.lang.Long">
+ 		update vm_flow_template set delete_flag = 1 where template_id = #{templateId} AND delete_flag = 0 AND flow_type = '0'
+ 	</update>
+
+	<update id="deleteFlowTemplateLink" parameterType="java.lang.Long">
+		update vm_flow_template_link set delete_flag = 1 where template_id = #{templateId} AND delete_flag = 0
+	</update>
+
+</mapper>

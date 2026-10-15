@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.stdu.query.dao.VideoQueryDAO">
+
+    <select id="getCasCadeByDeviceCodeBatch" resultType="com.chinatower.video.api.entity.CasCadeVO">
+        SELECT device_code,access_node as cascadeToCode FROM vm_device_info_t
+        WHERE device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getUserHabitList" resultType="com.chinatower.stdu.query.entity.HabitVO"
+            parameterType="java.lang.String">
+        select t.user_habit_key as habitKey, t.habit_value from sys_user_video_habit t where t.user_habit_key in
+        <if test="list != null and list.size() > 0">
+            <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="listChannelInfoForCustDev"
+            resultType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">
+        SELECT DISTINCT od.device_code as parentDeviceCode,t.channel_code
+        FROM vm_order_devices od
+        LEFT JOIN vm_channel_info_t t on od.device_code = t.device_code
+        <where>
+            AND od.delete_flag = 0 AND od.ord_status IN (0, 1, 2)
+            <if test='deviceCodeList != null and deviceCodeList.size()>0'>
+                and od.device_code in
+                <foreach item="item" index="index" collection="deviceCodeList" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test='tenantId!= null and tenantId != "" '>
+                AND od.tenant_id= #{tenantId}
+            </if>
+            <if test='industryCode != null and industryCode != ""'>
+                and od.industry_code = #{industryCode}
+            </if>
+        </where>
+    </select>
+</mapper>

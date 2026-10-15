@@ -1,0 +1,26 @@
+server:
+  port: 18083
+  servlet:
+    context-path: /
+spring:
+  profiles:
+    active: local
+    #  loacl 本地   test 测试    specheck 专项验收   check 验收  stable 准生产   prod 生产
+  main:
+    banner-mode: "off"
+    allow-bean-definition-overriding: true
+  application:
+    name: video-system
+
+jasypt:
+  encryptor:
+    bootstrap: false
+
+mybatis:
+  mapperLocations: classpath*:mybatis/mapper/**/*Mapper.xml
+  configuration:
+    cache-enabled: true
+    use-generated-keys: false
+    default-executor-type: reuse
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    map-underscore-to-camel-case: true

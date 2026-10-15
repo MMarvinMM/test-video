@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.videopatrolplan.mapper.PatrolInfoMapper">
+    <select id="getPatrolCount" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM vm_patrol_info_t t1
+                 LEFT JOIN vm_patrol_preset_rela_t t2 ON t1.patrol_id = t2.patrol_id AND t2.delete_flag = 0
+        WHERE t1.delete_flag = 0
+          AND t2.preset_id = #{presetId}
+          AND t2.device_code = #{deviceCode}
+    </select>
+
+    <select id="getDeviceInfo" resultType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        select d.device_code as "deviceCode", ifnull(d.partrol_mode,1) as "partrolMode", access_node
+        from vm_device_info_t d
+        where d.device_code = #{deviceCode} and delete_flag = '0' limit 1
+    </select>
+
+
+    <select id="getPatrolInfoList" resultType="com.chinatower.video.api.entity.PatrolInfoVO">
+        select
+         patrol_id			as "patrolId"
+        ,patrol_name         as "patrolName"
+        ,device_code         as "deviceCode"
+        ,channel_code        as "channelCode"
+        ,tenant_id           as "tenantId"
+        ,creator             as creator
+        ,create_time         as "createTime"
+        ,modifier            as modifier
+        ,update_time         as "updateTime"
+        ,delete_flag         as "deleteFlag"
+        ,order_code          as "orderCode"
+        ,if_cruise           as "ifCruise"
+        ,start_time_period   as "startTimePeriod"
+        ,start_stop          as "startStop"
+        ,start_stop_date     as "startStopDate"
+        from vm_patrol_info_t
+        where device_code = #{deviceCode}
+        and channel_code = #{channelCode}
+        and start_stop = '2'
+        and delete_flag = 0
+        and INSTR(start_time_period, #{startTimePeriod}) > 0
+        order by start_stop_date asc
+    </select>
+
+    <select id="getPatrolMergeList" resultType="com.chinatower.video.api.entity.PatrolInfoVO">
+        select
+         patrol_id			 as "patrolId"
+        ,source_patrol_id	 as "sourcePatrolId"
+        ,patrol_name         as "patrolName"
+        ,device_code         as "deviceCode"
+        ,channel_code        as "channelCode"
+        ,creator             as creator
+        ,create_time         as "createTime"
+        ,modifier            as modifier
+        ,update_time         as "updateTime"
+        ,delete_flag         as "deleteFlag"
+        ,tenant_id           as "tenantId"
+        ,if_cruise           as "ifCruise"
+        ,start_time_period   as "startTimePeriod"
+        ,start_stop          as "startStop"
+        ,start_stop_date     as "startStopDate"
+        from vm_patrol_info_merge_t
+        where device_code = #{deviceCode}
+        and channel_code = #{channelCode}
+        and start_stop = '2'
+        and delete_flag = 0
+        order by start_stop_date asc
+    </select>
+
+    <select id="getPatrolMergeListById" resultType="com.chinatower.video.api.entity.PatrolInfoVO">
+        select
+         patrol_id			 as "patrolId"
+        ,source_patrol_id	 as "sourcePatrolId"
+        ,patrol_name         as "patrolName"
+        ,device_code         as "deviceCode"
+        ,channel_code        as "channelCode"
+        ,creator             as creator
+        ,create_time         as "createTime"
+        ,modifier            as modifier
+        ,update_time         as "updateTime"
+        ,delete_flag         as "deleteFlag"
+        ,tenant_id           as "tenantId"
+        ,if_cruise           as "ifCruise"
+        ,start_time_period   as "startTimePeriod"
+        ,start_stop          as "startStop"
+        ,start_stop_date     as "startStopDate"
+        from vm_patrol_info_merge_t
+        where device_code = #{deviceCode}
+        and channel_code = #{channelCode}
+    </select>
+
+    <select id="getPatrolMergeListNew" resultType="com.chinatower.video.api.entity.PatrolInfoVO">
+        select
+         patrol_id			 as "patrolId"
+        ,source_patrol_id	 as "sourcePatrolId"
+        ,patrol_name         as "patrolName"
+        ,device_code         as "deviceCode"
+        ,channel_code        as "channelCode"
+        ,creator             as creator
+        ,create_time         as "createTime"
+        ,modifier            as modifier
+        ,update_time         as "updateTime"
+        ,delete_flag         as "deleteFlag"
+        ,tenant_id           as "tenantId"
+        ,if_cruise           as "ifCruise"
+        ,start_time_period   as "startTimePeriod"
+        ,start_stop          as "startStop"
+        ,start_stop_date     as "startStopDate"
+        from vm_patrol_info_merge_t
+        where device_code = #{deviceCode}
+        and channel_code = #{channelCode}
+        and if_cruise = '2'
+        and delete_flag = 0
+        order by start_stop_date asc
+    </select>
+
+<!--    <select id="getPatrolPresetMergeList" resultType="com.chinatower.video.api.entity.AddPatrolPresetReq">-->
+<!--        select-->
+<!--         preset_id        as presetId-->
+<!--        ,stay_seconds     as staySeconds-->
+<!--        ,speed            as speed-->
+<!--        ,sort             as sort-->
+<!--        from vm_patrol_preset_rela_merge_t-->
+<!--        where patrol_id = #{patrolId}-->
+<!--        and delete_flag = 0-->
+<!--        order by sort asc-->
+<!--    </select>-->
+    <resultMap type="com.chinatower.video.api.entity.AddPatrolPresetReq" id="patrolPresetMap">
+        <result property="patrolId" column="patrol_id"/>
+        <result property="deviceCode" column="device_code"/>
+        <result property="channelCode" column="channel_code"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="industryCode" column="industry_code"/>
+        <result property="operator" column="operator"/>
+        <collection property="list" ofType="com.chinatower.video.api.entity.AddPatrolPresetReq">
+            <result property="patrolId" column="patrol_id"/>
+            <result property="presetId" column="preset_id"/>
+            <result property="staySeconds" column="stay_seconds"/>
+            <result property="speed" column="speed"/>
+            <result property="sort" column="sort"/>
+        </collection>
+    </resultMap>
+
+    <select id="getPatrolPresetList" resultMap="patrolPresetMap">
+        select
+        t.patrol_id,
+        t.preset_id
+        ,t.stay_seconds
+        ,t.speed
+        ,t.sort
+        ,t1.operator
+        ,t1.device_code
+        ,t1.channel_code
+        ,t1.tenant_id
+        ,t1.industry_code
+        from vm_patrol_preset_rela_t t
+        left join vm_patrol_info_t t1 on t.patrol_id = t1.patrol_id
+        where t.delete_flag = 0
+        AND t.patrol_id in
+        <foreach collection="patrolIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        ORDER BY field(t.patrol_id ,
+        <foreach item="item" collection="patrolIdList" index="index" separator=",">
+            #{item}
+        </foreach>),t.sort asc
+    </select>
+
+
+    <select id="getPatrolPresetListNew"  resultType="com.chinatower.video.api.entity.QueryPatrolListData"
+            parameterType="com.chinatower.video.api.entity.VideoPatrolVO">
+        select patrol_id,t.preset_id,t.stay_seconds,speed,sort,p.preset_name
+        from vm_patrol_preset_rela_t t
+        left join vm_video_preset p
+        on t.preset_id = p.preset_id and  t.device_code = p.device_code
+        where 1 = 1
+        <if test='patrolId!= null and patrolId != "" '>
+            AND patrol_id= #{patrolId}
+        </if>
+        <if test='deleteFlag != null '>
+            AND delete_flag= #{deleteFlag}
+        </if>
+        <if test='patrolIdList != null and patrolIdList.size() > 0 '>
+            AND patrol_id in
+            <foreach collection="patrolIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <delete id="deletePatrolPresetMerge" parameterType="com.chinatower.video.api.entity.PatrolInfoVO">
+        delete from vm_patrol_preset_rela_merge_t where patrol_id = #{patrolId} and device_code = #{deviceCode}
+
+    </delete>
+
+    <delete id="deletePatrolMerge" parameterType="com.chinatower.video.api.entity.PatrolInfoVO">
+        delete from vm_patrol_info_merge_t where patrol_id = #{patrolId} and device_code = #{deviceCode}
+
+    </delete>
+
+
+    <insert id="savePatrolMerge" parameterType="com.chinatower.video.api.entity.PatrolInfoVO" >
+        insert into vm_patrol_info_merge_t(
+        patrol_id,patrol_name,device_code,channel_code,tenant_id,creator
+        ,create_time,modifier,update_time,delete_flag,if_cruise
+        ,start_time_period,start_stop,start_stop_date,source_patrol_id)
+        values (
+        #{patrolId} ,#{patrolName} ,#{deviceCode},#{channelCode},#{tenantId},#{creator}
+        ,now(),#{modifier} ,now(),#{deleteFlag},#{ifCruise}
+        ,#{startTimePeriod},#{startStop} ,now(),#{sourcePatrolId}
+        )
+    </insert>
+
+<!--    <insert id="savePatrolPresetMerge" parameterType="com.chinatower.video.api.entity.PresetDTO" >-->
+<!--        insert into vm_patrol_preset_rela_merge_t(-->
+<!--        patrol_id,preset_id,stay_seconds,speed,sort-->
+<!--        ,creator,create_time,modifier,update_time,delete_flag)-->
+<!--        values (-->
+<!--        #{patrolId} ,#{presetId} ,#{staySeconds},#{speed},#{sort}-->
+<!--        ,NULL ,now() ,NULL ,NULL,#{deleteFlag}-->
+<!--        )-->
+<!--    </insert>-->
+
+
+    <insert id="batchSavePatrolPresetMerge">
+        INSERT INTO vm_patrol_preset_rela_merge_t(patrol_id,preset_id,stay_seconds,speed,sort,creator,create_time,
+            modifier,update_time,delete_flag,device_code)
+        VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.patrolId} ,#{item.presetId} ,#{item.staySeconds},#{item.speed},#{item.sort},NULL ,now()
+                ,NULL ,NULL,#{item.deleteFlag},#{item.deviceCode})
+        </foreach>
+    </insert>
+
+
+    <update id="updatePatrolMerge" parameterType="com.chinatower.video.api.entity.PatrolInfoVO">
+        update vm_patrol_info_merge_t
+        <set>
+            <if test='tenantId != null and tenantId != ""'>
+                tenant_id = #{tenantId, jdbcType=VARCHAR},
+            </if>
+            <if test='ifCruise != null and ifCruise != ""'>
+                if_cruise = #{ifCruise, jdbcType=VARCHAR},
+            </if>
+            <if test='startTimePeriod != null and startTimePeriod != ""'>
+                start_time_period = #{startTimePeriod, jdbcType=VARCHAR},
+            </if>
+            <if test='startStop != null and startStop != ""'>
+                start_stop = #{startStop, jdbcType=VARCHAR},
+            </if>
+            <if test='sourcePatrolId != null and sourcePatrolId != ""'>
+                source_patrol_id = #{sourcePatrolId, jdbcType=VARCHAR},
+            </if>
+            <if test='startStopDate != null '>
+                start_stop_date = NOW(),
+            </if>
+
+            <if test='deleteFlag != null '>
+                delete_flag = #{deleteFlag},
+            </if>
+            update_time=NOW()
+        </set>
+        where patrol_id = #{patrolId} and delete_flag = 0 and device_code = #{deviceCode}
+    </update>
+
+    <select id="getStartPatrolInfoList" resultType="com.chinatower.video.api.entity.PatrolInfoVO">
+        select DISTINCT device_code, channel_code, industry_code,start_stop_date
+        from vm_patrol_info_t
+        where (start_stop = '2' and if_cruise = '1' and delete_flag = 0 and INSTR(start_time_period, #{startTimePeriod})>0)
+        OR (start_stop = '2' and if_cruise = '2' and delete_flag = 0 and INSTR(start_time_period, #{startTimePeriod})=0)
+        order by start_stop_date asc
+    </select>
+
+    <update id="updatePatrolInfo" parameterType="com.chinatower.video.api.entity.PatrolInfoVO">
+        update vm_patrol_info_t
+        set if_cruise = #{ifCruise, jdbcType=VARCHAR}
+        where device_code = #{deviceCode}
+        and channel_code = #{channelCode}
+        and delete_flag = 0
+    </update>
+
+    <update id="updatePatrolInfoBatch" parameterType="com.chinatower.video.api.entity.PatrolInfoVO">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_patrol_info_t
+            set if_cruise = #{ifCruise}
+            where device_code = #{deviceCode}
+            and channel_code = #{channelCode}
+            and patrol_id = #{patrolId}
+            and delete_flag = 0
+        </foreach>
+    </update>
+
+    <select id="getPatrolListNew"  resultType="com.chinatower.video.api.entity.QueryPatrolData"
+            parameterType="com.chinatower.video.api.entity.VideoPatrolVO">
+        select patrol_id,patrol_name,device_code,channel_code,tenant_id,creator,create_time,case if_cruise when 1 then 0 else 1 end  as isCruise,
+        start_stop,start_time_period,start_stop_date,order_code
+        from vm_patrol_info_t where 1 = 1
+        <if test='channelCode!= null and channelCode != "" '>
+            AND channel_code= #{channelCode}
+        </if>
+        <if test='deviceCode!= null and deviceCode != "" '>
+            AND device_code= #{deviceCode}
+        </if>
+        <if test='industryCode!= null and industryCode != "" '>
+            AND industry_code= #{industryCode}
+        </if>
+        <if test='customerCode!= null and customerCode != "" '>
+            AND tenant_id= #{customerCode}
+        </if>
+        <if test='patrolId!= null and patrolId != "" '>
+            AND patrol_id= #{patrolId}
+        </if>
+        <if test='deleteFlag != null '>
+            AND delete_flag= #{deleteFlag}
+        </if>
+    </select>
+
+	<select id="chkOrderDevices" resultType="java.lang.Integer">
+    select count(*)
+	from vm_order_devices
+	where delete_flag = '0'
+	and device_code = #{deviceCode}
+	and tenant_id = #{tenantId}
+	and ord_status in (0,1,2)
+    </select>
+
+
+    <select id="chkOrder" resultType="com.chinatower.video.api.entity.PatrolInfoVO">
+    select order_code,device_code
+	from vm_order_devices
+	where delete_flag = '0'
+	and device_code = #{deviceCode}
+	and tenant_id = #{tenantId}
+	and industry_code = #{industryCode}
+	and ord_status in (0,1,2)
+    </select>
+
+
+    <select id="isExistByPresetId" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM vm_polygon_patch_config
+        WHERE
+            delete_flag = 0
+            AND preset_id = #{presetId}
+            AND device_code = #{deviceCode}
+    </select>
+
+    <select id="queryARCruisePlan" resultType="java.lang.String"
+            parameterType="com.chinatower.video.api.entity.SttPatrolReq">
+        SELECT DISTINCT ar_view_id AS "deviceCode" FROM vm_ar_cruise_plan
+	    WHERE delete_flag = 0 AND execution_status = '1'
+        <if test='deviceCode != null and deviceCode != "" '>
+            AND ar_view_id= #{deviceCode}
+        </if>
+    </select>
+
+
+    <select id="isExistARByPresetId" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM vm_ar_tags_info
+        WHERE delete_flag = 0 AND preset_id = #{presetId}
+        AND ar_view_id= #{deviceCode}
+    </select>
+
+    <select id="selectPatrolMerge" parameterType="com.chinatower.video.api.entity.PatrolInfoVO" resultType="com.chinatower.video.api.entity.PatrolInfoVO">
+        select
+         patrol_id			 as "patrolId"
+         ,source_patrol_id	 as "sourcePatrolId"
+         ,patrol_name         as "patrolName"
+         ,device_code         as "deviceCode"
+         ,channel_code        as "channelCode"
+         ,creator             as creator
+         ,create_time         as "createTime"
+         ,modifier            as modifier
+         ,update_time         as "updateTime"
+         ,delete_flag         as "deleteFlag"
+         ,tenant_id           as "tenantId"
+         ,if_cruise           as "ifCruise"
+         ,start_time_period   as "startTimePeriod"
+         ,start_stop          as "startStop"
+         ,start_stop_date     as "startStopDate"
+        from vm_patrol_info_merge_t
+        where device_code = #{deviceCode}
+          and channel_code = #{channelCode}
+          and source_patrol_id like CONCAT('%', #{patrolId}, '%')
+          and start_stop = '2'
+          and delete_flag = 0
+    </select>
+
+    <select id="getMinChannelCode" resultType="java.lang.String">
+        SELECT
+            channel_code
+        FROM
+            vm_channel_info_t
+        WHERE
+            delete_flag = 0
+          AND device_code = #{deviceCode}
+        ORDER BY
+            channel_code
+            LIMIT 1
+    </select>
+
+    <select id="getRealChannelCode" resultType="java.lang.String">
+        SELECT DISTINCT
+            channel_code
+        FROM
+            vm_patrol_info_t
+        WHERE device_code = #{deviceCode}
+        ORDER BY
+            channel_code
+            LIMIT 1
+    </select>
+
+    <select id="getExistTimePeriod" resultType="java.lang.String">
+        SELECT
+            DISTINCT start_time_period
+        FROM
+            vm_patrol_info_t
+        WHERE
+            device_code = #{deviceCode}
+          AND delete_flag = 0
+          AND if_cruise = '2'
+    </select>
+
+    <update id="updatePatrol">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_patrol_info_t
+            <set>
+                <if test="item.startTimePeriod != null and item.startTimePeriod != ''">
+                    start_time_period = #{item.startTimePeriod},
+                </if>
+                <if test="item.startTimePeriod != null and item.startTimePeriod != ''">
+                    init_start_time_period = #{item.startTimePeriod},
+                </if>
+            </set>
+            where patrol_id = #{item.patrolId}
+        </foreach>
+    </update>
+
+    <update id="updateMerge">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_patrol_info_merge_t
+            <set>
+                <if test="item.startTimePeriod != null and item.startTimePeriod != ''">
+                    start_time_period = #{item.startTimePeriod},
+                </if>
+            </set>
+            where id = #{item.id}
+        </foreach>
+    </update>
+
+    <select id="getPatrolMerge" resultType="com.chinatower.video.api.entity.PatrolInfoVO">
+        SELECT
+            id,
+            start_time_period
+        FROM
+            vm_patrol_info_merge_t
+        WHERE
+            delete_flag = 0
+    </select>
+    <select id="patrolAlgoRel" resultType="java.lang.Long">
+        SELECT
+            t1.patrol_id
+        FROM
+            vm_patrol_preset_rela_t t1
+                INNER JOIN vm_algorithm_config t2 ON ( t1.preset_id = t2.preset_id AND t2.algorithm_code = #{algorithmCode} )
+        WHERE
+            t1.delete_flag = 0
+          AND t2.delete_flag = 0
+          AND t2.tenant_id = #{tenantId}
+          AND t2.industry_code = #{industryCode}
+        AND patrol_id IN
+        <foreach collection="list" item="item" index="index"  separator="," open="(" close=")">
+            #{item.patrolId}
+        </foreach>
+    </select>
+
+    <update id="updatePatrolStartTimeBatch">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_patrol_info_t
+                set start_time_period = #{item.startTimePeriod}
+            where patrol_id = #{item.patrolId}
+        </foreach>
+    </update>
+</mapper>

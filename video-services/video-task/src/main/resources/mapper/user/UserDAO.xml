@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.user.dao.UserDAO">
+
+
+    <update id="updateUserStatus">
+        UPDATE sys_user SET STATUS = '1'
+        WHERE DEL_FLAG = '0' AND STATUS = '0'
+          AND USER_TYPE = '0'
+          AND validity_period_state = '2'
+          AND NOW() > account_validity_period
+    </update>
+
+</mapper>

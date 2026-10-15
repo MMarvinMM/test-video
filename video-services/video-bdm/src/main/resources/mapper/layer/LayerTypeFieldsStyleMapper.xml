@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.LayerTypeFieldsStyleMapper">
+
+
+    <resultMap type="com.chinatower.bdm.modules.layer.domain.LayerTypeStyle" id="LayerTypeStyle">
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="layerTypeId" column="layer_type_id"/>
+        <result property="abbreviation" column="abbreviation"/>
+        <result property="showBindField" column="show_bind_field"/>
+        <result property="type" column="type"/>
+        <result property="showLabel" column="show_label"/>
+        <result property="defaultShow" column="default_show"/>
+        <result property="dictJson" column="dict_json" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="createTime" column="create_time"/>
+        <result property="creator" column="creator"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="modifier" column="modifier"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="industryCode" column="industry_code"/>
+        <result property="defaultShow" column="default_show"/>
+    </resultMap>
+
+    <insert id="addBatch">
+        INSERT INTO `sys_layer_type_style`
+            (`id`, `code`, `name`, `layer_type_id`, `abbreviation`,`type`,
+            `show_bind_field`, `show_label`, `dict_json`,
+             `create_time`, `creator`,`delete_flag`, `tenant_id`, `industry_code`,`default_show`)
+        VALUES
+            <foreach collection="list" index="index" item="item" separator=",">
+                (#{item.id}, #{item.code}, #{item.name}, #{item.layerTypeId}, #{item.abbreviation},#{item.type},
+                #{item.showBindField}, #{item.showLabel}, #{item.dictJson, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+                #{item.createTime}, #{item.creator}, 0, #{item.tenantId}, #{item.industryCode},#{item.defaultShow})
+            </foreach>
+
+    </insert>
+    <update id="updateBatch">
+        <foreach collection="list" item="item" separator=";">
+        UPDATE sys_layer_type_style
+        <set>
+            show_label = #{item.showLabel},
+            code = #{item.code},
+            `name` = #{item.name},
+            default_show = #{item.defaultShow},
+            `type` = #{item.type},
+            dict_json = #{item.dictJson, typeHandler=com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler},
+            update_time = NOW(),
+            modifier = #{item.modifier}
+        </set>
+        WHERE id = #{item.id}
+    </foreach>
+    </update>
+    <delete id="deleteByLayerTypeId">
+        DELETE FROM sys_layer_type_style WHERE layer_type_id = #{layerTypeId}
+    </delete>
+    <delete id="deleteBatch">
+        UPDATE sys_layer_type_style SET delete_flag = 1 WHERE delete_flag = 0
+        AND id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item.id}
+        </foreach>
+
+    </delete>
+    <select id="findByLayerTypeId" resultMap="LayerTypeStyle">
+        SELECT
+            id,
+            code,
+            name,
+            layer_type_id,
+            abbreviation,
+            show_bind_field,
+            `type`,
+            show_label,
+            default_show,
+            dict_json,
+            create_time,
+            creator,
+            update_time,
+            modifier,
+            tenant_id,
+            industry_code,
+            default_show
+        FROM
+            sys_layer_type_style
+        <where>
+            delete_flag = 0
+            <if test="layerTypeId != null and layerTypeId != ''">
+                AND layer_type_id = #{layerTypeId}
+            </if>
+            <if test="abbreviation != null and abbreviation != ''">
+                AND abbreviation = #{abbreviation}
+            </if>
+            <if test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </if>
+            <if test="industryCode != null and industryCode != ''">
+                AND industry_code = #{industryCode}
+            </if>
+        </where>
+        ${dataScope}
+        ORDER BY create_time ASC
+    </select>
+
+    <select id="selectLayerTypeStyles" resultMap="LayerTypeStyle">
+        SELECT
+        id,
+        code,
+        name,
+        layer_type_id,
+        abbreviation,
+        show_bind_field,
+        `type`,
+        show_label,
+        default_show,
+        dict_json,
+        create_time,
+        creator,
+        update_time,
+        modifier,
+        tenant_id,
+        industry_code,
+        default_show
+        FROM
+        sys_layer_type_style
+        <where>
+            delete_flag = 0
+            <if test="tenantId != null and tenantId != ''">
+                AND tenant_id = #{tenantId}
+            </if>
+            <if test="industryCode != null and industryCode != ''">
+                AND industry_code = #{industryCode}
+            </if>
+            <if test="abbreviation != null and abbreviation != ''">
+                AND abbreviation = #{abbreviation}
+            </if>
+        </where>
+    </select>
+</mapper>

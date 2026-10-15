@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.FlowLinkUserMapper">
+
+	<resultMap type="com.chinatower.event.dataobject.FlowLinkUser" id="FlowLinkUserResult">
+		<id property="linkUserId" column="link_user_id"/>
+		<!--<result property="flowId" column="flow_id"/>-->
+		<result property="flowLinkId" column="flow_link_id"/>
+		<!--<result property="userType" column="user_type"/>-->
+		<result property="userId" column="user_id"/>
+		<result property="orgId" column="org_id"/>
+	</resultMap>
+
+	<insert id="addFlowLinkUser" parameterType="com.chinatower.event.dto.FlowLinkUserModel" keyColumn="link_user_id" keyProperty="linkUserId" useGeneratedKeys="true">
+		insert into vm_flow_link_user(flow_link_id, user_id, org_id)
+        values (#{flowLinkId}, #{userId}, #{orgId})
+	</insert>
+
+	<insert id="batchAddFlowLinkUser" parameterType="java.util.List">
+		insert into vm_flow_link_user(flow_link_id, user_id, org_id) values
+		<foreach collection ="list" item="flowLinkUser" index="index" separator =",">
+			(#{flowLinkUser.flowLinkId}, #{flowLinkUser.userId}, #{flowLinkUser.orgId})
+		</foreach>
+	</insert>
+
+	<select id="queryFlowLinkUser" parameterType="com.chinatower.event.dto.FlowLinkUserModel" resultMap="FlowLinkUserResult">
+		select link_user_id, link_id as flow_link_id, user_id, org_id from vm_flow_link_user
+		<where>
+			<if test="linkUserId != null and linkUserId != ''">
+				AND link_user_id = #{linkUserId}
+			</if>
+			<if test="flowLinkId != null and flowLinkId != ''">
+				AND link_id = #{flowLinkId}
+			</if>
+		</where>
+	</select>
+
+	<update id="modifyFlowLinkUser" parameterType="com.chinatower.event.dto.FlowLinkUserModel">
+		update vm_flow_link_user
+		<set>
+			<if test='flowId != null and flowId != ""'>
+				flow_id = #{flowId},
+			</if>
+			<if test='flowLinkId != null and flowLinkId != ""'>
+				flow_link_id = #{flowLinkId},
+			</if>
+			<if test='userId != null and userId != ""'>
+				user_id = #{userId},
+			</if>
+			<if test='orgId != null and orgId != ""'>
+				org_id = #{orgId},
+			</if>
+		</set>
+		where link_user_id = #{linkUserId}
+	</update>
+
+	<delete id="deleteFlowLinkUser" parameterType="java.lang.Long">
+ 		delete from vm_flow_link_user where link_user_id = #{linkUserId}
+ 	</delete>
+
+	<delete id="deleteByFlowLinkIds" parameterType="java.util.List">
+ 		delete from vm_flow_link_user where flow_link_id in
+		<foreach collection ="list" item="flowLinkId" index="index" open="(" close=")" separator =",">
+			#{flowLinkId}
+		</foreach>
+ 	</delete>
+
+</mapper>

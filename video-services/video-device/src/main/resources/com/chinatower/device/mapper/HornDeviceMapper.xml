@@ -1,0 +1,1124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.HornDeviceMapper">
+
+
+
+    <resultMap id="treeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="province_code" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="city_code" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                <result column="county_code" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+                <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                    <result column="town_code" property="code" jdbcType="VARCHAR"/>
+                    <result column="townName" property="name" jdbcType="VARCHAR"/>
+                    <result column="townLevel" property="level" jdbcType="VARCHAR"/>
+                    <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+                        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+                        <result column="device_code" property="code" jdbcType="VARCHAR"/>
+                        <result column="device_name" property="name" jdbcType="VARCHAR"/>
+                        <result column="device_alias" property="deviceAlias" jdbcType="VARCHAR"/>
+                        <result column="device_status" property="status" jdbcType="VARCHAR"/>
+                        <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+                        <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+                        <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+                        <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+                        <result column="tagCollect" property="tagCollect" jdbcType="VARCHAR"/>
+                    </collection>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <!-- 组织树查询 mybatis嵌套查询  -->
+    <resultMap id="orgTreeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="org_id" property="code" jdbcType="VARCHAR"/>
+        <result column="org_name" property="name" jdbcType="VARCHAR"/>
+        <result column="org_level" property="level" jdbcType="VARCHAR"/>
+        <result column="parent_org_id" property="parentCode" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="device_code" property="code" jdbcType="VARCHAR"/>
+            <result column="device_name" property="name" jdbcType="VARCHAR"/>
+            <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+            <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+            <result column="device_status" property="status" jdbcType="VARCHAR"/>
+            <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+            <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+            <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+            <result column="devLevel" property="level" jdbcType="VARCHAR"/>
+            <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+
+    <select id="queryHornDeviceList" resultType="com.chinatower.device.entity.vo.HornDeviceVo">
+        select * from(
+        SELECT DISTINCT od.device_code,
+        m.id,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        m.manufacturer_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'horn_manage_status' AND DICT_VALUE = m.device_status limit 1) deviceStatusName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'broadcast_manufacturer' AND DICT_VALUE = m.manufacturer_code limit 1) manufacturerName,
+        m.model_code,
+        m.device_type,
+        m.site_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'broadcast_device_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        m.height,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.access_node,
+        <if test="param.latitude != null and param.latitude != '' and param.longitude != null and param.longitude != ''">
+            CAST(ST_DISTANCE(POINT(#{param.longitude},#{param.latitude}),POINT(m.longitude,m.latitude))*111195 as DECIMAL(65,2)) as distance,
+        </if>
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '1'
+        WHEN od.ord_status = '3' THEN '3'
+        WHEN od.ord_status = '4' THEN '4'
+        END ) orderStatus,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_code,
+        city.area_name as cityName,
+        city.area_code as city_code,
+        county.area_name as countyName,
+        county.area_code as county_code,
+        town.area_code as town_code,
+        town.area_name as town_name
+        from vm_order_horn_devices od
+        LEFT JOIN vm_horn_device_info_t m on m.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t ten on ten.device_code = od.device_code and ten.tenant_id = od.tenant_id
+          and ten.industry_code = od.industry_code and ten.delete_flag = 0
+          and ten.device_type = 2
+        LEFT JOIN sys_area pro on pro.area_code = m.province_code
+        LEFT JOIN sys_area city on city.area_code = m.city_code
+        LEFT JOIN sys_area county on county.area_code = m.county_code
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+          and dct.coll_obj_type = '10' AND dct.user_id = #{param.userId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0 or param.dataScope.contains("dept_id")'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+            and vod.delete_flag = '0'
+            and vod.tenant_id = od.tenant_id
+            and vod.industry_code = od.industry_code
+            and vod.device_type = 12
+        </if>
+        where od.delete_flag = 0 and m.delete_flag = 0
+        and od.tenant_id = #{param.tenantId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        <if test="param.manufacturerCodeList != null and param.manufacturerCodeList.size() >0">
+            and m.manufacturer_code in
+            <foreach collection="param.manufacturerCodeList" open="(" close=")" separator="," index="index" item="manufacturerCode">
+                #{manufacturerCode}
+            </foreach>
+        </if>
+        <if test="param.deviceCode !=null and param.deviceCode !=''">
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceCodeList !=null and param.deviceCodeList.size() > 0'>
+            and m.device_code in
+            <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.provinceCode != null and param.provinceCode != ""'>
+            AND m.province_code = #{param.provinceCode}
+        </if>
+        <if test='param.cityCode != null and param.cityCode != ""'>
+            AND m.city_code = #{param.cityCode}
+        </if>
+        <if test='param.countyCode != null and param.countyCode != ""'>
+            AND m.county_code = #{param.countyCode}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND m.town_code = #{param.townCode}
+        </if>
+        <if test="param.deviceStatus != null">
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test="param.manufacturerCode != null and param.manufacturerCode != ''">
+            and m.manufacturer_code like CONCAT('%', #{param.manufacturerCode}, '%')
+        </if>
+        <if test="param.modelCode != null and param.modelCode != ''">
+            and m.model_code like CONCAT('%', #{param.modelCode}, '%')
+        </if>
+        <if test="param.deviceType != null and param.deviceType !=''">
+            and m.device_type = #{param.deviceType}
+        </if>
+        <if test='param.orderStatus == "1"'>
+            and od.ord_status in (0, 1, 2)
+        </if>
+        <if test='param.orderStatus == "3"'>
+            and od.ord_status = #{param.orderStatus}
+        </if>
+        <if test='param.orderStatus == "4"'>
+            and od.ord_status = #{param.orderStatus}
+        </if>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+        <choose>
+            <when test='param.appFlag != null and param.appFlag != "" and param.appFlag == "1"'>
+                <choose>
+                    <when test="param.latitude != null and param.latitude != '' and param.longitude != null and param.longitude != ''">
+                        order by distance,FIELD(m.device_status,'1','2','4','3','0'),od.device_code
+                    </when>
+                    <otherwise>
+                        order by FIELD(m.device_status,'1','2','4','3','0'),od.device_code
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                <choose>
+                    <when test="param.sortName == 'deviceCode'">
+                        order by od.device_code
+                        <if test="param.sort == 'desc'">
+                            desc
+                        </if>
+                        <if test="param.sort == 'asc'">
+                            asc
+                        </if>
+                    </when>
+                    <otherwise>
+                        order by pro.area_code, city.area_code, county.area_code,od.device_code
+                    </otherwise>
+                </choose>
+            </otherwise>
+        </choose>
+        )dt
+        <where>
+            <if test="param.deviceName != null and param.deviceName != ''">
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+            <if test="param.codeOrName !=null and param.codeOrName !=''">
+                and ((dt.device_code like CONCAT('%', #{param.codeOrName}, '%')) or (dt.device_name like CONCAT('%', #{param.codeOrName}, '%')))
+            </if>
+        </where>
+    </select>
+
+    <select id="queryHornList" resultType="com.chinatower.device.entity.vo.HornDeviceVo">
+        select * from(
+        SELECT DISTINCT m.device_code,
+        m.id,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        m.manufacturer_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'broadcast_manufacturer' AND DICT_VALUE = m.manufacturer_code limit 1) manufacturerName,
+        m.model_code,
+        m.device_type,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'broadcast_device_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        m.height,
+        m.longitude,
+        m.latitude,
+        m.location,
+        <if test="param.latitude != null and param.latitude != '' and param.longitude != null and param.longitude != ''">
+            CAST(ST_DISTANCE(POINT(#{param.longitude},#{param.latitude}),POINT(m.longitude,m.latitude))*111195 as DECIMAL(65,2)) as distance,
+        </if>
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '1'
+        WHEN od.ord_status = '3' THEN '3'
+        WHEN od.ord_status = '4' THEN '4'
+        END ) orderStatus,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_code,
+        city.area_name as cityName,
+        city.area_code as city_code,
+        county.area_name as countyName,
+        county.area_code as county_code,
+        town.area_code as town_code,
+        town.area_name as town_name
+        from vm_order_horn_devices od
+        LEFT JOIN vm_horn_device_info_t m on m.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t ten on ten.device_code = od.device_code and ten.tenant_id = od.tenant_id
+        and ten.industry_code = od.industry_code and ten.delete_flag = 0
+        and ten.device_type = 2
+        LEFT JOIN sys_area pro on pro.area_code = m.province_code
+        LEFT JOIN sys_area city on city.area_code = m.city_code
+        LEFT JOIN sys_area county on county.area_code = m.county_code
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '10' AND dct.user_id = #{param.userId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0 or param.dataScope.contains("dept_id")'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+            and vod.delete_flag = '0'
+            and vod.tenant_id = od.tenant_id
+            and vod.industry_code = od.industry_code
+            and vod.device_type = 12
+        </if>
+        where od.delete_flag = 0 and m.delete_flag = 0
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        <if test="param.manufacturerCodeList != null and param.manufacturerCodeList.size() >0">
+            and m.manufacturer_code in
+            <foreach collection="param.manufacturerCodeList" open="(" close=")" separator="," index="index" item="manufacturerCode">
+                #{manufacturerCode}
+            </foreach>
+        </if>
+        <if test="param.deviceCode !=null and param.deviceCode !=''">
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.provinceCode != null and param.provinceCode != ""'>
+            AND m.province_code = #{param.provinceCode}
+        </if>
+        <if test='param.cityCode != null and param.cityCode != ""'>
+            AND m.city_code = #{param.cityCode}
+        </if>
+        <if test='param.countyCode != null and param.countyCode != ""'>
+            AND m.county_code = #{param.countyCode}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND m.town_code = #{param.townCode}
+        </if>
+        <if test="param.deviceStatus != null">
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test="param.manufacturerCode != null and param.manufacturerCode != ''">
+            and m.manufacturer_code like CONCAT('%', #{param.manufacturerCode}, '%')
+        </if>
+        <if test="param.modelCode != null and param.modelCode != ''">
+            and m.model_code like CONCAT('%', #{param.modelCode}, '%')
+        </if>
+        <if test="param.deviceType != null and param.deviceType !=''">
+            and m.device_type = #{param.deviceType}
+        </if>
+        <if test='param.orderStatus == "1"'>
+            and od.ord_status in (0, 1, 2)
+        </if>
+        <if test='param.orderStatus == "3"'>
+            and od.ord_status = #{param.orderStatus}
+        </if>
+        <if test='param.orderStatus == "4"'>
+            and od.ord_status = #{param.orderStatus}
+        </if>
+        ${param.dataScope}
+        <choose>
+            <when test="param.latitude != null and param.latitude != '' and param.longitude != null and param.longitude != ''">
+                order by distance,FIELD(m.device_status,'1','2','4','3','0'),od.device_code
+            </when>
+            <otherwise>
+                order by FIELD(m.device_status,'1','2','4','3','0'),od.device_code
+            </otherwise>
+        </choose>
+        )dt
+        <where>
+            <if test="param.deviceName != null and param.deviceName != ''">
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+            <if test="param.codeOrName !=null and param.codeOrName !=''">
+                and ((dt.device_code like CONCAT('%', #{param.codeOrName}, '%')) or (dt.device_name like CONCAT('%', #{param.codeOrName}, '%')))
+            </if>
+        </where>
+    </select>
+
+    <select id="selectUserOnlyByUserName" resultType="com.chinatower.platform.entity.admin.SysUser">
+        select * from sys_user u
+        where u.del_flag = '0' AND u.user_name = #{userName}
+    </select>
+
+    <select id="getHornMonitorOrgTree" resultMap="orgTreeMap">
+        select * from (
+        select distinct
+        gg.dept_id as org_id,
+        gg.dept_name as org_name,
+        gg.dept_level as org_level,
+        gg.parent_id as parent_org_id,
+        m.device_code,
+        m.site_code,
+        m.device_status,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.longitude,
+        m.latitude,
+        concat(gg.dept_level + 1) AS devLevel,
+        osd.ord_status as orderStatus,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from sys_dept gg
+        LEFT JOIN vm_organ_device_rel_t dd ON gg.dept_id = dd.dept_id
+        and dd.device_type = 12
+        and gg.industry_code = dd.industry_code
+        LEFT JOIN vm_order_horn_devices osd ON dd.device_code = osd.device_code
+        and dd.tenant_id = osd.tenant_id
+        and dd.industry_code = osd.industry_code
+        left join vm_horn_device_info_t m on m.device_code = osd.device_code
+        left join vm_tenant_device_common_rel_t ten on ten.device_code = osd.device_code and ten.tenant_id = osd.tenant_id
+        and ten.industry_code = osd.industry_code and ten.delete_flag = 0
+        and ten.device_type = 2
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '10' AND dct.user_id = #{param.userId}
+        where osd.delete_flag = 0 and m.delete_flag = 0
+        and m.device_status != 4
+        and gg.del_flag = '0' AND dd.delete_flag = '0'
+        and osd.tenant_id = #{param.tenantId}
+        AND dd.device_code IS NOT NULL AND dd.device_code != ''
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test="param.deviceCode !=null and param.deviceCode !=''">
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test="param.deviceStatus != null">
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        <if test="param.manufacturerCode != null and param.manufacturerCode != ''">
+            and m.manufacturer_code like CONCAT('%', #{param.manufacturerCode}, '%')
+        </if>
+        <if test="param.modelCode != null and param.modelCode != ''">
+            and m.model_code like CONCAT('%', #{param.modelCode}, '%')
+        </if>
+        <if test="param.deviceType != null and param.deviceType !=''">
+            and m.device_type = #{param.deviceType}
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test='param.orderStatus == "1"'>
+            and osd.ord_status in (0, 1, 2)
+        </if>
+        <if test='param.orderStatus == "3"'>
+            and osd.ord_status = #{param.orderStatus}
+        </if>
+        <if test='param.orderStatus == "4"'>
+            and osd.ord_status = #{param.orderStatus}
+        </if>
+        ${param.dataScope}
+        ORDER BY gg.dept_id,dd.device_code
+        ) dt
+        <where>
+            <if test="param.deviceName != null and param.deviceName != ''">
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+
+
+    <select id="getHornMonitorTree" resultMap="treeMap">
+        select * from (
+        select distinct m.device_code,
+        m.site_code,
+        m.device_status,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.longitude,
+        m.latitude,
+        m.province_code,
+        m.city_code,
+        m.county_code,
+        m.town_code,
+        pro.area_name as provinceName,
+        city.area_name as cityName,
+        county.area_name as countyName,
+        town.area_name as townName,
+        '1' as prolevel,
+        '2' as citylevel,
+        '3' as countrylevel,
+        '4' as townLevel,
+        (case when length(IFNULL(ten.device_name, '')) = 0 then m.device_name else ten.device_name end) as device_alias,
+        osd.ord_status as orderStatus,
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        </if>
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from vm_order_horn_devices osd
+        left join vm_horn_device_info_t m on m.device_code = osd.device_code
+        left join sys_area pro on pro.area_code = m.province_code
+        left join sys_area city on city.area_code = m.city_code
+        left join sys_area county on county.area_code = m.county_code
+        left join sys_area town on town.area_code = m.town_code
+        left join vm_tenant_device_common_rel_t ten on ten.device_code = osd.device_code and ten.tenant_id = osd.tenant_id
+        and ten.industry_code = osd.industry_code and ten.delete_flag = 0
+        and ten.device_type = 2
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '10' AND dct.user_id = #{param.userId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0 or param.dataScope.contains("dept_id")'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+            and vod.delete_flag = '0'
+            and vod.tenant_id = osd.tenant_id
+            and vod.industry_code = osd.industry_code
+            and vod.device_type = 12
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code and art.coll_obj_type = '10' and art.user_id = #{param.userId}
+        </if>
+        where osd.delete_flag = 0 and m.delete_flag = 0
+        and osd.tenant_id = #{param.tenantId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test="param.deviceCode !=null and param.deviceCode !=''">
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.needDevice != null and "true".toString() == param.needDevice.toString()'>
+            and m.device_status != 4
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            <if test='param.isArTagFlag != null and param.isArTagFlag != "" and param.isArTagFlag == "0" '>
+                and art.coll_obj_code IS NOT NULL
+            </if>
+        </if>
+        <choose>
+            <when test='param.provinceCode != null and param.provinceCode != ""'>
+                AND m.province_code = #{param.provinceCode}
+            </when>
+            <when test='param.cityCode != null and param.cityCode != ""'>
+                AND m.city_code = #{param.cityCode}
+            </when>
+            <when test='param.countyCode != null and param.countyCode != ""'>
+                AND m.county_code = #{param.countyCode}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test="param.deviceStatus != null">
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        <if test="param.manufacturerCode != null and param.manufacturerCode != ''">
+            and m.manufacturer_code like CONCAT('%', #{param.manufacturerCode}, '%')
+        </if>
+        <if test="param.modelCode != null and param.modelCode != ''">
+            and m.model_code like CONCAT('%', #{param.modelCode}, '%')
+        </if>
+        <if test="param.deviceType != null and param.deviceType !=''">
+            and m.device_type = #{param.deviceType}
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test='param.orderStatus == "1"'>
+            and osd.ord_status in (0, 1, 2)
+        </if>
+        <if test='param.orderStatus == "3"'>
+            and osd.ord_status = #{param.orderStatus}
+        </if>
+        <if test='param.orderStatus == "4"'>
+            and osd.ord_status = #{param.orderStatus}
+        </if>
+        ${param.dataScope}
+        order by m.province_code,m.city_code,m.county_code,m.town_code,m.device_code
+        ) dt
+        <where>
+            <if test="param.deviceName != null and param.deviceName != ''">
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="queryHornAliasName" resultType="java.lang.Integer">
+        select
+        count(id)
+        from vm_tenant_device_common_rel_t m
+        where m.device_code = #{param.deviceCode}
+        and m.delete_flag = 0
+        and m.device_type = #{param.deviceType}
+        and m.tenant_id = #{param.tenantId}
+        and m.industry_code = #{param.industryCode}
+    </select>
+
+    <update id="updateHornAliasName" parameterType="com.chinatower.device.entity.dto.HornDeviceDTO">
+        update
+        vm_tenant_device_common_rel_t m
+        set m.device_name = #{param.deviceName},m.modifier = #{param.modifier},m.update_time = #{param.updateTime}
+        where m.device_code = #{param.deviceCode}
+        and m.tenant_id = #{param.tenantId}
+        and m.industry_code = #{param.industryCode}
+        and m.device_type = #{param.deviceType}
+        and m.delete_flag = 0
+    </update>
+
+    <insert id="addHornAliasName" parameterType="com.chinatower.device.entity.dto.HornDeviceDTO">
+        insert into vm_tenant_device_common_rel_t
+        (device_code,device_name,tenant_id,industry_code,app_ver_code,device_type,delete_flag,creator,create_time)
+        values (
+        #{param.deviceCode},
+        #{param.deviceName},
+        #{param.tenantId},
+        #{param.industryCode},
+        #{param.appVerCode},
+        #{param.deviceType},
+        #{param.deleteFlag},
+        #{param.creator},
+        #{param.createTime}
+        )
+    </insert>
+
+    <delete id="deleteHornOrgList" parameterType="com.chinatower.platform.entity.devicemgmt.vo.OrganDeviceRelVO">
+        delete from vm_organ_device_rel_t t
+        where t.device_code = #{param.deviceCode}
+        and t.tenant_id = #{param.tenantId}
+        and t.industry_code = #{param.industryCode}
+        and t.device_type = #{param.deviceType}
+    </delete>
+
+    <insert id="addHornOrgRelList" parameterType="com.chinatower.platform.entity.devicemgmt.vo.OrganDeviceRelVO">
+        insert into vm_organ_device_rel_t
+        (
+        tenant_id,
+        dept_id,
+        device_code,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        delete_flag,
+        device_type,
+        app_ver_code,
+        industry_code
+        )
+        values
+        <foreach collection="list" item="item" separator="," index="index">
+            (
+            #{item.tenantId},
+            #{item.deptId},
+            #{item.deviceCode},
+            #{item.createBy},
+            #{item.createTime},
+            #{item.updateBy},
+            #{item.updateTime},
+            #{item.deleteFlag},
+            #{item.deviceType},
+            #{item.appVerCode},
+            #{item.industryCode}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="addHornDeviceLockInfo" parameterType="com.chinatower.device.entity.dto.TalkReq">
+        insert into vm_horn_device_lock_t
+        (
+        device_code,
+        lock_id,
+        create_time
+        )
+        values (
+        #{param.deviceCode},
+        #{param.lockId},
+        #{param.createTime}
+        )
+    </insert>
+
+    <delete id="deleteLockInfo" parameterType="com.chinatower.device.entity.dto.TalkReq">
+        delete from vm_horn_device_lock_t t
+        where t.device_code in
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.deviceCode}
+            )
+        </foreach>
+    </delete>
+
+    <select id="queryLockInfoList" resultType="com.chinatower.device.dto.HornLockInfo">
+        select
+        t.device_code,
+        t.lock_id,
+        t.create_time
+        from vm_horn_device_lock_t t
+        left join vm_horn_device_info_t m on m.device_code = t.device_code
+        where t.create_time <![CDATA[<=]]> #{time}
+        and m.device_status != 0
+        and m.delete_flag = 0
+    </select>
+
+    <select id="queryHornForArea" parameterType="com.chinatower.device.entity.dto.HornDeviceDTO"
+            resultType="com.chinatower.device.entity.vo.HornDeviceVo">
+        SELECT DISTINCT t2.site_code,
+        t2.longitude,
+        t2.latitude,
+        t2.device_code as deviceCode,
+        (case when length(IFNULL(tdr.device_name, '')) = 0
+        then t2.device_name else tdr.device_name end ) as device_name,
+        t2.province_code,
+        t2.city_code,
+        t2.county_code,
+        t2.town_code,
+        t2.location,
+        max(t2.height) as height,
+        min(t2.device_status) as deviceStatus,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        FROM vm_order_horn_devices t1
+        left JOIN vm_horn_device_info_t t2 ON t1.device_code = t2.device_code
+        left join vm_tenant_device_common_rel_t tdr on tdr.device_code = t1.device_code and tdr.tenant_id = t1.tenant_id
+        and tdr.industry_code = t1.industry_code and tdr.delete_flag = 0
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = t2.device_code
+        AND dct.coll_obj_type = '10' AND dct.user_id = #{param.userId}
+        <if test='param.labelIdList != null and param.labelIdList.size() > 0'>
+            INNER JOIN vm_device_labels_rel t3 ON t1.device_code = t3.device_code
+        </if>
+            <if test='param.deptId != null and param.deptId != ""'>
+            LEFT JOIN vm_organ_device_rel_t dd ON t2.device_code = dd.device_code
+            and dd.device_type = 12
+            and t1.industry_code = dd.industry_code
+        </if>
+        WHERE t2.delete_flag = '0'
+        AND t1.delete_flag = '0'
+        and t1.ord_status in (0,1,2)
+        and t2.device_status != 4
+        <if test='param.provinceCode != null and param.provinceCode != ""'>
+            AND t2.province_code = #{param.provinceCode}
+        </if>
+        <if test='param.cityCode != null and param.cityCode != ""'>
+            AND t2.city_code = #{param.cityCode}
+        </if>
+        <if test='param.countyCode != null and param.countyCode != ""'>
+            AND t2.county_code = #{param.countyCode}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND t2.town_code = #{param.townCode}
+        </if>
+        <if test='param.labelIdList != null and param.labelIdList.size() > 0'>
+            and t3.label_id in
+            <foreach item="item" index="index" collection="param.labelIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.deptId != null and param.deptId != ""'>
+            AND dd.dept_id = #{param.deptId}
+        </if>
+        ${param.dataScope}
+        group by t2.site_code, t2.device_code
+    </select>
+
+    <resultMap id="querySiteDevTree" type="com.chinatower.device.entity.vo.HornDeviceVo">
+        <result property="siteCode" column="site_code"/>
+        <result property="longitude" column="longitude"/>
+        <result property="latitude" column="latitude"/>
+        <collection property="list" ofType="com.chinatower.device.entity.vo.HornDeviceVo">
+            <result property="height" column="height"/>
+            <result property="deviceCode" column="deviceCode"/>
+            <result property="deviceName" column="device_name"/>
+            <result property="deviceStatus" column="deviceStatus"/>
+            <result property="isMonitor" column="isMonitor"/>
+            <result property="provinceCode" column="province_code"/>
+            <result property="cityCode" column="city_code"/>
+            <result property="countyCode" column="county_code"/>
+            <result property="townCode" column="town_code"/>
+        </collection>
+    </resultMap>
+
+    <select id="querySiteDevTree" parameterType="com.chinatower.device.entity.dto.HornDeviceDTO"
+            resultMap="querySiteDevTree">
+        SELECT DISTINCT t2.site_code,
+        t2.longitude,
+        t2.latitude,
+        t2.device_code as deviceCode,
+        (case when length(IFNULL(tdr.device_name, '')) = 0
+        then t2.device_name else tdr.device_name end ) as device_name,
+        t2.province_code,
+        t2.city_code,
+        t2.county_code,
+        t2.town_code,
+        max(t2.height) as height,
+        min(t2.device_status) as deviceStatus,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        FROM vm_order_horn_devices t1
+        left JOIN vm_horn_device_info_t t2 ON t1.device_code = t2.device_code
+        left join vm_tenant_device_common_rel_t tdr on tdr.device_code = t1.device_code and tdr.tenant_id = t1.tenant_id
+        and tdr.industry_code = t1.industry_code and tdr.delete_flag = 0 and tdr.device_type = 2
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = t2.device_code
+        AND dct.coll_obj_type = '10' AND dct.user_id = #{param.userId}
+        <if test='param.labelIdList != null and param.labelIdList.size() > 0'>
+            INNER JOIN vm_device_labels_rel t3 ON t1.device_code = t3.device_code
+        </if>
+        <if test='param.deptId != null and param.deptId != ""'>
+            LEFT JOIN vm_organ_device_rel_t dd ON t2.device_code = dd.device_code
+            and dd.device_type = 12
+            and t1.industry_code = dd.industry_code
+        </if>
+        WHERE t2.delete_flag = '0'
+        and t2.device_status != 4
+        AND t1.delete_flag = '0'
+        and t1.ord_status in (0,1,2)
+        <if test='param.provinceCode != null and param.provinceCode != ""'>
+            AND t2.province_code = #{param.provinceCode}
+        </if>
+        <if test='param.cityCode != null and param.cityCode != ""'>
+            AND t2.city_code = #{param.cityCode}
+        </if>
+        <if test='param.countyCode != null and param.countyCode != ""'>
+            AND t2.county_code = #{param.countyCode}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND t2.town_code = #{param.townCode}
+        </if>
+        <if test='param.labelIdList != null and param.labelIdList.size() > 0'>
+            and t3.label_id in
+            <foreach item="item" index="index" collection="param.labelIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.deptId != null and param.deptId != ""'>
+            AND dd.dept_id = #{param.deptId}
+        </if>
+        ${param.dataScope}
+        group by t2.site_code, t2.device_code
+    </select>
+
+    <select id="queryHornForSite" resultType="com.chinatower.device.entity.vo.HornDeviceVo">
+        SELECT distinct m.device_code,
+        osd.order_code,
+        osd.tenant_id,
+        m.manufacturer_code,
+        (case when length(IFNULL(tdr.device_name, '')) = 0
+        then m.device_name else tdr.device_name end ) as device_name,
+        m.province_code,
+        m.city_code,
+        m.county_code,
+        m.town_code,
+        m.site_code,
+        m.latitude,
+        m.longitude,
+        m.location,
+        <choose>
+            <when test='param.queryFlag == "1"'>
+                max(m.height) as height,
+                min(m.device_status) as deviceStatus,
+            </when>
+            <otherwise>
+                m.height,
+                m.device_status,
+            </otherwise>
+        </choose>
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'broadcast_manufacturer' AND DICT_VALUE = m.manufacturer_code limit 1) manufacturerName,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        FROM vm_order_horn_devices osd
+        left join vm_horn_device_info_t m on osd.device_code = m.device_code
+        left join vm_tenant_device_common_rel_t tdr on tdr.device_code = osd.device_code and tdr.tenant_id = osd.tenant_id
+        and tdr.industry_code = osd.industry_code and tdr.delete_flag = 0
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '10' AND dct.user_id = #{param.userId}
+        <if test='param.labelIdList != null and param.labelIdList.size() > 0'>
+            INNER JOIN vm_device_labels_rel t3 ON osd.device_code = t3.device_code
+        </if>
+        <if test='param.deptId != null and param.deptId != ""'>
+            LEFT JOIN vm_organ_device_rel_t dd ON m.device_code = dd.device_code
+            and dd.device_type = 12
+            and osd.industry_code = dd.industry_code
+        </if>
+        where osd.delete_flag = '0' and m.delete_flag = '0' and m.device_status != 4 and osd.ord_status in (0,1,2)
+        <if test='param.siteCode!= null and param.siteCode != "" '>
+            AND m.site_code = #{param.siteCode}
+        </if>
+        <if test='param.deviceCode!= null and param.deviceCode != "" '>
+            AND m.device_code = #{param.deviceCode}
+        </if>
+        <if test='param.provinceCode != null and param.provinceCode != ""'>
+            AND m.province_code = #{param.provinceCode}
+        </if>
+        <if test='param.cityCode != null and param.cityCode != ""'>
+            AND m.city_code = #{param.cityCode}
+        </if>
+        <if test='param.countyCode != null and param.countyCode != ""'>
+            AND m.county_code = #{param.countyCode}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND m.town_code = #{param.townCode}
+        </if>
+        <if test='param.labelIdList != null and param.labelIdList.size() > 0'>
+            and t3.label_id in
+            <foreach item="item" index="index" collection="param.labelIdList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.deptId != null and param.deptId != ""'>
+            AND dd.dept_id = #{param.deptId}
+        </if>
+        ${param.dataScope}
+        <choose>
+            <when test='param.queryFlag == "1"'>
+                group by m.site_code, m.device_code
+            </when>
+            <otherwise>
+                group by m.device_code
+            </otherwise>
+        </choose>
+        order by m.height + 0 desc
+    </select>
+
+    <select id="queryDeviceCollStatus" resultType="java.lang.String">
+        select case when IFNULL(dc.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from vm_horn_device_info_t m
+                 JOIN vm_user_device_collection_t dc ON dc.coll_obj_code = m.device_code
+        where m.delete_flag = '0'
+          and m.device_code = #{deviceCode}
+          AND dc.coll_obj_type = '10'
+          and dc.user_id = #{userId}
+    </select>
+
+    <select id="queryHornDeviceDetail" resultType="com.chinatower.device.entity.vo.HornDeviceVo">
+        SELECT DISTINCT od.device_code,
+        m.id,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        m.manufacturer_code,
+        m.model_code,
+        m.device_type,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'broadcast_device_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        m.height,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.site_code,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '1'
+        WHEN od.ord_status = '3' THEN '3'
+        WHEN od.ord_status = '4' THEN '4'
+        END ) orderStatus,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_code,
+        city.area_name as cityName,
+        city.area_code as city_code,
+        county.area_name as countyName,
+        county.area_code as county_code,
+        town.area_code as town_code,
+        town.area_name as town_name,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'broadcast_manufacturer' AND DICT_VALUE = m.manufacturer_code limit 1) manufacturerName
+        from vm_order_horn_devices od
+        LEFT JOIN vm_horn_device_info_t m on m.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t ten on ten.device_code = od.device_code and ten.tenant_id = od.tenant_id
+          and ten.industry_code = od.industry_code and ten.delete_flag = 0
+          and ten.device_type = 2
+        LEFT JOIN sys_area pro on pro.area_code = m.province_code
+        LEFT JOIN sys_area city on city.area_code = m.city_code
+        LEFT JOIN sys_area county on county.area_code = m.county_code
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '10' AND dct.user_id = #{param.userId}
+        LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code
+        and art.coll_obj_type = '10' and art.user_id = #{param.userId}
+        where m.delete_flag = 0
+        and od.device_code = #{param.deviceCode}
+        ${param.dataScope}
+         limit 1
+    </select>
+    <select id="queryHornDeviceDistanceInfo" resultType="com.chinatower.platform.entity.device.DeviceDistanceVO">
+        select
+        t.device_code,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then t.device_name else rel.device_name end ) name,
+        t.location,
+        ST_Distance_Sphere(
+        ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+        ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+        ) as distance,
+        t.manufacturer_code modelCode,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'broadcast_manufacturer' AND DICT_VALUE = t.manufacturer_code limit 1) modelName,
+        t.device_type,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'broadcast_device_type' AND DICT_VALUE = t.device_type limit 1) deviceTypeName,
+        <if test='param.userId != null and param.userId != "" '>
+            case when IFNULL(dct.user_device_coll_id, 0) = 0 then '0' else '1' end isMonitor,
+        </if>
+        t.height,
+        t.longitude,
+        t.latitude,
+        t.device_status deviceOriginalStatus,
+        (case when t.device_status = '0' then '1'
+				     when t.device_status = '1'then '0'
+				     when t.device_status = '2'then '0'
+				     when t.device_status = '3'then '0'
+				     else '1' end) deviceStatus
+        from vm_order_horn_devices o
+        inner join vm_horn_device_info_t t on t.device_code = o.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = o.device_code and rel.tenant_id = o.tenant_id
+            and rel.industry_code = o.industry_code and rel.delete_flag = 0 and rel.device_type = 2
+        <if test='param.userId != null and param.userId != "" '>
+            LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = t.device_code AND dct.coll_obj_type = '10' AND dct.user_id = #{param.userId}
+        </if>
+        and rel.tenant_id = o.tenant_id
+        and rel.industry_code = o.industry_code
+        and rel.device_type = 2
+        where o.delete_flag = '0'
+        and t.delete_flag = '0'
+        <if test="param.withAllStatus == null or param.withAllStatus != 1 ">
+            and t.device_status != 4
+        </if>
+        and o.ord_status in (0,1,2)
+        <if test="param.radius != -1">
+            and ST_Distance_Sphere(
+            ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+            ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+            )  <![CDATA[<=]]> #{param.radius}
+        </if>
+        <if test='param.searchName != null and param.searchName != "" '>
+            AND (t.site_code like CONCAT('%', #{param.searchName}, '%') OR t.device_name like CONCAT('%', #{param.searchName}, '%'))
+        </if>
+        ${param.dataScope}
+        group by t.device_code
+        order by t.id
+        <if test='param.limitSize != null'>
+            limit #{param.limitSize}
+        </if>
+    </select>
+
+    <select id="queryAccessNodeInfoByDeviceCodeList" resultType="com.chinatower.platform.entity.device.DeviceTreeVO">
+        select device_code, device_name, access_node, device_status as status from vm_horn_device_info_t
+        where delete_flag = 0 and device_code in
+        <foreach item="item" index="index" collection="deviceCodeList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <select id="queryDeviceListByKeyWord" resultType="com.chinatower.device.entity.vo.DeviceComprehensiveVO">
+        select * from(
+        SELECT DISTINCT m.device_code,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.site_code,
+        m.device_status as deviceOriginalStatus,
+        (case when m.device_status = '0' then '1'
+        when m.device_status = '1'then '0'
+        when m.device_status = '2'then '0'
+        when m.device_status = '3'then '0'
+        else '1' end) deviceStatus
+        from vm_order_horn_devices od
+        LEFT JOIN vm_horn_device_info_t m on m.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t ten on ten.device_code = od.device_code and ten.tenant_id = od.tenant_id
+        and ten.industry_code = od.industry_code and ten.delete_flag = 0
+        and ten.device_type = 2
+        where od.delete_flag = 0 and m.delete_flag = 0
+        and od.ord_status in (0, 1, 2)
+        <if test="param.longitude != null and param.longitude != ''">
+            and m.longitude like CONCAT('%', #{param.longitude}, '%')
+        </if>
+        <if test="param.latitude != null and param.latitude != ''">
+            and m.latitude like CONCAT('%', #{param.latitude}, '%')
+        </if>
+        ${param.dataScope}
+        order by FIELD(m.device_status,'1','2','4','3','0'),od.device_code
+        )dt
+        <where>
+            <if test="param.keyWord !=null and param.keyWord !=''">
+                and ((dt.device_code = #{param.keyWord}) or (dt.device_name like CONCAT('%', #{param.keyWord}, '%')))
+            </if>
+        </where>
+    </select>
+
+    <select id="queryHornDeviceListByCondition" resultType="com.chinatower.device.entity.vo.HornDeviceVo">
+        SELECT DISTINCT od.device_code,
+        m.id,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        m.manufacturer_code,
+        m.model_code,
+        m.device_type,
+        m.site_code,
+        m.height,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.access_node,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '1'
+        WHEN od.ord_status = '3' THEN '3'
+        WHEN od.ord_status = '4' THEN '4'
+        END ) orderStatus,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName,
+        od.tenant_id as tenantId
+        from vm_order_horn_devices od
+        LEFT JOIN vm_horn_device_info_t m on m.device_code = od.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t ten on ten.device_code = od.device_code and ten.tenant_id = od.tenant_id
+        and ten.industry_code = od.industry_code and ten.delete_flag = 0
+        and ten.device_type = 2
+        where od.delete_flag = 0 and m.delete_flag = 0
+        and od.ord_status in (0, 1, 2)
+        <if test="param.deviceCode !=null and param.deviceCode !=''">
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceCodeList !=null and param.deviceCodeList.size() > 0'>
+            and m.device_code in
+            <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+    </select>
+</mapper>

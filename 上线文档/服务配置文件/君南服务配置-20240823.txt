@@ -1,0 +1,8 @@
+1、新增缓存配置
+登录铁塔帐号->工作台->铁塔系统管理->缓存管理-点击新增
+redis key：connectUrl:snapshotByNode
+value：string
+过期时间：2099-08-19 02:35:26
+类型：数据
+详情内容：/plat/devices/{deviceCode}/channels/{channelCode}/snapshotByNode
+

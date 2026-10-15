@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.IotDeviceConfigMapper">
+    <select id="queryIotDeviceConfigList" resultType="com.chinatower.device.dto.IotDeviceConfigVO">
+        select
+            t.rown,
+            t.id,
+            t.deviceCode,
+            t.deviceName,
+            t.bindFlag,
+            CASE WHEN t.bindFlag =1 THEN '' else t.iotName END iotDeviceName,
+            CASE WHEN t.bindFlag =1 THEN '' else t.iotModelCode END iotDeviceCode
+        from (
+                 SELECT
+                     ROW_NUMBER ( ) OVER ( ) AS rown,
+                     t3.id,
+                     t2.device_code AS deviceCode,
+                    ( case when length(IFNULL(ten.device_name, '')) = 0 then  t2.device_name else ten.device_name end ) AS deviceName,
+                     case when (select count(*) from vm_order_sensor_devices where ord_status IN ( 0, 1, 2 ) and device_code =t3.iot_device_code and industry_code = t1.industry_code and  tenant_id = t1.tenant_id) =0 THEN '1' else IFNULL(t3.bind_flag,1) end bindFlag,
+                     t4.device_name iotName,
+                     t4.device_code iotModelCode
+                 FROM
+                     vm_order_devices t1
+                         LEFT JOIN vm_device_info_t t2 ON t1.device_code = t2.device_code and t2.delete_flag='0'
+                         LEFT JOIN vm_device_iot_rel_t t3 ON t1.device_code = t3.device_code and t3.delete_flag='0'
+                         and t3.industry_code = t1.industry_code and t3.tenant_id = t1.tenant_id
+                         LEFT JOIN vm_iot_device_t t4 ON t4.device_code = t3.iot_device_code and t4.delete_flag = '0'
+                        LEFT JOIN vm_tenant_device_channel_rel_t ten on t1.device_code = ten.device_code and ten.tenant_id = t1.tenant_id
+                        and ten.industry_code = t1.industry_code and ten.delete_flag='0'
+                 WHERE
+                     t1.delete_flag = '0'
+                   AND t1.ord_status IN ( 0, 1, 2 )
+                <if test="param.deviceCode != null and param.deviceCode != ''">
+                    AND t1.device_code = #{param.deviceCode}
+                </if>
+                <if test="param.deviceName != null and param.deviceName != ''">
+                    AND ( case when length(IFNULL(ten.device_name, '')) = 0 then t2.device_name LIKE CONCAT('%',#{param.deviceName},'%') else ten.device_name LIKE CONCAT('%',#{param.deviceName},'%') end )
+                </if>
+                <if  test='param.bindFlag != null and param.bindFlag != "" and  param.bindFlag == "0"'>
+                    AND t3.bind_flag = '0'
+                </if>
+                <if  test='param.bindFlag != null and param.bindFlag != "" and  param.bindFlag == "1"'>
+                    AND NOT EXISTS (
+                    SELECT 1
+                    FROM vm_device_iot_rel_t
+                    WHERE device_code = t1.device_code and delete_flag = '0' and bind_flag ='0'
+                    and industry_code = t1.industry_code and tenant_id = t1.tenant_id
+                    )
+                </if>
+                <if test="param.iotDeviceCode != null and param.iotDeviceCode != ''">
+                    AND t4.device_code = #{param.iotDeviceCode} and t3.bind_flag != '1'
+                </if>
+                <if test="param.iotDeviceName != null and param.iotDeviceName != ''">
+                     and t4.device_name like CONCAT('%', #{param.iotDeviceName}, '%') and t3.bind_flag != '1'
+                </if>
+                    ${param.dataScope}
+                 GROUP BY
+                     t1.device_code
+             ) t
+
+    </select>
+    <select id="getOrderIotDeviceNum" resultType="java.lang.Integer">
+        select count(*) from vm_order_sensor_devices t where t.device_code = #{param.iotDeviceCode} and t.delete_flag = '0' and ord_status in (0,1,2)
+    </select>
+    <select id="getIotDeviceConfigNum" resultType="java.lang.Integer">
+        select count(*) from vm_device_iot_rel_t t
+        where t.device_code = #{param.deviceCode}
+        <if test="param.iotDeviceCode != null and param.iotDeviceCode != ''">
+        and t.iot_device_code = #{param.iotDeviceCode}
+        </if>
+        and t.delete_flag = '0' and t.bind_flag = '0'
+        and t.industry_code = #{param.industryCode} and t.tenant_id = #{param.tenantId}
+    </select>
+    <select id="getIotDeviceConfig" resultType="com.chinatower.device.dto.IotDeviceConfigVO">
+        select
+         t.device_code  deviceCode,
+         t.iot_device_code iotDeviceCode
+        from vm_device_iot_rel_t t
+        where t.delete_flag = '0' and t.bind_flag = '0'
+        <if test="param.deviceCode != null and param.deviceCode != ''">
+           and  t.device_code = #{param.deviceCode}
+        </if>
+        <if test="param.iotDeviceCode != null and param.iotDeviceCode != ''">
+           and t.iot_device_code = #{param.iotDeviceCode}
+        </if>
+    </select>
+    <select id="getSecondIotDeviceConfig" resultType="java.lang.Integer">
+        select count(*) from vm_device_iot_rel_t t
+        where t.device_code = #{param.deviceCode}
+            and t.delete_flag = '0'
+            and t.industry_code = #{param.industryCode} and t.tenant_id = #{param.tenantId}
+    </select>
+    <update id="updateIotDeviceConfig">
+            update vm_device_iot_rel_t t
+            set t.bind_flag = '1'
+            set t.delete_flag = '1'
+            where t.device_code = #{param.deviceCode} and t.iot_device_code = #{param.iotDeviceCode} and t.delete_flag = '0' and t.bind_flag = '0'
+    </update>
+</mapper>
+

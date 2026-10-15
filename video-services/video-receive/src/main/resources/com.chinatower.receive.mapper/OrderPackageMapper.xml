@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.OrderPackageMapper">
+
+
+    <select id="getCustomersByOrderAreaCode" resultType="com.chinatower.receive.vo.dto.OrderCustomerVO"
+            parameterType="com.chinatower.event.entity.vo.ReceiveSatelliteAlarmApiVo">
+        SELECT
+            DISTINCT b.tenant_id,b.tenant_name as customer_name,o.is_operation as isOperation,osl.app_ver_code,osl.industry_code,
+        GROUP_CONCAT( IF ( o.operation_type = '2', o.operation_alarm_type_str, null) ) AS parallel_alarm_type_str,
+        GROUP_CONCAT( IF ( o.operation_type = '1', o.operation_alarm_type_str, null) )  AS serial_alarm_type_str,
+        GROUP_CONCAT( o.operation_type ) AS operation_type,
+        GROUP_CONCAT(
+        DISTINCT NULLIF( CASE WHEN o.operation_type = '2' THEN o.operation_node END, '' )) AS parallelOperationNode,
+        GROUP_CONCAT(
+        DISTINCT NULLIF( CASE WHEN o.operation_type = '1' THEN o.operation_node END, '' )) AS operationNode,
+        GROUP_CONCAT(
+        DISTINCT NULLIF( CASE WHEN o.operation_type = '2' THEN o.operation_dept END, '' )) AS parallelOperationDept,
+        GROUP_CONCAT(
+        DISTINCT NULLIF( CASE WHEN o.operation_type = '1' THEN o.operation_dept END, '' )) AS operationDept,
+        GROUP_CONCAT(o.alarm_source) AS operation_alarm_source
+        FROM
+        sys_tenant_info b
+        INNER JOIN vm_order_services_rel osl ON b.tenant_id = osl.tenant_id
+        LEFT JOIN sys_tenant_operation_config o ON o.tenant_id = b.tenant_id
+        and o.industry_code = osl.industry_code AND (o.alarm_source = '9' or o.alarm_source = '-1')
+        <if test="localNode != null and localNode != ''">
+            and o.accept_node = #{localNode}
+        </if>
+        AND o.delete_flag = '0'
+        WHERE
+            osl.ord_status in (0, 1, 2)
+        <if test="localNode != null and localNode != ''">
+            and osl.accept_node = #{localNode}
+        </if>
+            AND osl.service_code = '9'
+            AND osl.delete_flag = '0'
+        <if test="province != null and province != ''">
+            AND osl.provice_code = #{province}
+        </if>
+        <if test="city != null and city != ''">
+            AND osl.city_code =  #{city}
+        </if>
+        <if test="county != null and county != ''">
+            AND osl.county_code =  #{county}
+        </if>
+        GROUP BY b.tenant_id,osl.industry_code
+    </select>
+    <select id="getPlatformCodeByAre" resultType="java.lang.String">
+        SELECT
+            DISTINCT accept_node
+        FROM
+            `vm_order_services_rel`
+        WHERE
+            delete_flag = '0'
+          AND service_code = '9'
+          AND ord_status IN ( '0', '1', '2' ) and provice_code = #{province} and city_code = #{city} and county_code = #{county}
+          AND accept_node != '10000000001'
+        <if test="list != null and list.size()> 0">
+            AND accept_node IN
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                 #{item}
+            </foreach>
+        </if>
+    </select>
+
+</mapper>

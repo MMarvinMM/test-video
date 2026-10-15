@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.UavMountModelMapper">
+    <select id="selectByCode" resultType="com.chinatower.sync.consumer.item.UavMountModelVO">
+        SELECT id,
+               model_code,
+               model_name,
+               manufacturer_code,
+               mount_type,
+               support_function,
+               creator,
+               create_time,
+               modifier,
+               update_time,
+               delete_flag
+        FROM vm_uav_mount_model_t
+        WHERE model_code = #{modelCode} limit 1
+    </select>
+
+    <!-- 查询所有数据 -->
+    <select id="getAllUavMountModel" resultType="com.chinatower.sync.consumer.item.UavMountModelVO">
+        SELECT *
+        FROM vm_uav_mount_model_t
+    </select>
+
+    <delete id="deleteByModelCode">
+        DELETE
+        FROM vm_uav_mount_model_t
+        WHERE model_code = #{modelCode} limit 1
+    </delete>
+
+    <update id="updateByModelCode">
+        UPDATE vm_uav_mount_model_t
+        SET model_name        = #{modelName},
+            manufacturer_code = #{manufacturerCode},
+            mount_type        = #{mountType},
+            support_function  = #{supportFunction},
+            modifier          = #{modifier},
+            update_time       = NOW()
+        WHERE model_code = #{modelCode} Limit 1
+    </update>
+
+    <select id="batchInsert" resultType="int">
+        INSERT INTO vm_uav_mount_model_t
+        (model_code, model_name, manufacturer_code, mount_type,
+         support_function, creator, create_time, modifier, update_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.modelCode}, #{item.modelName}, #{item.manufacturerCode},
+             #{item.mountType}, #{item.supportFunction}, #{item.creator},
+             NOW(), #{item.modifier}, NOW())
+        </foreach>
+    </select>
+
+    <!-- 批量物理删除 -->
+    <delete id="batchDelete" parameterType="java.util.List">
+        DELETE
+        FROM vm_uav_mount_model_t
+        WHERE yg_id IN
+        <foreach collection="list" item="Ygid" open="(" separator="," close=")">
+            #{Ygid}
+        </foreach>
+    </delete>
+
+    <!-- 批量更新 -->
+    <update id="batchUpdate" parameterType="java.util.List">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE vm_uav_mount_model_t
+            SET model_name        = #{item.modelName},
+                manufacturer_code = #{item.manufacturerCode},
+                mount_type        = #{item.mountType},
+                support_function  = #{item.supportFunction},
+                modifier          = #{item.modifier},
+                update_time       = NOW()
+            WHERE yg_id = #{item.ygId}
+        </foreach>
+    </update>
+</mapper>

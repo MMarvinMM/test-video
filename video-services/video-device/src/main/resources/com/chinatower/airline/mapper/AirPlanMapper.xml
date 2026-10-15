@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.airline.mapper.AirPlanMapper">
+
+
+
+
+    <resultMap id="planResultMap" type="com.chinatower.airline.dto.response.AirPlanRep">
+        <id column="id" property="id" />
+        <result column="plan_id" property="planId" />
+        <result column="plan_name" property="planName" />
+        <result column="flight_route_id" property="flightRouteId" />
+        <result column="plan_type" property="planType" />
+        <result column="device_code" property="deviceCode" />
+        <result column="plan_time_a" property="planTime" />
+        <result column="plan_end_time" property="planEndTime" />
+        <result column="plan_start_time" property="planStartTime" />
+        <result column="regular_execution_date" property="regularExecutionDate" />
+        <result column="cycle_execution_unit" property="cycleExecutionUnit" />
+        <result column="day_interval" property="dayInterval" />
+        <result column="interval_values" property="intervalValues" />
+        <result column="gain_video" property="gainVideo" />
+        <result column="auto" property="auto" />
+        <result column="gain_data_mode" property="gainDataMode" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="app_ver_code" property="appVerCode" />
+        <result column="create_user" property="createUser" />
+        <result column="update_user" property="updateUser" />
+        <result column="access_node" property="accessNode" />
+        <result column="accept_node" property="acceptNode" />
+        <result column="flight_route_name" property="flightRouteName" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="extra_field" property="extraField" />
+        <result column="type" property="airLineType"/>
+        <result column="uav_code" property="uavCode" />
+        <result column="device_name" property="deviceName" />
+        <result column="uav_nest_code" property="uavNestCode" />
+        <result column="uav_nest_name" property="uavNestName"/>
+        <result column="is_it_enabled" property="isItEnabled"/>
+        <result column="cycle_execution_time" property="cycleExecutionTime"/>
+        <result column="uav_allowed" property="uavAllowed"/>
+        <result column="snapshot_id" property="snapshotId"/>
+        <result column="video_definition" property="definition"/>
+        <result column="auto_resume" property="autoResume"/>
+    </resultMap>
+
+    <resultMap id="taskResultMap" type="com.chinatower.device.entity.dto.AirTaskReq">
+        <id column="task_id" property="id" />
+        <result column="plan_task_id" property="taskRecordId"/>
+        <result column="plan_time_t" property="scheduleExecTime" />
+        <result column="plan_id" property="planId" />
+        <result column="plan_name" property="planName" />
+        <result column="reality_time" property="realityTime" />
+        <result column="task_status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="create_user" property="createUser" />
+        <result column="update_time" property="updateTime" />
+        <result column="update_user" property="updateUser" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="medium_status" property="mediumStatus" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="access_node" property="accessNode" />
+        <result column="accept_node" property="acceptNode" />
+        <result column="uavNestCode" property="uavNestCode" />
+        <result column="deviceCode" property="deviceCode" />
+        <result column="deviceName" property="deviceName" />
+        <result column="flightRouteName" property="flightRouteName" />
+        <result column="planType" property="planType" />
+        <result column="is_it_enabled" property="isItEnabled"/>
+        <result column="fly_time" property="flyTime"/>
+        <result column="error_reason" property="errorReason"/>
+        <result column="break_point_json" property="breakPointJson"/>
+        <result column="task_type" property="taskType"/>
+        <result column="uav_code" property="uavCode"/>
+        <result column="frog_leap" property="frogLeap"/>
+        <result column="startNestName" property="startNestName"/>
+        <result column="endNestName" property="endNestName"/>
+    </resultMap>
+
+    <select id="airTask" resultMap="taskResultMap">
+        SELECT
+        a.`id` as task_id, a.`plan_id`, a.`plan_name`, a.`plan_task_id`, DATE_FORMAT( a.`plan_time`, '%Y-%m-%d %H:%i' ) as plan_time_t,
+        DATE_FORMAT( a.`reality_time`, '%Y-%m-%d %H:%i' ) as reality_time, a.`task_status`, a.`create_time`, a.`create_user`, a.`update_time`,
+        a.`update_user`, a.`delete_flag`, a.`medium_status`, a.`tenant_id`, a.`industry_code`, a.`access_node`, a.`accept_node`,
+        a.`is_it_enabled`,a.fly_time,a.error_reason,a.break_point_json,a.task_type,a.uav_code,
+        a.frog_leap,i.device_name as startNestName,e.device_name as endNestName,d.device_name as deviceName,
+        a.start_nest_code as uavNestCode
+        FROM vm_air_task_t a
+        left join vm_air_plan_t ap on ap.plan_id = a.plan_id
+        LEFT JOIN vm_uav_nest_device_info i on a.start_nest_code = i.device_code COLLATE utf8mb4_general_ci
+        LEFT JOIN vm_uav_nest_device_info e on a.end_nest_code = e.device_code COLLATE utf8mb4_general_ci
+        LEFT JOIN vm_uav_device_info_t d on a.uav_code = d.device_code COLLATE utf8mb4_general_ci
+        where a.plan_id in
+        <foreach collection="planIds" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        and a.delete_flag = 0
+        <!-- 添加 isRefly 条件 -->
+        <if test="isRefly != null and isRefly.size > 0">
+            and a.task_type in
+            <foreach collection="isRefly" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <!-- 添加 realityTime 条件 -->
+        <if test="realityStartTime != null and realityEndTime != null and realityStartTime != '' and realityEndTime != '' ">
+            and DATE_FORMAT(a.reality_time,'%Y-%m-%d %H:%i:%s') >= #{realityStartTime}
+            and DATE_FORMAT(a.reality_time,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]> #{realityEndTime}
+        </if>
+    </select>
+
+    <select id="airPlanList" resultMap="planResultMap">
+        select a.id, a.plan_id, a.plan_name, a.flight_route_id, a.`status`, a.plan_type, a.device_code, a.plan_time as plan_time_a,
+        a.uav_nest_code,a.auto_resume,
+        a.plan_end_time, a.plan_start_time, a.regular_execution_date, a.cycle_execution_unit, a.day_interval,
+        a.interval_values, a.gain_video, a.auto, a.gain_data_mode, a.tenant_id, a.industry_code,a.app_ver_code, a.create_time,
+        a.create_user, a.update_time, a.update_user, a.delete_flag, a.access_node, a.accept_node,a.uav_code,a.is_it_enabled,a.cycle_execution_time,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then d.device_name else rel.device_name end ) as device_name,
+        l.flight_route_name,
+        l.extra_field,l.type,
+        (CASE WHEN length(IFNULL(relnest.device_name, '')) = 0 THEN i.device_name ELSE relnest.device_name END) AS uav_nest_name,
+        l.uav_allowed,a.snapshot_id,a.video_definition as definition,
+        i.device_name as startNestName,
+        ii.device_name as endNestName,
+        l.frog_leap as frogLeap
+        FROM vm_air_plan_t a
+        LEFT JOIN vm_air_line_t l on a.flight_route_id = l.flight_route_id
+        LEFT JOIN vm_uav_device_info_t d ON l.device_code = d.uav_nest_code
+        LEFT JOIN vm_uav_nest_device_info i on l.start_nest_code = i.device_code
+        LEFT JOIN vm_uav_nest_device_info ii on l.end_nest_code = ii.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t relnest ON relnest.device_code = i.device_code
+        and relnest.tenant_id = #{tenantId}
+        and relnest.industry_code = #{industryCode}
+        and relnest.delete_flag = '0'
+        and relnest.device_type = 4
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = d.device_code
+        and rel.tenant_id = #{tenantId}
+        and rel.industry_code = #{industryCode}
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        <where>
+            <if test="planName != null and planName !=''">
+                and (a.plan_name like CONCAT('%', #{planName}, '%')
+                OR EXISTS (SELECT 1 FROM vm_air_task_t t LEFT JOIN vm_air_plan_t ap ON ap.plan_id = t.plan_id WHERE t.plan_name LIKE CONCAT('%', #{planName}, '%') AND ap.plan_id = a.plan_id AND t.delete_flag = 0))
+            </if>
+            <if test="isItEnabled != null and isItEnabled !=''">
+                <if test="status != null and status.size()>0">
+                    and EXISTS (SELECT 1 FROM vm_air_task_t WHERE plan_id = a.plan_id and ((task_status IN
+                    <foreach collection="status" item="item" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                    ) or is_it_enabled = 1) )
+                </if>
+            </if>
+            <if test="isItEnabled == null or isItEnabled ==''">
+                <if test="status != null and status.size()>0">
+                    and EXISTS (SELECT 1 FROM vm_air_task_t WHERE plan_id = a.plan_id and task_status IN
+                    <foreach collection="status" item="item" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+            </if>
+            <if test="planType != null and planType.size()>0">
+                and a.plan_type IN
+                <foreach collection="planType" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="planStartTime != null and planStartTime !=''">
+                and a.plan_time &gt;= #{planStartTime}
+            </if>
+            <if test="planEndTime != null and planEndTime !=''">
+                and a.plan_time &lt;= #{planEndTime}
+            </if>
+            <if test="flightRouteId != null and flightRouteId !=''">
+                and l.flight_route_id = #{flightRouteId}
+            </if>
+            <if test="flightRouteName != null and flightRouteName !=''">
+                and l.flight_route_name like CONCAT('%', #{flightRouteName}, '%')
+            </if>
+            <if test="deviceName != null and deviceName != ''">
+                AND (
+                CASE WHEN LENGTH(IFNULL(rel.device_name, '')) = 0
+                THEN d.device_name
+                ELSE rel.device_name
+                END
+                ) LIKE CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test="uavNestName != null and uavNestName != ''">
+                AND (
+                CASE WHEN LENGTH(IFNULL(relnest.device_name, '')) = 0
+                THEN i.device_name
+                ELSE relnest.device_name
+                END
+                ) LIKE CONCAT('%', #{uavNestName}, '%')
+            </if>
+            <if test="deviceCode != null and deviceCode !=''">
+                and a.device_Code = #{deviceCode}
+            </if>
+            <if test="isRefly != null and isRefly.size > 0">
+                and a.plan_id IN (
+                SELECT
+                plan_id
+                FROM
+                vm_air_task_t
+                WHERE
+                task_type in
+                <foreach collection="isRefly" item="item" open="(" separator="," close=")">
+                     #{item}
+                </foreach>
+                and tenant_id = #{tenantId}
+                and industry_code = #{industryCode}
+                )
+            </if>
+            <if test="realityStartTime != null and realityEndTime != null and realityStartTime != '' and realityEndTime != '' ">
+                and a.plan_id IN (
+                SELECT
+                plan_id
+                FROM
+                vm_air_task_t
+                WHERE
+                DATE_FORMAT(reality_time,'%Y-%m-%d %H:%i:%s') >= #{realityStartTime}
+                and
+                DATE_FORMAT(reality_time,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]> #{realityEndTime}
+                and tenant_id = #{tenantId}
+                and industry_code = #{industryCode}
+                )
+            </if>
+            and a.delete_flag = 0
+            and l.device_code in (select device_code from vm_order_uav_nest_devices where tenant_id = a.tenant_id and industry_code = a.industry_code and ord_status in (0,1,2))
+            <if test="autoResume != null">
+                and a.auto_resume = #{autoResume}
+            </if>
+            <if test="frogLeap != null">
+                and l.frog_leap = #{frogLeap}
+            </if>
+            <if test="startNestName != null">
+                and i.device_name LIKE CONCAT('%', #{startNestName}, '%')
+            </if>
+            <if test="endNestName != null">
+                and ii.device_name LIKE CONCAT('%', #{endNestName}, '%')
+            </if>
+        </where>
+        ${dataScope}
+        ORDER BY a.create_time desc
+    </select>
+
+    <select id="getRealityTimeList" resultType="com.chinatower.device.entity.dto.AirTaskReq">
+        SELECT
+            plan_id,
+            reality_time
+        FROM (
+            SELECT
+                b.plan_id,
+                a.reality_time,
+                ROW_NUMBER() OVER (PARTITION BY b.plan_id ORDER BY a.reality_time DESC) AS rn
+            FROM
+                vm_air_task_t a
+            LEFT JOIN
+                vm_air_plan_t b ON a.plan_id = b.plan_id
+            WHERE
+                a.task_status IN ('1', '3')
+            <if test="planIds != null and planIds.size() > 0 ">
+                and b.plan_id in
+                <foreach collection="planIds" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        ) t
+        WHERE rn = 1
+        ORDER BY reality_time DESC
+    </select>
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.airline.dto.response.AirPlanRep">
+        <id column="id" property="id" />
+        <result column="plan_id" property="planId" />
+        <result column="plan_name" property="planName" />
+        <result column="flight_route_id" property="flightRouteId" />
+        <result column="plan_type" property="planType" />
+        <result column="device_code" property="deviceCode" />
+        <result column="plan_time_a" property="planTime" />
+        <result column="plan_end_time" property="planEndTime" />
+        <result column="plan_start_time" property="planStartTime" />
+        <result column="regular_execution_date" property="regularExecutionDate" />
+        <result column="cycle_execution_unit" property="cycleExecutionUnit" />
+        <result column="day_interval" property="dayInterval" />
+        <result column="interval_values" property="intervalValues" />
+        <result column="gain_video" property="gainVideo" />
+        <result column="auto" property="auto" />
+        <result column="gain_data_mode" property="gainDataMode" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="app_ver_code" property="appVerCode" />
+        <result column="create_user" property="createUser" />
+        <result column="update_user" property="updateUser" />
+        <result column="access_node" property="accessNode" />
+        <result column="accept_node" property="acceptNode" />
+        <result column="flight_route_name" property="flightRouteName" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="extra_field" property="extraField" />
+        <result column="type" property="airLineType"/>
+        <result column="uav_code" property="uavCode" />
+        <result column="device_name" property="deviceName" />
+        <result column="uav_nest_code" property="uavNestCode" />
+        <result column="uav_nest_name" property="uavNestName"/>
+        <result column="is_it_enabled" property="isItEnabled"/>
+        <result column="cycle_execution_time" property="cycleExecutionTime"/>
+        <result column="video_definition" property="definition"/>
+        <result column="auto_resume" property="autoResume"/>
+        <result column="risk_msg_switch" property="riskMsgSwitch"/>
+        <collection property="children" ofType="com.chinatower.device.entity.dto.AirTaskReq">
+            <id column="task_id" property="id" />
+            <result column="plan_task_id" property="taskRecordId"/>
+            <result column="plan_time_t" property="scheduleExecTime" />
+            <result column="plan_id" property="planId" />
+            <result column="reality_time" property="realityTime" />
+            <result column="task_status" property="status" />
+            <result column="create_time" property="createTime" />
+            <result column="create_user" property="createUser" />
+            <result column="update_time" property="updateTime" />
+            <result column="update_user" property="updateUser" />
+            <result column="delete_flag" property="deleteFlag" />
+            <result column="medium_status" property="mediumStatus" />
+            <result column="tenant_id" property="tenantId" />
+            <result column="industry_code" property="industryCode" />
+            <result column="access_node" property="accessNode" />
+            <result column="accept_node" property="acceptNode" />
+            <result column="planName" property="planName" />
+            <result column="uavNestCode" property="uavNestCode" />
+            <result column="tdeviceCode" property="deviceCode" />
+            <result column="tdeviceName" property="deviceName" />
+            <result column="tflightRouteName" property="flightRouteName" />
+            <result column="planType" property="planType" />
+            <result column="is_it_enabled" property="isItEnabled"/>
+        </collection>
+    </resultMap>
+
+
+    <select id="findByCondition" resultMap="BaseResultMap">
+        select a.id, a.plan_id, a.plan_name, a.flight_route_id, a.`status`, a.plan_type, a.device_code, a.plan_time as plan_time_a,
+        a.uav_nest_code, a.plan_end_time, a.plan_start_time, a.regular_execution_date, a.cycle_execution_unit, a.day_interval,
+        a.interval_values, a.gain_video, a.auto, a.gain_data_mode, a.tenant_id, a.industry_code, a.app_ver_code, a.create_time,
+        a.create_user, a.update_time, a.update_user, a.delete_flag, a.access_node, a.accept_node,a.uav_code,d.device_name,l.flight_route_name,
+        l.extra_field,l.type,i.device_name as uav_nest_name
+        i.device_name as startNestName,
+        ii.device_name as endNestName
+        FROM vm_air_plan_t a
+        LEFT JOIN vm_uav_device_info_t d ON a.uav_code = d.device_code
+        LEFT JOIN vm_uav_nest_device_info i on l.start_nest_code = i.device_code
+        LEFT JOIN vm_uav_nest_device_info ii on l.end_nest_code = ii.device_code
+        LEFT JOIN vm_air_line_t l on a.flight_route_id = l.flight_route_id
+        <where>
+            <if test="planName != null and planName !=''">
+                a.plan_name like CONCAT('%', #{planName}, '%')
+            </if>
+            <if test="status != null and status.size()>0">
+                and a.`status` IN
+                <foreach collection="status" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="planType != null and planType.size()>0">
+                and a.plan_type IN
+                <foreach collection="planType" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="planStartTime != null and planStartTime !=''">
+                and a.plan_time &gt;= #{planStartTime}
+            </if>
+            <if test="planEndTime != null and planEndTime !=''">
+                and a.plan_time &lt;= #{planEndTime}
+            </if>
+            <if test="flightRouteName != null and flightRouteName !=''">
+                and l.flight_route_name like CONCAT('%', #{flightRouteName}, '%')
+            </if>
+            <if test="deviceName != null and deviceName !=''">
+                and d.device_name like CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test="uavNestCode != null and uavNestCode !=''">
+                and a.uav_nest_code like CONCAT('%', #{uavNestCode}, '%')
+            </if>
+            and a.delete_flag = 0
+        </where>
+        ORDER BY a.create_time desc
+    </select>
+
+
+
+    <select id="findAirPlanById" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        select a.id, a.plan_id, a.plan_name, a.flight_route_id, a.`status`, a.plan_type, a.device_code, a.plan_time as plan_time_a,
+               a.uav_nest_code, a.plan_end_time, a.plan_start_time, a.regular_execution_date, a.cycle_execution_unit, a.day_interval,
+               a.interval_values, a.gain_video, a.auto, a.gain_data_mode, a.tenant_id, a.industry_code, a.app_ver_code, a.create_time,
+               a.create_user, a.update_time, a.update_user, a.delete_flag, a.access_node, a.accept_node,a.uav_code,a.is_it_enabled,a.cycle_execution_time,d.device_name,l.flight_route_name,
+               l.extra_field,l.type,i.device_name as uav_nest_name,a.video_definition,a.auto_resume,a.risk_msg_switch
+        FROM vm_air_plan_t a
+                 LEFT JOIN vm_uav_device_info_t d ON a.uav_code = d.device_code
+                 LEFT JOIN vm_uav_nest_device_info i on a.uav_nest_code = i.device_code
+                 LEFT JOIN vm_air_line_t l on a.flight_route_id = l.flight_route_id
+        where a.plan_id = #{planId}
+    </select>
+
+    <insert id="addAirPlan" parameterType="com.chinatower.airline.dto.response.AirPlanRep">
+        INSERT INTO vm_air_plan_t
+            (`plan_id`, `plan_name`, `flight_route_id`, `status`, `plan_type`, `device_code`, `plan_time`, `uav_nest_code`, `plan_end_time`, `plan_start_time`, `regular_execution_date`, `cycle_execution_unit`, `day_interval`, `interval_values`, `gain_video`, `auto`, `gain_data_mode`, `tenant_id`, `industry_code`, `app_ver_code`, `create_time`, `create_user`,`delete_flag`, `access_node`, `accept_node`, `uav_code`, `is_it_enabled`, `cycle_execution_time`,`snapshot_id`,video_definition, auto_resume,risk_msg_switch)
+        VALUES
+            (#{planId}, #{planName}, #{flightRouteId}, #{status}, #{planType}, #{deviceCode}, #{planTime}, #{uavNestCode}, #{planEndTime}, #{planStartTime}, #{regularExecutionDate}, #{cycleExecutionUnit}, #{dayInterval}, #{intervalValues}, #{gainVideo}, #{auto}, #{gainDataMode}, #{tenantId}, #{industryCode}, #{appVerCode}, now(), #{createUser}, '0', #{accessNode}, #{acceptNode},#{uavCode},#{isItEnabled},#{cycleExecutionTime},#{snapshotId},#{definition},#{autoResume},#{riskMsgSwitch});
+    </insert>
+
+
+    <update id="editAirPlan" parameterType="com.chinatower.airline.dto.response.AirPlanRep">
+        UPDATE vm_air_plan_t SET
+        <if test='planName != null and planName != ""'>
+            `plan_name` = #{planName},
+        </if>
+        <if test='flightRouteId != null and flightRouteId != ""'>
+            `flight_route_id` = #{flightRouteId},
+        </if>
+        <if test='status != null and status != ""'>
+            `status` = #{status},
+        </if>
+        <if test='planType != null and planType != ""'>
+            `plan_type` = #{planType},
+        </if>
+        <if test='deviceCode != null and deviceCode != ""'>
+            `device_code` = #{deviceCode},
+        </if>
+        <if test='planTime != null'>
+            `plan_time` = #{planTime},
+        </if>
+        <if test='uavNestCode != null and uavNestCode != ""'>
+            `uav_nest_code` = #{uavNestCode},
+        </if>
+        <if test='planEndTime != null'>
+            `plan_end_time` = #{planEndTime},
+        </if>
+        <if test='regularExecutionDate != null'>
+            `regular_execution_date` = #{regularExecutionDate},
+        </if>
+        <if test='cycleExecutionUnit != null and cycleExecutionUnit != ""'>
+            `cycle_execution_unit` = #{cycleExecutionUnit},
+        </if>
+        <if test='dayInterval != null and dayInterval != ""'>
+            `day_interval` = #{dayInterval},
+        </if>
+        <if test='intervalValues != null and intervalValues != ""'>
+            `interval_values` = #{intervalValues},
+        </if>
+        <if test='gainVideo != null and gainVideo != ""'>
+            `gain_video` = #{gainVideo},
+        </if>
+        <if test='auto != null and auto != ""'>
+            `auto` = #{auto},
+        </if>
+        <if test='gainDataMode != null and gainDataMode != ""'>
+            `gain_data_mode` = #{gainDataMode},
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            `tenant_id` = #{tenantId},
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            `industry_code` = #{industryCode},
+        </if>
+        <if test='appVerCode != null and appVerCode != ""'>
+            `app_ver_code` = #{appVerCode},
+        </if>
+        <if test='createTime != null'>
+            `create_time` = #{createTime},
+        </if>
+        <if test='createUser != null and createUser != ""'>
+            `create_user` = #{createUser},
+        </if>
+        <if test='updateUser != null and updateUser != ""'>
+            `update_user` = #{updateUser},
+        </if>
+        <if test='accessNode != null and accessNode != ""'>
+            `access_node` = #{accessNode},
+        </if>
+        <if test='acceptNode != null and acceptNode != ""'>
+            `accept_node` = #{acceptNode},
+        </if>
+        <if test='planStartTime != null'>
+            `plan_start_time` = #{planStartTime},
+        </if>
+        <if test='uavCode != null and uavCode != ""'>
+            `uav_code` = #{uavCode},
+        </if>
+        <if test='isItEnabled != null and isItEnabled != ""'>
+            `is_it_enabled` = #{isItEnabled},
+        </if>
+        <if test='cycleExecutionTime != null and cycleExecutionTime != ""'>
+            `cycle_execution_time` = #{cycleExecutionTime},
+        </if>
+        <if test='snapshotId != null'>
+            `snapshot_id` = #{snapshotId},
+        </if>
+        <if test='definition != null'>
+            `video_definition` = #{definition},
+        </if>
+        <if test='autoResume != null'>
+            `auto_resume` = #{autoResume},
+        </if>
+        <if test='riskMsgSwitch != null'>
+            `risk_msg_switch` = #{riskMsgSwitch},
+        </if>
+        `update_time` = now()
+        WHERE `plan_id` = #{planId}
+    </update>
+
+    <update id="deleteByPlanId" parameterType="com.chinatower.airline.dto.response.AirPlanRep">
+        UPDATE vm_air_plan_t SET
+             `delete_flag` = '1',
+            `update_user` = #{updateUser},
+            `update_time` = now()
+        WHERE `plan_id` = #{planId};
+    </update>
+
+    <resultMap id="getPlanNameResultMap" type="java.lang.String">
+        <!-- 映射关系 -->
+        <result property="new_plan_name" column="new_plan_name" />
+        <!-- 其他映射关系 -->
+    </resultMap>
+
+    <select id="getPlanName" parameterType="java.lang.String" resultMap="getPlanNameResultMap">
+        SELECT
+            CONCAT('新建计划', COUNT(*) + 1) AS new_plan_name
+        FROM
+            vm_air_plan_t
+        WHERE
+            tenant_id = #{tenantId}
+          AND industry_code = #{industryCode}
+          AND delete_flag = 0;
+    </select>
+
+    <select id="planNameIsRepeat" resultType="com.chinatower.airline.dto.response.AirPlanRep">
+        select id,plan_name,tenant_id,industry_code
+        from vm_air_plan_t
+        where tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+          and plan_name = #{planName}
+          and delete_flag = 0
+        limit 1;
+    </select>
+
+    <select id="findFlightRouteIdAndPlanTimeInteger1" parameterType="java.lang.String" resultType="java.lang.Integer">
+    SELECT COUNT(1)
+    FROM vm_air_plan_t
+    WHERE
+      flight_route_id = #{flightRouteId}
+      AND tenant_id = #{tenantId}
+      AND industry_code = #{industryCode}
+      AND delete_flag = 0
+      and
+        <foreach collection="planTimes" item="planTime" index="index" open="(" close=")" separator="or">
+            plan_time between concat(#{planTime}, ' ', '00:00:00') and concat(#{planTime}, ' ', '23:59:59')
+        </foreach>
+    </select>
+
+    <select id="findFlightRouteIdAndPlanTimeInteger" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT DATE(t.plan_time))
+        FROM vm_air_task_t t
+        INNER JOIN vm_air_plan_t p ON p.plan_id = t.plan_id
+        WHERE
+            p.flight_route_id = #{flightRouteId}
+          AND p.tenant_id = #{tenantId}
+          AND p.industry_code = #{industryCode}
+          AND p.delete_flag = 0
+          AND t.delete_flag = 0
+          AND DATE(t.plan_time) in
+            <foreach collection="planTimes" item="planTime" index="index" open="(" close=")" separator=",">
+                #{planTime}
+            </foreach>
+    </select>
+
+
+    <update id="updateIsItEnabled" parameterType="com.chinatower.airline.dto.response.AirPlanRep">
+        UPDATE vm_air_plan_t SET
+              `is_it_enabled` = #{isItEnabled},
+              `update_user` = #{updateUser},
+              `update_time` = now()
+        WHERE `plan_id` = #{planId};
+    </update>
+
+    <select id="copyPlanName" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT
+            MAX( REPLACE ( plan_name, CONCAT( #{planName}, '_复制' ), '' ) + 1 )
+        FROM
+            vm_air_plan_t
+        WHERE
+            tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND
+            plan_name LIKE CONCAT( #{planName}, '%' )
+          AND TRUNCATE ((
+                            CHAR_LENGTH(
+                                    REPLACE ( plan_name, #{planName}, '' )) - CHAR_LENGTH(
+                                    REPLACE ( REPLACE ( plan_name, #{planName}, '' ), '_复制', '' ))
+                            )/ CHAR_LENGTH( '_复制' ),
+                        0
+              ) = 1;
+    </select>
+
+    <update id="isItEnabled" parameterType="com.chinatower.airline.dto.response.AirPlanRep">
+        UPDATE vm_air_plan_t SET
+               `is_it_enabled` = #{isItEnabled},
+               `update_user` = #{updateUser},
+               `update_time` = now()
+        WHERE `plan_id` = #{planId};
+    </update>
+
+    <select id="findPlanNameByPlanId" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT plan_name from vm_air_plan_t WHERE plan_id = #{planId};
+    </select>
+
+    <update id="updatePlanIdById" parameterType="com.chinatower.airline.dto.response.AirPlanRep">
+        UPDATE vm_air_plan_t SET
+              `plan_id` = #{planId},
+                <if test='isItEnabled != null and isItEnabled != ""'>
+                    `is_it_enabled` = #{isItEnabled},
+                </if>
+                <if test='updateUser != null and updateUser != ""'>
+                    `update_user` = #{updateUser},
+                </if>
+                `update_time` = now()
+              WHERE `id` = #{id};
+    </update>
+
+    <select id="findAirPlanByPlanId" resultMap="planResultMap">
+        select id, plan_id, plan_name, flight_route_id, status, plan_type, device_code, plan_time as plan_time_a,
+               uav_nest_code, plan_end_time, plan_start_time, regular_execution_date, cycle_execution_unit, day_interval,
+               interval_values, gain_video, auto, gain_data_mode, tenant_id, industry_code, app_ver_code, create_time,
+               create_user, update_time, update_user, delete_flag, access_node, accept_node,uav_code,is_it_enabled,cycle_execution_time
+        FROM vm_air_plan_t a
+        where plan_id = #{planId}
+        and delete_flag = 0
+    </select>
+
+</mapper>

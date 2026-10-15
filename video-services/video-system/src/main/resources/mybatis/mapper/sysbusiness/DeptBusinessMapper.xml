@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.sysbusiness.mapper.DeptBusinessMapper">
+
+
+    <insert id="addOrganCamera" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO">
+        insert into vm_organ_device_rel_t(tenant_id,dept_id,device_code,create_by,create_time,delete_flag,device_type,industry_code,APP_VER_CODE)
+        SELECT #{tenantId},#{orgId},di.device_code,#{creator},NOW(),di.delete_flag,4,#{industryCode},#{appVerCode} from vm_order_devices od LEFT JOIN vm_device_info_t di ON di.device_code=od.device_code
+        WHERE od.industry_code=#{industryCode} and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} AND di.device_code IN
+        <foreach collection="cameraCodeList" item="deviceCode" index="index" open="(" separator="," close=")">
+            #{deviceCode}
+        </foreach>
+    </insert>
+
+    <insert id="addOrganAlarmType" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO">
+        insert into vm_organ_alarm_type_rel_t(tenant_id,dept_id,warning_source,type_value,create_by,create_time,delete_flag,industry_code,APP_VER_CODE)
+        values
+        <foreach collection="alarmTypeList" item="item" index="index" open="(" separator="),(" close=")">
+            #{item.tenantId},#{item.orgId},#{item.warningSource},#{item.typeValue},#{item.creator},NOW(),'0',#{item.industryCode},#{item.appVerCode}
+        </foreach>
+    </insert>
+
+    <insert id="addOrganDevice" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO">
+        insert into vm_organ_device_rel_t
+        (tenant_id,dept_id,device_code,create_by,create_time,update_by,update_time,delete_flag,device_type,industry_code,APP_VER_CODE)
+        values
+        <foreach collection="deviceCodeList" item="deviceCode" index="index" open="(" separator="),(" close=")">
+            #{tenantId},#{orgId},#{deviceCode},#{creator},NOW(),#{creator},NOW(),'0',#{categoryCode},#{industryCode},#{appVerCode}
+        </foreach>
+    </insert>
+
+    <insert id="addOrganSatellite" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO">
+        insert into vm_organ_street_rel_t
+        (tenant_id,dept_id,province_code,city_code,county_code,street_code,create_by,create_time,update_by,update_time,delete_flag,category_code,industry_code,APP_VER_CODE)
+        values
+        <foreach collection="satelliteResultList" item="item" index="index" open="(" separator="),(" close=")">
+            #{tenantId},#{orgId},#{item.provinceCode},#{item.cityCode},#{item.countyCode},#{item.streetCode},#{creator},NOW(),#{creator},NOW(),'0',#{categoryCode},#{industryCode},#{appVerCode}
+        </foreach>
+    </insert>
+    <insert id="addOrganLayer">
+        insert into vm_organ_layer_rel_t
+        (tenant_id,dept_id,layer_id,create_by,create_time,update_by,update_time,delete_flag,industry_code,APP_VER_CODE)
+        values
+        <foreach collection="deviceCodeList" item="deviceCode" index="index" open="(" separator="),(" close=")">
+            #{tenantId},#{orgId},#{deviceCode},#{creator},NOW(),#{creator},NOW(),'0',#{industryCode},#{appVerCode}
+        </foreach>
+    </insert>
+
+
+    <delete id="delOrganDevice" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO">
+        delete from vm_organ_device_rel_t where dept_id = #{orgId}
+    </delete>
+
+    <delete id="delOrganAlarmType" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO">
+        delete from vm_organ_alarm_type_rel_t where dept_id = #{orgId}
+    </delete>
+
+    <delete id="delOrganSatellite" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO">
+        delete from vm_organ_street_rel_t where dept_id = #{orgId}
+    </delete>
+    <delete id="delOrganLayer">
+        delete from vm_organ_layer_rel_t where dept_id = #{orgId}
+    </delete>
+
+
+
+    <select id="getDeviceList" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO"
+            resultType="com.chinatower.platform.project.sysbusiness.entity.SysAreaBusinessVO">
+        SELECT DISTINCT
+        m.device_code as area_code,
+        m.device_name as area_name,
+        '10' as area_level,
+        m.town_code as area_parent_code,
+        m.province_id ,
+        m.city_id ,
+        m.county_id,
+        m.town_code as townId
+        FROM vm_order_devices ord
+        LEFT JOIN vm_device_info_t m on m.device_code = ord.device_code
+        LEFT JOIN vm_order_customer c on c.order_code = ord.order_code
+        <if test='orgId != null and orgId != "" '>
+            LEFT JOIN vm_organ_device_rel_t t ON ord.device_code = t.device_code
+        </if>
+        WHERE ord.tenant_id = #{tenantId} and ord.delete_flag = '0' and m.delete_flag='0' and c.ord_status in (0,1,2)
+        <if test='orgId != null and orgId != "" '>
+            AND t.dept_id = #{orgId} and t.device_type = 4
+        </if>
+    </select>
+
+    <select id="getSensorList" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO"
+            resultType="com.chinatower.platform.project.sysbusiness.entity.SysAreaBusinessVO">
+        SELECT DISTINCT
+        m.device_code as area_code,
+        IFNULL(id.device_name,m.device_name) as area_name,
+        m.town_code as area_parent_code,
+        m.province_id ,
+        m.city_id ,
+        m.county_id,
+        m.town_code as townId
+        FROM vm_order_sensor_devices ord
+        LEFT JOIN vm_iot_device_t  m on m.device_code = ord.device_code
+        LEFT JOIN vm_order_customer c on c.order_code = ord.order_code
+        LEFT JOIN vm_tenant_iot_device_rel_t id ON id.device_code = m.device_code and ord.TENANT_ID = id.TENANT_ID
+        <if test='orgId != null and orgId != "" '>
+            LEFT JOIN vm_organ_device_rel_t t ON ord.device_code = t.device_code
+        </if>
+        WHERE ord.tenant_id = #{tenantId} and ord.delete_flag = '0' and m.delete_flag='0' and c.ord_status in (0,1,2)
+        <if test='orgId != null and orgId != "" '>
+            AND t.dept_id = #{orgId} and t.device_type = 8
+        </if>
+    </select>
+
+    <select id="getSatelliteList" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO"
+            resultType="com.chinatower.platform.project.sysbusiness.entity.SysAreaBusinessVO">
+        SELECT DISTINCT
+        m.street_code as area_parent_code,
+        m.provice_code as provinceId ,
+        m.city_code as cityId ,
+        m.county_code as countyId,
+        m.street_code as townId
+        FROM vm_order_services_rel m
+        LEFT JOIN vm_order_customer c on c.order_code = m.order_code
+        <if test='orgId != null and orgId != "" '>
+            LEFT JOIN vm_organ_street_rel_t t ON m.tenant_id = t.tenant_id and m.provice_code = t.province_code and m.city_code = t.city_code and m.county_code = t.county_code and m.street_code = t.street_code
+        </if>
+        WHERE m.tenant_id = #{tenantId} and m.delete_flag = '0' and m.delete_flag='0' and c.ord_status in (0,1,2) and m.service_code = '9'
+        <if test='orgId != null and orgId != "" '>
+            AND t.dept_id = #{orgId}
+        </if>
+    </select>
+
+    <select id="getAreaList" parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO"
+            resultType="com.chinatower.platform.project.sysbusiness.entity.SysAreaBusinessVO">
+        SELECT DISTINCT
+        m.STREET_AREA_CODE as area_parent_code,
+        m.PROVINCE_CODE as provinceId ,
+        m.CITY_CODE as cityId ,
+        m.COUNTY_CODE as countyId,
+        m.STREET_AREA_CODE as townId
+        FROM sys_dept_street_rel m
+        WHERE m.tenant_id = #{tenantId}
+        <if test='orgId != null and orgId != "" '>
+            AND m.DEPT_ID = #{orgId}
+        </if>
+    </select>
+
+
+    <select id="selectSysArea"
+            resultType="com.chinatower.platform.project.sysbusiness.entity.SysAreaBusinessVO">
+        SELECT
+            a.area_code,
+            a.area_name,
+            a.area_level,
+            a.area_parent_code,
+            '' as province_id,
+            '' as city_id,
+            '' as county_id
+        FROM
+            sys_area a
+        where a.DEL_FLAG='0'
+          and a.status='0'
+    </select>
+
+
+    <select id="getDeptDeviceRefList"
+            parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO"
+            resultType="String">
+        select device_code from vm_organ_device_rel_t where delete_flag='0' and dept_id=#{orgId}
+        <if test='categoryCode != null and categoryCode != "" '>
+            and device_type = #{categoryCode}
+        </if>
+    </select>
+
+    <select id="getDeptSatelliteRefList"
+            parameterType="com.chinatower.platform.project.custom.entity.OrganDeviceVO"
+            resultType="String">
+        select street_code from vm_organ_street_rel_t where delete_flag='0' and dept_id=#{orgId}
+    </select>
+
+    <select id="getProcessByUserCount" resultType="int">
+        select count(1) from ${tableName} where delete_flag='0' and order_status  in ('1','2','3','4','5') and process_id in
+        <foreach item="item" index="index" collection="userIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </select>
+
+    <select id="getLayerUrl" parameterType="java.lang.String" resultType="com.chinatower.platform.project.sysbusiness.entity.LayerUrlVo">
+        select id,appVerCode,layerName,url,code,industry_code from sys_applayer_url where 1 = 1
+        <if test='industryCode != null and industryCode != "" '>
+            AND industry_code = #{industryCode}
+        </if>
+        order by code
+    </select>
+
+    <select id="queryAreaByDevice" resultType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        SELECT DISTINCT #{orgId} as deptId,town_code as streetAreaCode,province_id as provinceCode,city_id as cityCode,county_id as countyCode,'0' as type FROM vm_device_info_t WHERE delete_flag = '0'
+        AND device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryAreaBySensor" resultType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        SELECT DISTINCT #{orgId} as deptId,town_code as streetAreaCode,province_id as provinceCode,city_id as cityCode,county_id as countyCode,'0' as type FROM vm_iot_device_t  WHERE delete_flag = '0'
+        AND category_code=2
+        AND device_code in
+        <foreach collection="sensorCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryAreaByRadar" resultType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        SELECT DISTINCT #{orgId} as deptId,town_code as streetAreaCode,province_id as provinceCode,city_id as cityCode,county_id as countyCode,'0' as type FROM vm_iot_device_t  WHERE delete_flag = '0'
+        AND category_code=1
+        AND device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryAreaBySatellite" resultType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        SELECT DISTINCT #{orgId} as deptId,street_code as streetAreaCode,province_code as provinceCode,city_code as cityCode,county_code as countyCode,'0' as type FROM vm_organ_street_rel_t  WHERE delete_flag = '0'
+        AND street_code in
+        <foreach collection="satelliteList" item="item" index="index" open="(" close=")" separator=",">
+            #{item.streetCode}
+        </foreach>
+    </select>
+
+    <select id="queryAreaByUav" resultType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        SELECT DISTINCT #{orgId} as deptId,town_code as streetAreaCode,province_code,city_code,county_code
+        FROM vm_uav_device_info_t  WHERE delete_flag = '0'
+        AND device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryAreaByHorn" resultType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        SELECT DISTINCT #{orgId} as deptId,town_code as streetAreaCode,province_code,city_code,county_code
+        FROM vm_horn_device_info_t  WHERE delete_flag = '0'
+        AND device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryAreaByLER" resultType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        SELECT DISTINCT #{orgId} as deptId,town_code as streetAreaCode,province_code,city_code,county_code
+        FROM vm_recorder_device_info_t  WHERE delete_flag = '0'
+        AND device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryStreetArea" resultType="com.chinatower.platform.project.custom.entity.OrganAreaVO">
+        SELECT DISTINCT area_code as streetId,area_parent_code as countyId FROM sys_area WHERE status = '0'
+        AND area_code in
+        <foreach collection="applyScope" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+
+
+    <select id="getDevicesByDeptList"
+            resultType="String">
+        select DISTINCT device_code from vm_organ_device_rel_t where delete_flag='0' and dept_id in
+        <foreach item="item" index="index" collection="deptList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </select>
+
+
+    <select id="getAreaByDeptList" resultType="com.chinatower.system.api.model.AreaDataVO">
+        SELECT DISTINCT province_code,city_code,county_code FROM sys_dept_street_rel WHERE
+        dept_id in
+        <foreach item="item" index="index" collection="deptList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </select>
+
+    <select id="getAllDeptList" resultType="String" parameterType="String">
+        SELECT DISTINCT DEPT_ID FROM sys_dept WHERE `STATUS`=0 AND  TENANT_ID= #{tenantId}
+    </select>
+
+
+    <select id="getAllDeviceList" resultType="String" parameterType="String">
+        select device_code from vm_order_devices where delete_flag='0' and tenant_id= #{tenantId}
+    </select>
+
+
+    <select id="getAllAreaList" resultType="com.chinatower.system.api.model.AreaDataVO" parameterType="String">
+        SELECT DISTINCT
+            DISTINCT
+            b.province_id AS provinceCode,
+            b.city_id AS cityCode,
+            b.county_id AS countyCode
+        FROM
+            vm_order_devices a,vm_device_info_t b,vm_order_customer e
+        WHERE
+            a.delete_flag = '0' and b.delete_flag='0'
+          and a.device_code=b.device_code
+          and b.province_id is not null
+          and b.city_id is not null
+          and b.county_id is not null
+          AND a.order_code = e.order_code
+	      AND a.tenant_id = e.tenant_id
+	      AND e.ord_status IN ( 0, 1, 2 )
+          and a.tenant_id= #{tenantId}
+
+    </select>
+
+    <select id="getSysAreaAll" resultType="com.chinatower.system.api.model.SysArea">
+        SELECT DISTINCT
+        a.area_code, a.area_name, a.area_level, a.area_parent_code, a.area_parent_name, a.longitude, a.latitude,
+        a.status, a.create_by, a.create_time, a.update_by, a.update_time, a.dept_id,a.bussness_unit
+        FROM sys_area a , sys_dept_street_rel b
+        WHERE (a.AREA_CODE = b.PROVINCE_CODE OR a.AREA_CODE = b.CITY_CODE OR a.AREA_CODE = b.COUNTY_CODE)
+        AND b.`TYPE` = '0'
+        ORDER BY a.AREA_CODE
+    </select>
+
+    <select id="getSysAreaByDeptList" resultType="com.chinatower.system.api.model.SysArea">
+        SELECT DISTINCT
+         a.area_code, a.area_name, a.area_level, a.area_parent_code, a.area_parent_name, a.longitude, a.latitude,
+         a.status, a.create_by, a.create_time, a.update_by, a.update_time, a.dept_id,a.bussness_unit
+        FROM sys_area a , sys_dept_street_rel b
+        WHERE (a.AREA_CODE = b.PROVINCE_CODE OR a.AREA_CODE = b.CITY_CODE OR a.AREA_CODE = b.COUNTY_CODE)
+        AND b.DEPT_ID IN
+        <foreach item="item" index="index" collection="deptList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        ORDER BY a.AREA_CODE
+    </select>
+
+    <select id="getSysAreaListAreaCode" resultType="com.chinatower.system.api.model.SysArea">
+        SELECT DISTINCT
+         a.area_code, a.area_name, a.area_level, a.area_parent_code, a.area_parent_name, a.longitude, a.latitude,
+         a.status, a.create_by, a.create_time, a.update_by, a.update_time, a.dept_id,a.bussness_unit
+        FROM sys_area a
+        where a.AREA_CODE
+        <foreach item="item" index="index" collection="areaList" open="IN (" separator="," close=")">
+            #{item}
+        </foreach>
+        ORDER BY a.AREA_CODE
+    </select>
+
+    <select id="getOrgInfo" parameterType="String" resultType="com.chinatower.platform.project.custom.entity.SatelliteInfoVO">
+        select provice_code as provinceCode,
+               city_code,
+               county_code,
+               street_code
+        from vm_order_services_rel where tenant_id = #{tenantId} and street_code = #{xStr}
+    </select>
+    <select id="getScreenData" resultType="com.chinatower.platform.project.custom.entity.ScreenDataVO">
+        SELECT DISTINCT
+            sdcc.id AS countId,
+            sdcc.camera_num AS cameraNum,
+            sdcc.iot_num AS iotNum,
+            sdcc.radar_num AS radarNum,
+            sdcc.speaker_num AS speakerNum,
+            sdcc.uav_num AS uavNum,
+            sdcc.recorder_num AS recorderNum,
+            sdcc.alarm_type_num AS alarmTypeNum,
+            sdc.data_code AS dataCode,
+            sdc.data_source AS dataSource,
+            sdc.data_type AS dataType
+        FROM
+            vm_screen_data_config_count sdcc
+                LEFT JOIN vm_screen_data_config sdc ON sdcc.id = sdc.screen_data_config_id
+                AND sdc.data_type IN ( '0', '1', '2', '3', '4', '5', '9' )
+        WHERE
+            sdcc.tenant_id = #{tenantId}
+          AND sdcc.industry_code =  #{industryCode}
+          AND sdcc.app_ver_code = #{appVerCode}
+          and sdcc.is_customize = '1'
+          AND sdcc.delete_flag = '0'
+          AND sdc.delete_flag = '0'
+    </select>
+
+    <select id="queryAreaByUavNest" resultType="com.chinatower.platform.project.system.domain.SysDeptStreetRel">
+        SELECT DISTINCT #{orgId} as deptId,town_code as streetAreaCode,province_code,city_code,county_code
+        FROM vm_uav_nest_device_info WHERE delete_flag = '0'
+        AND device_code in
+        <foreach collection="deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateScreenData">
+        <foreach item="item" index="index" collection="needUpdateList"  separator=";" >
+            UPDATE vm_screen_data_config_count
+            <set>
+                <if test="item.cameraNum != null and item.cameraNum != ''">
+                    camera_num = #{item.cameraNum},
+                </if>
+                <if test="item.iotNum != null and item.iotNum != ''">
+                    iot_num = #{item.iotNum},
+                </if>
+                <if test="item.radarNum != null and item.radarNum != ''">
+                    radar_num = #{item.radarNum},
+                </if>
+                <if test="item.speakerNum != null and item.speakerNum != ''">
+                    speaker_num = #{item.speakerNum},
+                </if>
+                <if test="item.uavNum != null and item.uavNum != ''">
+                    uav_num = #{item.uavNum},
+                </if>
+                <if test="item.recorderNum != null and item.recorderNum != ''">
+                    recorder_num = #{item.recorderNum},
+                </if>
+                <if test="item.alarmTypeNum != null and item.alarmTypeNum != ''">
+                    alarm_type_num = #{item.alarmTypeNum}
+                </if>
+            </set>
+            WHERE id = #{item.countId}
+        </foreach>
+    </update>
+    <delete id="deleteScreenDataConfig">
+        <foreach item="item" index="index" collection="needDeleteList" separator=";">
+            DELETE FROM vm_screen_data_config WHERE
+            screen_data_config_id = #{item.countId}
+            AND data_type = #{item.dataType}
+            AND data_code = #{item.dataCode}
+            <if test="item.dataSource != null and item.dataSource != ''">
+                AND data_source = #{item.dataSource}
+            </if>
+        </foreach>
+    </delete>
+
+
+    <!-- 根据算法编码列表查询算法信息 -->
+    <select id="selectByAlgorithmCodes" parameterType="java.util.Set" resultType="com.chinatower.platform.project.system.domain.VmAlgorithmInfoT">
+        SELECT
+        algorithm_id, algorithm_code, algo_min_type_code, model_config, delete_flag, status
+        FROM vm_algorithm_info_t
+        WHERE delete_flag = '0'
+        AND status = '1'
+        AND algorithm_code IN
+        <foreach collection="algorithmCodes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+    </select>
+
+
+    <select id="getOrganAlarmTypeList"  parameterType="java.util.List"  resultType="com.chinatower.platform.project.custom.entity.OrganAlarmTypeVO">
+        SELECT
+        tenant_id,
+        dept_id,
+        warning_source,
+        type_value,
+        create_by creator,
+        industry_code,
+        app_ver_code
+        FROM
+        vm_organ_alarm_type_rel_t
+        WHERE
+        delete_flag = 0
+        and type_value in
+        <foreach collection="typeValueList" item="typeValue" open="(" separator="," close=")">
+            #{typeValue}
+        </foreach>
+    </select>
+
+    <delete id="deleteExistingAlarmTypes" parameterType="list">
+        DELETE FROM vm_organ_alarm_type_rel_t
+        WHERE delete_flag = 0
+        AND (
+        <foreach collection="list" item="item" separator=" OR " index="index">
+            (tenant_id = #{item.tenantId}
+            AND dept_id = #{item.deptId}
+            AND warning_source = #{item.warningSource}
+            AND type_value = #{item.typeValue}
+            AND industry_code = #{item.industryCode}
+            AND app_ver_code = #{item.appVerCode})
+        </foreach>
+        )
+    </delete>
+
+    <!-- 查询需要处理的大屏配置数据（特定父告警类型） -->
+    <select id="selectScreenConfigForProcess" resultType="com.chinatower.platform.project.sysbusiness.entity.ScreenConfigVO">
+        SELECT
+        sdc.id,
+        sdc.screen_data_config_id,
+        sdc.data_type,
+        sdc.data_code,
+        sdc.data_source
+        FROM vm_screen_data_config sdc
+        WHERE sdc.delete_flag = '0'
+        AND sdc.data_type = '9'
+        AND sdc.data_code IN
+        <foreach collection="alarmTypeCodes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+    </select>
+
+    <!-- 批量插入大屏配置数据 -->
+    <insert id="insertScreenConfigBatch" parameterType="com.chinatower.platform.project.sysbusiness.entity.ScreenConfigVO">
+        INSERT INTO vm_screen_data_config (
+        screen_data_config_id,
+        data_type,
+        data_source,
+        data_code,
+        create_by,
+        create_time,
+        update_by,
+        update_time,
+        delete_flag
+        ) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.screenDataConfigId},
+            #{item.dataType},
+            #{item.dataSource},
+            #{item.dataCode},
+            'system',
+            NOW(),
+            'system',
+            NOW(),
+            '0'
+            )
+        </foreach>
+    </insert>
+
+    <!-- 查询需要更新的大屏配置数量记录 -->
+    <select id="selectScreenConfigCountForUpdate"
+            resultType="com.chinatower.platform.project.sysbusiness.entity.ScreenConfigVO"
+            parameterType="java.util.List">
+        SELECT
+        id as screenDataConfigId,
+        alarm_type_num
+        FROM vm_screen_data_config_count
+        WHERE id IN
+        <foreach collection="screenDataConfigIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND is_customize = '1'
+        AND delete_flag = '0'
+    </select>
+
+    <!-- 根据配置ID统计告警类型数量 -->
+    <select id="countAlarmTypeByConfigIds" resultType="java.util.Map" parameterType="java.util.List">
+        SELECT
+        screen_data_config_id,
+        COUNT(*) as alarm_type_count
+        FROM vm_screen_data_config
+        WHERE screen_data_config_id IN
+        <foreach collection="screenDataConfigIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND data_type = '9'
+        AND delete_flag = '0'
+        GROUP BY screen_data_config_id
+    </select>
+
+    <!-- 批量更新大屏配置数量 -->
+    <update id="updateScreenConfigCountBatch" parameterType="java.util.List">
+        UPDATE vm_screen_data_config_count
+        SET alarm_type_num =
+        CASE id
+        <foreach collection="updateList" item="item">
+            WHEN #{item.screenDataConfigId} THEN #{item.dataCode}
+        </foreach>
+        END,
+        update_by = 'system',
+        update_time = NOW()
+        WHERE id IN
+        <foreach collection="updateList" item="item" open="(" separator="," close=")">
+            #{item.screenDataConfigId}
+        </foreach>
+    </update>
+
+    <!-- 删除已存在的大屏配置数据 -->
+    <delete id="deleteExistingScreenConfig" parameterType="java.util.List">
+        DELETE FROM vm_screen_data_config
+        WHERE delete_flag = '0'
+        AND screen_data_config_id IN
+        <foreach collection="configList" item="item" open="(" separator="," close=")">
+            #{item.screenDataConfigId}
+        </foreach>
+        AND data_type = '9'
+        AND data_code IN
+        <foreach collection="configList" item="item" open="(" separator="," close=")">
+            #{item.dataCode}
+        </foreach>
+    </delete>
+
+    <select id="getLargeModelAlgorithms" resultType="java.lang.String">
+        SELECT DISTINCT
+            algorithm_code
+        FROM
+            vm_algorithm_info_t
+        WHERE
+            delete_flag = '0'
+          AND algorithm_model_type = '2'
+    </select>
+</mapper>

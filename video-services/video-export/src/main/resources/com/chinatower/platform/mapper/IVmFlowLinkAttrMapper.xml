@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IVmFlowLinkAttrMapper">
+
+    <select id="getFlowLinkByUserId" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto">
+        select attr.alarm_flow_id,u.link_id from vm_flow_link_user u
+            LEFT JOIN vm_flow_link_attr attr on attr.id = u.attr_id
+          where u.user_id = #{userId}
+           GROUP BY attr.alarm_flow_id,u.link_id
+    </select>
+
+    <select id="getFlowLinkByRoleIdList" resultType="com.chinatower.event.entity.dto.VmFlowLinkAttrDto">
+        select fll.template_id as alarm_flow_id,flic.link_id from vm_flow_link_industry_config flic
+        INNER JOIN vm_flow_template_link as fll on flic.link_id = fll.cur_link
+        INNER JOIN vm_flow_template as ft on ft.template_id = fll.template_id and flic.app_ver_code = ft.app_ver_code and flic.industry_code = ft.industry_code
+        where  flic.delete_flag = 0 and flic.app_ver_code =#{param.appVerCode} and flic.industry_code =#{param.industryCode}
+        <if test="param.roleIdList!=null and param.roleIdList.size()>0">
+            and
+            <foreach collection="param.roleIdList" item="item" index="index" open="(" close=")" separator="or">
+                FIND_IN_SET(#{item},flic.role_id)
+            </foreach>
+        </if>
+        GROUP BY fll.template_id,flic.link_id
+        UNION all
+        select fll.template_id as alarm_flow_id,flic.link_id from vm_flow_link_industry_config flic
+        INNER JOIN vm_flow_template_link as fll on flic.link_id = fll.cur_link
+        INNER JOIN vm_flow_template as ft on ft.template_id = fll.template_id and ft.app_ver_code is null and ft.industry_code is null
+        where  flic.delete_flag = 0 and flic.app_ver_code is null and flic.industry_code is null
+        <if test="param.roleIdList!=null and param.roleIdList.size()>0">
+            and
+            <foreach collection="param.roleIdList" item="item" index="index" open="(" close=")" separator="or">
+                FIND_IN_SET(#{item},flic.role_id)
+            </foreach>
+        </if>
+        GROUP BY fll.template_id,flic.link_id
+        union all
+        select attr.alarm_flow_id,r.link_id from vm_flow_link_role r
+        LEFT JOIN vm_flow_link_attr attr on attr.id = r.attr_id
+        where attr.tenant_id = #{param.tenantId} and attr.app_ver_code =#{param.appVerCode} and attr.industry_code =#{param.industryCode}
+        <if test="param.roleIdList!=null and param.roleIdList.size()>0">
+            and r.role_id in
+            <foreach collection="param.roleIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY attr.alarm_flow_id,r.link_id
+    </select>
+
+</mapper>

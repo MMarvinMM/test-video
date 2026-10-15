@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.TenantIotDeviceConfMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.device.dataobject.TenantIotDeviceConfDO">
+        <id column="iot_device_conf_id" property="iotDeviceConfId" />
+        <result column="device_code" property="deviceCode" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="trigger_cond" property="triggerCond" />
+        <result column="link_action" property="linkAction" />
+        <result column="link_conf_type" property="linkConfType" />
+        <result column="link_conf_sub_type" property="linkConfSubType" />
+        <result column="link_distance" property="linkDistance" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="creator" property="creator" />
+        <result column="modifier" property="modifier" />
+    </resultMap>
+
+    <resultMap id="TenIotDevDetailMap" type="com.chinatower.device.entity.vo.TenantIotDeviceConfVO">
+        <id column="iot_device_conf_id" property="iotDeviceConfId" />
+        <result column="device_code" property="deviceCode" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="trigger_cond" property="triggerCond" />
+        <result column="link_action" property="linkAction" />
+        <result column="link_conf_type" property="linkConfType" />
+        <result column="link_conf_sub_type" property="linkConfSubType" />
+        <result column="link_distance" property="linkDistance" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="creator" property="creator" />
+        <result column="modifier" property="modifier" />
+        <collection property="confRels" ofType="com.chinatower.device.entity.vo.TenantIotConfRelVO" column="iot_device_conf_id"
+                    notNullColumn="conf_rel_id">
+            <id column="conf_rel_id" property="confRelId" />
+            <result column="image_url" property="deviceImageUrl" />
+            <result column="child_link_conf_type" property="linkConfType" />
+            <result column="iot_device_conf_id" property="iotDeviceConfId" />
+            <result column="vidicon_code" property="deviceCode" />
+            <result column="vidicon_name" property="deviceName" />
+            <result column="channel_code" property="channelCode" />
+            <result column="channel_name" property="channelName" />
+            <result column="preset_id" property="presetId" />
+            <result column="preset_name" property="presetName" />
+            <result column="pan" property="pan"/>
+            <result column="tilt" property="tilt"/>
+            <result column="zoom" property="zoom"/>
+            <result column="longitude"  property="longitude"/>
+            <result column="latitude"  property="latitude"/>
+            <result column="model_code"  property="modelCode"/>
+            <result column="location"  property="location"/>
+            <result column="height"  property="height"/>
+        </collection>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        t.iot_device_conf_id, t.device_code, t.tenant_id, t.trigger_cond, t.link_action, t.link_conf_type, t.link_conf_sub_type, t.link_distance, t.create_time, t.update_time, t.creator, t.modifier
+    </sql>
+
+    <select id="getTenantIotDevConf" resultMap="TenIotDevDetailMap">
+        select <include refid="Base_Column_List"/>
+        ,r.conf_rel_id, r.device_code as vidicon_code, d.device_name as vidicon_name, r.channel_code, d.image_url, t.tenant_id, t.industry_code,
+        <if test='alarmReporting != "1"'>
+            a.channel_name,
+            p.tilt,
+            p.zoom,
+            p.preset_name,
+            p.pan,
+        </if>
+        r.preset_id,d.longitude,d.latitude,d.model_code,d.location,d.height, r.link_conf_type as child_link_conf_type
+        from vm_tenant_iot_device_conf_t t
+        left join vm_tenant_iot_conf_rel_t r on t.iot_device_conf_id=r.iot_device_conf_id
+        <if test='alarmReporting != "1"'>
+            left join vm_video_preset p on r.preset_id= p.preset_id and r.device_code = p.device_code and p.delete_flag='0'
+        </if>
+        left join vm_device_info_t d on d.device_code = r.device_code and d.delete_flag='0'
+        <if test='alarmReporting != "1"'>
+            left join vm_channel_info_t a on a.channel_code = r.channel_code and a.delete_flag = '0'
+        </if>
+        where 1 = 1
+        <if test='tenantId != null and tenantId != ""'>
+            and t.tenant_id= #{tenantId}
+        </if>
+        <if test='tenantIdList != null and tenantIdList.size() > 0'>
+            and t.tenant_id in
+            <foreach collection="tenantIdList" item="tenantId" open="(" separator="," close=")" index="index">
+                #{tenantId}
+            </foreach>
+        </if>
+        <choose>
+            <when test="deviceCodeList != null and deviceCodeList.size() > 0">
+                and t.device_code in
+                <foreach collection="deviceCodeList" item="deviceCode" open="(" separator="," close=")" index="index">
+                    #{deviceCode}
+                </foreach>
+            </when>
+            <otherwise>
+                and t.device_code = #{deviceCode}
+            </otherwise>
+        </choose>
+        <if test='industryCode != null and industryCode != ""'>
+            and t.industry_code = #{industryCode}
+        </if>
+        ${dataScope}
+        order by r.conf_rel_id
+    </select>
+
+
+    <select id="getTenantIotDevConfV2" resultType="com.chinatower.device.entity.vo.TenantIotDeviceConfVO">
+        select <include refid="Base_Column_List"/>, t.industry_code
+        from vm_tenant_iot_device_conf_t t
+        where delete_flag = 0
+        <if test='tenantId != null and tenantId != ""'>
+            and t.tenant_id= #{tenantId}
+        </if>
+        <if test='tenantIdList != null and tenantIdList.size() > 0'>
+            and t.tenant_id in
+            <foreach collection="tenantIdList" item="tenantId" open="(" separator="," close=")" index="index">
+                #{tenantId}
+            </foreach>
+        </if>
+        <choose>
+            <when test="deviceCodeList != null and deviceCodeList.size() > 0">
+                and t.device_code in
+                <foreach collection="deviceCodeList" item="deviceCode" open="(" separator="," close=")" index="index">
+                    #{deviceCode}
+                </foreach>
+            </when>
+            <otherwise>
+                and t.device_code = #{deviceCode}
+            </otherwise>
+        </choose>
+        <if test='industryCode != null and industryCode != ""'>
+            and t.industry_code = #{industryCode}
+        </if>
+        ${dataScope}
+        order by t.iot_device_conf_id
+    </select>
+
+    <select id="getTenantIotRelConf" resultType="com.chinatower.device.entity.vo.TenantIotConfRelVO">
+        select r.iot_device_conf_id, r.conf_rel_id, r.device_code, d.device_name, r.channel_code, d.image_url as deviceImageUrl,
+        <if test='alarmReporting != "1"'>
+            a.channel_name,
+            p.tilt,
+            p.zoom,
+            p.preset_name,
+            p.pan,
+        </if>
+        r.preset_id,d.longitude,d.latitude,d.model_code,d.location,d.height, r.link_conf_type
+        from vm_tenant_iot_device_conf_t t
+        inner join vm_tenant_iot_conf_rel_t r on t.iot_device_conf_id = r.iot_device_conf_id
+        <if test='alarmReporting != "1"'>
+            left join vm_video_preset p on r.preset_id= p.preset_id and r.device_code = p.device_code and p.delete_flag='0'
+        </if>
+        inner join vm_device_info_t d on d.device_code = r.device_code and d.delete_flag='0'
+        <if test='alarmReporting != "1"'>
+            left join vm_channel_info_t a on a.channel_code = r.channel_code and a.delete_flag = '0'
+        </if>
+        where t.iot_device_conf_id in
+        <foreach collection="iotDeviceConfIdList" item="item" open="(" separator="," close=")" index="index">
+            #{item}
+        </foreach>
+        ${dataScope}
+    </select>
+</mapper>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.ReservePlanMapper">
+
+    <select id="queryReservePlan"  resultType="com.chinatower.device.dto.ReservePlanDTO">
+        SELECT
+        re.plan_id,
+        re.plan_name,
+        re.plan_type,
+        re.patrol_interval,
+        re.if_auto_execute,
+        re.plan_start_time,
+        re.plan_end_time,
+        re.user_code,
+        re.tenant_id,
+        re.creator_date,
+        re.modifier_date,
+        u.user_name creator,
+        re.modifier
+        FROM
+        vm_reserve_plan_t re
+        left join sys_user u on re.user_code = u.user_id
+        WHERE
+        re.delete_flag = '0'
+        and re.tenant_id = #{tenantId}
+        and (re.plan_type = 1 or (re.plan_type = 2 and re.user_code = #{userId} ))
+        and industry_code = #{industryCode}
+        <if test='reservePlanDTO.planName != null and reservePlanDTO.planName != ""'>
+            and re.plan_name like concat ('%',#{reservePlanDTO.planName},'%')
+        </if>
+        <if test='reservePlanDTO.planType != null and reservePlanDTO.planType != ""'>
+            and re.plan_type = #{reservePlanDTO.planType}
+        </if>
+        <if test='reservePlanDTO.creator != null and reservePlanDTO.creator != ""'>
+            and u.user_name like concat ('%',#{reservePlanDTO.creator},'%')
+        </if>
+        <if test='reservePlanDTO.modifier != null and reservePlanDTO.modifier != ""'>
+            and re.modifier like concat ('%',#{reservePlanDTO.modifier},'%')
+        </if>
+        <if test='reservePlanDTO.creatorDateStart != null and reservePlanDTO.creatorDateStart != ""'>
+            AND re.creator_date >= #{reservePlanDTO.creatorDateStart}
+            AND re.creator_date <![CDATA[<=]]> #{reservePlanDTO.creatorDateEnd}
+        </if>
+        <if test='reservePlanDTO.modifierDateStart != null and reservePlanDTO.modifierDateStart != ""'>
+            AND re.modifier_date >= #{reservePlanDTO.modifierDateStart}
+            AND re.modifier_date <![CDATA[<=]]> #{reservePlanDTO.modifierDateEnd}
+        </if>
+        ORDER BY creator_date desc
+    </select>
+
+    <select id="selectUserId" resultType="java.lang.String">
+        select user_id from sys_user where user_name = #{userName} and DEL_FLAG = '0'
+    </select>
+    <select id="queryReservePlanNameCount" resultType="java.lang.Integer">
+        select count(1) from vm_reserve_plan_t where delete_flag = '0'
+        <if test='planId != null and planId != ""'>
+            and plan_id != #{planId}
+        </if>
+        <if test='planName != null and planName != ""'>
+            and plan_name = #{planName}
+        </if>
+        <if test='userCode != null and userCode != ""'>
+            and user_code = #{userCode}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            and industry_code = #{industryCode}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            and tenant_id = #{tenantId}
+        </if>
+        <if test='planType != null and planType != ""'>
+            and plan_type = #{planType}
+        </if>
+    </select>
+</mapper>

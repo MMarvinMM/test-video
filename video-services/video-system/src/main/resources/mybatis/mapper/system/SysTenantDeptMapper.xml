@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysTenantDeptMapper">
+
+    <!--<resultMap type="com.chinatower.platform.entity.admin.SysTenantDept" id="SysTenantDeptResult">
+        <result property="tenantId"     column="tenant_id"      />
+        <result property="deptId"     column="dept_id"      />
+    </resultMap>
+
+    <select id="selectTenantDeptByTenantId" resultMap="SysTenantDeptResult">
+        select tenant_id,dept_id
+        from sys_tenant_dept where tenant_id = #{tenantId}
+    </select>
+
+    <select id="countByTenantDept" resultType="int" parameterType="com.chinatower.platform.entity.admin.SysTenantDept">
+        select count(*)
+        from sys_tenant_dept where tenant_id = #{tenantId} and dept_id = #{deptId}
+    </select>
+
+    <insert id="insertTenantDept" useGeneratedKeys="false"  parameterType="com.chinatower.platform.entity.admin.SysTenantDept">
+        insert into sys_tenant_dept(tenant_id,dept_id)
+        values (#{tenantId}, #{deptId})
+    </insert>
+
+    <delete id="delTenantDept" parameterType="string">
+		delete from sys_tenant_dept where tenant_id = #{tenantId}
+	</delete>-->
+
+</mapper>

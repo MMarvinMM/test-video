@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysJpushRecordMapper">
+
+    <select id="getJpushRecordlist" resultType="com.chinatower.platform.entity.msg.BsJpushRecord">
+        SELECT
+         id						as id
+        ,alias					as alias
+        ,notification_title     as notificationTitle
+        ,msg_title              as msgTitle
+        ,msg_content            as msgContent
+        ,extrasparam            as extrasparam
+        ,send_time              as sendTime
+        ,send_result            as sendResult
+        ,fail_reason            as failReason
+        ,del_flag               as delFlag
+        ,create_by              as createBy
+        ,create_time            as createTime
+        ,update_by              as updateBy
+        ,update_time            as updateTime
+        ,dept_id                as deptId
+        ,is_read                as isRead
+        FROM bs_jpush_record
+        WHERE DEL_FLAG = '0'
+        AND ALIAS = #{alias}
+        AND SEND_RESULT = '1'
+        AND is_read = 0
+        ORDER BY CREATE_TIME DESC
+    </select>
+
+    <update id="updateJpushRecordById" parameterType="com.chinatower.platform.project.system.domain.vo.SysJpushRecord">
+        update bs_jpush_record
+        set is_read = 1,update_time = now(),update_by = #{updateBy}
+        where id = #{id}
+    </update>
+
+    <select id="countJpushRecord" parameterType="com.chinatower.platform.project.system.domain.vo.SysJpushRecord" resultType="java.lang.Integer">
+        select count(0) from bs_jpush_record T
+        where ALIAS = #{alias}
+        and IS_READ = 0
+
+    </select>
+
+    <select id="countJpushRecordUnread" parameterType="com.chinatower.platform.project.system.domain.vo.SysJpushRecord" resultType="java.lang.Integer">
+        select count(0) from bs_jpush_record T
+        WHERE DEL_FLAG = '0'
+          AND ALIAS = #{alias}
+          AND SEND_RESULT = '1'
+          AND is_read = 0
+
+    </select>
+
+    <update id="updateJpushRecord" parameterType="com.chinatower.platform.project.system.domain.vo.SysJpushRecord">
+        update bs_jpush_record
+        set is_read = 1,update_time = now(),update_by = #{updateBy}
+        where DEL_FLAG = 0 and SEND_RESULT = 1 and is_read = 0
+        AND ALIAS  = #{alias}
+        <if test="id != null and id != ''">
+            AND ID  = #{id}
+        </if>
+    </update>
+
+
+</mapper>

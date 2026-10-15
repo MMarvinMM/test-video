@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SystemRiskManagementMapper">
+
+    <insert id="batchInsert" keyColumn="id" keyProperty="id" parameterType="java.util.List" useGeneratedKeys="true">
+        INSERT INTO system_risk_management
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            judge_method,
+            is_risk,
+            user_code,
+            user_name,
+            scan_time,
+            business_key,
+            business_name,
+            province_code,
+            city_code,
+            to_user_name,
+            to_role_name
+        </trim>
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            <trim prefix="(" suffix=")" suffixOverrides=",">
+                #{item.judgeMethod,jdbcType=VARCHAR},
+                #{item.isRisk,jdbcType=VARCHAR},
+                #{item.userCode,jdbcType=VARCHAR},
+                #{item.userName,jdbcType=VARCHAR},
+                now(),
+                #{item.businessKey,jdbcType=VARCHAR},
+                #{item.businessName,jdbcType=VARCHAR},
+                #{item.provinceCode,jdbcType=VARCHAR},
+                #{item.cityCode,jdbcType=VARCHAR},
+                #{item.toUserName,jdbcType=VARCHAR},
+                #{item.toRoleName,jdbcType=VARCHAR}
+            </trim>
+        </foreach>
+    </insert>
+
+</mapper>

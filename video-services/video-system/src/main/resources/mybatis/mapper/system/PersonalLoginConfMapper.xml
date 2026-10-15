@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.PersonalLoginConfMapper">
+
+    <resultMap id="PersonalLoginConfResult" type="com.chinatower.platform.project.system.domain.vo.PersonalLoginConfVO">
+        <result property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="systemLogoUrl" column="system_logo_url"/>
+        <result property="backgroundImageUrl" column="background_image_url"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="configType" column="config_type"/>
+        <result property="creator" column="creator"/>
+        <result property="createTime" column="create_time"/>
+        <result property="modifier" column="modifier"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <select id="selectPersonalLoginConf" parameterType="com.chinatower.platform.project.system.domain.vo.PersonalLoginConfVO" resultMap="PersonalLoginConfResult">
+        SELECT
+        id,
+        title,
+        system_logo_url,
+        background_image_url,
+        tenant_id,
+        config_type,
+        creator,
+        create_time,
+        modifier,
+        update_time,
+        delete_flag
+        FROM
+        vm_personal_login_conf_t
+        WHERE
+        delete_flag = '0'
+        AND config_type = #{configType}
+        <if test="tenantId != null and tenantId != ''">
+            AND tenant_id = #{tenantId}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <update id="logicDeleteByTenantId">
+        UPDATE vm_personal_login_conf_t
+        SET delete_flag = '1',
+        update_time = NOW()
+        WHERE
+        delete_flag = '0'
+        <if test="tenantId != null and tenantId != ''">
+            AND tenant_id = #{tenantId}
+        </if>
+        AND config_type = #{configType}
+    </update>
+
+    <insert id="insertPersonalLoginConf" parameterType="com.chinatower.platform.project.system.domain.vo.PersonalLoginConfVO">
+        INSERT INTO vm_personal_login_conf_t (
+            title,
+            system_logo_url,
+            background_image_url,
+            tenant_id,
+            config_type,
+            creator,
+            create_time,
+            delete_flag
+        ) VALUES (
+                     #{title},
+                     #{systemLogoUrl},
+                     #{backgroundImageUrl},
+                     #{tenantId},
+                     COALESCE(#{configType}, 1),
+                     #{creator},
+                     NOW(),
+                     0
+                 )
+    </insert>
+
+    <select id="selectByTenantId" resultMap="PersonalLoginConfResult">
+        SELECT
+        id,
+        title,
+        system_logo_url,
+        background_image_url,
+        tenant_id,
+        config_type,
+        creator,
+        create_time,
+        modifier,
+        update_time,
+        delete_flag
+        FROM
+        vm_personal_login_conf_t
+        WHERE
+        delete_flag = '0'
+        <if test="tenantId != null and tenantId != ''">
+            AND tenant_id = #{tenantId}
+        </if>
+        AND config_type = #{configType}
+    </select>
+
+</mapper>

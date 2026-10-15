@@ -1,0 +1,89 @@
+#本地环境
+video:
+  mysql:
+    ip: 10.43.86.8
+    port: 3306
+    username: root
+    password: CFVTjmmoSXN56Rol
+
+knife4j:
+  production: false
+spring:
+  #配置数据源
+  datasource:
+    dynamic:
+      primary: master
+      datasource:
+        master:
+          url:  jdbc:mysql://10.43.86.8:3306/video-platform-base?characterEncoding=UTF-8&useSSL=false&serverTimezone=GMT
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          username: root
+          password: CFVTjmmoSXN56Rol
+  session:
+    store-type: REDIS
+    timeout: 72000
+    redis:
+      namespace: video:session
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+feign:
+  sentinel:
+    enabled: true
+  client:
+    config:
+      default:           #服务名，填写default为所有服务
+        connectTimeout: 5000
+        readTimeout: 60000
+tower:
+  log:
+    enable: false
+  swagger:
+    enable: true
+  redis:
+    enabled: true
+    max-pool-idex: 10
+    max-pool-total: 10
+    min-pool-idex: 10
+    max-wait-millis: 5000
+    command-timeout: 10000
+    primary:
+      host: 10.1.2.45
+      port: 6379
+      password: coJCw22PFAKc
+logging:
+  level:
+    root: info
+    com.chinatower: debug
+    com.alibaba.nacos.client.naming: error
+  path: .logs
+
+sms:
+  channelRatio: '{"AiPai":"3","ZhongShang":"7"}'
+
+loadbalance: randomweight
+AIPaiCMPPhost: 123.57.111.67
+AIPaiCMPPport: 7890
+AIPaiCMPPsourceAddr: tasms1
+AIPaiCMPPsharedSecret: Tas_Ys@101
+AIPaiCMPPheartbeatInterval: 10
+AIPaiCMPPreconnectInterval: 10
+AIPaiCMPPheartbeatNoresponseout: 5
+AIPaiCMPPtransactionTimeout: 10
+AIPaiCMPPversion: 1
+AIPaiCMPPdebug: true
+AIPaiTerminalId: 10886101
+
+
+ZhongShangCMPPhost: 139.129.107.160
+ZhongShangCMPPport: 7895
+ZhongShangCMPPsourceAddr: 125082
+ZhongShangCMPPsharedSecret: '!z^mkwb*'
+ZhongShangCMPPheartbeatInterval: 10
+ZhongShangCMPPreconnectInterval: 10
+ZhongShangCMPPheartbeatNoresponseout: 5
+ZhongShangCMPPtransactionTimeout: 10
+ZhongShangCMPPversion: 1
+ZhongShangCMPPdebug: true
+ZhongShangTerminalId: 10691134

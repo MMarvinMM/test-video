@@ -1,0 +1,17 @@
+server:
+  port: 9220
+  servlet:
+    context-path: /
+spring:
+  profiles:
+    active: local
+    #  loacl 本地   test 测试    specheck 专项验收   check 验收  stable 准生产   prod 生产
+  main:
+    banner-mode: "off"
+    allow-bean-definition-overriding: true
+  application:
+    name: video-out-data
+
+jasypt:
+  encryptor:
+    bootstrap: false

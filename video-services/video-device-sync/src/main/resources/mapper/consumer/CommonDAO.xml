@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.CommonDAO">
+
+
+
+    <update id="updateAlgrithmInfoBatch" parameterType="com.chinatower.sync.consumer.entity.AlgorithmInfoDO">
+        <foreach collection="list" item="item" separator=";">
+            update vm_algorithm_info_t
+            set algorithm_code = #{item.algorithmCode},
+            algorithm_name = #{item.algorithmName},
+            algo_min_type_code = #{item.algoMinTypeCode},
+            algo_min_type_name = #{item.algoMinTypeName},
+            algo_type_code = #{item.algoTypeCode},
+            algo_type_name = #{item.algoTypeName},
+            algo_sub_type_code = #{item.algoSubTypeCode},
+            algo_sub_type_name = #{item.algoSubTypeName},
+            product_name = #{item.productName},
+            product_code = #{item.productCode},
+            chip_platform = #{item.chipPlatform},
+            algorithm_description = #{item.algorithmDescription},
+            app_scenarios = #{item.appScenarios},
+            document_url = #{item.documentUrl},
+            logo_url = #{item.logoUrl},
+            version = #{item.version},
+            publish_time = #{item.publishTime},
+            algorithm_shape = #{item.algorithmShape},
+            status = #{item.status},
+            function_code = #{item.functionCode},
+            support_enlarge = #{item.supportEnlarge},
+            confidence = #{item.confidence},
+            object_min_pixel = #{item.objectMinPixel},
+            support_trip_thread = #{item.supportTripThread},
+            support_alarm_area_list = #{item.supportAlarmAreaList},
+            support_shield = #{item.supportShield},
+            model_config = #{item.modelConfig},
+            update_time = NOW(),
+            analy_type = #{item.analyType},
+            push_stream_type = #{item.pushStreamType},
+            algorithm_analysis_type = #{item.algorithmAnalysisType},
+            support_benchmark = #{item.supportBenchmark},
+            algorithm_model_type = #{item.algorithmModelType},
+            extend_json = #{item.extendJson}
+            where algorithm_id = #{item.algorithmId}
+        </foreach>
+    </update>
+
+
+</mapper>

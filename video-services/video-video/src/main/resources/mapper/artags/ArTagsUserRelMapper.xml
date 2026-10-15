@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.artags.mapper.ArTagsUserRelMapper">
+    <insert id="batchSave" parameterType="java.util.List">
+        INSERT INTO vm_ar_tags_tree_user_rel (user_id, coll_obj_code, coll_obj_type)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.userId}, #{item.collObjCode}, #{item.collObjType})
+        </foreach>
+    </insert>
+    <select id="getChanCollInfo" resultType="java.lang.Integer">
+        SELECT
+        count(*)
+        FROM
+        vm_ar_tags_tree_user_rel
+        WHERE
+        user_id = #{userId}
+        AND coll_obj_type = #{collType}
+        AND coll_obj_code IN
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getChanInfoByChanCode" resultType="com.chinatower.video.modules.artags.dataobject.ChannelInfoDO">
+        SELECT
+            DISTINCT
+            device_code,
+            channel_code
+        FROM
+            vm_channel_info_t
+        WHERE delete_flag = '0'AND
+                device_code in ( SELECT device_code FROM vm_channel_info_t WHERE channel_code = #{channelCode} )
+    </select>
+    <select id="getDeviceByChanCode" resultType="java.lang.String">
+        SELECT DISTINCT device_code FROM vm_channel_info_t WHERE channel_code in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

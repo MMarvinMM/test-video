@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.product.api.modules.videosquare.mapper.VideoSquareDao">
+
+    <select id="queryOrderDevInfo" parameterType="com.chinatower.product.api.modules.videosquare.entity.VideoRequestVO"
+            resultType="com.chinatower.product.api.modules.videosquare.entity.VideoRequestVO">
+        select DISTINCT order_code,customer_code,device_code from vm_order_devices  where delete_Flag = '1'
+        <if test='customerCode != null and customerCode != "" and customerCode != "0"'>
+            and customer_code = #{customerCode}
+        </if>
+        <if test='orderCode != null and orderCode != "" and orderCode != "0"'>
+            and order_code = #{orderCode}
+        </if>
+        <if test='deviceCode != null and deviceCode != "" and deviceCode != "0"'>
+            and device_code = #{deviceCode}
+        </if>
+        <if test='channelCode !=null and channelCode != "" '>
+            AND channel_codes_str = #{channelCode}
+        </if>
+        ORDER BY id DESC
+    </select>
+</mapper>

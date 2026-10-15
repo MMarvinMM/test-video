@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysAreaMapper">
+
+    <sql id="selectSysAreaVo">
+        select
+            a.area_code, a.area_name, a.area_level, a.area_parent_code , a.area_parent_name, a.longitude, a.latitude,
+            a.status, a.create_by, a.create_time, a.update_by, a.update_time, a.bussness_unit
+        from sys_area a
+    </sql>
+    <select id="getManagementAreaByTenantId" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT r.DEPT_ID,r.PROVINCE_CODE as provinceId,r.CITY_CODE as cityId,r.COUNTY_CODE as countyId,r.STREET_AREA_CODE as townCode
+        from sys_dept_street_rel r WHERE r.industry_code=#{industryCode} and r.tenant_id=#{tenantId}
+    </select>
+
+    <select id="selectSysAreaList" parameterType="com.chinatower.system.api.model.SysArea"
+            resultType="com.chinatower.system.api.model.SysArea">
+        <include refid="selectSysAreaVo"/>
+        where a.DEL_FLAG = '0' and a.area_parent_code is not null
+        <if test="areaCode != null  and areaCode != ''">and a.area_code = #{areaCode}</if>
+        <if test="areaName != null  and areaName != ''">and a.area_name like CONCAT(CONCAT('%', #{areaName}),'%')</if>
+        <if test="areaLevel != null  and areaLevel != ''">and a.area_level = #{areaLevel}</if>
+        <if test="areaParentCode != null  and areaParentCode != ''">and a.area_parent_code = #{areaParentCode}</if>
+        <if test="areaParentName != null  and areaParentName != ''">and a.area_parent_name like CONCAT(CONCAT('%', #{areaParentName}),'%')
+        </if>
+        <if test="status != null  and status != ''">and a.status = #{status}</if>
+        <if test="areaCodeList != null and  areaCodeList.size() > 0">
+            and a.area_code in
+            <foreach item="areaCode" collection="areaCodeList" open="(" separator="," close=")">
+                #{areaCode,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        ORDER BY a.area_parent_code ASC,a.area_code asc
+    </select>
+
+    <select id="selectSysAreaById" parameterType="String"
+            resultType="com.chinatower.system.api.model.SysArea">
+        <include refid="selectSysAreaVo"/>
+        where a.area_code = #{areaCode}
+    </select>
+    <select id="selectSysAreaCodes" resultType="com.chinatower.system.api.model.SysArea">
+        <include refid="selectSysAreaVo"/>
+        where a.area_code in
+        <foreach collection="codes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+    </select>
+
+
+    <select id="selectSysAreaByIds" parameterType="java.util.List"
+            resultType="com.chinatower.system.api.model.SysArea">
+        <include refid="selectSysAreaVo"/>
+        where a.area_code in
+        <foreach item="areaCode" collection="areaCodes" open="(" separator="," close=")">
+            #{areaCode,jdbcType=VARCHAR}
+        </foreach>
+    </select>
+
+
+    <select id="selectAreaNamesByIds" resultType="java.lang.String">
+        select area_name from sys_area where area_code in
+        <foreach collection="list" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+    <select id="queryAreaNameById" resultType="string">
+        select area_name from sys_area where area_code = #{areaCode}
+    </select>
+
+    <select id="querySysTiledArea" parameterType="java.util.Map" resultType="com.chinatower.platform.entity.admin.SysTiledArea">
+        select * from (
+        select t1.area_code as regionId,t1.area_name as regionName,
+        t1.area_parent_code as cityId,t1.area_parent_name as cityName,
+        t2.area_parent_code as provinceId,t2.area_parent_name as provinceName
+        from sys_area t1 inner join sys_area t2
+        on t1.area_parent_code=t2.area_code
+        where t1.area_level='4' and t2.area_level='3') s
+        <where>
+            <if test="regionIds != null and  regionIds.size() > 0">
+                s.regionId in
+                <foreach item="regionId" collection="regionIds" open="(" separator="," close=")">
+                    #{regionId,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <select id="getArea" resultType="com.chinatower.system.api.model.SysArea">
+        select AREA_CODE, AREA_NAME, AREA_LEVEL, AREA_PARENT_CODE,LONGITUDE,LATITUDE
+        from sys_area
+        where DEL_FLAG = '0'
+        <if test='areaCode != null and areaCode != "" and areaCode != "0"'>
+            and AREA_CODE = #{areaCode}
+        </if>
+        <if test='areaName != null and areaName != "" and areaName != "0"'>
+            and AREA_NAME = #{areaName}
+        </if>
+        <if test='areaLevel !=null and areaLevel != "" '>
+            and AREA_LEVEL = #{areaLevel}
+        </if>
+        <if test='areaParentCode !=null and areaParentCode != "" and areaParentCode != "0"'>
+            AND AREA_PARENT_CODE = #{areaParentCode}
+        </if>
+        <if test='areaCodeList != null and areaCodeList.size() > 0'>
+            AND AREA_CODE IN
+            <foreach collection="areaCodeList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='longitude !=null and longitude != "" '>
+            and LONGITUDE = #{longitude}
+        </if>
+        <if test='latitude !=null and latitude != "" '>
+            and LATITUDE = #{latitude}
+        </if>
+        ORDER BY AREA_CODE asc
+    </select>
+
+    <insert id="insertSysArea" parameterType="com.chinatower.system.api.model.SysArea">
+        insert into sys_area
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id > 0">id,</if>
+            <if test="areaCode != null  and areaCode != ''">area_code,</if>
+            <if test="areaName != null  and areaName != ''">area_name,</if>
+            <if test="areaLevel != null  and areaLevel != ''">area_level,</if>
+            <if test="areaParentCode != null  and areaParentCode != ''">area_parent_code,</if>
+            <if test="areaParentName != null  and areaParentName != ''">area_parent_name,</if>
+            <if test="longitude != null  and longitude != ''">longitude,</if>
+            <if test="latitude != null  and latitude != ''">latitude,</if>
+            <if test="status != null  and status != ''">status,</if>
+            <if test="deptId != null  and deptId != ''">dept_id,</if>
+            <if test="creator != null  and creator != ''">CREATE_BY,</if>
+            <if test="createTime != null ">create_time,</if>
+            <if test="modifier != null  and modifier != ''">UPDATE_BY,</if>
+            <if test="updateTime != null ">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id > 0">#{id},</if>
+            <if test="areaCode != null  and areaCode != ''">#{areaCode},</if>
+            <if test="areaName != null  and areaName != ''">#{areaName},</if>
+            <if test="areaLevel != null  and areaLevel != ''">#{areaLevel},</if>
+            <if test="areaParentCode != null  and areaParentCode != ''">#{areaParentCode},</if>
+            <if test="areaParentName != null  and areaParentName != ''">#{areaParentName},</if>
+            <if test="longitude != null  and longitude != ''">#{longitude},</if>
+            <if test="latitude != null  and latitude != ''">#{latitude},</if>
+            <if test="status != null  and status != ''">#{status},</if>
+            <if test="deptId != null  and deptId != ''">#{deptId},</if>
+            <if test="creator != null  and creator != ''">#{creator},</if>
+            <if test="createTime != null ">#{createTime},</if>
+            <if test="modifier != null  and modifier != ''">#{modifier},</if>
+            <if test="updateTime != null ">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateSysArea" parameterType="com.chinatower.system.api.model.SysArea">
+        update sys_area
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="areaName != null  and areaName != ''">area_name = #{areaName},</if>
+            <if test="areaLevel != null  and areaLevel != ''">area_level = #{areaLevel},</if>
+            <if test="areaParentCode != null  and areaParentCode != ''">area_parent_code = #{areaParentCode},</if>
+            <if test="areaParentName != null  and areaParentName != ''">area_parent_name= #{areaParentName},</if>
+            <if test="longitude != null  and longitude != ''">longitude= #{longitude},</if>
+            <if test="latitude != null  and latitude != ''">latitude= #{latitude},</if>
+            <if test="status != null  and status != ''">status = #{status},</if>
+            <if test="creator != null  and creator != ''">CREATE_BY = #{creator},</if>
+            <if test="createTime != null ">create_time = #{createTime},</if>
+            <if test="modifier != null  and modifier != ''">UPDATE_BY = #{modifier},</if>
+            <if test="updateTime != null ">update_time = #{updateTime},</if>
+        </trim>
+        where area_code = #{areaCode}
+    </update>
+
+    <delete id="deleteSysAreaById" parameterType="String">
+        delete from sys_area where area_code = #{areaCode}
+    </delete>
+
+    <delete id="deleteSysAreaByIds" parameterType="String">
+        delete from sys_area where area_code in
+        <foreach item="areaCode" collection="array" open="(" separator="," close=")">
+            #{areaCode}
+        </foreach>
+    </delete>
+    <select id="getSysCapital" resultType="com.chinatower.system.api.model.SysCapitalVO">
+        select capital_code as capitalCode, capital_name as capitalName
+        from sys_capital
+        where status = '0'
+        and prov_code = #{provCode}
+        limit 1
+
+    </select>
+
+    <select id="getAllArea" resultType="com.chinatower.system.api.model.SysArea">
+        select AREA_CODE,AREA_NAME,AREA_LEVEL,AREA_PARENT_CODE,AREA_PARENT_NAME
+        from sys_area
+        where AREA_LEVEL in(1,2,3,4)
+        and DEL_FLAG = '0'
+
+    </select>
+
+    <select id="getCenterLonLat" resultType="com.chinatower.system.api.model.SysArea">
+        select longitude,latitude
+        from sys_area
+        where area_code = #{code}
+
+    </select>
+
+    <select id="selectByAreaName" resultType="com.chinatower.system.api.model.SysArea">
+        SELECT
+            a.area_code, a.area_name, a.AREA_LEVEL
+        FROM sys_area a
+        WHERE DEL_FLAG = '0' AND
+            a.area_name IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectAreaByLevel" resultType="com.chinatower.system.api.model.SysArea">
+        SELECT a.area_code, a.area_name, a.area_level, a.area_parent_code , a.area_parent_name
+        FROM sys_area a
+        <where>
+            AND a.area_level IN ('2','3','4')
+            AND a.DEL_FLAG = '0'
+        </where>
+        ORDER BY a.area_parent_code ASC,a.area_code ASC
+    </select>
+
+    <select id="getAllAreaInfo" resultType="com.chinatower.system.api.model.SysArea">
+        SELECT a.area_code, a.area_name, a.area_level, a.area_parent_code , a.area_parent_name, a.longitude, a.latitude,
+               a.status, a.create_by, a.create_time, a.update_by, a.update_time, a.bussness_unit FROM sys_area a WHERE a.DEL_FLAG = '0'
+    </select>
+
+    <select id="selectMaxId" resultType="java.lang.Long">
+        SELECT max(Id) FROM sys_area
+    </select>
+    <select id="getAreaTreeList" resultType="com.chinatower.system.api.model.SysArea">
+        SELECT
+            AREA_CODE AS areaCode,
+            AREA_NAME AS areaName,
+            AREA_PARENT_CODE AS areaParentCode,
+            AREA_LEVEL AS areaLevel
+        FROM
+            sys_area
+        WHERE
+            STATUS = 0
+          AND AREA_LEVEL IN (2,3,4)
+        ORDER BY
+            AREA_CODE
+    </select>
+    <select id="selectSysAreas" resultType="com.chinatower.system.api.model.SysArea">
+        <include refid="selectSysAreaVo"/>
+        where a.area_code IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.countyCode}
+        </foreach>
+    </select>
+</mapper>

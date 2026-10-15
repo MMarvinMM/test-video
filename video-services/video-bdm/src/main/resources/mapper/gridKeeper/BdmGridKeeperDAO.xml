@@ -1,0 +1,1233 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.gridKeeper.dao.BdmGridKeeperDAO">
+
+    <select id="checkIdCard" resultType="java.lang.Integer" parameterType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT
+        count(1) as `count`
+        FROM
+        bm_gridkeeper a
+        WHERE
+        a.keeper_id_card_number = #{keeperIdCardNumber,jdbcType=VARCHAR}
+        <if test="keeperId != null">
+            and a.keeper_id != #{keeperId,jdbcType=BIGINT}
+        </if>
+    </select>
+
+    <select id="checkPhone" resultType="java.lang.Integer" parameterType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT
+        count(1) as `count`
+        FROM
+        bm_gridkeeper a
+        WHERE
+        a.keeper_phone_number = #{keeperPhoneNumber,jdbcType=VARCHAR}
+        <if test="keeperId != null">
+            and a.keeper_id != #{keeperId,jdbcType=BIGINT}
+        </if>
+
+    </select>
+    <select id="findGridKeeperInfo" parameterType="com.chinatower.bdm.api.entity.GridKeeperVO" resultType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT
+            DISTINCT
+            a.keeper_id,
+            b.dept_name as staff_org_name,
+            a.grid_type,
+            a.keeper_code,
+            a.staff_id,
+            a.staff_id as userId,
+            a.staff_org_id,
+            a.login_name,
+            a.entry_time,
+            a.wechat_number,
+            a.party,
+            a.education,
+            a.is_special,
+            a.special_type,
+            a.major_type,
+            a.keeper_aidentity,
+            a.keeper_motto,
+            a.personal_profile,
+            a.is_grid_manager,
+            a.keeper_sort,
+            a.star_class,
+            a.creator,
+            a.create_time,
+            a.modifier,
+            a.update_time,
+            a.delete_flag,
+            a.versions,
+            IF(a.keeper_id_card_number, CONCAT( SUBSTRING( a.keeper_id_card_number, 1, 6 ), '********', SUBSTRING( a.keeper_id_card_number, 15 )), NULL ) AS keeper_id_card_number,
+            a.keeper_birth_date,
+            a.keeper_address,
+            a.keeper_phone_number as aes_phone_number,
+            CONCAT(SUBSTRING( a.keeper_phone_number, 1, 3 ),'****',SUBSTRING( a.keeper_phone_number, 8 )) AS keeper_phone_number,
+            a.keeper_email,
+            a.keeper_gender,
+            a.keeper_name,
+            a.longitude,
+            a.latitude,
+            a.take_point_time,
+            a.tenant_id,
+            a.fj_url,
+            (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line,
+            a.province_id,
+            a.city_id,
+            a.county_id,
+            a.location_flag,
+            a.keeper_type,
+            a.operating_duty,
+            a.industry_code,
+            a.app_ver_code
+        FROM
+            bm_gridkeeper a
+                LEFT JOIN sys_dept b ON a.staff_org_id = b.dept_id and b.del_flag=0
+        WHERE
+            a.keeper_id = #{keeperId,jdbcType=BIGINT}
+    </select>
+
+    <select id="findGridKeeperInfoNoEncryption" resultType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT keeper_id, grid_type, keeper_code, staff_id, staff_org_id, login_name, entry_time, wechat_number, party,
+        education, is_special, special_type, major_type, keeper_aidentity, keeper_motto, personal_profile, is_grid_manager,
+        keeper_sort, star_class, creator, create_time, modifier, update_time, tenant_id, industry_code,app_ver_code, delete_flag, versions,
+        IF(keeper_id_card_number, CONCAT( SUBSTRING( keeper_id_card_number, 1, 6 ), '********', SUBSTRING( keeper_id_card_number, 15 )), NULL ) AS keeper_id_card_number,
+        keeper_id_card_number as aesKeeperIdCardNumber,
+        keeper_birth_date, keeper_address,
+        CONCAT(SUBSTRING( keeper_phone_number, 1, 3 ),'****',SUBSTRING( keeper_phone_number, 8 )) AS keeper_phone_number,
+        keeper_phone_number as aesPhoneNumber,
+        keeper_email, keeper_gender, keeper_name, longitude, latitude,
+        take_point_time, tenant_id, fj_url, province_id, city_id, county_id,location_flag,
+        keeper_type,operating_duty,(case when TIMESTAMPDIFF(MINUTE,take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line
+	    FROM bm_gridkeeper
+        where keeper_id = #{keeperId,jdbcType=BIGINT}
+    </select>
+
+    <insert id="insertGridKeeperInfo" keyColumn="keeper_id" keyProperty="keeperId" parameterType="com.chinatower.bdm.api.entity.GridKeeperVO" useGeneratedKeys="true">
+        INSERT INTO bm_gridkeeper
+	    (keeper_id, grid_type, keeper_code, staff_id, staff_org_id, login_name, entry_time, wechat_number, party, education, is_special,
+	    special_type, major_type, keeper_aidentity, keeper_motto, personal_profile, is_grid_manager, keeper_sort, star_class, creator,
+	    create_time, keeper_id_card_number, keeper_birth_date, keeper_address, keeper_phone_number,
+	    keeper_email, keeper_gender, keeper_name, longitude, latitude, take_point_time, tenant_id, industry_code, app_ver_code, fj_url, is_line, province_id, city_id,
+	    county_id,location_flag,keeper_type,operating_duty)
+        values ( #{keeperId},#{gridType}, #{keeperCode}, #{staffId},#{staffOrgId}, #{loginName}, #{entryTime},#{wechatNumber}, #{party}, #{education},#{isSpecial},
+        #{specialType}, #{majorType},#{keeperAidentity}, #{keeperMotto}, #{personalProfile},#{isGridManager}, #{keeperSort}, #{starClass},#{creator},
+        now(), #{keeperIdCardNumber}, #{keeperBirthDate}, #{keeperAddress},#{keeperPhoneNumber},
+        #{keeperEmail}, #{keeperGender}, #{keeperName},#{longitude}, #{latitude}, #{takePointTime},#{tenantId},#{industryCode},#{appVerCode},#{fjUrl},#{isLine},#{provinceId},#{cityId},#{countyId},
+        #{locationFlag},#{keeperType},#{operatingDuty})
+    </insert>
+
+    <delete id="deleteGridKeeperRefInfo">
+        update  bm_grid_keeper_ref a set a.delete_flag = 1
+        where a.keeper_id = #{keeperId,jdbcType=BIGINT}
+
+    </delete>
+
+    <insert id="insertGridKeeperRefInfo" parameterType="java.util.ArrayList" useGeneratedKeys="true">
+        insert into bm_grid_keeper_ref
+        (ref_id,keeper_id, grid_id,
+        creator, create_time, delete_flag
+        )values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.refId},#{item.keeperId,jdbcType=BIGINT}, #{item.gridId,jdbcType=BIGINT},
+            #{item.creator,jdbcType=VARCHAR}, now(), 0)
+        </foreach>
+    </insert>
+
+    <update id="updateGridKeeperInfo" parameterType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        update bm_gridkeeper
+        <set>
+            <if test="gridType != null">
+                grid_type = #{gridType,jdbcType=VARCHAR},
+            </if>
+            <if test="keeperCode != null">
+                keeper_code = #{keeperCode,jdbcType=VARCHAR},
+            </if>
+            <if test="staffId != null">
+                staff_id = #{staffId,jdbcType=BIGINT},
+            </if>
+            <if test="staffOrgId != null">
+                staff_org_id = #{staffOrgId,jdbcType=BIGINT},
+            </if>
+            <if test="loginName != null">
+                login_name = #{loginName,jdbcType=VARCHAR},
+            </if>
+            <if test="entryTime != null">
+                entry_time = #{entryTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="wechatNumber != null">
+                wechat_number = #{wechatNumber,jdbcType=VARCHAR},
+            </if>
+            <if test="party != null">
+                party = #{party,jdbcType=VARCHAR},
+            </if>
+            <if test="education != null">
+                education = #{education,jdbcType=VARCHAR},
+            </if>
+            <if test="isSpecial != null">
+                is_special = #{isSpecial,jdbcType=VARCHAR},
+            </if>
+            <if test="specialType != null">
+                special_type = #{specialType,jdbcType=VARCHAR},
+            </if>
+            <if test="majorType != null">
+                major_type = #{majorType,jdbcType=VARCHAR},
+            </if>
+            <if test="keeperAidentity != null">
+                keeper_aidentity = #{keeperAidentity,jdbcType=VARCHAR},
+            </if>
+            <if test="keeperMotto != null">
+                keeper_motto = #{keeperMotto,jdbcType=VARCHAR},
+            </if>
+            <if test="personalProfile != null">
+                personal_profile = #{personalProfile,jdbcType=VARCHAR},
+            </if>
+            <if test="isGridManager != null">
+                is_grid_manager = #{isGridManager,jdbcType=VARCHAR},
+            </if>
+            <if test="keeperSort != null">
+                keeper_sort = #{keeperSort,jdbcType=INTEGER},
+            </if>
+            <if test="starClass != null">
+                star_class = #{starClass,jdbcType=VARCHAR},
+            </if>
+            <if test="modifier != null">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+                update_time = now(),
+            <if test="deleteFlag != null">
+                delete_flag = #{deleteFlag,jdbcType=INTEGER},
+            </if>
+            <if test="keeperIdCardNumber != null">
+                keeper_id_card_number = #{keeperIdCardNumber,jdbcType=VARCHAR},
+            </if>
+            <if test="keeperBirthDate != null">
+                keeper_birth_date = #{keeperBirthDate,jdbcType=VARCHAR},
+            </if>
+            <if test="keeperAddress != null">
+                keeper_address = #{keeperAddress,jdbcType=VARCHAR},
+            </if>
+            <if test="keeperPhoneNumber != null">
+                keeper_phone_number = #{keeperPhoneNumber,jdbcType=VARCHAR},
+            </if>
+            <if test="keeperEmail != null">
+                keeper_email = #{keeperEmail,jdbcType=VARCHAR},
+            </if>
+            <if test="keeperGender != null">
+                keeper_gender = #{keeperGender,jdbcType=BIGINT},
+            </if>
+            <if test="keeperName != null">
+                keeper_name = #{keeperName,jdbcType=BIGINT},
+            </if>
+            <if test="longitude != null">
+                longitude = #{longitude,jdbcType=BIGINT},
+            </if>
+            <if test="latitude != null">
+                latitude = #{latitude,jdbcType=VARCHAR},
+            </if>
+            <if test="takePointTime != null">
+                take_point_time = #{takePointTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="isLine != null">
+                is_line = #{isLine,jdbcType=VARCHAR},
+            </if>
+            <if test="fjUrl != null">
+                fj_url = #{fjUrl,jdbcType=VARCHAR},
+            </if>
+            <if test="provinceId != null">
+                province_id = #{provinceId,jdbcType=VARCHAR},
+            </if>
+            <if test="cityId != null">
+                city_id = #{cityId,jdbcType=VARCHAR},
+            </if>
+            <if test="countyId != null">
+                county_id = #{countyId,jdbcType=VARCHAR},
+            </if>
+            <if test='locationFlag != null and locationFlag != ""'>
+                location_flag = #{locationFlag},
+            </if>
+            <if test='keeperType != null and keeperType != ""'>
+                keeper_type = #{keeperType},
+            </if>
+            <if test='operatingDuty != null and operatingDuty != ""'>
+                operating_duty = #{operatingDuty},
+            </if>
+        </set>
+        where keeper_id = #{keeperId,jdbcType=BIGINT}
+    </update>
+
+    <select id="findKeeperRef" resultType="java.util.Map">
+        select
+        a.ref_id as refId, a.keeper_id as keeperId, a.grid_id as gridId, b.grid_classification as gridClassification,a.delete_flag as deleteFlag, b.grid_name as gridName,
+        b.grid_range gridRange
+        from bm_grid_keeper_ref a left join bm_grid b
+            on a.grid_id=b.grid_id
+        where a.keeper_id = #{keeperId,jdbcType=BIGINT}
+             and a.delete_flag  = 0
+            <if test='gridId != null and gridId != ""'>
+                and a.grid_id = #{gridId}
+            </if>
+    </select>
+
+    <update id="deleteGridKeeperInfo">
+        update bm_gridkeeper set delete_flag=1,modifier = #{userId},update_time = now()
+        where keeper_id in (
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+
+    <update id="deleteGridKeeperRefInfoBatch">
+        update  bm_grid_keeper_ref a set a.delete_flag = 1
+        where a.keeper_id in (
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+
+    <update id="stopGridKeeperInfo">
+        update bm_gridkeeper set `status`='1',modifier = #{userId},update_time = now()
+        where keeper_id in (
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+    <update id="openGridKeeperInfo">
+        update bm_gridkeeper set `status`='0',modifier = #{userId},update_time = now()
+        where keeper_id in (
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+    <update id="openGridKeeperLocal">
+        update bm_gridkeeper set location_flag='0',modifier = #{userId},update_time = now()
+        where keeper_id in (
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+    <update id="stopGridKeeperLocal">
+        update bm_gridkeeper set location_flag='1',modifier = #{userId},update_time = now()
+        where keeper_id in (
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+
+    <select id="getGridKeeperList" parameterType="com.chinatower.bdm.api.entity.GridKeeperParam" resultType="com.chinatower.bdm.api.entity.GridKeeperListVO">
+        SELECT keeper_id, keeper_code, keeper_name,login_name,keeper_gender,
+        IF(keeper_id_card_number,CONCAT(SUBSTRING(keeper_id_card_number,1,6),'********',SUBSTRING(keeper_id_card_number,15)),NULL) AS keeper_id_card_number,
+        CONCAT(SUBSTRING(keeper_phone_number,1,3),'****',SUBSTRING(keeper_phone_number,8)) AS keeper_phone_number,
+        keeper_email,status,longitude,latitude,province_id,city_id,county_id,location_flag,keeper_type,(case when TIMESTAMPDIFF(MINUTE,take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line
+        FROM
+        bm_gridkeeper a
+        WHERE
+        a.delete_flag = 0 ${dataScope}
+        <if test="deptId != null and deptId != ''">
+            and a.keeper_id in (select r.keeper_id from bm_grid_keeper_ref r where r.delete_flag = '0' and r.grid_id = #{deptId,jdbcType=VARCHAR} )
+        </if>
+        <if test="provinceId != null and provinceId != ''">
+            and a.province_id = #{provinceId,jdbcType=VARCHAR}
+        </if>
+        <if test="cityId != null and cityId != ''">
+            and a.city_id = #{cityId,jdbcType=VARCHAR}
+        </if>
+        <if test="status != null and status != ''">
+            and a.status = #{status}
+        </if>
+        <if test="keeperCode != null and keeperCode != ''">
+            and a.keeper_code  like concat('%',#{keeperCode},'%')
+        </if>
+        <if test="keeperName != null and keeperName != ''">
+            and a.keeper_name  like concat('%',#{keeperName},'%')
+        </if>
+        <if test="loginName != null and loginName != ''">
+            and a.login_name  like concat('%',#{loginName},'%')
+        </if>
+        <if test="keeperPhoneNumber != null and keeperPhoneNumber != ''">
+            and a.keeper_phone_number like concat('%',#{keeperPhoneNumber},'%')
+        </if>
+        <if test="gridId != null">
+            and EXISTS(SELECT b.keeper_id FROM bm_grid_keeper_ref b WHERE  b.delete_flag = '0' and b.grid_id = #{gridId} AND b.keeper_id = a.keeper_id)
+        </if>
+        <if test='keyword != null and keyword != ""'>
+            and (a.keeper_code like concat('%',#{keyword},'%') or a.keeper_name like concat('%',#{keyword},'%') or a.login_name like concat('%',#{keyword},'%'))
+        </if>
+        <if test='locationFlag != null and locationFlag != ""'>
+            and a.location_flag = #{locationFlag}
+        </if>
+        <if test='keeperType != null and keeperType != ""'>
+            and a.keeper_type = #{keeperType}
+        </if>
+        order by a.create_time DESC,a.keeper_id DESC
+    </select>
+
+    <select id="getGridKeeperListByFloor" parameterType="com.chinatower.bdm.api.entity.GridKeeperLayerParam" resultType="com.chinatower.bdm.api.entity.GridKeeperListVO">
+        SELECT
+        DISTINCT
+        a.keeper_id,
+        a.keeper_code,
+        a.keeper_name,
+        a.login_name,
+        a.keeper_gender,
+        c.color,
+        c.grid_id,
+        a.staff_id as userId,
+        IF
+        (
+        a.keeper_id_card_number,
+        CONCAT(
+        SUBSTRING( a.keeper_id_card_number, 1, 6 ),
+        '********',
+        SUBSTRING( a.keeper_id_card_number, 15 )),
+        NULL
+        ) AS keeper_id_card_number,
+        a.keeper_phone_number aesPhoneNumber,
+        CONCAT(
+        SUBSTRING( a.keeper_phone_number, 1, 3 ),
+        '****',
+        SUBSTRING( a.keeper_phone_number, 8 )) AS keeper_phone_number,
+        a.keeper_email,
+        a.STATUS,
+        a.longitude,
+        a.latitude,
+        a.province_id,
+        a.city_id,
+        a.county_id,
+        a.location_flag,
+        a.keeper_type,
+        (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line,
+        sys.AVATAR keeperPhotoUrl
+        FROM
+        bm_gridkeeper a,
+        bm_grid_keeper_ref b,
+        bm_grid c,
+        sys_user sys
+        WHERE
+        a.delete_flag = 0
+        AND b.delete_flag = 0
+        AND a.keeper_id = b.keeper_id
+        and b.grid_id=c.grid_id
+        and a.industry_code = c.industry_code
+        and a.staff_id = sys.USER_ID
+        <if test="provinceId != null and provinceId != ''">
+            and a.province_id = #{provinceId,jdbcType=VARCHAR}
+        </if>
+        <if test="cityId != null and cityId != ''">
+            and a.city_id = #{cityId,jdbcType=VARCHAR}
+        </if>
+        <if test="status != null and status != ''">
+            and a.status = #{status}
+        </if>
+        <if test="keeperCode != null and keeperCode != ''">
+            and a.keeper_code  like concat('%',#{keeperCode,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="keeperName != null and keeperName != ''">
+            and a.keeper_name  like concat('%',#{keeperName,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="loginName != null and loginName != ''">
+            and a.login_name  like concat('%',#{loginName,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="keeperPhoneNumber != null and keeperPhoneNumber != ''">
+            and a.keeper_phone_number like concat('%',#{keeperPhoneNumber,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="gridLevelCode != null and gridLevelCode != ''">
+            and c.grid_level_code like concat('%',#{gridLevelCode,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="gridId != null">
+            and b.grid_id = #{gridId,jdbcType=VARCHAR}
+        </if>
+        <if test='keyword != null and keyword != ""'>
+            and (a.keeper_code  like concat('%',#{keyword,jdbcType=VARCHAR},'%') or a.keeper_name  like concat('%',#{keyword},'%'))
+        </if>
+        <if test='locationFlag != null and locationFlag != ""'>
+            and a.location_flag = #{locationFlag,jdbcType=VARCHAR}
+        </if>
+        <if test='keeperType != null and keeperType != ""'>
+            and a.keeper_type = #{keeperType,jdbcType=VARCHAR}
+        </if>
+        ${dataScope}
+        order by a.keeper_sort
+    </select>
+
+
+    <select id="getGridKeeperListByFloorNew" parameterType="com.chinatower.bdm.api.entity.GridKeeperParam" resultType="com.chinatower.bdm.api.entity.GridKeeperListVO">
+        SELECT
+        DISTINCT
+        a.keeper_id,
+        a.keeper_code,
+        a.keeper_name,
+        a.login_name,
+        a.keeper_gender,
+        GROUP_CONCAT(c.grid_id) as gridId,
+        a.staff_id as userId,
+        IF
+        (
+        a.keeper_id_card_number,
+        CONCAT(
+        SUBSTRING( a.keeper_id_card_number, 1, 6 ),
+        '********',
+        SUBSTRING( a.keeper_id_card_number, 15 )),
+        NULL
+        ) AS keeper_id_card_number,
+        a.keeper_phone_number aesPhoneNumber,
+        CONCAT(
+        SUBSTRING( a.keeper_phone_number, 1, 3 ),
+        '****',
+        SUBSTRING( a.keeper_phone_number, 8 )) AS keeper_phone_number,
+        a.keeper_email,
+        a.STATUS,
+        a.longitude,
+        a.latitude,
+        a.province_id,
+        a.city_id,
+        a.county_id,
+        a.location_flag,
+        a.keeper_type,
+        (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line,
+        sys.AVATAR keeperPhotoUrl
+        FROM
+        bm_gridkeeper a,
+        bm_grid_keeper_ref b,
+        bm_grid c,
+        sys_user sys
+        WHERE
+        a.delete_flag = 0
+        AND b.delete_flag = 0
+        AND a.keeper_id = b.keeper_id
+        and b.grid_id=c.grid_id
+        and a.industry_code = c.industry_code
+        and a.staff_id = sys.USER_ID
+        <if test="provinceId != null and provinceId != ''">
+            and a.province_id = #{provinceId,jdbcType=VARCHAR}
+        </if>
+        <if test="cityId != null and cityId != ''">
+            and a.city_id = #{cityId,jdbcType=VARCHAR}
+        </if>
+        <if test="status != null and status != ''">
+            and a.status = #{status}
+        </if>
+        <if test="keeperCode != null and keeperCode != ''">
+            and a.keeper_code  like concat('%',#{keeperCode},'%')
+        </if>
+        <if test="keeperName != null and keeperName != ''">
+            and a.keeper_name  like concat('%',#{keeperName},'%')
+        </if>
+        <if test="loginName != null and loginName != ''">
+            and a.login_name  like concat('%',#{loginName},'%')
+        </if>
+        <if test="keeperPhoneNumber != null and keeperPhoneNumber != ''">
+            and a.keeper_phone_number like concat('%',#{keeperPhoneNumber},'%')
+        </if>
+        <if test="gridLevelCode != null and gridLevelCode != ''">
+            and c.grid_level_code like concat('%',#{gridLevelCode},'%')
+        </if>
+        <if test="gridId != null">
+            and b.grid_id = #{gridId}
+        </if>
+        <if test='keyword != null and keyword != ""'>
+            and (a.keeper_code  like concat('%',#{keyword},'%') or a.keeper_name  like concat('%',#{keyword},'%'))
+        </if>
+        <if test='locationFlag != null and locationFlag != ""'>
+            and a.location_flag = #{locationFlag}
+        </if>
+        <if test='keeperType != null and keeperType != ""'>
+            and a.keeper_type = #{keeperType}
+        </if>
+        ${dataScope}
+        GROUP BY a.keeper_id
+        order by a.keeper_sort
+    </select>
+
+
+    <select id="getGridKeeperListByGridId" resultType="com.chinatower.bdm.api.entity.GridKeeperListByGridIdVO">
+        SELECT keeper_id, keeper_code, keeper_name, longitude, latitude,keeper_type,is_grid_manager
+        FROM
+        bm_gridkeeper a
+        WHERE
+        a.delete_flag = 0
+        and a.`status` = '0'
+        ${dataScope}
+        and EXISTS(SELECT b.keeper_id FROM bm_grid_keeper_ref b WHERE   b.delete_flag = '0' and b.grid_id = #{gridId} AND b.keeper_id = a.keeper_id)
+        order by a.keeper_sort
+    </select>
+
+    <select id="getKeeperIdByUserId" resultType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT a.keeper_id,a.keeper_name,a.staff_id,a.tenant_id,a.industry_code
+        FROM
+        bm_gridkeeper a
+        WHERE a.staff_id = #{userId}
+        AND a.delete_flag = 0
+        and a.status = '0'
+        and a.tenant_id = #{tenantId,jdbcType=VARCHAR}
+        and a.industry_code = #{industryCode,jdbcType=VARCHAR}
+    </select>
+
+
+    <select id="getGridByKeeper" resultType="com.chinatower.bdm.api.entity.GridVO">
+        select
+            a.grid_id,b.keeper_id, a.grid_code, a.grid_name, a.gb_code, a.parent_id, a.parent_code, a.grid_classification, a.grid_level, a.grid_level_code, a.grid_property, a.is_end, a.grid_address,
+            a.grid_introduce, a.grid_picture, a.regin_scope_desc, a.grid_sort, a.point_status, a.grid_em_center, a.grid_begin_time, a.grid_end_time, a.grid_area, a.is_valid, a.creator,
+            a.create_time, a.delete_flag, a.color, a.grid_center, a.grid_range, a.tenant_id, a.industry_code
+        from bm_grid a left join bm_grid_keeper_ref b on a.grid_id=b.grid_id AND b.delete_flag = 0
+        where b.keeper_id = #{keeperId,jdbcType=BIGINT}
+        AND a.delete_flag = 0
+        ${dataScope}
+    </select>
+
+    <select id="getKeeperByPeriphery" resultType="com.chinatower.bdm.modules.gridKeeper.entity.GridKeeperTTVO">
+        SELECT ST_Distance_Sphere(
+                       ST_GeomFromText(CONCAT('POINT(',#{longitude},' ',#{latitude},')')),
+                       ST_GeomFromText(CONCAT('POINT(',a.longitude,' ',a.latitude,')'))
+                   ) as distance,a.keeper_id, a.grid_type, a.keeper_code, a.staff_id,a.staff_id as userId,a.staff_org_id, b.dept_name as staffOrgName, a.login_name, a.entry_time, a.wechat_number, a.party,
+               a.education, a.is_special, a.special_type, a.major_type, a.keeper_aidentity, a.keeper_motto, a.personal_profile, a.is_grid_manager,a.keeper_type,
+               a.keeper_sort, a.star_class, a.creator, a.create_time, a.modifier, a.update_time, a.delete_flag, a.versions, a.keeper_id_card_number,
+               a.keeper_birth_date, a.keeper_address, a.keeper_phone_number, a.keeper_email, a.keeper_gender, a.keeper_name, a.longitude, a.latitude,
+               a.take_point_time, a.tenant_id, a.industry_code, a.fj_url,a.province_id, a.city_id, a.county_id, a.`status`,a.location_flag,a.keeper_type,a.operating_duty,(case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line
+        FROM bm_gridkeeper a left join sys_dept b on a.staff_org_id = b.dept_id and b.del_flag = 0
+        WHERE a.delete_flag = 0
+        AND a.status='0'
+        ${dataScope}
+        <if test="radius != null and radius != '' and latitude != null and latitude != '' and longitude != null and longitude != ''">
+            AND ST_Distance_Sphere(
+                        ST_GeomFromText(CONCAT('POINT(',#{longitude},' ',#{latitude},')')),
+                        ST_GeomFromText(CONCAT('POINT(',a.longitude,' ',a.latitude,')'))
+                ) <![CDATA[<=]]> #{radius}
+        </if>
+        order by a.keeper_sort
+    </select>
+    <select id="getUserByLoginName" resultType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT
+               USER_ID AS user_id,
+               DEPT_ID AS staff_org_id,
+               NICK_NAME as keeper_name,
+               SEX as keeper_gender,
+               PHONENUMBER as keeper_phone_number,
+               EMAIL as keeper_email
+        FROM sys_user
+        WHERE USER_NAME = #{loginName}
+        AND DEL_FLAG = '0'
+    </select>
+
+    <select id="getKeeperLeader" resultType="com.chinatower.bdm.api.entity.GridListVO">
+        SELECT a.keeper_id,a.keeper_name,b.grid_id,
+        CONCAT(
+        SUBSTRING( a.keeper_phone_number, 1, 3 ),
+        '****',
+        SUBSTRING( a.keeper_phone_number, 8 )) AS keeper_phone_number,
+        a.keeper_phone_number AS phonePlainText,
+        sys.AVATAR as keeperPhotoUrl,
+        (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as isLine
+        FROM bm_gridkeeper a, bm_grid_keeper_ref b, sys_user sys
+        WHERE a.keeper_id = b.keeper_id
+        and a.staff_id = sys.USER_ID
+        and b.grid_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and a.tenant_id = #{tenantId,jdbcType=VARCHAR}
+        and a.industry_code = #{industryCode,jdbcType=VARCHAR}
+        AND a.delete_flag = 0
+        AND b.delete_flag = 0
+        AND a.keeper_type = '1'
+        <if test="keeperId != null and keeperId != ''">
+            and a.keeper_id != #{keeperId,jdbcType=BIGINT}
+        </if>
+    </select>
+
+    <select id="getKeeperCountByGridId" resultType="java.lang.Integer" parameterType="com.chinatower.bdm.api.entity.GridVO">
+        SELECT
+            count(*)
+        FROM
+            bm_gridkeeper a,
+            bm_grid_keeper_ref b
+        WHERE
+            a.keeper_id = b.keeper_id
+        AND b.grid_id = #{gridId,jdbcType=VARCHAR}
+        AND a.delete_flag = 0 AND a.status = 0
+        AND b.delete_flag = 0
+    </select>
+
+
+    <select id="getGridKeeperInfoByGridId" resultType="com.chinatower.bdm.api.entity.GridKeeperBaseVO" parameterType="java.lang.String">
+        SELECT a.keeper_id,a.keeper_name,
+        CONCAT(
+        SUBSTRING( a.keeper_phone_number, 1, 3 ),
+        '****',
+        SUBSTRING( a.keeper_phone_number, 8 )) AS keeper_phone_number
+        FROM
+        bm_gridkeeper a,
+        bm_grid_keeper_ref b
+        WHERE
+            a.keeper_id = b.keeper_id
+        AND b.grid_id = #{gridId}
+        AND a.delete_flag = 0 AND a.status = 0
+        AND b.delete_flag = 0
+        AND a.keeper_type != '1'
+    </select>
+
+    <select id="getGridKeeperTree" resultType="com.chinatower.bdm.api.entity.TreeSelectByBdm">
+        SELECT
+            id,
+            label,
+            pid,
+            IF
+                ( t.type = '3', '0', t.type ) AS type,
+            tel,
+            center,
+            isLine,
+            color,
+            userId,
+            userName,
+            locationFlag
+        FROM
+            (
+                SELECT
+                    a.keeper_id AS id,
+                    a.keeper_name AS label,
+                    b.grid_id AS pid,
+                    '1' AS type,
+                    CONCAT(SUBSTRING( a.keeper_phone_number, 1, 3 ),'****',SUBSTRING( a.keeper_phone_number, 8 ))  AS tel,
+                    concat(a.longitude,',',a.latitude) AS center,
+                    (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as  isLine,
+                    '' AS color,
+                    a.staff_id as userId,
+                    a.login_name as userName,
+                    a.location_flag as locationFlag
+                FROM
+                    bm_gridkeeper a,
+                    bm_grid_keeper_ref b
+                WHERE
+                    a.delete_flag = 0
+                  AND b.delete_flag = 0
+                  AND a.keeper_id = b.keeper_id
+                  AND a.STATUS = '0'
+                  AND a.keeper_type = '1'
+                  ${dataScope} UNION ALL
+                SELECT
+                    s.keeper_id AS id,
+                    s.keeper_name AS label,
+                    ( CASE WHEN x.keeper_id IS NULL OR x.keeper_id = '' THEN s.grid_id ELSE x.keeper_id END ) AS pid,
+                    '2' AS type,
+                    s.tel,
+                    s.center AS center,
+                    (case when TIMESTAMPDIFF(MINUTE,s.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as  isLine,
+                    '' AS color,
+                    s.userId,
+                    s.userName,
+                    s.locationFlag
+                FROM
+                    (
+                        SELECT
+                            a.keeper_id,
+                            a.keeper_name,
+                            b.grid_id,
+                            CONCAT(SUBSTRING( a.keeper_phone_number, 1, 3 ),'****',SUBSTRING( a.keeper_phone_number, 8 ))  AS tel,
+                            a.take_point_time,
+                            concat(a.longitude,',',a.latitude) as center,
+                            a.staff_id as userId,
+                            a.login_name as userName,
+                            a.location_flag as locationFlag
+                        FROM
+                            bm_gridkeeper a,
+                            bm_grid_keeper_ref b
+                        WHERE
+                            a.delete_flag = 0
+                          AND b.delete_flag = 0
+                          AND a.keeper_id = b.keeper_id
+                          AND a.STATUS = '0'
+                          AND a.keeper_type = '2'
+                          ${dataScope}
+                    ) s
+                        LEFT JOIN (
+                        SELECT
+                            a.keeper_id,
+                            a.keeper_name,
+                            b.grid_id
+                        FROM
+                            bm_gridkeeper a,
+                            bm_grid_keeper_ref b
+                        WHERE
+                            a.delete_flag = 0
+                          AND b.delete_flag = 0
+                          AND a.keeper_id = b.keeper_id
+                          AND a.STATUS = '0'
+                          AND a.keeper_type = '1'
+                          ${dataScope}
+                    ) x ON s.grid_id = x.grid_id UNION ALL
+                SELECT
+                    a.grid_id AS id,
+                    a.grid_name AS label,
+                    a.parent_id AS pid,
+                    '3' AS type,
+                    '' AS tel,
+                    a.grid_center AS center,
+                    '' AS isLine,
+                    a.color,
+                    '' as userId,
+                    '' as userName,
+                    '' as locationFlag
+
+                FROM
+                    bm_grid a
+                WHERE
+                    a.delete_flag = 0
+                    and a.tenant_id = #{tenantId} and a.industry_code = #{industryCode}
+            ) t
+        ORDER BY
+            t.pid,
+            t.type
+
+    </select>
+
+
+    <select id="getGridKeeperTreeNew" resultType="com.chinatower.bdm.api.entity.TreeSelectByBdm">
+        SELECT
+            id,
+            label,
+            pid,
+            IF
+                ( t.type = '3', '0', t.type ) AS type,
+            tel,
+            center,
+            isLine,
+            color,
+            userId,
+            userName,
+            locationFlag
+        FROM
+            (
+                SELECT
+                    a.keeper_id AS id,
+                    a.keeper_name AS label,
+                    b.grid_id AS pid,
+                    a.keeper_type AS type,
+                    CONCAT(SUBSTRING( a.keeper_phone_number, 1, 3 ),'****',SUBSTRING( a.keeper_phone_number, 8 ))  AS tel,
+                    concat(a.longitude,',',a.latitude) AS center,
+                    (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as  isLine,
+                    '' AS color,
+                    a.staff_id as userId,
+                    a.login_name as userName,
+                    a.location_flag as locationFlag
+                FROM
+                    bm_gridkeeper a,
+                    bm_grid_keeper_ref b
+                WHERE
+                    a.delete_flag = 0
+                  AND b.delete_flag = 0
+                  AND a.keeper_id = b.keeper_id
+                  AND a.STATUS = '0'
+                  ${dataScope}
+                UNION ALL
+                SELECT
+                    a.grid_id AS id,
+                    a.grid_name AS label,
+                    a.parent_id AS pid,
+                    '3' AS type,
+                    '' AS tel,
+                    a.grid_center AS center,
+                    '' AS isLine,
+                    a.color,
+                    '' as userId,
+                    '' as userName,
+                    '' as locationFlag
+                FROM
+                    bm_grid a
+                WHERE
+                    a.delete_flag = 0
+                    and a.tenant_id = #{tenantId} and a.industry_code = #{industryCode}
+            ) t
+        ORDER BY
+            t.pid,
+            t.type
+
+
+    </select>
+
+    <select id="getGridKeeperLine" resultType="com.chinatower.bdm.api.entity.TreeSelectByBdm">
+        SELECT
+        (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as  isLine,
+        b.grid_id as id,
+        c.grid_level_code as gridLevelcode
+        FROM
+        bm_gridkeeper a,
+        bm_grid_keeper_ref b,
+        bm_grid c
+        WHERE
+        a.`status` = '0'
+        AND a.delete_flag = 0
+        AND b.delete_flag = 0
+        AND c.delete_flag = 0
+        AND a.keeper_id=b.keeper_id
+        AND b.grid_id=c.grid_id
+        ${dataScope}
+    </select>
+
+
+
+    <select id="findKeeperByUserId" resultType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT
+                keeper_id, grid_type, keeper_code, staff_id, staff_org_id, login_name, entry_time, wechat_number, party,
+                education, is_special, special_type, major_type, keeper_aidentity, keeper_motto, personal_profile, is_grid_manager,
+                keeper_sort, star_class, creator, create_time, modifier, update_time, delete_flag, versions, keeper_id_card_number,
+                keeper_birth_date, keeper_address, keeper_phone_number, keeper_email, keeper_gender, keeper_name, longitude, latitude,
+                take_point_time, tenant_id, industry_code,fj_url,province_id, city_id, county_id, `status`,location_flag,keeper_type,operating_duty,(case when TIMESTAMPDIFF(MINUTE,take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line
+        FROM
+            bm_gridkeeper a
+        WHERE
+            a.staff_id = #{userId}
+        <if test="tenantId != null and tenantId != ''">
+            and a.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            and a.industry_code = #{industryCode}
+        </if>
+            AND a.delete_flag=0
+            limit 1
+    </select>
+
+
+    <update id="closeKeeper" parameterType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        update bm_gridkeeper
+        <set>
+            is_line = '0',
+            take_point_time = null
+        </set>
+        where keeper_id = #{keeperId,jdbcType=BIGINT}
+    </update>
+    <update id="updateGridKeeperArea">
+        UPDATE bm_gridkeeper
+        <set>
+            <trim prefix="keeper_address = case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.address != null">
+                        WHEN keeper_id = #{item.keeperId} THEN #{item.address}
+                    </if>
+                </foreach>
+            </trim>
+        </set>
+        WHERE
+        <if test="list != null and list.size()>0 ">
+            keeper_id in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item.keeperId}
+            </foreach>
+        </if>
+    </update>
+
+
+    <select id="findGridKeeperAll" resultType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT
+        b.dept_name as staff_org_name,
+        a.keeper_id,
+        a.status,
+        a.grid_type,
+        a.keeper_code,
+        a.staff_id,
+        a.staff_id as userId,
+        a.staff_org_id,
+        a.login_name,
+        a.entry_time,
+        a.wechat_number,
+        a.party,
+        a.education,
+        a.is_special,
+        a.special_type,
+        a.major_type,
+        a.keeper_aidentity,
+        a.keeper_motto,
+        a.personal_profile,
+        a.is_grid_manager,
+        a.keeper_sort,
+        a.star_class,
+        a.creator,
+        a.create_time,
+        a.modifier,
+        a.update_time,
+        a.delete_flag,
+        a.versions,
+        IF(a.keeper_id_card_number, CONCAT( SUBSTRING( a.keeper_id_card_number, 1, 6 ), '********', SUBSTRING( a.keeper_id_card_number, 15 )), NULL ) AS keeper_id_card_number,
+        a.keeper_birth_date,
+        a.keeper_address,
+        CONCAT(SUBSTRING( a.keeper_phone_number, 1, 3 ),'****',SUBSTRING( a.keeper_phone_number, 8 )) AS keeper_phone_number,
+        a.keeper_phone_number as aes_phone_number,
+        a.keeper_email,
+        a.keeper_gender,
+        a.keeper_name,
+        a.longitude,
+        a.latitude,
+        a.take_point_time,
+        a.tenant_id,
+        a.fj_url,
+        (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line,
+        a.province_id,
+        a.city_id,
+        a.county_id,
+        a.location_flag,
+        a.keeper_type,
+        a.operating_duty,
+        a.industry_code,
+        a.app_ver_code,
+        re.grid_id,
+        g.grid_name
+        FROM
+        bm_gridkeeper a
+        LEFT JOIN sys_dept b ON a.staff_org_id = b.dept_id and b.del_flag=0
+        LEFT JOIN bm_grid_keeper_ref re on a.keeper_id = re.keeper_id
+        LEFT JOIN bm_grid g on g.grid_id = re.grid_id
+        WHERE a.delete_flag = 0 and g.delete_flag = 0 and re.delete_flag = 0
+        ${dataScope}
+    </select>
+
+    <select id="searchGridKeeper" resultType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT distinct
+            b.dept_name as staff_org_name,
+            a.STATUS,
+            a.keeper_id,
+            a.grid_type,
+            a.keeper_code,
+            a.staff_id,
+            a.staff_id as userId,
+            a.staff_org_id,
+            a.login_name,
+            a.entry_time,
+            a.wechat_number,
+            a.party,
+            a.education,
+            a.is_special,
+            a.special_type,
+            a.major_type,
+            a.keeper_aidentity,
+            a.keeper_motto,
+            a.personal_profile,
+            a.is_grid_manager,
+            a.keeper_sort,
+            a.star_class,
+            a.creator,
+            a.create_time,
+            a.modifier,
+            a.update_time,
+            a.delete_flag,
+            a.versions,
+            IF(a.keeper_id_card_number, CONCAT( SUBSTRING( a.keeper_id_card_number, 1, 6 ), '********', SUBSTRING( a.keeper_id_card_number, 15 )), NULL ) AS keeper_id_card_number,
+            a.keeper_birth_date,
+            a.keeper_address,
+            a.keeper_phone_number as aes_phone_number,
+            CONCAT(SUBSTRING( a.keeper_phone_number, 1, 3 ),'****',SUBSTRING( a.keeper_phone_number, 8 )) AS keeper_phone_number,
+            a.keeper_email,
+            a.keeper_gender,
+            a.keeper_name,
+            a.longitude,
+            a.latitude,
+            a.take_point_time,
+            a.tenant_id,
+            a.fj_url,
+            (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line,
+            a.province_id,
+            a.city_id,
+            a.county_id,
+            a.location_flag,
+            a.keeper_type,
+            a.operating_duty,
+            a.industry_code,
+            a.app_ver_code
+        FROM
+            bm_gridkeeper a
+                LEFT JOIN sys_dept b ON a.staff_org_id = b.dept_id and b.del_flag=0
+                LEFT JOIN bm_grid_keeper_ref re on a.keeper_id = re.keeper_id
+        WHERE a.delete_flag  = 0 and re.delete_flag = 0
+        <if test=" keeperName != null  and keeperName != ''">
+            and a.keeper_name like concat ('%',#{keeperName},'%')
+        </if>
+        <if test=" keeperIdCardNumber != null  and keeperIdCardNumber != ''">
+            and a.keeper_id_card_number like concat ('%',#{keeperIdCardNumber},'%')
+        </if>
+        <if test=" gridId != null  and gridId != ''">
+            and re.grid_id = #{gridId}
+        </if>
+        <if test=" keeperType != null  and keeperType != ''">
+            and a.keeper_type = #{keeperType}
+        </if>
+        <if test=' isLine != null  and isLine == "1"'>
+            and TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5
+        </if>
+        <if test=' isLine != null  and isLine == "0"'>
+            and (a.take_point_time is null or TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[>=]]>5)
+        </if>
+            ${dataScope}
+    </select>
+
+    <sql id="selectDictDataVo">
+        select dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, remark
+        from sys_dict_data
+    </sql>
+
+    <select id="selectDictDataByType" resultType="com.chinatower.platform.entity.admin.SysDictData">
+        <include refid="selectDictDataVo"/>
+        where status = '0' and dict_type = #{dictType} order by dict_sort asc
+    </select>
+    <select id="CheckGridKeeperByUserGrid"
+            resultType="com.chinatower.bdm.modules.gridKeeper.entity.GridKeeperParamVO">
+        SELECT keeper_id,grid_id
+        FROM
+        bm_grid_keeper_ref
+        WHERE keeper_id = #{keeperId,jdbcType=BIGINT}
+        and delete_flag = 0
+        AND grid_id in
+        <foreach collection="gridIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="checkTask" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO">
+        select task_id, conf_id, cnof_name, tenant_id, grid_id, grid_name, task_status, start_time, end_time, keeper_id, keeper_name,
+        create_time, retroaction, fj_id, voice_url, video_url, inspection_time,conf_desc,send_flag
+        from bm_inspection_task
+        where delete_flag = 0 AND task_status = '2'
+        <if test=" list != null  and list != ''">
+            <foreach collection="list" item="item" index="index"  open="" close="" separator=" ">
+                and FIND_IN_SET(#{item},keeper_id)
+            </foreach>
+        </if>
+    </select>
+
+    <select id="checkInspectionConf" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO">
+        select conf_id, cnof_name
+        from bm_inspection_conf
+        where delete_flag = 0 AND conf_status = '0'
+        <if test=" list != null  and list != ''">
+            <foreach collection="list" item="item" index="index"  open="" close="" separator=" ">
+                and FIND_IN_SET(#{item},keeper_id)
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getKeeperGridByKeeperIds" resultType="com.chinatower.bdm.modules.gridKeeper.entity.GridRefGridKeeperVO">
+        select a.grid_id,a.grid_code,a.grid_name,b.keeper_id from bm_grid a left join bm_grid_keeper_ref b on a.grid_id = b.grid_id
+        where a.delete_flag = '0' and b.delete_flag = '0'
+        <if test="list != null and list.size() > 0 ">
+             and b.keeper_id in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="checkTaskByGrid" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO">
+        select task_id, conf_id, cnof_name, tenant_id, grid_id, grid_name, task_status, start_time, end_time, keeper_id, keeper_name,
+        create_time, retroaction, fj_id, voice_url, video_url, inspection_time,conf_desc from bm_inspection_task
+        <where>
+            <if test=" keeperId != null  and keeperId != ''">
+                    and FIND_IN_SET(#{keeperId},keeper_id)
+            </if>
+            <if test=" gridId != null  and gridId != ''">
+                    and grid_id = #{gridId}
+            </if>
+        </where>
+    </select>
+
+    <select id="checkGridUser"
+            resultType="com.chinatower.bdm.modules.gridKeeper.entity.GridKeeperParamVO">
+        SELECT keeper_id,grid_id
+        FROM
+        bm_grid_keeper_ref
+        WHERE keeper_id = #{keeperId,jdbcType=BIGINT}
+        and delete_flag = 0
+    </select>
+    <select id="getGridByTenantId" resultType="com.chinatower.bdm.api.entity.GridVO">
+        select
+            a.grid_id, a.grid_code, a.grid_name, a.gb_code, a.parent_id, a.parent_code, a.grid_classification, a.grid_level, a.grid_level_code, a.grid_property, a.is_end, a.grid_address,
+            a.grid_introduce, a.grid_picture, a.regin_scope_desc, a.grid_sort, a.point_status, a.grid_em_center, a.grid_begin_time, a.grid_end_time, a.grid_area, a.is_valid, a.creator,
+            a.create_time, a.delete_flag, a.color, a.grid_center, a.grid_range, a.tenant_id, a.industry_code
+        from bm_grid a
+        where a.delete_flag = '0' and a.point_status = '1'
+            ${dataScope}
+    </select>
+    <select id="getGridKeeperListByTenantId" resultType="com.chinatower.bdm.api.entity.GridKeeperListVO">
+        SELECT keeper_id,longitude,latitude
+        FROM bm_gridkeeper
+        WHERE tenant_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+          AND longitude IS NOT NULL
+          AND latitude IS NOT NULL
+    </select>
+    <select id="selectGridKeeperById" resultType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        SELECT
+        keeper_id, keeper_type, keeper_code, is_grid_manager
+        FROM
+        bm_gridkeeper a
+        WHERE
+        a.staff_id = #{userId}
+        <if test="tenantId != null and tenantId != ''">
+            and a.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            and a.industry_code = #{industryCode}
+        </if>
+        AND a.delete_flag=0
+        limit 1
+    </select>
+
+    <select id="getKeeperListByLonLat" parameterType="com.chinatower.bdm.api.entity.GridKeeperListVO" resultType="com.chinatower.bdm.api.entity.GridKeeperListVO">
+        SELECT
+            keeper_id,
+            keeper_name,
+            login_name,
+            STATUS,
+            longitude,
+            latitude,
+            province_id,
+            city_id,
+            county_id,
+            location_flag,
+            keeper_type,
+            (case when TIMESTAMPDIFF(MINUTE,take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line
+        FROM
+            bm_gridkeeper a
+        WHERE a.delete_flag = 0
+        <if test="tenantId != null and tenantId != ''">
+            and a.tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            and a.industry_code = #{industryCode}
+        </if>
+        <if test="longitude != null and longitude != ''">
+            and a.longitude = #{longitude}
+        </if>
+        <if test="latitude != null and latitude != ''">
+            and a.latitude = #{latitude}
+        </if>
+        <if test="provinceId != null and provinceId != ''">
+            and a.province_id = #{provinceId}
+        </if>
+        <if test="cityId != null and cityId != ''">
+            and a.city_id = #{cityId}
+        </if>
+        <if test="countyId != null and countyId != ''">
+            and a.county_id = #{countyId}
+        </if>
+        <if test="regionList != null and regionList.size() > 0">
+            and (a.province_id, a.city_id,a.county_id) IN
+            <foreach item="item" index="index" collection="regionList" open="(" separator="," close=")">
+                (#{item.provinceId}, #{item.cityId} , #{item.countyId})
+            </foreach>
+        </if>
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        ORDER BY CASE WHEN SUBSTRING(a.keeper_name, 1, 1) REGEXP '[一-龥]'
+           THEN firstPinyin(a.keeper_name) ELSE SUBSTRING(a.keeper_name, 1, 1)
+            END
+    </select>
+
+</mapper>

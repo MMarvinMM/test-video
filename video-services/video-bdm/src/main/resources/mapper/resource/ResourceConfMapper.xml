@@ -1,0 +1,686 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.resource.mapper.ResourceConfMapper">
+  <resultMap id="BaseResultMap" type="com.chinatower.bdm.api.entity.ResourceConf">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="resource_id" jdbcType="VARCHAR" property="resourceId" />
+    <result column="resource_name" jdbcType="VARCHAR" property="resourceName" />
+    <result column="resource_type_id" jdbcType="VARCHAR" property="resourceTypeId" />
+    <result column="order_num" jdbcType="DECIMAL" property="orderNum" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="delete_flag" jdbcType="INTEGER" property="deleteFlag" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="modifier" jdbcType="VARCHAR" property="modifier" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+    <result column="tenant_name" jdbcType="VARCHAR" property="tenantName" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="longitude" jdbcType="VARCHAR" property="longitude" />
+    <result column="latitude" jdbcType="VARCHAR" property="latitude" />
+    <result column="elevation" jdbcType="VARCHAR" property="elevation" />
+    <result column="addr" jdbcType="VARCHAR" property="addr" />
+    <result column="province_name" jdbcType="VARCHAR" property="provinceName" />
+    <result column="city_name" jdbcType="VARCHAR" property="cityName" />
+    <result column="resource_type_name" jdbcType="VARCHAR" property="resourceTypeName" />
+    <result column="icon" jdbcType="VARCHAR" property="icon" />
+    <result column="distance" jdbcType="VARCHAR" property="distance" />
+    <result column="industry_code" jdbcType="VARCHAR" property="industryCode" />
+    <result column="app_ver_code" jdbcType="VARCHAR" property="appVerCode" />
+    <result column="resource_property" jdbcType="VARCHAR" property="resourceProperty" />
+    <result column="admin" jdbcType="VARCHAR" property="admin" />
+    <result column="tel" jdbcType="VARCHAR" property="tel" />
+    <result column="color" jdbcType="VARCHAR" property="color" />
+    <result column="geometry" jdbcType="VARCHAR" property="geometry" />
+    <result column="video_url" jdbcType="VARCHAR" property="videoUrl" />
+    <result column="img_url" jdbcType="VARCHAR" property="imgUrl" />
+    <result column="isMonitor" jdbcType="VARCHAR" property="isMonitor" />
+  </resultMap>
+
+  <resultMap id="BaseResultMapnNew" type="com.chinatower.bdm.api.entity.ResourceVO">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="resource_id" jdbcType="VARCHAR" property="resourceId" />
+    <result column="resource_name" jdbcType="VARCHAR" property="resourceName" />
+    <result column="resource_type_id" jdbcType="VARCHAR" property="resourceTypeId" />
+    <result column="order_num" jdbcType="DECIMAL" property="orderNum" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="delete_flag" jdbcType="INTEGER" property="deleteFlag" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_by" jdbcType="VARCHAR" property="updateBy" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+    <result column="tenant_name" jdbcType="VARCHAR" property="tenantName" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="longitude" jdbcType="VARCHAR" property="longitude" />
+    <result column="latitude" jdbcType="VARCHAR" property="latitude" />
+    <result column="elevation" jdbcType="VARCHAR" property="elevation" />
+    <result column="addr" jdbcType="VARCHAR" property="addr" />
+    <result column="province_name" jdbcType="VARCHAR" property="provinceName" />
+    <result column="city_name" jdbcType="VARCHAR" property="cityName" />
+    <result column="resource_type_name" jdbcType="VARCHAR" property="resourceTypeName" />
+    <result column="industry_code" jdbcType="VARCHAR" property="industryCode" />
+    <result column="app_ver_code" jdbcType="VARCHAR" property="appVerCode" />
+  </resultMap>
+
+  <sql id="Base_Column_List" >
+    id, resource_id, resource_name, resource_type_id, order_num, `status`, delete_flag,
+    creator, create_time, modifier, update_time, tenant_id, remark, longitude,
+    latitude, elevation, addr,industry_code,app_ver_code
+  </sql>
+
+  <!--获取资源顶级列表-->
+  <select id="selectResourceList" parameterType="com.chinatower.bdm.api.entity.ResourceConf" resultMap="BaseResultMap">
+    select
+      DISTINCT
+      <if test=" latitude != null and latitude != '' and longitude != null and longitude != ''">
+        CAST(ST_Distance_Sphere(
+        ST_GeomFromText(CONCAT('POINT(',#{longitude},' ',#{latitude},')')),
+        ST_GeomFromText(CONCAT('POINT(',d.longitude,' ',d.latitude,')'))
+        ) as DECIMAL(65,2)) as distance,
+      </if>
+      d.id,
+      d.resource_id,
+      d.resource_name,
+      d.resource_type_id,
+      z.resource_type_name,
+      d.order_num,
+      d.`status`,
+      d.delete_flag,
+      d.creator,
+      d.create_time,
+      d.modifier,
+      d.update_time,
+      d.tenant_id,
+      s.tenant_name,
+      d.remark,
+      d.longitude,
+      d.latitude,
+      d.elevation,
+      d.addr,
+      d.industry_code,
+      d.app_ver_code,
+      d.resource_property,
+      st_astext(d.geometry) as geometry,
+      d.color,
+      a.area_name as province_name,
+      b.area_name as city_name,
+      z.icon,
+      d.img_url,
+      d.`admin`,
+      <if test="isMonitor != null">
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+      </if>
+      d.tel
+    from
+        resource_conf d
+    left join resource_type z on d.resource_type_id=z.resource_type_id and d.tenant_id = z.tenant_id and d.industry_code = z.industry_code
+    left join sys_tenant_info s on d.tenant_id = s.tenant_id
+    left join sys_area a on a.area_code=s.province_id
+    left join sys_area b on b.area_code=s.city_id
+    <if test="isMonitor != null">
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = d.resource_id AND dct.coll_obj_type = '14' AND dct.user_id = #{userId}
+    </if>
+    where
+      d.delete_flag = 0 and z.delete_flag = 0
+      <if test='dataScope != null and dataScope != ""'>
+        ${dataScope}
+      </if>
+      <if test="resourceName != null and resourceName != ''">
+        AND d.resource_name like CONCAT(CONCAT('%',#{resourceName}),'%')
+      </if>
+      <if test="resourceTypeName != null and resourceTypeName != ''">
+        AND z.resource_type_name like CONCAT(CONCAT('%',#{resourceTypeName}),'%')
+      </if>
+      <if test="typeLevelUrl != null and typeLevelUrl != ''">
+        AND z.type_level_url like CONCAT(CONCAT('%',#{typeLevelUrl}),'%')
+      </if>
+      <if test="longitudeParam != null and longitudeParam != ''">
+        AND d.longitude = #{longitudeParam}
+      </if>
+      <if test="latitudeParam != null and latitudeParam != ''">
+        AND d.latitude = #{latitudeParam}
+      </if>
+      <if test="elevation != null and elevation != ''">
+        AND d.elevation = #{elevation}
+      </if>
+      <if test="tenantName != null and tenantName != ''">
+        AND s.tenant_name like CONCAT(CONCAT('%',#{tenantName}),'%')
+      </if>
+      <if test="tenantId != null and tenantId != ''">
+        AND d.tenant_id = #{tenantId}
+      </if>
+      <if test="industryCode != null and industryCode != ''">
+        AND d.industry_code = #{industryCode}
+      </if>
+      <if test="appVerCode != null and appVerCode != ''">
+        AND d.app_ver_code = #{appVerCode}
+      </if>
+      <if test="resourceTypeId != null and resourceTypeId != ''">
+        AND d.resource_type_id = #{resourceTypeId}
+      </if>
+      <if test="resourceProperty != null and resourceProperty != ''">
+        AND d.resource_property = #{resourceProperty}
+      </if>
+      <if test="radius != null and radius != '' and latitude != null and latitude != '' and longitude != null and longitude != ''">
+        AND   (d.LONGITUDE != '' or d.LONGITUDE != '' or d.LONGITUDE != null or d.LONGITUDE != null)
+        and ST_Distance_Sphere(
+        ST_GeomFromText(CONCAT('POINT(',#{longitude},' ',#{latitude},')')),
+        ST_GeomFromText(CONCAT('POINT(',d.longitude,' ',d.latitude,')'))
+        )  <![CDATA[<=]]> #{radius}
+      </if>
+      <if test="resourceTypeList != null and resourceTypeList.size() > 0 ">
+        AND d.resource_type_id IN
+        <foreach collection="resourceTypeList" item="item" index="index" open="(" close=")" separator=",">
+          #{item}
+        </foreach>
+      </if>
+      <!-- 数据范围过滤 -->
+      <choose>
+        <when test="prop != null and prop != '' and order != null and order != '' ">
+          <if test='prop == "resourceTypeName"'>
+            ORDER BY CONVERT(z.resource_type_name USING GBK)
+            <if test='order == "desc"'>
+              desc
+            </if>
+          </if>
+          <if test='prop == "elevation"'>
+            order by d.elevation + 0
+            <if test='order == "desc"'>
+              desc
+            </if>
+          </if>
+        </when>
+        <otherwise>
+          order by d.update_time desc,d.ID DESC
+        </otherwise>
+      </choose>
+  </select>
+
+  <!--新增资源-->
+    <insert id="insertSelective" keyColumn="id" keyProperty="id" parameterType="com.chinatower.bdm.api.entity.ResourceConf" useGeneratedKeys="true">
+    insert into resource_conf
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+        <if test="resourceId != null and resourceId != ''">
+          resource_id,
+        </if>
+        <if test="resourceName != null and resourceName != ''">
+          resource_name,
+        </if>
+        <if test="resourceTypeId != null and resourceTypeId != ''">
+          resource_type_id,
+        </if>
+        <if test="orderNum != null and orderNum != ''">
+          order_num,
+        </if>
+        <if test="status != null and status != ''">
+          `status`,
+        </if>
+        <if test="deleteFlag != null and deleteFlag != ''">
+          delete_flag,
+        </if>
+        <if test="creator != null and creator != ''">
+          creator,
+        </if>
+        <if test="createTime != null">
+          create_time,
+        </if>
+        <if test="modifier != null and modifier != ''">
+          modifier,
+        </if>
+        <if test="updateTime != null">
+          update_time,
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+          tenant_id,
+        </if>
+        <if test="remark != null and remark != ''">
+          remark,
+        </if>
+        <if test="longitude != null and longitude != ''">
+          longitude,
+        </if>
+        <if test="latitude != null and latitude != ''">
+          latitude,
+        </if>
+        <if test="elevation != null and elevation != ''">
+          elevation,
+        </if>
+        <if test="addr != null and addr != ''">
+          addr,
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+          industry_code,
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+          app_ver_code,
+        </if>
+        <if test="imgUrl != null and imgUrl != ''">
+          img_url,
+        </if>
+        <if test="videoUrl != null and videoUrl != ''">
+          video_url,
+        </if>
+        <if test="geometry != null and geometry != ''">
+          geometry,
+        </if>
+        <if test="color != null and color != ''">
+          color,
+        </if>
+        <if test="resourceProperty != null and resourceProperty != ''">
+          resource_property,
+        </if>
+        <if test="admin != null and admin != ''">
+          `admin`,
+        </if>
+        <if test="tel != null and tel != ''">
+          tel,
+        </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="resourceId != null and resourceId != ''">
+        #{resourceId,jdbcType=VARCHAR},
+      </if>
+      <if test="resourceName != null and resourceName != ''">
+        #{resourceName,jdbcType=VARCHAR},
+      </if>
+      <if test="resourceTypeId != null and resourceTypeId != ''">
+        #{resourceTypeId,jdbcType=VARCHAR},
+      </if>
+      <if test="orderNum != null and orderNum != ''">
+        #{orderNum,jdbcType=DECIMAL},
+      </if>
+      <if test="status != null and status != ''">
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="deleteFlag != null and deleteFlag != ''">
+        #{deleteFlag,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null and creator != ''">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifier != null and modifier != ''">
+        #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="updateTime != null">
+        #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="tenantId != null and tenantId != ''">
+        #{tenantId,jdbcType=VARCHAR},
+      </if>
+      <if test="remark != null and remark != ''">
+        #{remark,jdbcType=VARCHAR},
+      </if>
+      <if test="longitude != null and longitude != ''">
+        #{longitude,jdbcType=VARCHAR},
+      </if>
+      <if test="latitude != null and latitude != ''">
+        #{latitude,jdbcType=VARCHAR},
+      </if>
+      <if test="elevation != null and elevation != ''">
+        #{elevation,jdbcType=VARCHAR},
+      </if>
+      <if test="addr != null and addr != ''">
+        #{addr,jdbcType=VARCHAR},
+      </if>
+      <if test="industryCode != null and industryCode != ''">
+        #{industryCode,jdbcType=VARCHAR},
+      </if>
+      <if test="appVerCode != null and appVerCode != ''">
+        #{appVerCode,jdbcType=VARCHAR},
+      </if>
+      <if test="imgUrl != null and imgUrl != ''">
+        #{imgUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="videoUrl != null and videoUrl != ''">
+        #{videoUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="geometry != null and geometry != ''">
+        ST_GeomFromText(#{geometry}),
+      </if>
+      <if test="color != null and color != ''">
+        #{color,jdbcType=VARCHAR},
+      </if>
+      <if test="resourceProperty != null and resourceProperty != ''">
+        #{resourceProperty,jdbcType=VARCHAR},
+      </if>
+      <if test="admin != null and admin != ''">
+        #{admin},
+      </if>
+      <if test="tel != null and tel != ''">
+        #{tel},
+      </if>
+    </trim>
+  </insert>
+
+  <!--修改资源-->
+  <update id="updateByPrimaryKeySelective" parameterType="com.chinatower.bdm.api.entity.ResourceConf">
+    update resource_conf
+    <set>
+      <if test="resourceId != null and resourceId != ''">
+        resource_id = #{resourceId,jdbcType=VARCHAR},
+      </if>
+      <if test="resourceName != null and resourceName != ''">
+        resource_name = #{resourceName,jdbcType=VARCHAR},
+      </if>
+      <if test="resourceTypeId != null and resourceTypeId != ''">
+        resource_type_id = #{resourceTypeId,jdbcType=VARCHAR},
+      </if>
+      <if test="orderNum != null and orderNum != ''">
+        order_num = #{orderNum,jdbcType=DECIMAL},
+      </if>
+      <if test="status != null and status != ''">
+        `status` = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="deleteFlag != null and deleteFlag != ''">
+        delete_flag = #{deleteFlag,jdbcType=INTEGER},
+      </if>
+      <if test="creator != null and creator != ''">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null ">
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="modifier != null and modifier != ''">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="updateTime != null ">
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="tenantId != null and tenantId != ''">
+        tenant_id = #{tenantId,jdbcType=VARCHAR},
+      </if>
+        remark = #{remark,jdbcType=VARCHAR},
+      <if test="longitude != null and longitude != ''">
+        longitude = #{longitude,jdbcType=VARCHAR},
+      </if>
+      <if test="latitude != null and latitude != ''">
+        latitude = #{latitude,jdbcType=VARCHAR},
+      </if>
+        elevation = #{elevation,jdbcType=VARCHAR},
+      <if test="addr != null and addr != ''">
+        addr = #{addr,jdbcType=VARCHAR},
+      </if>
+      <if test="industryCode != null and industryCode != ''">
+        industry_code = #{industryCode,jdbcType=VARCHAR},
+      </if>
+      <if test="appVerCode != null and appVerCode != ''">
+        app_ver_code = #{appVerCode,jdbcType=VARCHAR},
+      </if>
+        img_url = #{imgUrl,jdbcType=VARCHAR},
+        video_url = #{videoUrl,jdbcType=VARCHAR},
+      <if test="geometry != ''">
+        geometry = ST_GeomFromText(#{geometry}),
+      </if>
+        color = #{color,jdbcType=VARCHAR},
+      <if test="resourceProperty != null and resourceProperty != ''">
+        resource_property = #{resourceProperty},
+      </if>
+      <if test="admin != null">
+        `admin` = #{admin},
+      </if>
+      <if test="tel != null">
+        tel = #{tel},
+      </if>
+    </set>
+    where
+        id = #{id,jdbcType=BIGINT}
+  </update>
+
+  <!--是否存在资源名称相同-->
+  <select id="checkResourceNameUnique" resultType="Integer" parameterType="com.chinatower.bdm.api.entity.ResourceConf">
+    select
+        count(1)
+    from
+        resource_conf
+    where
+        resource_name = #{resourceName}
+        and delete_flag = 0
+        <if test="tenantId != null and tenantId != ''">
+          and tenant_id = #{tenantId,jdbcType=VARCHAR}
+        </if>
+        <if test="resourceId != null and resourceId != ''">
+          and resource_id != #{resourceId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+          and industry_code = #{industryCode}
+        </if>
+  </select>
+
+  <!--更新资源-->
+  <update id="updateByResourceId" parameterType="com.chinatower.bdm.api.entity.ResourceConf">
+    update resource_conf
+    <set>
+      <if test="deleteFlag != null and deleteFlag != ''">
+        delete_flag = #{deleteFlag,jdbcType=INTEGER},
+      </if>
+      <if test="modifier != null and modifier != ''">
+        modifier = #{modifier,jdbcType=VARCHAR},
+      </if>
+      <if test="updateTime != null ">
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where
+        resource_id = #{resourceId,jdbcType=VARCHAR}
+  </update>
+
+  <!--根据id获取资源详情-->
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select
+      a.id, a.resource_id, a.resource_name, a.resource_type_id, a.order_num, a.`status`, a.delete_flag,
+      a.creator, a.create_time, a.modifier, a.update_time, a.tenant_id, a.remark, a.longitude,
+      a.latitude, a.elevation, a.addr,b.resource_type_name,a.industry_code,a.app_ver_code,a.img_url,a.video_url,a.resource_property,
+      st_astext(a.geometry) as geometry, a.color,a.`admin`,a.tel
+    from
+        resource_conf a
+    left JOIN resource_type b on a.RESOURCE_TYPE_ID=b.RESOURCE_TYPE_ID and a.tenant_id = b.tenant_id and a.industry_code = b.industry_code
+    where
+        a.id = #{id,jdbcType=BIGINT} and b.delete_flag = 0
+  </select>
+
+
+  <!--根据resourceId获取资源详情-->
+  <select id="selectByResourceId" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select distinct
+      a.id, a.resource_id, a.resource_name, a.resource_type_id, a.order_num, a.`status`, a.delete_flag,
+      a.creator, a.create_time, a.modifier, a.update_time, a.tenant_id, a.remark, a.longitude,
+      a.latitude, a.elevation, a.addr,b.resource_type_name,b.icon,a.industry_code,a.app_ver_code,
+      a.resource_property,st_astext(a.geometry) as geometry, a.color,a.video_url,a.img_url,
+      a.admin,a.tel,
+      case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+    from
+        resource_conf a
+    left JOIN resource_type b on a.RESOURCE_TYPE_ID=b.RESOURCE_TYPE_ID and a.TENANT_ID=b.TENANT_ID
+    LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = a.resource_id AND dct.coll_obj_type = '14' AND dct.user_id = #{userId}
+    where
+        a.resource_id = #{resourceId,jdbcType=VARCHAR}
+        limit 1
+  </select>
+
+  <!--获取租户资源集合(tree格式用)-->
+  <select id="getResourceTree" parameterType="com.chinatower.platform.model.dto.CommonFeignEntity" resultType="com.chinatower.bdm.api.entity.TreeSelectByBdm">
+    SELECT
+    d.RESOURCE_ID AS id,
+    d.RESOURCE_NAME AS label,
+    d.RESOURCE_TYPE_ID as pid,
+    '1' as type,
+    '' as icon,
+    d.resource_property,
+    <if test='isEmergencyFlag != null and isEmergencyFlag != "" and isEmergencyFlag == "1" '>
+      case when IFNULL(er.id,0) = 0 then '0' else '1' end isEmergency,
+    </if>
+    case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+    FROM
+    resource_conf d
+    left join resource_type z on d.resource_type_id=z.resource_type_id and d.tenant_id = z.tenant_id and d.industry_code = z.industry_code
+    LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = d.resource_id AND dct.coll_obj_type = '14' AND dct.user_id = #{userId}
+    <if test='isEmergencyFlag != null and isEmergencyFlag != "" and isEmergencyFlag == "1" '>
+      LEFT JOIN vm_emergency_resource_info er ON d.RESOURCE_ID = er.resource_id AND d.TENANT_ID = er.tenant_id
+      AND d.industry_code = er.industry_code AND d.app_ver_code = er.app_ver_code
+      <if test="eventCode != null and eventCode != ''">
+        AND er.event_code = #{eventCode}
+      </if>
+      <if test="stageId != null and stageId != ''">
+        AND er.stage_id = #{stageId}
+      </if>
+      <if test="taskId != null and taskId != ''">
+        AND er.task_id = #{taskId}
+      </if>
+    </if>
+    where
+    d.DELETE_FLAG = 0 and z.delete_flag = 0
+    and d.status='0'
+    and d.tenant_id = #{tenantId,jdbcType=VARCHAR}
+    and d.industry_code = #{industryCode,jdbcType=VARCHAR}
+    <if test="appVerCode != null and appVerCode != ''">
+      AND d.app_ver_code = #{appVerCode}
+    </if>
+    <if test="resourceProperty != null and resourceProperty != ''">
+      AND d.resource_property = #{resourceProperty}
+    </if>
+    <if test='isMonitorFlag != null and isMonitorFlag != "" and isMonitorFlag == "0" '>
+      and dct.user_device_coll_id IS NOT NULL
+    </if>
+    <if test='dataScope != null and dataScope != ""'>
+      ${dataScope}
+    </if>
+    union all
+    SELECT
+      RESOURCE_TYPE_ID AS id,
+      RESOURCE_TYPE_NAME AS label,
+      PARENT_ID as pid,
+      '0' as type,
+      icon,
+      resource_property,
+      <if test='isEmergencyFlag != null and isEmergencyFlag != "" and isEmergencyFlag == "1" '>
+        '0' isEmergency,
+      </if>
+      0 as isMonitor
+    FROM
+      resource_type
+    where delete_flag = 0
+      and status='0'
+      and tenant_id = #{tenantId,jdbcType=VARCHAR}
+      and industry_code = #{industryCode,jdbcType=VARCHAR}
+      <if test="appVerCode != null and appVerCode != ''">
+        AND app_ver_code = #{appVerCode}
+      </if>
+      <if test="resourceProperty != null and resourceProperty != ''">
+        AND resource_property = #{resourceProperty}
+      </if>
+
+  </select>
+  <select id="getMateResourceType" resultType="java.lang.Integer">
+    select
+      count(1)
+    from
+      resource_type
+    where
+      resource_type_name = #{resourceTypeName}
+      and delete_flag = 0
+      and resource_property = '1'
+  </select>
+
+
+  <!--资源导入-->
+  <insert id="insertResourceExport" parameterType="com.chinatower.bdm.api.entity.ResourceVO">
+    insert into resource_conf (
+      RESOURCE_ID,
+      RESOURCE_NAME,
+      RESOURCE_TYPE_ID,
+      ORDER_NUM,
+      `STATUS`,
+      DELETE_FLAG,
+      CREATOR,
+      CREATE_TIME,
+      modifier,
+      UPDATE_TIME,
+      TENANT_ID,
+      REMARK,
+      LONGITUDE,
+      LATITUDE,
+      ELEVATION,
+      ADDR,
+      app_ver_code,
+      industry_code,
+      resource_property
+    )
+    values
+      (UUID_SHORT(),
+       #{resourceName,jdbcType=VARCHAR},
+       #{resourceTypeId,jdbcType=VARCHAR},
+       #{orderNum,jdbcType=DECIMAL},
+       #{status,jdbcType=VARCHAR},
+       #{deleteFlag,jdbcType=INTEGER},
+       #{creator,jdbcType=VARCHAR},
+       #{createTime,jdbcType=TIMESTAMP},
+       #{modifier,jdbcType=VARCHAR},
+       #{updateTime,jdbcType=TIMESTAMP},
+       #{tenantId,jdbcType=VARCHAR},
+       #{remark,jdbcType=VARCHAR},
+       #{longitude,jdbcType=VARCHAR},
+       #{latitude,jdbcType=VARCHAR},
+       #{elevation,jdbcType=VARCHAR},
+       #{addr,jdbcType=VARCHAR},
+       #{appVerCode,jdbcType=VARCHAR},
+       #{industryCode,jdbcType=VARCHAR},
+       #{resourceProperty,jdbcType=VARCHAR}
+      )
+  </insert>
+  <insert id="insertResourceExportBatch">
+    INSERT INTO resource_conf (
+    RESOURCE_ID,
+    RESOURCE_NAME,
+    RESOURCE_TYPE_ID,
+    ORDER_NUM,
+    `STATUS`,
+    DELETE_FLAG,
+    CREATOR,
+    CREATE_TIME,
+    MODIFIER,
+    UPDATE_TIME,
+    TENANT_ID,
+    REMARK,
+    LONGITUDE,
+    LATITUDE,
+    ELEVATION,
+    ADDR,
+    APP_VER_CODE,
+    industry_code,
+    RESOURCE_PROPERTY,
+    admin,
+    tel
+    )
+    VALUES
+    <foreach collection="list" item="item" separator=",">
+      (
+      UUID_SHORT(),
+      #{item.resourceName,jdbcType=VARCHAR},
+      #{item.resourceTypeId,jdbcType=VARCHAR},
+      #{item.orderNum,jdbcType=DECIMAL},
+      #{item.status,jdbcType=VARCHAR},
+      #{item.deleteFlag,jdbcType=INTEGER},
+      #{item.creator,jdbcType=VARCHAR},
+      #{item.createTime,jdbcType=TIMESTAMP},
+      #{item.modifier,jdbcType=VARCHAR},
+      #{item.updateTime,jdbcType=TIMESTAMP},
+      #{item.tenantId,jdbcType=VARCHAR},
+      #{item.remark,jdbcType=VARCHAR},
+      #{item.longitude,jdbcType=VARCHAR},
+      #{item.latitude,jdbcType=VARCHAR},
+      #{item.elevation,jdbcType=VARCHAR},
+      #{item.addr,jdbcType=VARCHAR},
+      #{item.appVerCode,jdbcType=VARCHAR},
+      #{item.industryCode,jdbcType=VARCHAR},
+      #{item.resourceProperty,jdbcType=VARCHAR},
+       #{item.admin,jdbcType=VARCHAR},
+       #{item.tel,jdbcType=VARCHAR}
+      )
+    </foreach>
+  </insert>
+
+</mapper>

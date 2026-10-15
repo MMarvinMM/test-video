@@ -1,0 +1,1273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.statistics.dao.TowerStatisticsDAO">
+    <select id="getChannelStatistic" resultType="java.util.Map">
+        SELECT
+            t3.province_id,
+            t3.city_id,
+            t3.county_id,
+            count(t3.channel_code ) AS 'channelNum',
+            sum( CASE WHEN t3.channel_status = '0' THEN 1 ELSE 0 END ) AS 'onlineNum',
+            sum( CASE WHEN t3.channel_status = '1' THEN 1 ELSE 0 END ) AS 'offlineNum',
+            date_format( now( ), '%Y' ) AS year_str,
+            date_format( now( ), '%c' ) AS month_str,
+            date_format( now( ), '%e' ) AS day_str,
+            now( )
+        FROM
+            (
+            SELECT DISTINCT
+                dev.province_id,
+                dev.city_id,
+                dev.county_id,
+                dev.device_code,
+                dev.device_status AS devStatus,
+                channel.channel_code,
+                channel.channel_status
+            FROM
+                vm_device_info_t dev,
+                vm_channel_info_t channel
+            WHERE
+                dev.device_code = channel.device_code
+                AND channel.delete_flag = '0'
+                AND dev.delete_flag = '0'
+            ) t3
+        GROUP BY
+            t3.province_id,
+            t3.city_id,
+            t3.county_id
+    </select>
+
+    <select id="getDevStatistic" resultType="java.util.Map">
+        SELECT
+            t3.province_id,
+            t3.city_id,
+            t3.county_id,
+            count( t3.device_code ) AS 'deviceNum',
+            sum( CASE WHEN t3.devStatus = '0' THEN 1 ELSE 0 END ) AS 'devOnlineNum',
+            sum( CASE WHEN t3.devStatus = '1' THEN 1 ELSE 0 END ) AS 'devOfflineNum',
+            date_format( now( ), '%Y' ) AS year_str,
+            date_format( now( ), '%c' ) AS month_str,
+            date_format( now( ), '%e' ) AS day_str,
+            now( )
+        FROM
+            (
+            SELECT DISTINCT
+                dev.province_id,
+                dev.city_id,
+                dev.county_id,
+                dev.device_code,
+                dev.device_status AS devStatus
+            FROM
+                vm_device_info_t dev
+            WHERE dev.delete_flag = '0'
+            ) t3
+        GROUP BY
+            t3.province_id,
+            t3.city_id,
+            t3.county_id
+    </select>
+
+    <select id="getEventTodayNumTower" resultType="com.chinatower.platform.modules.statistics.entity.DurationVO"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT m.tenant_id,m.province_id, m.city_id, m.county_id,m.town_id, sum( m.yesterday_all ) AS yesterday_all,
+            sum( m.today_all ) AS today_all, sum( m.false_all ) AS false_all, sum( m.today_process ) AS today_process,
+            sum( m.today_complete ) AS today_complete, 0 AS pendding_receive, 0 AS pendding_judged, 0 AS pending_dispatched,
+            0 AS pedding_disposal, 0 AS pending_approve, 0 AS pendding_Leader_approve, sum(m.overtime)    AS overtime,#{handleDateTime} as 'handleDateTime'
+        FROM (
+            SELECT a.tenant_id,a.province_code AS province_id, a.city_code AS city_id,a.county_code AS county_id,a.town_code AS town_id,a.device_code,
+            IF (DATE_FORMAT( a.alarm_time, '%Y-%m-%d' ) = DATE_FORMAT( DATE_SUB( #{handleDate}, INTERVAL 1 DAY ),
+                '%Y-%m-%d' ), 1, 0 ) AS yesterday_all,
+            IF ( DATE_FORMAT( a.alarm_time, '%Y-%m-%d' ) = #{handleDate}, 1, 0 ) AS today_all,
+            IF ( DATE_FORMAT( a.alarm_time, '%Y-%m-%d' ) = #{handleDate}
+                    AND a.judge_result = '0', 1, 0 ) AS false_all,
+            IF ( DATE_FORMAT( a.alarm_time, '%Y-%m-%d' ) = #{handleDate}
+                     AND ((a.order_status IN ( '1', '2', '3', '4', '5' )AND a.enable_acceptance_mode !='1')OR a.enable_acceptance_mode = '1'), 1, 0 ) AS today_process,
+                   IF ( DATE_FORMAT( a.alarm_time, '%Y-%m-%d' ) = #{handleDate}
+                AND a.order_status IN ('6','0','7'), 1, 0 ) AS today_complete,
+            IF( DATE_FORMAT( a.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND TIMESTAMPDIFF(MINUTE,a.flow_node_time, NOW()) > a.time_limit
+                   AND a.time_limit IS NOT NULL, 1, 0) AS overtime
+            FROM ${tableName} a
+            WHERE a.delete_flag = '0'  and a.alarm_time <![CDATA[>=]]> #{startDate,jdbcType=VARCHAR} and a.alarm_time <![CDATA[<=]]> #{endDate,jdbcType=VARCHAR}
+        ) m GROUP BY m.tenant_id,m.province_id, m.city_id, m.county_id,m.town_id;
+    </select>
+
+    <select id="getEventTodayNumTowers" resultType="com.chinatower.platform.modules.statistics.entity.DurationVO"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT m.tenant_id,m.province_id,m.alarm_time, m.city_id, m.county_id,m.town_id, 0 AS yesterday_all,
+               sum( m.today_all ) AS today_all, sum( m.false_all ) AS false_all, sum(m.today_process) AS today_process,
+               sum(m.today_complete) AS today_complete, 0 AS pendding_receive, 0 AS pendding_judged, 0 AS pending_dispatched,
+               0 AS pedding_disposal, 0 AS pending_approve, 0 AS pendding_Leader_approve, sum(m.overtime)    AS overtime
+        FROM (
+                 SELECT a.tenant_id,a.alarm_time, a.province_code AS province_id, a.city_code AS city_id,a.county_code AS county_id,a.town_code AS town_id,a.device_code,
+                        IF (DATE_FORMAT( a.alarm_time, '%Y-%m-%d' ) = DATE_FORMAT( DATE_SUB( NOW( ), INTERVAL 1 DAY ),
+                                                                                   '%Y-%m-%d' ), 1, 0 ) AS yesterday_all,
+                        IF ( DATE_FORMAT( a.alarm_time, '%Y-%m' ) = #{handleDate}, 1, 0 ) AS today_all,
+                        IF ( DATE_FORMAT( a.alarm_time, '%Y-%m' ) = #{handleDate}
+                                 AND a.judge_result = '0', 1, 0 ) AS false_all,
+                        IF ( DATE_FORMAT( a.alarm_time, '%Y-%m' ) = #{handleDate}
+                                 AND ((a.order_status IN ( '1', '2', '3', '4', '5' )AND a.enable_acceptance_mode !='1')OR a.enable_acceptance_mode = '1'), 1, 0 ) AS today_process,
+                        IF ( DATE_FORMAT( a.alarm_time, '%Y-%m' ) = #{handleDate}
+                                 AND a.order_status IN ('6','0','7'), 1, 0 ) AS today_complete,
+                        IF( DATE_FORMAT( a.alarm_time, '%Y-%m' ) = #{handleDate} AND TIMESTAMPDIFF(MINUTE,a.flow_node_time, NOW()) > a.time_limit
+                               AND a.time_limit IS NOT NULL, 1, 0) AS overtime
+                 FROM ${tableName} a
+                 WHERE a.delete_flag = '0'
+             ) m GROUP BY m.tenant_id,m.province_id, m.city_id, m.county_id,m.town_id,DATE_FORMAT( m.alarm_time, '%Y-%m-%d' )
+    </select>
+
+    <select id="getEventNumTower" resultType="com.chinatower.platform.modules.statistics.entity.DurationVO"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT m.tenant_id,m.province_id, m.city_id, m.county_id,m.town_id, 0 AS yesterday_all, 0 AS today_all, 0 AS false_all,
+            0 AS today_process, 0 AS today_complete, sum( m.pendding_receive ) AS pendding_receive,
+            sum( m.pendding_judged ) AS pendding_judged, sum( m.pending_dispatched ) AS pending_dispatched,
+            sum( m.pedding_disposal ) AS pedding_disposal, sum( m.pending_approve ) AS pending_approve,
+            0 AS pendding_Leader_approve,0 AS overtime,#{handleDateTime} as 'handleDateTime'
+        FROM (
+            SELECT a.tenant_id,a.province_code AS province_id, a.city_code AS city_id,a.county_code AS county_id,a.town_code AS town_id,a.device_code,
+            IF ( a.order_status = '3', 1, 0 ) AS pendding_receive,
+            IF ( a.order_status = '1', 1, 0 )  AS pendding_judged,
+            IF ( a.order_status = '2', 1, 0 ) AS pending_dispatched,
+            IF ( a.order_status IN ( '3', '4' ), 1, 0 ) AS pedding_disposal,
+            IF ( a.order_status = '5', 1, 0 ) AS pending_approve,
+            IF (TIMESTAMPDIFF(MINUTE,a.flow_node_time,NOW()) > a.time_limit
+                AND a.time_limit IS NOT NULL, 1, 0 ) AS overtime
+            FROM ${tableName} a
+            WHERE a.delete_flag = '0' AND a.enable_acceptance_mode != '1'
+        ) m GROUP BY m.tenant_id,m.province_id, m.city_id, m.county_id,m.town_id;
+    </select>
+
+    <delete id="deleteEventNum">
+        DELETE FROM vm_statistics_event_num_tt WHERE DATE_FORMAT(create_time, '%Y-%m-%d') = #{handleDate}
+    </delete>
+
+    <delete id="deleteEventNums">
+        DELETE FROM vm_statistics_event_num_tt WHERE DATE_FORMAT(create_time, '%Y-%m') = #{handleDate}
+    </delete>
+
+    <insert id="insertEventNum" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_num_tt(province_id,city_id,county_id,town_id,yesterday_all,today_all,false_all,today_process,
+        today_complete,pendding_receive,pendding_judged,pending_dispatched,pedding_disposal,pending_approve,
+        pendding_leader_approve,overtime,create_time,tenant_id) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.provinceId},#{item.cityId},#{item.countyId},#{item.townId},#{item.yesterdayAll},#{item.todayAll},
+            #{item.falseAll},#{item.todayProcess},#{item.todayComplete},#{item.penddingReceive},
+            #{item.penddingJudged},#{item.pendingDispatched},#{item.peddingDisposal},#{item.pendingApprove},
+            0,#{item.overtime},#{item.handleDateTime},#{item.tenantId})
+        </foreach>
+    </insert>
+
+    <insert id="insertEventNums" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_num_tt(province_id,city_id,county_id,town_id,yesterday_all,today_all,false_all,today_process,
+        today_complete,pendding_receive,pendding_judged,pending_dispatched,pedding_disposal,pending_approve,
+        pendding_leader_approve,overtime,create_time,tenant_id) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.provinceId},#{item.cityId},#{item.countyId},#{item.townId},#{item.yesterdayAll},#{item.todayAll},
+            #{item.falseAll},#{item.todayProcess},#{item.todayComplete},#{item.penddingReceive},
+            #{item.penddingJudged},#{item.pendingDispatched},#{item.peddingDisposal},#{item.pendingApprove},
+            0,#{item.overtime},DATE_FORMAT(#{item.alarmTime},'%Y-%m-%d'),#{item.tenantId})
+        </foreach>
+    </insert>
+
+    <delete id="deleteDeviceStatistic">
+        delete from vm_statistics_devices_tt where
+             create_date <![CDATA[<=]]> NOW()
+    </delete>
+
+    <insert id="insertDeviceStatistic" parameterType="java.util.List">
+        INSERT INTO vm_statistics_devices_tt
+        ( province_id, city_id, county_id, device_num, dev_online_num,
+        dev_offline_num, channel_num, channel_online_num, channel_offline_num, `YEAR`,
+        `MONTH`, `DAY`, create_date )
+        values
+        <foreach collection="list" item="item" index="index" open="" close="" separator=",">
+            (#{item.province_id},#{item.city_id},#{item.county_id},#{item.deviceNum},#{item.devOnlineNum},
+            #{item.devOfflineNum},#{item.channelNum},#{item.onlineNum},#{item.offlineNum},#{item.year_str},
+            #{item.month_str},#{item.day_str},now())
+        </foreach>
+    </insert>
+
+    <delete id="deleteEventArea">
+        DELETE
+        FROM
+            vm_statistics_event_area_tt
+        WHERE
+            `year` = #{year}
+            AND `month` = #{month}
+            <if test="day != null and day != ''">
+                AND `day` = #{day}
+            </if>
+    </delete>
+
+    <select id="getEventArea" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT
+        a.tenant_id,
+        a.province_code,
+        a.city_code,
+        a.county_code,
+        CONCAT( province_name, city_name, county_name ) AS 'regionName',
+        a.town_code,
+        a.town_name,
+        count( DISTINCT a.warning_order_id ) AS warning_num,
+        date_format( alarm_time, '%Y' ) AS year_str,
+        date_format( alarm_time, '%c' ) AS month_str,
+        date_format( alarm_time, '%e' ) AS day_str,
+        alarm_time,
+        COUNT( IF (judge_result = '1', 1, NULL )) AS real_num,
+        COUNT(IF(order_status = '0', 1, NULL)) AS false_num,
+        COUNT(IF (order_status = '7', 1, NULL )) AS repeat_complete_num
+        FROM
+        ${tableName} a
+        WHERE
+        delete_flag = '0'
+        <if test="day != null and day != ''">
+            AND DATE_FORMAT( alarm_time, '%Y-%m-%d' ) = #{handleDate}
+        </if>
+        GROUP BY
+        a.tenant_id,
+        a.province_code,
+        a.city_code,
+        a.county_code,
+        a.town_code,
+        DATE_FORMAT( alarm_time, '%Y-%m-%d' )
+    </select>
+
+    <insert id="insertEventArea" parameterType="java.util.List">
+        insert into vm_statistics_event_area_tt(province_id,city_id,county_id,region_name,warning_num,`year`,`month`,`day`,create_date,update_date,street_id,street_name,real_num,false_num,repeat_complete_num,tenant_id) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},#{item.regionName},#{item.warning_num},#{item.year_str},
+            #{item.month_str},#{item.day_str},#{item.alarm_time},now(),#{item.town_code},#{item.town_name},#{item.real_num},#{item.false_num},#{item.repeat_complete_num},#{item.tenant_id})
+        </foreach>
+    </insert>
+    <insert id="insertEventAreaParam" parameterType="java.util.List">
+        insert into vm_statistics_event_area_tt(province_id,city_id,county_id,region_name,warning_num,`year`,`month`,`day`,create_date,update_date,street_id,street_name,real_num,false_num,repeat_complete_num,tenant_id) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},#{item.regionName},#{item.warning_num},#{item.year_str},
+            #{item.month_str},#{item.day_str},#{item.alarm_time},now(),#{item.town_code},#{item.town_name},#{item.real_num},#{item.false_num},#{item.repeat_complete_num},#{item.tenant_id})
+        </foreach>
+    </insert>
+
+    <select id="getEventDurationTower" resultType="com.chinatower.platform.modules.statistics.entity.DurationVO"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT ord.province_code AS provinceId,ord.city_code AS cityId,ord.county_code AS countyId,
+            COUNT(if(UNIX_TIMESTAMP(ord.modifier_date) - UNIX_TIMESTAMP(ord.alarm_time) <![CDATA[<]]> '3600',1,NULL)) AS lessOne,
+            COUNT(if(UNIX_TIMESTAMP(ord.modifier_date) - UNIX_TIMESTAMP(ord.alarm_time) >= '3600' AND
+                UNIX_TIMESTAMP(ord.modifier_date) - UNIX_TIMESTAMP(ord.alarm_time) <![CDATA[<=]]> '18000',1,NULL)) AS 'oneFive',
+            COUNT(if(UNIX_TIMESTAMP(ord.modifier_date) - UNIX_TIMESTAMP(ord.alarm_time) > '18000' AND
+                UNIX_TIMESTAMP(ord.modifier_date) - UNIX_TIMESTAMP(ord.alarm_time) <![CDATA[<=]]> '36000',1,NULL)) AS 'fiveTen',
+            COUNT(if(UNIX_TIMESTAMP(ord.modifier_date) - UNIX_TIMESTAMP(ord.alarm_time) > '36000',1,NULL)) AS 'moreTen',
+            ord.modifier_date,ord.alarm_time,
+            year(ord.modifier_date) as year_str,
+            MONTH(ord.modifier_date) as month_str,
+            DAY(ord.modifier_date) as day_str
+        FROM ${tableName} ord
+        WHERE ord.delete_flag = '0' AND ord.order_status IN ('0','6','7')
+        <choose>
+            <when test="day != null and day != ''">
+                AND DATE_FORMAT(ord.modifier_date, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(ord.modifier_date, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        GROUP BY ord.province_code,ord.city_code,ord.county_code,ord.device_code, ord.app_ver_code, ord.industry_code, ord.warning_source
+        ,DATE_FORMAT(ord.modifier_date, '%Y-%m-%d'),DATE_FORMAT(ord.alarm_time, '%Y-%m-%d')
+    </select>
+
+    <delete id="delEventDurationTower">
+        DELETE FROM vm_statistics_event_duration_tt
+        WHERE `year` = #{year}
+        AND `month` = #{month}
+        <if test='day != null and day != ""'>
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="addEventDurationTower" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_duration_tt(province_id, city_id, county_id, less_one, one_five, five_ten,
+        more_ten, year, month, day, update_date, create_date) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.provinceId},#{item.cityId},#{item.countyId},#{item.lessOne},#{item.oneFive},#{item.fiveTen},
+            #{item.moreTen},YEAR(NOW()),MONTH(NOW()),DAY(NOW()),NOW(),#{item.alarmTime})
+        </foreach>
+    </insert>
+    <insert id="addEventDurationTowerParam" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_duration_tt(province_id, city_id, county_id, less_one, one_five, five_ten,
+        more_ten, year, month, day, update_date, create_date) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.provinceId},#{item.cityId},#{item.countyId},#{item.lessOne},#{item.oneFive},#{item.fiveTen},
+            #{item.moreTen},#{item.yearStr},#{item.monthStr},
+            #{item.dayStr},NOW(),#{item.alarmTime})
+        </foreach>
+    </insert>
+
+    <select id="getEventAreaHandle" resultType="com.chinatower.platform.modules.statistics.entity.DurationVO"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT
+            a.province_code,
+            a.city_code,
+            a.county_code,
+            a.regionName,
+            a.modifier_date,
+            a.alarm_time,
+            sum(duration) as handle_duration,
+            count( DISTINCT a.warning_order_id ) as duration_num,
+            date_format( a.modifier_date, '%Y' ) AS year_str,
+            date_format( a.modifier_date, '%c' ) AS month_str,
+            date_format( a.modifier_date, '%e' ) AS day_str
+        FROM
+            (
+            SELECT
+                warning_order_id,
+                modifier_date,
+                alarm_time,
+                province_code,
+                city_code,
+                county_code,
+                CONCAT( province_name, city_name, county_name ) AS 'regionName',
+                UNIX_TIMESTAMP( modifier_date ) - UNIX_TIMESTAMP( alarm_time ) AS duration
+            FROM
+                ${tableName}
+            WHERE order_status IN ('0','6','7')
+                AND delete_flag = '0'
+        <choose>
+            <when test="day != null and day != ''">
+                AND DATE_FORMAT(modifier_date, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(modifier_date, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+            ) a
+        GROUP BY
+            a.province_code,
+            a.city_code,
+            a.county_code,
+        DATE_FORMAT(modifier_date, '%Y-%m-%d'),DATE_FORMAT(alarm_time, '%Y-%m-%d')
+
+    </select>
+
+    <delete id="deleteEventAreaHandle" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE
+        FROM
+            vm_statistics_event_handle_tt
+        WHERE
+            `year` = #{year}
+            AND `month` = #{month}
+        <if test='day != null and day != ""'>
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertEventAreaHandle" parameterType="java.util.List">
+        insert into vm_statistics_event_handle_tt(province_id,city_id,county_id,region_name,handle_duration,duration_num,`year`,`month`,`day`,create_date,update_date) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.provinceCode},#{item.cityCode},#{item.countyCode},#{item.regionName},#{item.handleDuration},#{item.durationNum},
+            #{item.yearStr},#{item.monthStr},#{item.dayStr},#{item.alarmTime},NOW())
+        </foreach>
+    </insert>
+
+    <select id="getEventByHour" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT m.device_code,m.tenant_id,m.province_code, m.city_code, m.county_code,m.town_code,m.alarm_time, HOUR ( m.alarm_time ) as hour_str, COUNT( 1 ) as event_num, YEAR (m.alarm_time) as year_str,
+            MONTH (m.alarm_time) as month_str, DAY (m.alarm_time) as day_str, #{handleDateTime} as 'handleDateTime',
+        COUNT( IF ( m.judge_result = '1', 1, NULL )) AS real_num,
+        COUNT(IF(m.order_status = '0', 1, NULL)) AS false_num,
+        COUNT(IF ( m.order_status = '7', 1, NULL )) AS repeat_complete_num
+         FROM ${tableName} m
+            WHERE
+             m.delete_flag = '0'
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(m.alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(m.alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+         GROUP BY m.device_code,m.tenant_id,m.province_code, m.city_code, m.county_code,m.town_code, HOUR ( m.alarm_time ),YEAR (m.alarm_time),MONTH (m.alarm_time),DAY (m.alarm_time)
+    </select>
+
+    <select id="getEventByHourNew" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT m.tenant_id,m.device_code,m.province_code, m.city_code, m.county_code,m.town_code,m.alarm_time, HOUR ( m.alarm_time ) as hour_str, COUNT( 1 ) as event_num, YEAR (m.alarm_time) as year_str,
+        MONTH (m.alarm_time) as month_str, DAY (m.alarm_time) as day_str, #{handleDateTime} as 'handleDateTime',
+        COUNT( IF ( m.judge_result = '1', 1, NULL )) AS real_num,
+        COUNT(IF(m.order_status = '0', 1, NULL)) AS false_num,
+        COUNT(IF ( m.order_status = '7', 1, NULL )) AS repeat_complete_num
+       FROM ${tableName} m
+        WHERE
+        m.delete_flag = '0'
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(m.alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(m.alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+         GROUP BY m.device_code,m.tenant_id,m.province_code, m.city_code, m.county_code,m.town_code, HOUR ( m.alarm_time ),
+        YEAR (m.alarm_time),MONTH (m.alarm_time),DAY (m.alarm_time)
+    </select>
+    <delete id="deleteEventByHour">
+        DELETE FROM vm_statistics_event_hour_tt
+            WHERE
+            `year` = #{year}
+            AND `month` = #{month}
+        <if test='day != null and day != ""'>
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertEventByHour" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_hour_tt
+        (province_id, city_id, county_id,town_id, warning_hour, warning_num, year, month, day, update_date, create_date,real_num,false_num,repeat_complete_num,tenant_id,device_code) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},#{item.town_code},#{item.hour_str},#{item.event_num},
+            #{item.year_str},#{item.month_str},#{item.day_str},NOW(),#{item.alarm_time},#{item.real_num},#{item.false_num},#{item.repeat_complete_num},#{item.tenant_id},#{item.device_code})
+        </foreach>
+    </insert>
+
+    <select id="getEventByHourNews" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT m.tenant_id,m.province_code, m.city_code,m.alarm_time,m.warning_source,m.warning_type_id, HOUR ( m.alarm_time ) as hour_str, COUNT( 1 ) as event_num, YEAR (m.alarm_time) as year_str,
+        MONTH (m.alarm_time) as month_str, DAY (m.alarm_time) as day_str, #{handleDateTime} as 'handleDateTime',
+        COUNT( IF ( m.judge_result = '1', 1, NULL )) AS real_num,
+        COUNT(IF(m.order_status = '0', 1, NULL)) AS false_num,
+        COUNT(IF ( m.order_status = '7', 1, NULL )) AS repeat_complete_num
+        FROM ${tableName} m
+        WHERE
+        m.delete_flag = '0'
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(m.alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(m.alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        GROUP BY m.tenant_id,m.province_code, m.city_code,m.warning_source,m.warning_type_id, HOUR ( m.alarm_time ),YEAR (m.alarm_time),MONTH (m.alarm_time),DAY (m.alarm_time)
+    </select>
+
+    <select id="getEventByHourNewNews" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT m.tenant_id,m.province_code, m.city_code,m.alarm_time, HOUR ( m.alarm_time ) as hour_str, COUNT( 1 ) as event_num, YEAR (m.alarm_time) as year_str,
+        MONTH (m.alarm_time) as month_str, DAY (m.alarm_time) as day_str, #{handleDateTime} as 'handleDateTime',
+        COUNT( IF ( m.judge_result = '1', 1, NULL )) AS real_num,
+        COUNT(IF(m.order_status = '0', 1, NULL)) AS false_num,
+        COUNT(IF ( m.order_status = '7', 1, NULL )) AS repeat_complete_num,
+        m.warning_source,m.warning_type_id
+        FROM ${tableName} m
+        WHERE
+        m.delete_flag = '0'
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(m.alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(m.alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        GROUP BY m.tenant_id,m.province_code, m.city_code, m.warning_source,m.warning_type_id, HOUR ( m.alarm_time ),
+        YEAR (m.alarm_time),MONTH (m.alarm_time),DAY (m.alarm_time)
+    </select>
+    <delete id="deleteEventByHourNews">
+        DELETE FROM vm_statistics_event_hour_tt_new
+        WHERE
+        `year` = #{year}
+        AND `month` = #{month}
+        <if test='day != null and day != ""'>
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertEventByHourNews" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_hour_tt_new
+        (province_id, city_id, warning_hour, warning_num, year, month, day, update_date, create_date,real_num,false_num,repeat_complete_num,tenant_id,warning_source,warning_type_id) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.hour_str},#{item.event_num},#{item.year_str},#{item.month_str},#{item.day_str},NOW(),#{item.alarm_time},
+             #{item.real_num},#{item.false_num},#{item.repeat_complete_num},#{item.tenant_id},#{item.warning_source},#{item.warning_type_id})
+        </foreach>
+    </insert>
+
+    <select id="getEventNumListByInterceptHour" parameterType="com.chinatower.analysis.api.entity.DateVO"
+            resultType="java.util.Map">
+        SELECT m.tenant_id,m.device_code,
+        m.province_code,
+        m.city_code,
+        m.county_code,
+        m.town_code,
+        m.alarm_time,
+        HOUR (m.alarm_time) as hour_str, COUNT(1) as event_num, YEAR (
+        m.alarm_time) as year_str, MONTH (
+        m.alarm_time) as month_str,
+        DAY (
+        m.alarm_time) as day_str,
+        #{handleDateTime} as 'handleDateTime'
+       FROM vm_warning_intercept_t m
+        WHERE  m.delete_flag = '0' AND m.judge_result IS NULL
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(m.alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(m.alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        GROUP BY m.device_code,m.tenant_id, m.province_code, m.city_code, m.county_code, m.town_code, HOUR ( m.alarm_time ),YEAR (m.alarm_time),MONTH (m.alarm_time),DAY (m.alarm_time)
+    </select>
+
+    <delete id="deleteEventNumByInterceptHour" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE
+        FROM vm_statistics_event_hour_intercept_tt
+        WHERE `year` = #{year}
+        AND `month` = #{month}
+        <if test='day != null and day != ""'>
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertEventNumByInterceptHour" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_hour_intercept_tt
+        (tenant_id,device_code,county_id, warning_hour, warning_num, year, month, day, create_date, update_date,
+        province_id,city_id,town_id) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.tenant_id},#{item.device_code},#{item.county_code},#{item.hour_str},#{item.event_num},
+            #{item.year_str},#{item.month_str},#{item.day_str},#{item.alarm_time},now(),#{item.province_code},#{item.city_code},#{item.town_code})
+        </foreach>
+    </insert>
+
+    <select id="getEventNumListByInterceptHourNew" parameterType="com.chinatower.analysis.api.entity.DateVO"
+            resultType="java.util.Map">
+        SELECT m.tenant_id,
+        m.province_code,
+        m.city_code,
+        m.alarm_time,
+        m.warning_source,m.warning_type_id,
+        HOUR (m.alarm_time) as hour_str, COUNT(1) as event_num, YEAR (
+        m.alarm_time) as year_str, MONTH (
+        m.alarm_time) as month_str,
+        DAY (
+        m.alarm_time) as day_str,
+        #{handleDateTime} as 'handleDateTime'
+        FROM vm_warning_intercept_t m
+        WHERE  m.delete_flag = '0' AND m.judge_result IS NULL
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(m.alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(m.alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        GROUP BY m.tenant_id, m.province_code, m.city_code, m.warning_source,m.warning_type_id, HOUR ( m.alarm_time ),YEAR (m.alarm_time),MONTH (m.alarm_time),DAY (m.alarm_time)
+    </select>
+
+    <delete id="deleteEventNumByInterceptHourNew" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE
+        FROM vm_statistics_event_hour_intercept_tt_new
+        WHERE `year` = #{year}
+        AND `month` = #{month}
+        <if test='day != null and day != ""'>
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertEventNumByInterceptHourNew" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_hour_intercept_tt_new
+        (tenant_id, warning_hour, warning_num, year, month, day, create_date, update_date,
+        province_id,city_id,warning_source,warning_type_id) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.tenant_id},#{item.hour_str},#{item.event_num},
+            #{item.year_str},#{item.month_str},#{item.day_str},#{item.alarm_time},now(),#{item.province_code},#{item.city_code},#{item.warning_source},#{item.warning_type_id})
+        </foreach>
+    </insert>
+
+    <select id="getEventLevel" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT
+        a.province_code,
+        a.city_code,
+        a.county_code,
+        a.emergency_level,
+        count( DISTINCT a.warning_order_id ) AS warning_num,
+        date_format( a.alarm_time, '%Y' ) AS year_str,
+        date_format( a.alarm_time, '%c' ) AS month_str,
+        date_format( a.alarm_time, '%e' ) AS day_str
+        FROM
+        (
+        SELECT
+        warning_order_id,
+        alarm_time,
+        province_code,
+        city_code,
+        county_code,
+        emergency_level
+        FROM
+        ${tableName}
+        WHERE
+        delete_flag = '0'
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        ) a
+        GROUP BY
+        a.province_code,
+        a.city_code,
+        a.county_code,
+        a.emergency_level,
+        DATE_FORMAT(a.alarm_time, '%Y-%m-%d')
+    </select>
+
+    <delete id="deleteEventLevel" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE
+        FROM
+            vm_statistics_event_level_tt
+        WHERE
+            `year` = #{year}
+            AND `month` = #{month}
+        <if test='day != null and day != ""'>
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertEventLevel" parameterType="java.util.List">
+        insert into vm_statistics_event_level_tt(province_id,city_id,county_id,emergency_level,warning_num,`year`,`month`,`day`,create_date,update_date) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},#{item.emergency_level},#{item.warning_num},
+            #{item.year_str},#{item.month_str},#{item.day_str},NOW(),NOW())
+        </foreach>
+    </insert>
+
+    <select id="getEventNumDay" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT aa.province_code,aa.city_code,aa.county_code,aa.tenant_id,aa.town_code,aa.warning_source,aa.warning_type_id,
+        COUNT( if(DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate},1,NULL)  ) AS today_all,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status IN ( '0', '7', '6' ), 1, NULL ) ) AS today_complete,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status = '0', 1, NULL ) ) AS false_complete_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status = '1' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS judge_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status = '2' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS dispatch_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status = '3' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS grab_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status = '4' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS handle_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status = '5' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS approve_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status = '6', 1, NULL ) ) AS order_complete_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status = '7', 1, NULL ) ) AS repeat_complete_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.order_status = '0', 1, NULL ) ) AS false_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.judge_result = '1', 1, NULL ) ) AS real_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d') = #{handleDate}   AND aa.enable_acceptance_mode = '1', 1,  NULL )) AS acceptance_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.warning_source = '1', 1, NULL ) ) AS ai_num,
+        SUM( IF ( DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND aa.order_status IN ( '0', '7', '6' ), duration, NULL )) AS duration,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.warning_source = '2', 1, NULL ) ) AS manual_num,
+        COUNT( IF (DATE_FORMAT(aa.alarm_time, '%Y-%m-%d' ) = #{handleDate} AND  aa.warning_source = '3', 1, NULL ) ) AS onekey_num,
+        COUNT( IF ( aa.order_status = '1' AND aa.enable_acceptance_mode !='1' AND aa.judge_result = '1', 1, NULL ) ) AS judge_real_num,
+        COUNT( IF ( aa.order_status = '2' AND aa.enable_acceptance_mode !='1' AND aa.judge_result = '1', 1, NULL ) ) AS dispatch_real_num,
+        COUNT( IF ( aa.order_status = '4' AND aa.enable_acceptance_mode !='1' AND aa.judge_result = '1', 1, NULL ) ) AS handle_real_num,
+        COUNT( IF ( aa.order_status = '5' AND aa.enable_acceptance_mode !='1' AND aa.judge_result = '1', 1, NULL ) ) AS approve_real_num,
+        COUNT( IF ( aa.order_status = '6' AND aa.judge_result = '1', 1, NULL ) ) AS order_complete_real_num,
+        COUNT( IF ( aa.enable_acceptance_mode = '1' AND aa.judge_result = '1', 1, NULL )) AS acceptance_real_num,
+        YEAR(#{handleDate}) as year_str,MONTH(#{handleDate}) as month_str,DAY(#{handleDate}) as day_str, #{handleDateTime} as 'handleDateTime'	FROM (
+        SELECT ord.tenant_id,ord.province_code,ord.city_code,ord.county_code,ord.town_code,ord.alarm_time, ord.order_status, ord.warning_source,ord.warning_type_id,ord.judge_result,ord.enable_acceptance_mode,UNIX_TIMESTAMP(ord.modifier_date) - UNIX_TIMESTAMP(ord.alarm_time) AS duration
+        FROM ${tableName} ord WHERE ord.delete_flag = '0'  and ord.alarm_time <![CDATA[>=]]> #{startDate,jdbcType=VARCHAR} and ord.alarm_time <![CDATA[<=]]> #{endDate,jdbcType=VARCHAR}
+        ) aa GROUP BY aa.province_code,aa.city_code,aa.county_code,aa.town_code,aa.tenant_id,aa.warning_source,aa.warning_type_id
+    </select>
+
+    <select id="getEventNumDays" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT
+            aa.tenant_id,
+            aa.province_code,
+            aa.city_code,
+            aa.county_code,
+            aa.town_code,
+            aa.alarm_time,
+            aa.warning_source,
+            aa.warning_type_id,
+            COUNT(1) AS today_all,
+            COUNT( IF ( aa.order_status IN ( '0', '7', '6' ), 1, NULL ) ) AS today_complete,
+            COUNT( IF ( aa.order_status = '0', 1, NULL ) ) AS false_complete_num,
+            COUNT( IF ( aa.order_status = '1' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS judge_num,
+            COUNT( IF ( aa.order_status = '2' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS dispatch_num,
+            COUNT( IF ( aa.order_status = '3' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS grab_num,
+            COUNT( IF ( aa.order_status = '4' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS handle_num,
+            COUNT( IF ( aa.order_status = '5' AND aa.enable_acceptance_mode !='1', 1, NULL ) ) AS approve_num,
+            COUNT( IF ( aa.order_status = '6', 1, NULL ) ) AS order_complete_num,
+            COUNT( IF ( aa.order_status = '7', 1, NULL ) ) AS repeat_complete_num,
+            COUNT( IF ( aa.order_status = '0', 1, NULL ) ) AS false_num,
+            COUNT( IF ( aa.judge_result = '1', 1, NULL ) ) AS real_num,
+            COUNT( IF ( aa.enable_acceptance_mode = '1', 1, NULL )) AS acceptance_num,
+            SUM( IF ( aa.order_status IN ( '0', '7', '6' ), duration, NULL )) AS duration,
+            COUNT( IF ( aa.warning_source = '1', 1, NULL ) ) AS ai_num,
+            COUNT( IF ( aa.warning_source = '2', 1, NULL ) ) AS manual_num,
+            COUNT( IF ( aa.warning_source = '3', 1, NULL ) ) AS onekey_num,
+            COUNT( IF ( aa.order_status = '1' AND aa.enable_acceptance_mode !='1' AND aa.judge_result = '1', 1, NULL ) ) AS judge_real_num,
+            COUNT( IF ( aa.order_status = '2' AND aa.enable_acceptance_mode !='1' AND aa.judge_result = '1', 1, NULL ) ) AS dispatch_real_num,
+            COUNT( IF ( aa.order_status = '4' AND aa.enable_acceptance_mode !='1' AND aa.judge_result = '1', 1, NULL ) ) AS handle_real_num,
+            COUNT( IF ( aa.order_status = '5' AND aa.enable_acceptance_mode !='1' AND aa.judge_result = '1', 1, NULL ) ) AS approve_real_num,
+            COUNT( IF ( aa.order_status = '6' AND aa.judge_result = '1', 1, NULL ) ) AS order_complete_real_num,
+            COUNT( IF ( aa.enable_acceptance_mode = '1' AND aa.judge_result = '1', 1, NULL )) AS acceptance_real_num,
+            YEAR ( aa.alarm_time ) AS year_str,
+            MONTH ( aa.alarm_time ) AS month_str,
+            DAY ( aa.alarm_time ) AS day_str
+        FROM
+            (
+            SELECT
+            ord.tenant_id,
+            ord.province_code,
+            ord.city_code,
+            ord.county_code,
+            ord.town_code,
+            ord.alarm_time,
+            ord.order_status,
+            ord.warning_source,
+            ord.warning_type_id,
+            ord.judge_result,
+            ord.enable_acceptance_mode,
+            UNIX_TIMESTAMP(ord.modifier_date) - UNIX_TIMESTAMP(ord.alarm_time) AS duration
+            FROM
+            ${tableName} ord
+            WHERE
+            ord.delete_flag = '0'
+            <if test='year != null and year != ""'>
+                and YEAR ( ord.alarm_time ) = #{year}
+            </if>
+            <if test='month != null and month != ""'>
+                and MONTH ( ord.alarm_time ) = #{month}
+            </if>
+            <if test='day != null and day != ""'>
+                and DAY ( ord.alarm_time ) = #{day}
+            </if>
+            ) aa
+
+        GROUP BY
+            aa.province_code,
+            aa.city_code,
+            aa.county_code,
+            aa.town_code,
+            aa.tenant_id,
+            aa.warning_source,
+            aa.warning_type_id,
+            DATE_FORMAT(aa.alarm_time, '%Y-%m-%d')
+    </select>
+
+    <delete id="delEventNumDay" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_event_num_day_tt
+        WHERE
+            `year` = #{year}
+            AND `month` = #{month}
+        <if test="day != null and day != ''">
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertEventNumDay" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_num_day_tt(province_id, city_id, county_id, yesterday_all,
+        today_all, today_complete, false_complete_num, judge_num, dispatch_num, grab_num, handle_num, approve_num,
+        order_complete_num, repeat_complete_num, false_num, real_num, ai_num,manual_num,onekey_num,year, month, day,
+        update_date, create_date,town_id,acceptance_num,tenant_name,duration,tenant_id,warning_source,warning_type_id,judge_real_num,dispatch_real_num,handle_real_num,approve_real_num,order_complete_real_num,acceptance_real_num) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},0,#{item.today_all},
+            #{item.today_complete},#{item.false_complete_num},#{item.judge_num},#{item.dispatch_num},#{item.grab_num},
+            #{item.handle_num},#{item.approve_num},#{item.order_complete_num},#{item.repeat_complete_num},#{item.false_num},
+            #{item.real_num},#{item.ai_num},#{item.manual_num},#{item.onekey_num},#{item.year_str},#{item.month_str},
+             #{item.day_str},NOW(),#{item.handleDateTime},#{item.town_code},#{item.acceptance_num},#{item.tenantName},#{item.duration},#{item.tenant_id},#{item.warning_source},#{item.warning_type_id},#{item.judge_real_num},#{item.dispatch_real_num},#{item.handle_real_num},#{item.approve_real_num},#{item.order_complete_real_num},#{item.acceptance_real_num})
+        </foreach>
+    </insert>
+
+    <insert id="insertEventNumDays" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_num_day_tt(tenant_id,province_id, city_id, county_id, yesterday_all,
+        today_all, today_complete, false_complete_num, judge_num, dispatch_num, grab_num, handle_num, approve_num,
+        order_complete_num, repeat_complete_num, false_num, real_num, ai_num,manual_num,onekey_num,year, month, day,
+        update_date, create_date,town_id,acceptance_num,tenant_name,duration,warning_source,warning_type_id,judge_real_num,dispatch_real_num,handle_real_num,approve_real_num,order_complete_real_num,acceptance_real_num) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.tenant_id},#{item.province_code},#{item.city_code},#{item.county_code},0,#{item.today_all},
+            #{item.today_complete},#{item.false_complete_num},#{item.judge_num},#{item.dispatch_num},#{item.grab_num},
+            #{item.handle_num},#{item.approve_num},#{item.order_complete_num},#{item.repeat_complete_num},#{item.false_num},
+            #{item.real_num},#{item.ai_num},#{item.manual_num},#{item.onekey_num},
+            #{item.year_str},#{item.month_str},#{item.day_str},#{item.alarm_time},#{item.alarm_time},#{item.town_code},#{item.acceptance_num},#{item.tenantName},#{item.duration},#{item.warning_source},#{item.warning_type_id},#{item.judge_real_num},#{item.dispatch_real_num},#{item.handle_real_num},#{item.approve_real_num},#{item.order_complete_real_num},#{item.acceptance_real_num})
+        </foreach>
+    </insert>
+
+    <select id="getEventNumMonth" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT aa.province_code,aa.alarm_time,aa.city_code,aa.county_code,COUNT(1) AS num,#{year} as year_str,#{month} as month_str FROM (
+        SELECT ord.province_code,ord.city_code,ord.county_code,ord.alarm_time
+        FROM ${tableName} ord WHERE ord.delete_flag = '0'
+            AND DATE_FORMAT(ord.alarm_time ,'%Y-%m') = #{handleMonth}
+		) aa GROUP BY aa.province_code,aa.city_code,aa.county_code
+    </select>
+
+        <delete id="delEventNumMonth" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_event_num_month_tt
+        WHERE `year` = #{year}
+          AND `month` = #{month}
+    </delete>
+
+    <insert id="insertEventNumMonth" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_num_month_tt(province_id, city_id, county_id, today_all, year, month,
+        update_date, create_date) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},#{item.num},#{item.year_str},
+            #{item.month_str},NOW(),NOW())
+        </foreach>
+    </insert>
+
+    <insert id="insertEventNumMonths" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_num_month_tt(province_id, city_id, county_id, today_all, year, month,
+        update_date, create_date) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},#{item.num},#{item.year_str},
+            #{item.month_str},#{item.alarm_time},#{item.alarm_time})
+        </foreach>
+    </insert>
+
+    <select id="getEventNumYear" resultType="com.chinatower.platform.modules.statistics.entity.DurationVO"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT aa.province_code AS provinceId,aa.city_code AS cityId,aa.county_code AS countyId,COUNT(1) AS todayAll,#{handleYear} as handleYear FROM (
+        SELECT ord.province_code,ord.city_code,ord.county_code
+        FROM ${tableName} ord WHERE ord.delete_flag = '0'
+            AND DATE_FORMAT(ord.alarm_time ,'%Y') = #{handleYear}
+		) aa GROUP BY aa.province_code,aa.city_code,aa.county_code;
+    </select>
+
+    <delete id="delEventNumYear" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_event_num_year_tt
+            WHERE  `year` = #{handleYear};
+    </delete>
+
+    <insert id="addEventNumYear" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_event_num_year_tt(province_id, city_id, county_id, today_all, year,
+        update_date, create_date) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.provinceId},#{item.cityId},#{item.countyId},#{item.todayAll},#{item.handleYear},NOW(),NOW())
+        </foreach>
+    </insert>
+
+    <!-- 铁塔统计沉淀：按 sub_scenes 拆行；空/NULL 回退 JSON_ARRAY(warning_type_id)（小模型）。
+         大模型场景回退行由 TowerStatisticsService 按 sys_scene_config 剔除，只保留下游任务。客户 StatisticsDAO 不改。 -->
+    <select id="getEventType" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT aa.tenant_id,aa.province_code,aa.city_code,aa.county_code,aa.town_code,
+        jt.sub_type AS warning_type_id,
+        COUNT( IF (aa.warning_source = '1', 1, NULL)) AS ai_num,
+        COUNT( IF (aa.warning_source = '1'
+        AND aa.order_status IN ('0', '2', '3', '4', '5', '6', '7'), 1, NULL ) ) AS judge_num,
+        COUNT( IF ( aa.judge_result = '1', 1, NULL )) AS real_num,
+        COUNT(IF(aa.order_status = '0', 1, NULL)) AS false_num,
+        COUNT(IF ( aa.order_status = '7', 1, NULL )) AS repeat_complete_num,
+        count(*) num,YEAR(aa.alarm_time) as year_str,MONTH(aa.alarm_time) as month_str,DAY(aa.alarm_time) as day_str,aa.alarm_time
+        FROM ${tableName} aa
+        LEFT JOIN JSON_TABLE(
+            IF(aa.sub_scenes IS NULL OR JSON_TYPE(aa.sub_scenes)='NULL' OR JSON_LENGTH(aa.sub_scenes)=0,
+               JSON_ARRAY(aa.warning_type_id),
+               aa.sub_scenes),
+            '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+        ) jt ON TRUE
+        WHERE aa.delete_flag = '0'
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(aa.alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(aa.alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        GROUP BY aa.tenant_id,aa.province_code,aa.city_code,aa.county_code,aa.town_code,jt.sub_type,DATE_FORMAT(aa.alarm_time, '%Y-%m-%d')
+    </select>
+
+    <delete id="delEventType" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_event_type_tt
+            WHERE
+            `year` = #{year}
+            AND `month` = #{month}
+        <if test='day != null and day != ""'>
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="addEventType" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_event_type_tt(province_id, city_id, county_id,town_id, warning_type_id,
+        ai_num, judge_num, real_num, false_num, warning_num, year, month, day, update_date, create_date,repeat_complete_num,warning_type_name,tenant_id) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},#{item.town_code},#{item.warning_type_id},#{item.ai_num},
+            #{item.judge_num},#{item.real_num},#{item.false_num},#{item.num},#{item.year_str},#{item.month_str},#{item.day_str},#{item.alarm_time},#{item.alarm_time},#{item.repeat_complete_num},#{item.typeName},#{item.tenant_id})
+        </foreach>
+    </insert>
+
+    <!-- 月表/运营表按 sub_scenes 拆行（空回退 warning_type_id）；intercept 仍用 warning_type_id。 -->
+    <select id="getEventAlgorithm" resultType="java.util.Map">
+        SELECT a.province_code,a.city_code,a.county_code,a.warning_type_id,a.algorithm_code,
+        COUNT(DISTINCT a.warning_order_id) AS warning_num,COUNT(if(a.judge_result IS NOT NULL,1,NULL)) AS judge_num,
+        COUNT(if(a.judge_result = '1',1,NULL)) AS real_num,
+        COUNT(if(a.judge_result = '0',1,NULL)) AS false_num,
+        COUNT(if(a.judge_result = '2',1,NULL)) AS duplicat_num,
+        YEAR(DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 day),'%Y-%m-%d')) as year_str,
+        MONTH(DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 day),'%Y-%m-%d')) as month_str,
+        DAY(DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 day),'%Y-%m-%d')) as day_str
+        FROM (
+        SELECT t.warning_order_id,t.province_code,t.city_code,t.county_code,jt.sub_type AS warning_type_id,t.algorithm_code,t.judge_result
+        FROM ${tableName} t
+        LEFT JOIN JSON_TABLE(
+            IF(t.sub_scenes IS NULL OR JSON_TYPE(t.sub_scenes)='NULL' OR JSON_LENGTH(t.sub_scenes)=0,
+               JSON_ARRAY(t.warning_type_id),
+               t.sub_scenes),
+            '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+        ) jt ON TRUE
+        WHERE t.delete_flag = '0'
+        AND t.warning_source = '1'
+        AND DATE_FORMAT(t.alarm_time,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 day),'%Y-%m-%d')
+        UNION ALL
+        SELECT t.warning_order_id,t.province_id AS province_code,t.city_id AS city_code,t.county_id AS county_code,
+               jt.sub_type AS warning_type_id,t.algorithm_code,NULL AS judge_result
+        FROM vm_alarm_operate_t t
+        LEFT JOIN JSON_TABLE(
+            IF(t.sub_scenes IS NULL OR JSON_TYPE(t.sub_scenes)='NULL' OR JSON_LENGTH(t.sub_scenes)=0,
+               JSON_ARRAY(t.warning_type_id),
+               t.sub_scenes),
+            '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+        ) jt ON TRUE
+        WHERE t.delete_flag = '0'
+        AND t.warning_source = '1'
+        AND DATE_FORMAT(t.alarm_time,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 day),'%Y-%m-%d')
+        UNION ALL
+        SELECT t.warning_order_id,t.province_code,t.city_code,t.county_code,t.warning_type_id,t.algorithm_code,NULL AS judge_result
+        FROM vm_warning_intercept_t t
+        WHERE t.delete_flag = '0'
+        AND t.warning_source = '1'
+        AND DATE_FORMAT(t.alarm_time,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 day),'%Y-%m-%d')
+        ) a
+        GROUP BY a.province_code,a.city_code,a.county_code,a.warning_type_id,a.algorithm_code
+    </select>
+
+    <delete id="delEventAlgorithm">
+        DELETE FROM vm_statistics_event_algorithm_tt
+        WHERE DATE_FORMAT(create_date,'%Y-%m-%d') = DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 day),'%Y-%m-%d')
+    </delete>
+
+    <insert id="insertEventAlgorithm">
+        INSERT INTO vm_statistics_event_algorithm_tt
+	    (province_id, city_id, county_id, warning_type_id, algorithm_code, warning_num, judge_num, real_num, false_num, duplicate_num, `year`, `month`, `day`, update_date, create_date) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},#{item.warning_type_id},#{item.algorithm_code},
+            #{item.warning_num},#{item.judge_num},#{item.real_num},#{item.false_num},#{item.duplicat_num},#{item.year_str},#{item.month_str},#{item.day_str},NOW(),DATE_SUB(NOW(),INTERVAL 1 day))
+        </foreach>
+    </insert>
+
+    <!--
+      算法统计历史刷数：按 DateVO.handleDate 过滤（yyyy-MM-dd 按日 / yyyy-MM 按月），
+      月表按 sub_scenes 拆行（空回退 warning_type_id）；year/month/day 取自 alarm_time。
+    -->
+    <select id="getEventAlgorithmByDate" resultType="java.util.Map"
+            parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT a.province_code,a.city_code,a.county_code,a.warning_type_id,a.algorithm_code,
+        COUNT(DISTINCT a.warning_order_id) AS warning_num,COUNT(if(a.judge_result IS NOT NULL,1,NULL)) AS judge_num,
+        COUNT(if(a.judge_result = '1',1,NULL)) AS real_num,
+        COUNT(if(a.judge_result = '0',1,NULL)) AS false_num,
+        COUNT(if(a.judge_result = '2',1,NULL)) AS duplicat_num,
+        YEAR(a.alarm_time) as year_str,
+        MONTH(a.alarm_time) as month_str,
+        DAY(a.alarm_time) as day_str
+        FROM (
+        SELECT t.warning_order_id,t.province_code,t.city_code,t.county_code,jt.sub_type AS warning_type_id,
+               t.algorithm_code,t.judge_result,t.alarm_time
+        FROM ${tableName} t
+        LEFT JOIN JSON_TABLE(
+            IF(t.sub_scenes IS NULL OR JSON_TYPE(t.sub_scenes)='NULL' OR JSON_LENGTH(t.sub_scenes)=0,
+               JSON_ARRAY(t.warning_type_id),
+               t.sub_scenes),
+            '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+        ) jt ON TRUE
+        WHERE t.delete_flag = '0'
+        AND t.warning_source = '1'
+        <choose>
+            <when test="day != null and day != ''">
+                AND DATE_FORMAT(t.alarm_time,'%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT(t.alarm_time,'%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        UNION ALL
+        SELECT t.warning_order_id,t.province_id AS province_code,t.city_id AS city_code,t.county_id AS county_code,
+               jt.sub_type AS warning_type_id,t.algorithm_code,NULL AS judge_result,t.alarm_time
+        FROM vm_alarm_operate_t t
+        LEFT JOIN JSON_TABLE(
+            IF(t.sub_scenes IS NULL OR JSON_TYPE(t.sub_scenes)='NULL' OR JSON_LENGTH(t.sub_scenes)=0,
+               JSON_ARRAY(t.warning_type_id),
+               t.sub_scenes),
+            '$[*]' COLUMNS (sub_type VARCHAR(64) PATH '$')
+        ) jt ON TRUE
+        WHERE t.delete_flag = '0'
+        AND t.warning_source = '1'
+        <choose>
+            <when test="day != null and day != ''">
+                AND DATE_FORMAT(t.alarm_time,'%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT(t.alarm_time,'%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        UNION ALL
+        SELECT t.warning_order_id,t.province_code,t.city_code,t.county_code,t.warning_type_id,t.algorithm_code,
+               NULL AS judge_result,t.alarm_time
+        FROM vm_warning_intercept_t t
+        WHERE t.delete_flag = '0'
+        AND t.warning_source = '1'
+        <choose>
+            <when test="day != null and day != ''">
+                AND DATE_FORMAT(t.alarm_time,'%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                AND DATE_FORMAT(t.alarm_time,'%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        ) a
+        GROUP BY a.province_code,a.city_code,a.county_code,a.warning_type_id,a.algorithm_code,
+                 DATE_FORMAT(a.alarm_time,'%Y-%m-%d')
+    </select>
+
+    <delete id="delEventAlgorithmByDate" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_event_algorithm_tt
+        WHERE `year` = #{year}
+          AND `month` = #{month}
+        <if test='day != null and day != ""'>
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertEventAlgorithmByDate">
+        INSERT INTO vm_statistics_event_algorithm_tt
+        (province_id, city_id, county_id, warning_type_id, algorithm_code, warning_num, judge_num, real_num, false_num,
+         duplicate_num, `year`, `month`, `day`, update_date, create_date) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.province_code},#{item.city_code},#{item.county_code},#{item.warning_type_id},#{item.algorithm_code},
+            #{item.warning_num},#{item.judge_num},#{item.real_num},#{item.false_num},#{item.duplicat_num},
+            #{item.year_str},#{item.month_str},#{item.day_str},NOW(),
+            STR_TO_DATE(CONCAT(#{item.year_str}, '-', #{item.month_str}, '-', #{item.day_str}), '%Y-%c-%e'))
+        </foreach>
+    </insert>
+
+    <select id="getInterceptNum" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT
+        province_code AS province_id,
+        city_code AS city_id,
+        county_code AS county_id,
+        province_name,
+        city_name,
+        county_name,
+        town_code,
+        town_name,
+        alarm_time,
+        modifier_date,
+        tenant_id,
+        device_code,
+        warning_source,
+        warning_type_id,
+        count( DISTINCT warning_order_id ) AS today_num,
+        date_format( alarm_time, '%Y' ) AS year_str,
+        date_format( alarm_time, '%c' ) AS month_str,
+        date_format( alarm_time, '%e' ) AS day_str
+        FROM
+        vm_warning_intercept_t
+        WHERE
+        delete_flag = '0'
+        AND judge_result IS NULL
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        GROUP BY
+        province_code,
+        city_code,
+        county_code,
+        town_code,
+        tenant_id,
+        device_code,
+        warning_source,
+        warning_type_id,
+        DATE_FORMAT( alarm_time, '%Y-%m-%d' )
+    </select>
+
+    <delete id="deleteInterceptNum">
+        DELETE
+        FROM
+        vm_statistics_intercept_event_tt
+        WHERE
+        `year` = #{year}
+        AND `month` = #{month}
+        <if test="day != null and day != ''">
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertInterceptNum" parameterType="java.util.List">
+        insert into vm_statistics_intercept_event_tt (province_id,city_id,county_id,province_name,city_name,county_name,town_code,town_name,tenant_id,device_code,warning_source,today_num,`year`,`month`,`day`,create_date,update_date,warning_type_id) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_id},#{item.city_id},#{item.county_id},#{item.province_name},#{item.city_name},#{item.county_name},#{item.town_code},#{item.town_name},#{item.tenant_id},#{item.device_code},#{item.warning_source},#{item.today_num},
+            #{item.year_str},#{item.month_str},#{item.day_str},#{item.alarm_time},#{item.modifier_date},#{item.warning_type_id})
+        </foreach>
+    </insert>
+
+    <select id="getDeviceNum" resultType="java.util.Map" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        SELECT
+        province_code as province_id,
+        city_code as city_id,
+        county_code as county_id,
+        province_name,
+        city_name,
+        county_name,
+        town_code,
+        town_name,
+        alarm_time,
+        modifier_date,
+        tenant_id,
+        device_code,
+        device_name,
+        date_format( alarm_time, '%Y' ) AS year_str,
+        date_format( alarm_time, '%c' ) AS month_str,
+        date_format( alarm_time, '%e' ) AS day_str,
+        count( DISTINCT warning_order_id ) AS today_num,
+        COUNT( IF (order_status IN ( '0', '7', '6' ), 1, NULL ) ) AS order_complete_num,
+        COUNT( IF (order_status = '1' AND enable_acceptance_mode !='1', 1, NULL ) ) AS judge_num,
+        COUNT( IF (order_status = '2' AND enable_acceptance_mode !='1', 1, NULL ) ) AS dispatch_num,
+        COUNT( IF (order_status = '4' AND enable_acceptance_mode !='1', 1, NULL ) ) AS handle_num,
+        COUNT( IF (order_status = '5' AND enable_acceptance_mode !='1', 1, NULL ) ) AS approve_num,
+        COUNT( IF (order_status = '7', 1, NULL ) ) AS repeat_complete_num,
+        COUNT( IF (order_status = '0', 1, NULL ) ) AS false_num,
+        COUNT( IF (judge_result = '1', 1, NULL ) ) AS real_num,
+        COUNT( IF (enable_acceptance_mode = '1', 1,  NULL )) AS acceptance_num,
+        COUNT( IF (order_status = '1' AND enable_acceptance_mode !='1' AND judge_result = '1', 1, NULL ) ) AS judge_real_num,
+        COUNT( IF (order_status = '2' AND enable_acceptance_mode !='1' AND judge_result = '1', 1, NULL ) ) AS dispatch_real_num,
+        COUNT( IF (order_status = '4' AND enable_acceptance_mode !='1' AND judge_result = '1', 1, NULL ) ) AS handle_real_num,
+        COUNT( IF (order_status = '5' AND enable_acceptance_mode !='1' AND judge_result = '1', 1, NULL ) ) AS approve_real_num,
+        COUNT( IF (order_status = '6' AND judge_result = '1', 1, NULL ) ) AS order_complete_real_num,
+        COUNT( IF (enable_acceptance_mode = '1' AND judge_result = '1', 1, NULL )) AS acceptance_real_num
+        FROM
+        ${tableName}
+        WHERE
+        delete_flag = '0' AND warning_source IN('1','3','4')
+        AND device_code IS NOT NULL  AND device_code !=''
+        <choose>
+            <when test="day != null and day != ''">
+                and DATE_FORMAT(alarm_time, '%Y-%m-%d') = #{handleDate}
+            </when>
+            <otherwise>
+                and DATE_FORMAT(alarm_time, '%Y-%m') = #{handleDate}
+            </otherwise>
+        </choose>
+        GROUP BY
+        province_code,
+        city_code,
+        county_code,
+        town_code,
+        tenant_id,
+        device_code,
+        DATE_FORMAT( alarm_time, '%Y-%m-%d' )
+    </select>
+
+    <delete id="deleteDeviceNum">
+        DELETE
+        FROM
+        vm_statistics_event_device_tt
+        WHERE
+        `year` = #{year}
+        AND `month` = #{month}
+        <if test="day != null and day != ''">
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+    <insert id="insertDeviceNum" parameterType="java.util.List">
+        insert into vm_statistics_event_device_tt (province_id,city_id,county_id,province_name,city_name,county_name,town_code,town_name,tenant_id,today_num,`year`,`month`,`day`,create_date,update_date,device_code,
+        judge_num, dispatch_num, handle_num, approve_num,
+        order_complete_num, repeat_complete_num, false_num, real_num,acceptance_num,device_name,judge_real_num,dispatch_real_num,handle_real_num,approve_real_num,order_complete_real_num,acceptance_real_num) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.province_id},#{item.city_id},#{item.county_id},#{item.province_name},#{item.city_name},#{item.county_name},#{item.town_code},#{item.town_name},#{item.tenant_id},#{item.today_num},
+            #{item.year_str},#{item.month_str},#{item.day_str},#{item.alarm_time},#{item.modifier_date},#{item.device_code},
+            #{item.judge_num},#{item.dispatch_num}, #{item.handle_num},#{item.approve_num},
+            #{item.order_complete_num},#{item.repeat_complete_num},#{item.false_num},#{item.real_num},#{item.acceptance_num},#{item.device_name},#{item.judge_real_num},#{item.dispatch_real_num},#{item.handle_real_num},#{item.approve_real_num},#{item.order_complete_real_num},#{item.acceptance_real_num})
+        </foreach>
+    </insert>
+
+    <select id="getTenants" resultType="java.util.Map">
+        SELECT  tenant_id as 'tenantId',tenant_name as 'tenantName'
+        FROM sys_tenant_info  t
+        GROUP BY tenant_id
+    </select>
+
+    <select id="getGrids" resultType="java.util.Map">
+        SELECT  grid_id as 'gridId',grid_level as 'gridLevel'
+        FROM bm_grid
+    </select>
+
+
+    <select id="getEventNumYesterdayListForTower" parameterType="com.chinatower.analysis.api.entity.DateVO"
+            resultType="java.util.Map">
+        SELECT
+        IFNULL( bb.province_code, 'null' ) AS province_id,
+        IFNULL( bb.city_code, 'null' ) AS city_id,
+        IFNULL( bb.county_code, 'null' ) AS county_id,
+        IFNULL( bb.town_code, 'null' ) AS town_id,
+        COUNT( 1 ) AS yesterday_all,
+        YEAR ( bb.alarm_time ) AS year_str,
+        MONTH ( bb.alarm_time ) AS month_str,
+        DAY ( bb.alarm_time ) AS day_str,
+        #{handleDateTime} as 'handleDateTime',
+        bb.alarm_time as  alarm_time
+        FROM
+        (
+        SELECT
+        ord.province_code,
+        ord.city_code,
+        ord.county_code,
+        ord.town_code,
+        DATE_SUB( ord.alarm_time, INTERVAL -1 DAY ) as alarm_time
+        FROM
+        ${tableName} ord
+        WHERE
+        ord.delete_flag = '0'
+        <if test='year != null and year != ""'>
+            and YEAR ( ord.alarm_time ) = #{year}
+        </if>
+        <if test='month != null and month != ""'>
+            and MONTH ( ord.alarm_time ) = #{month}
+        </if>
+        <if test='day != null and day != ""'>
+            and DAY ( ord.alarm_time ) = #{day}-1
+        </if>
+        ) bb
+        GROUP BY
+        bb.province_code,
+        bb.city_code,
+        bb.county_code,
+        bb.town_code,
+        DATE_FORMAT( bb.alarm_time, '%Y-%m-%d' )
+    </select>
+
+    <delete id="delEventNumYesterdayTower" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE
+        FROM vm_statistics_event_num_yesterday_tt
+        WHERE `year` = #{year}
+        AND `month` = #{month}
+        <if test="day != null and day != ''">
+            AND `day` = #{day}
+        </if>
+    </delete>
+
+
+    <insert id="addEventNumYesterdayTower" parameterType="java.util.List">
+        INSERT INTO vm_statistics_event_num_yesterday_tt(province_id, city_id, county_id,town_id,yesterday_all, year,
+        month, day, create_date,update_date) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.province_id},#{item.city_id},#{item.county_id},#{item.town_id},#{item.yesterday_all},#{item.year_str},
+            #{item.month_str},#{item.day_str},#{item.alarm_time},NOW())
+        </foreach>
+    </insert>
+</mapper>

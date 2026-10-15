@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Author:lijiwei
+-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 客户信息表(CUSTOM_T) -->
+<mapper namespace="com.chinatower.event.mapper.ParkDeviceInfoMapper">
+    <!-- 结果映射 -->
+    <resultMap  id="ParkDeviceInfoResult" type="com.chinatower.event.vo.ParkDeviceInfoVo">
+        <result property="parkCode"    column="park_code"    />
+        <result property="parkName"    column="park_name"    />
+        <result property="parkCarryingCapacity"    column="park_carrying_capacity"    />
+        <result property="parkTrafficCount"    column="park_traffic_count"    />
+        <result property="parkDeviceCodes"    column="park_device_codes"    />
+        <result property="parkDesc"    column="park_desc"    />
+        <result property="creator"    column="creator"    />
+        <result property="creatorDate"    column="creator_date"    />
+        <result property="modifier"    column="modifier"    />
+        <result property="modifierDate"    column="modifier_date"    />
+        <result property="deleteFlag"    column="delete_flag"    />
+        <result property="tenantId"    column="tenant_id"    />
+        <result property="industryCode"    column="industry_code"    />
+        <result property="appVerCode"    column="app_ver_code"    />
+    </resultMap>
+    <!-- 表所有字段 -->
+    <sql id="selectVmParkDeviceInfoVo">
+        select p.park_code, p.park_name, p.park_carrying_capacity, p.park_traffic_count, p.park_device_codes, p.park_desc, p.creator, p.creator_date, p.modifier, p.modifier_date, p.delete_flag, p.tenant_id,p.app_ver_code,p.industry_code from vm_park_device_info p
+    </sql>
+
+    <select id="selectVmParkDeviceInfoList" parameterType="com.chinatower.event.vo.ParkDeviceInfoVo" resultMap="ParkDeviceInfoResult">
+        <include refid="selectVmParkDeviceInfoVo"/>
+        <if test="devName != null  and devName != ''">
+            LEFT JOIN vm_device_info_t d on FIND_IN_SET(d.device_code,p.park_device_codes)
+            LEFT JOIN vm_tenant_device_channel_rel_t ten ON FIND_IN_SET( ten.device_code, p.park_device_codes )
+        </if>
+        where  p.delete_flag = 0
+            <if test="parkName != null  and parkName != ''"> and p.park_name like concat('%', #{parkName}, '%')</if>
+            <if test="parkCarryingCapacity != null  and parkCarryingCapacity != ''"> and p.park_carrying_capacity = #{parkCarryingCapacity}</if>
+            <if test="parkTrafficCount != null  and parkTrafficCount != ''"> and p.park_traffic_count = #{parkTrafficCount}</if>
+            <if test="parkDeviceCodes != null  and parkDeviceCodes != ''"> and FIND_IN_SET(#{parkDeviceCodes},p.park_device_codes)</if>
+            <if test="parkDesc != null  and parkDesc != ''"> and p.park_desc = #{parkDesc}</if>
+            <if test="tenantId != null  and tenantId != ''"> and p.tenant_id = #{tenantId}</if>
+            <if test="creatorDate != null "> and p.creator_date = #{creatorDate}</if>
+            <if test="modifier != null  and modifier != ''"> and p.modifier = #{modifier}</if>
+            <if test="modifierDate != null "> and p.modifier_date = #{modifierDate}</if>
+            <if test="devName != null  and devName != ''">
+                and (d.device_name like concat('%', #{devName}, '%') OR ten.device_name LIKE concat('%', #{devName}, '%'))
+            </if>
+             ${dataScope}
+         GROUP BY p.park_code
+        <choose>
+            <when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+                order by creator_date asc
+            </when>
+            <when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+                order by creator_date desc
+            </when>
+            <when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+                order by modifier_date asc
+            </when>
+            <when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+                order by modifier_date desc
+            </when>
+            <otherwise>
+                order by p.park_code desc
+            </otherwise>
+        </choose>
+        <if test="limit != null  and limit != ''">
+            limit #{offset},#{limit}
+        </if>
+    </select>
+
+    <select id="selectVmParkDeviceInfoCount" parameterType="com.chinatower.event.vo.ParkDeviceInfoVo" resultMap="ParkDeviceInfoResult">
+        <include refid="selectVmParkDeviceInfoVo"/>
+        where  p.delete_flag = 0
+        <if test="parkName != null  and parkName != ''"> and p.park_name = #{parkName}</if>
+        <if test="parkCode != null and parkCode != ''"> and p.park_code != #{parkCode}</if>
+        ${dataScope}
+    </select>
+
+    <select id="selectVmParkDeviceInfoListCount" parameterType="com.chinatower.event.vo.ParkDeviceInfoVo" resultType="java.lang.Integer">
+        SELECT COUNT( DISTINCT p.park_code) from vm_park_device_info p
+        <if test="devName != null  and devName != ''">
+            LEFT JOIN vm_device_info_t d on FIND_IN_SET(d.device_code,p.park_device_codes)
+            LEFT JOIN vm_tenant_device_channel_rel_t ten ON FIND_IN_SET( ten.device_code, p.park_device_codes )
+        </if>
+        where p.delete_flag = 0
+            <if test="parkName != null  and parkName != ''"> and p.park_name like concat('%', #{parkName}, '%')</if>
+            <if test="parkCarryingCapacity != null  and parkCarryingCapacity != ''"> and p.park_carrying_capacity = #{parkCarryingCapacity}</if>
+            <if test="parkTrafficCount != null  and parkTrafficCount != ''"> and p.park_traffic_count = #{parkTrafficCount}</if>
+            <if test="parkDeviceCodes != null  and parkDeviceCodes != ''"> and FIND_IN_SET(#{parkDeviceCodes},p.park_device_codes)</if>            <if test="parkDesc != null  and parkDesc != ''"> and p.park_desc = #{parkDesc}</if>
+            <if test="tenantId != null  and tenantId != ''"> and p.tenant_id = #{tenantId}</if>
+            <if test="creatorDate != null "> and p.creator_date = #{creatorDate}</if>
+            <if test="modifier != null  and modifier != ''"> and p.modifier = #{modifier}</if>
+            <if test="modifierDate != null "> and p.modifier_date = #{modifierDate}</if>
+            <if test="devName != null  and devName != ''">
+                and (d.device_name like concat('%', #{devName}, '%') OR ten.device_name LIKE concat('%', #{devName}, '%'))
+            </if>
+        ${dataScope}
+    </select>
+
+
+    <insert id="insertVmParkDeviceInfo" parameterType="com.chinatower.event.vo.ParkDeviceInfoVo" keyProperty="parkCode">
+        insert into vm_park_device_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="parkName != null and parkName != ''">park_name,</if>
+            <if test="parkCarryingCapacity != null and parkCarryingCapacity != ''">park_carrying_capacity,</if>
+            park_traffic_count,
+            <if test="parkDeviceCodes != null and parkDeviceCodes != ''">park_device_codes,</if>
+            <if test="parkDesc != null">park_desc,</if>
+            <if test="creator != null">creator,</if>
+            creator_date,
+            <if test="modifier != null">modifier,</if>
+            <if test="modifierDate != null">modifier_date,</if>
+            delete_flag,
+            <if test="tenantId != null">tenant_id,</if>
+            industry_code,
+            app_ver_code
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="parkName != null and parkName != ''">#{parkName},</if>
+            <if test="parkCarryingCapacity != null and parkCarryingCapacity != ''">#{parkCarryingCapacity},</if>
+            0,
+            <if test="parkDeviceCodes != null and parkDeviceCodes != ''">#{parkDeviceCodes},</if>
+            <if test="parkDesc != null">#{parkDesc},</if>
+            <if test="creator != null">#{creator},</if>
+            now(),
+            <if test="modifier != null">#{modifier},</if>
+            <if test="modifierDate != null">#{modifierDate},</if>
+            0,
+            <if test="tenantId != null">#{tenantId},</if>
+            #{industryCode},
+            #{appVerCode}
+        </trim>
+    </insert>
+
+    <update id="updateVmParkDeviceInfo" parameterType="com.chinatower.event.vo.ParkDeviceInfoVo">
+        update vm_park_device_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="parkName != null and parkName != ''">park_name = #{parkName},</if>
+            <if test="parkCarryingCapacity != null and parkCarryingCapacity != ''">park_carrying_capacity = #{parkCarryingCapacity},</if>
+            <if test="parkTrafficCount != null">park_traffic_count = #{parkTrafficCount},</if>
+            <if test="parkDeviceCodes != null and parkDeviceCodes != ''">park_device_codes = #{parkDeviceCodes},</if>
+            <if test="parkDesc != null">park_desc = #{parkDesc},</if>
+            <if test="modifier != null">modifier = #{modifier},</if>
+            modifier_date = now(),
+            <if test="deleteFlag != null">delete_flag = #{deleteFlag},</if>
+        </trim>
+        where park_code = #{parkCode}
+    </update>
+
+    <update id="updateVmParkDeviceInfoRe" parameterType="com.chinatower.event.vo.ParkDeviceInfoVo">
+        update vm_park_device_info
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="parkName != null and parkName != ''">park_name = #{parkName},</if>
+            <if test="parkCarryingCapacity != null and parkCarryingCapacity != ''">park_carrying_capacity = #{parkCarryingCapacity},</if>
+            <if test="parkTrafficCount != null">park_traffic_count = park_traffic_count + #{parkTrafficCount},</if>
+            <if test="parkDeviceCodes != null and parkDeviceCodes != ''">park_device_codes = #{parkDeviceCodes},</if>
+            <if test="parkDesc != null">park_desc = #{parkDesc},</if>
+            <if test="modifier != null">modifier = #{modifier},</if>
+            modifier_date = now(),
+            <if test="deleteFlag != null">delete_flag = #{deleteFlag},</if>
+        </trim>
+        where park_code = #{parkCode}
+    </update>
+
+
+</mapper>

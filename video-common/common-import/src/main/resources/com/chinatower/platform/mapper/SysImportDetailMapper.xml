@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.SysImportDetailMapper">
+
+    <insert id="insertImportDetail" parameterType="com.chinatower.platform.entity.SysImportDetail">
+        INSERT INTO sys_import_detail
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="importId != null  and importId != ''">IMPORT_ID,</if>
+            <if test="importRow != null  and importRow != ''">IMPORT_ROW,</if>
+            <if test="handleResult != null  and handleResult != ''">HANDLE_RESULT,</if>
+            <if test="failReason != null  and failReason != ''">FAIL_REASON,</if>
+            <if test="createTime != null ">CREATE_TIME,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="importId != null  and importId != ''">#{importId},</if>
+            <if test="importRow != null  and importRow != ''">#{importRow},</if>
+            <if test="handleResult != null  and handleResult != ''">#{handleResult},</if>
+            <if test="failReason != null  and failReason != ''">#{failReason},</if>
+            <if test="createTime != null ">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <insert id="batchInsertImportDetail" parameterType="list">
+        INSERT INTO sys_import_detail (IMPORT_ID, IMPORT_ROW, HANDLE_RESULT, FAIL_REASON, CREATE_TIME) values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.importId},  #{item.importRow},  #{item.handleResult}, #{item.failReason}, now() )
+        </foreach>
+    </insert>
+
+
+</mapper>

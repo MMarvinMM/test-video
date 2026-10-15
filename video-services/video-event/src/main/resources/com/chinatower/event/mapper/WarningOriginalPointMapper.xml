@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.WarningOriginalPointMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.WarningOriginalPointDO">
+        <result column="alarm_point_id" property="alarmPointId" />
+        <result column="alarm_area_id" property="alarmAreaId" />
+        <result column="percent_x" property="percentX" />
+        <result column="percent_y" property="percentY" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        alarm_point_id, alarm_area_id, percent_x, percent_y
+    </sql>
+
+    <insert id="insertOriginalPoints" parameterType="list">
+        insert into vm_warning_original_point_t
+        (alarm_point_id,alarm_area_id,percent_x,percent_y) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.alarmPointId}, #{item.alarmAreaId},  #{item.percentX},#{item.percentY})
+        </foreach>
+    </insert>
+
+</mapper>

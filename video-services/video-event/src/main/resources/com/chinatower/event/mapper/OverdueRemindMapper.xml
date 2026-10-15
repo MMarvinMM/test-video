@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.OverdueRemindMapper">
+
+    <insert id="insertOverdueRemindList" parameterType="java.util.List">
+        insert into vm_overdue_remind_t (
+        warning_order_id,
+        address,
+        order_status,
+        link_id,
+        overdue_remind_sign,
+        remind_time,
+        remind_process_id,
+        warning_type_id,
+        app_ver_code,
+        industry_code,
+        create_time,
+        update_time,
+        alarm_time
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.warningOrderId},
+            #{item.address},
+            #{item.orderStatus},
+            #{item.linkId},
+            #{item.overdueRemindSign},
+            #{item.remindTime},
+            #{item.remindProcessId},
+            #{item.warningTypeId},
+            #{item.appVerCode},
+            #{item.industryCode},
+            now(),
+            null,
+             #{item.alarmTime}
+            )
+        </foreach>
+    </insert>
+    <delete id="deleteOverdueRemind">
+
+        delete from vm_overdue_remind_t where warning_order_id = #{warningOrderId}
+        <if test='overdueRemindSign != null and overdueRemindSign != ""'>
+            and overdue_remind_sign = #{overdueRemindSign}
+        </if>
+    </delete>
+
+    <delete id="deleteOverdueRemindByOrders">
+
+        delete from vm_overdue_remind_t where
+        warning_order_id in
+        <foreach collection="warningOrderIdList" item="item" index="index" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+</mapper>

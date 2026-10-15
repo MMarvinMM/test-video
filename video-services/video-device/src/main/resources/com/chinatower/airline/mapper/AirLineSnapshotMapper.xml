@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.airline.mapper.AirLineSnapshotMapper">
+    <insert id="addAirLineSnapshot" useGeneratedKeys="true" keyProperty="id"
+            parameterType="com.chinatower.device.entity.dto.AirEditDto">
+        insert into vm_air_line_snapshot_t (flight_route_id, extra_field,
+                                            kmz_access_path, tenant_id, industry_code,
+                                            create_time, create_user,
+                                            access_node, accept_node)
+        VALUES (#{flightRouteId}, #{kmzJson}, #{fileAccessPath}, #{tenantId}, #{industryCode},
+                NOW(), #{createUser},
+                #{accessNode}, #{acceptNode})
+    </insert>
+    <select id="getAirLineSnapshot" resultType="com.chinatower.airline.dto.response.AirLineSnapshotRsp"
+            parameterType="com.chinatower.device.entity.dto.AirEditDto">
+        SELECT id, flight_route_id as flightRouteId, extra_field as extraField, kmz_access_path as kmzAccessPath
+        FROM vm_air_line_snapshot_t
+        WHERE id = #{snapshotId}
+    </select>
+</mapper>

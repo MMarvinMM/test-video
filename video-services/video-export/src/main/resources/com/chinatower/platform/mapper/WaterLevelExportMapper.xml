@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.WaterLevelExportMapper">
+
+    <select id="queryWaterLevelDeviceInfoList" resultType="com.chinatower.platform.entity.WaterLevelQueryVO">
+        SELECT
+        resultdata.*,
+        a1.AREA_NAME AS provinceName,
+        a2.AREA_NAME AS cityName,
+        a3.AREA_NAME AS countryName
+        FROM
+        (
+        SELECT
+        m.id,
+        m.device_code,
+        d.device_name,
+        m.creator,
+        m.create_time,
+        d.province_id,
+        d.city_id,
+        d.county_id,
+        d.device_status,
+        d.location as deviceAddress
+        FROM
+        vm_water_level_info_t m,
+        vm_device_info_t d,
+        vm_order_devices t
+        WHERE
+        t.device_code = d.device_code
+        AND m.device_code = d.device_code
+        AND m.tenant_id = t.tenant_id
+        AND m.industry_code = t.industry_code
+        AND m.delete_flag = 0
+        AND d.delete_flag = '0'
+        AND t.delete_flag = 0
+        AND t.ord_status IN ( 0, 1, 2 )
+        ${dataScope}
+        <if test='deviceCode != null and deviceCode != ""'>
+            AND m.device_code like CONCAT('%', #{deviceCode}, '%')
+        </if>
+        <if test='deviceStatus != null and deviceStatus != ""'>
+            AND d.device_status = #{deviceStatus}
+        </if>
+        <if test='deviceName != null and deviceName != ""'>
+            AND d.device_name like CONCAT('%', #{deviceName}, '%')
+        </if>
+        <if test='provinceId != null and provinceId != ""'>
+            AND d.province_id = #{provinceId}
+        </if>
+        <if test='cityId != null and cityId != ""'>
+            AND d.city_id = #{cityId}
+        </if>
+        <if test='countryId != null and countryId != ""'>
+            AND d.county_id = #{countryId}
+        </if>
+        <if test="ids != null and ids.size() > 0 ">
+            AND m.id IN
+            <foreach collection="ids" item="labelIdItem" index="index" open="(" close=")" separator=",">
+                #{labelIdItem}
+            </foreach>
+        </if>
+        ) resultdata
+        LEFT JOIN sys_area a1 ON a1.AREA_CODE = resultdata.province_id
+        LEFT JOIN sys_area a2 ON a2.AREA_CODE = resultdata.city_id
+        LEFT JOIN sys_area a3 ON a3.AREA_CODE = resultdata.county_id
+    </select>
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.ResourceConfMapper">
+
+
+    <select id="selectResourceList" resultType="com.chinatower.device.dto.ResourceConfVO">
+        select
+        DISTINCT
+        d.id,
+        d.resource_id,
+        d.resource_name,
+        d.resource_type_id,
+        z.resource_type_name,
+        d.order_num,
+        d.`status`,
+        d.delete_flag,
+        d.creator,
+        d.create_time,
+        d.modifier,
+        d.update_time,
+        d.tenant_id,
+        d.remark,
+        d.longitude,
+        d.latitude,
+        d.elevation,
+        d.addr,
+        d.industry_code,
+        d.app_ver_code,
+        d.resource_property,
+        d.color,
+        z.icon,
+        d.img_url,
+        d.tel
+        from
+        resource_conf d
+        left join resource_type z on d.resource_type_id=z.resource_type_id and d.tenant_id = z.tenant_id and d.industry_code = z.industry_code
+           where
+            d.delete_flag = 0 and z.delete_flag = 0
+            and d.resource_id in
+        <foreach collection="resourceIdList" index="index" open="(" close=")" separator="," item="resourceId">
+            #{resourceId}
+        </foreach>
+                ${dataScope}
+    </select>
+
+
+</mapper>

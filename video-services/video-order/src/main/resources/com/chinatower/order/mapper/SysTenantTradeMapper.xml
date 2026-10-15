@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.SysTenantTradeMapper">
+
+    <!--<resultMap type="com.chinatower.platform.entity.admin.SysTenantTrade" id="SysTenantTradeResult">
+        <result property="tenantId"     column="tenant_id"      />
+        <result property="industryCode"     column="industry_code"      />
+        <result property="appVerCode"     column="app_ver_code"      />
+    </resultMap>
+
+    <select id="selectTenantTradeByTenantId" resultMap="SysTenantTradeResult">
+        select tenant_id,industry_code,app_ver_code
+        from sys_tenant_trade where tenant_id = #{tenantId}
+    </select>
+
+    <select id="countTenantTrade" resultType="int">
+        select count(*)
+        from sys_tenant_trade where tenant_id = #{tenantId}
+        and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+    </select>
+
+
+    <insert id="insertTenantTrade" useGeneratedKeys="false"  parameterType="com.chinatower.platform.entity.admin.SysTenantTrade">
+        insert into sys_tenant_trade(tenant_id,industry_code,app_ver_code)
+        values (#{tenantId}, #{industryCode}, #{appVerCode})
+    </insert>
+
+    <insert id="batchInsertTenantTrade">
+        insert into sys_tenant_trade(tenant_id,industry_code,app_ver_code)
+        values
+        <foreach collection="tenantTrades" item="item" separator=",">
+            (#{tenantId}, #{item.industryCode}, #{item.appVerCode})
+        </foreach>
+    </insert>-->
+
+</mapper>

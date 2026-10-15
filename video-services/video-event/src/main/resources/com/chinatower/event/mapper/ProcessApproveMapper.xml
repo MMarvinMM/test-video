@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.ProcessApproveMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.ProcessApproveDO">
+        <id column="approve_id" property="approveId" />
+        <result column="create_time" property="createTime" />
+        <result column="process_order_id" property="processOrderId" />
+        <result column="order_id" property="orderId" />
+        <result column="approve_result" property="approveResult" />
+        <result column="approve_person" property="approvePerson" />
+        <result column="approve_status" property="approveStatus" />
+        <result column="approve_level" property="approveLevel" />
+        <result column="approve_time" property="approveTime" />
+        <result column="if_level_approve" property="ifLevelApprove" />
+        <result column="parent_approve_id" property="parentApproveId" />
+        <result column="modifier_date" property="modifierDate" />
+        <result column="delete_flag" property="deleteFlag" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        approve_id, create_time, process_order_id, order_id, approve_result, approve_person, approve_status, approve_level, approve_time, if_level_approve, parent_approve_id, modifier_date, delete_flag
+    </sql>
+
+    <insert id="insertOrderApprove" useGeneratedKeys="true" keyProperty="approveId" keyColumn="approve_id"
+            parameterType="com.chinatower.common.core.dto.ProcessApproveDTO">
+        <selectKey keyProperty="approveId" order="BEFORE" resultType="java.lang.String">
+            select UUID_SHORT() from dual
+        </selectKey>
+        insert into vm_process_approve_t (
+        approve_id,
+        create_time,
+        process_order_id,
+        order_id,
+        approve_result,
+        approve_person,
+
+        approve_status,
+        approve_level,
+
+        if_level_approve,
+        parent_approve_id,
+        modifier_date,
+
+        delete_flag
+        ) values (
+        #{approveId,jdbcType=VARCHAR},
+        now(),
+        #{processOrderId,jdbcType=VARCHAR},
+        #{orderId,jdbcType=VARCHAR},
+        #{approveResult,jdbcType=VARCHAR},
+        #{approvePerson,jdbcType=VARCHAR},
+
+        #{approveStatus,jdbcType=VARCHAR},
+        #{approveLevel,jdbcType=VARCHAR},
+
+        #{ifLevelApprove,jdbcType=VARCHAR},
+        #{parentApproveId,jdbcType=VARCHAR},
+        now(),
+        #{deleteFlag,jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <resultMap id="orderApproveMap"
+               type="com.chinatower.common.core.dto.ProcessApproveDTO">
+
+        <result column="approve_id" property="approveId" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="VARCHAR"/>
+        <result column="process_order_id" property="processOrderId" jdbcType="VARCHAR"/>
+        <result column="order_id" property="orderId" jdbcType="VARCHAR"/>
+        <result column="approve_result" property="approveResult" jdbcType="VARCHAR"/>
+        <result column="approve_person" property="approvePerson" jdbcType="VARCHAR"/>
+
+        <result column="approve_status" property="approveStatus" jdbcType="VARCHAR"/>
+        <result column="approve_level" property="approveLevel" jdbcType="VARCHAR"/>
+        <result column="approve_time" property="approveTime" jdbcType="VARCHAR"/>
+        <result column="if_level_approve" property="ifLevelApprove" jdbcType="VARCHAR"/>
+        <result column="parent_approve_id" property="parentApproveId" jdbcType="VARCHAR"/>
+        <result column="modifier_date" property="modifierDate" jdbcType="VARCHAR"/>
+
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR"/>
+        <result column="approve_status_name" property="approveStatusName" jdbcType="VARCHAR"/>
+        <result column="approve_person_name" property="approvePersonName" jdbcType="VARCHAR"/>
+        <result column="mobile_phone" property="mobilePhone" jdbcType="VARCHAR"/>
+
+
+    </resultMap>
+    <select id="getOrderApprove" resultMap="orderApproveMap"
+            parameterType="com.chinatower.common.core.dto.ProcessApproveDTO">
+        select t.*
+        from vm_process_approve_t t
+        <where>
+            <if test='approveId!= null and approveId != "" '>
+                and t.approve_id = #{approveId}
+            </if>
+            <if test='processOrderId!= null and processOrderId != ""'>
+                and t.process_order_id = #{processOrderId}
+            </if>
+            <if test='orderId != null and orderId != "" '>
+                and t.order_id = #{orderId}
+            </if>
+            <if test='deleteFlag!= null and deleteFlag != ""'>
+                AND t.delete_flag = #{deleteFlag}
+            </if>
+            <if test='isSign!= null and isSign != "" and isSign == 1'>
+                and t.approve_person = #{approvePerson}
+            </if>
+        </where>
+        ORDER by t.create_time DESC limit 1
+
+    </select>
+
+    <update id="updateOrderApprove"
+            parameterType="com.chinatower.common.core.dto.ProcessApproveDTO">
+        update vm_process_approve_t set
+        approve_id = #{approveId,jdbcType=VARCHAR}
+        <if test='approveResult!= null and approveResult != "" '>
+            ,approve_result = #{approveResult,jdbcType=VARCHAR}
+            ,approve_time = now()
+        </if>
+        <if test='approvePerson!= null and approvePerson != "" '>
+            ,approve_person = #{approvePerson,jdbcType=VARCHAR}
+        </if>
+        <if test='approveStatus!= null and approveStatus != "" '>
+            ,approve_status = #{approveStatus,jdbcType=VARCHAR}
+        </if>
+        <if test='deleteFlag!= null and deleteFlag != "" '>
+            ,delete_flag = #{deleteFlag,jdbcType=VARCHAR}
+        </if>
+        ,modifier_date = now()
+        where approve_id = #{approveId}
+    </update>
+
+    <insert id="insertOrderApproveList"
+            parameterType="java.util.List">
+        insert into vm_process_approve_t (
+        approve_id,
+        create_time,
+        process_order_id,
+        order_id,
+        approve_result,
+        approve_person,
+
+        approve_status,
+        approve_level,
+
+        if_level_approve,
+        parent_approve_id,
+        modifier_date,
+
+        delete_flag
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.approveId,jdbcType=VARCHAR},
+            now(),
+            #{item.processOrderId,jdbcType=VARCHAR},
+            #{item.orderId,jdbcType=VARCHAR},
+            #{item.approveResult,jdbcType=VARCHAR},
+            #{item.approvePerson,jdbcType=VARCHAR},
+
+            #{item.approveStatus,jdbcType=VARCHAR},
+            #{item.approveLevel,jdbcType=VARCHAR},
+
+            #{item.ifLevelApprove,jdbcType=VARCHAR},
+            #{item.parentApproveId,jdbcType=VARCHAR},
+            now(),
+            #{item.deleteFlag,jdbcType=VARCHAR}
+            )
+        </foreach>
+    </insert>
+
+    <select id="getOrderApproveList" resultMap="orderApproveMap"
+            parameterType="com.chinatower.common.core.dto.ProcessApproveDTO">
+        select t.*
+        from vm_process_approve_t t
+        <where>
+            <if test='approveId!= null and approveId != "" '>
+                and t.approve_id = #{approveId}
+            </if>
+            <if test='processOrderId!= null and processOrderId != ""'>
+                and t.process_order_id = #{processOrderId}
+            </if>
+            <if test='orderId != null and orderId != "" '>
+                and t.order_id = #{orderId}
+            </if>
+            <if test='deleteFlag!= null and deleteFlag != ""'>
+                AND t.delete_flag = #{deleteFlag}
+            </if>
+        </where>
+    </select>
+
+    <select id="getApproveInfo" resultType="java.util.Map" parameterType="java.lang.String">
+        SELECT a.approve_id AS approveId,a.approve_person AS approvePerson,'' approvePersonName,
+        a.approve_result AS approveResult,a.approve_status AS approveStatus,a.approve_time AS approveTime
+        FROM vm_process_approve_t a
+        WHERE a.process_order_id = #{processOrderId}
+    </select>
+</mapper>

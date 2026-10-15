@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.chinatower.platform</groupId>
+        <artifactId>video-platform</artifactId>
+        <version>2.6.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <modules>
+        <module>video-analysis</module>
+        <module>video-bdm</module>
+        <module>video-device</module>
+        <module>video-device-sync</module>
+        <module>video-event</module>
+        <module>video-receive</module>
+        <module>video-file</module>
+<!--        <module>video-stream</module>-->
+        <module>video-gis</module>
+        <module>video-manage</module>
+        <module>video-message</module>
+        <module>video-msg</module>
+        <module>video-order</module>
+        <module>video-video</module>
+        <module>video-system</module>
+        <module>video-task</module>
+        <module>video-export</module>
+        <module>video-log</module>
+        <module>video-service-api</module>
+        <module>video-cascade-config</module>
+        <module>video-stdu</module>
+        <module>video-emergency</module>
+    </modules>
+
+    <artifactId>video-services</artifactId>
+    <packaging>pom</packaging>
+
+    <description>
+        video-services 通用应用业务模块
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.chinatower.platform</groupId>
+            <artifactId>common-core</artifactId>
+            <version>2.6.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.chinatower</groupId>
+            <artifactId>comp-tech-log</artifactId>
+            <version>${comp.tech.core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.chinatower</groupId>
+            <artifactId>comp-tech-starter-redis</artifactId>
+            <version>${comp.tech.core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.chinatower</groupId>
+            <artifactId>comp-tech-exception</artifactId>
+            <version>${comp.tech.core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.chinatower</groupId>
+            <artifactId>comp-tech-starter-mybatis</artifactId>
+            <version>${comp.tech.core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.chinatower</groupId>
+            <artifactId>comp-tech-swagger-starter</artifactId>
+            <version>${comp.tech.core.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>

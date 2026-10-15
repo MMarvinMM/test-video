@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.LayerTaoheMapper">
+    <select id="getTaoheAnalysisStruct" resultType="com.chinatower.gis.modules.gis.entity.layer.TaoheAnalysisStruct">
+        SELECT
+            t2.layer_type_simple "type",
+            t1.tablename tmpName,
+            t1.overarea overArea,
+            t2.layer_name sourceTableName
+        FROM
+            t_tmp_thmanage t1, layer_info t2
+        WHERE
+            t1.guid= #{guid}
+          AND t2.layer_id= #{layerId}
+    </select>
+    <select id="selectTaoheAnalysisLayerTableBsm" resultType="java.lang.String">
+        select bsm from ${tmpName} where reftablename=#{sourcTableName} order by id OFFSET #{offset} LIMIT #{count}
+    </select>
+    <select id="selectTaoheAnalysisLayerTableObj" resultType="java.lang.String">
+        SELECT
+            row_to_json(fc)
+        FROM (
+                 SELECT
+                     'FeatureCollection' AS type,
+                     '212' AS id,
+                     array_to_json(array_agg(f)) AS features
+                 FROM (
+                          SELECT
+                              'Feature' AS type, (
+                              SELECT
+                                  row_to_json(t)
+                              FROM (
+                                       SELECT ${cols}
+                                   ) AS t
+                          ) AS properties
+                          FROM ( ${sqlRest} ) T1
+                      ) AS f
+             ) AS fc
+    </select>
+    <select id="selectTaoheAnalysisLayerTableAllCountStr" resultType="java.lang.String">
+        select allcount from t_tmp_thmanage where guid=#{guid}
+    </select>
+    <select id="selectTaoheAnalysisSerialItems"
+            resultType="com.chinatower.gis.api.entity.layer.TaoheAnalysisSerialItem">
+        select
+            bsm "name",
+            dlmc lable,
+            coverarea "value",
+            coverratio radio
+        from ${tmpName} where reftablename= #{sourcTableName}
+    </select>
+    <select id="selectTaoheAnalysisLayers" resultType="com.chinatower.gis.modules.gis.entity.layer.TaoheLayerInfo">
+        SELECT
+            lyr.id layerId,
+            lyr.layer_name layerName,
+            LOWER ( lyrtp.abbreviation ) layerTypeSimple,
+            lyr.custom_name layerCustomName
+        FROM
+            sys_layer lyr,
+            sys_layer_type lyrtp
+        WHERE
+            lyr.delete_flag IS FALSE
+            AND lyr.nest_flag = 1
+            AND lyr.layer_type_id = lyrtp.id
+            AND lyr.tenant_id = #{dto.tenantId}
+            AND lyr.industry_code = #{dto.industryCode}
+            AND lyr.create_time IS NOT NULL
+            AND lyrtp.abbreviation IN (${typeSimplesString})
+            AND (lyr.geo_type = 'MULTIPOLYGON' OR lyr.geo_type = 'POLYGON' OR lyr.geo_type IS NULL)
+            ${dto.dataPermissions}
+            ORDER BY lyrtp.abbreviation ASC
+    </select>
+
+    <select id="selectTaoheAnalysisLayersExt" resultType="com.chinatower.gis.modules.gis.entity.layer.TaoheLayerInfo">
+        SELECT
+            lyr.id layerId,
+            lyr.layer_name layerName,
+            LOWER ( lyrtp.abbreviation ) layerTypeSimple,
+            lyr.custom_name layerCustomName
+        FROM
+            sys_layer lyr,
+            sys_layer_type lyrtp
+        WHERE
+            lyr.delete_flag IS FALSE
+          AND lyr.layer_type_id = lyrtp.id
+          AND lyr.tenant_id = #{dto.tenantId}
+          AND lyr.industry_code = #{dto.industryCode}
+          AND lyr.create_time IS NOT NULL
+          AND lyrtp.abbreviation IN (${typeSimplesString})
+          AND (lyr.geo_type = 'MULTIPOLYGON' OR lyr.geo_type = 'POLYGON' OR lyr.geo_type IS NULL)
+          ${slqExt}
+          ${dto.dataPermissions}
+        ORDER BY lyrtp.abbreviation ASC
+    </select>
+
+    <select id="selectIntersectAnalysisLayersExt" resultType="com.chinatower.gis.modules.gis.entity.layer.TaoheLayerInfo">
+        SELECT
+            lyr.id layerId,
+            lyr.layer_area layerArea,
+            lyr.layer_name layerName,
+            LOWER ( lyrtp.abbreviation ) layerTypeSimple,
+            lyrtp.area_ref areaField,
+            lyr.custom_name layerCustomName
+        FROM
+            sys_layer lyr,
+            sys_layer_type lyrtp
+        WHERE
+            lyr.delete_flag IS FALSE
+          AND lyr.layer_type_id = lyrtp.id
+          AND lyr.tenant_id = #{dto.tenantId}
+          AND lyr.industry_code = #{dto.industryCode}
+          AND lyr.create_time IS NOT NULL
+          AND (lyr.geo_type = 'MULTIPOLYGON' OR lyr.geo_type = 'POLYGON' OR lyr.geo_type IS NULL)
+            ${slqExt}
+            ${dto.dataPermissions}
+        ORDER BY lyrtp.abbreviation ASC
+    </select>
+    <select id="selectIntersectingLayers" resultType="com.chinatower.gis.modules.gis.entity.layer.TaoheLayerInfo">
+        SELECT
+            lyr.id layerId,
+            lyr.layer_name layerName,
+            lyr.custom_name layerCustomName
+        FROM
+            sys_layer lyr
+        WHERE
+            lyr.delete_flag IS FALSE
+          AND lyr.tenant_id = #{dto.tenantId}
+          AND lyr.industry_code = #{dto.industryCode}
+          AND lyr.create_time IS NOT NULL
+          AND lyr.layer_name IS NOT NULL
+          AND lyr.maxx &gt; ${geoExtent.minX}
+          AND lyr.minx &lt; ${geoExtent.maxX}
+          AND lyr.maxy &gt; ${geoExtent.minY}
+          AND lyr.miny &lt; ${geoExtent.maxY}
+            ${dto.dataPermissions}
+    </select>
+    <select id="selectIntersectingLayers2" resultType="com.chinatower.gis.modules.gis.entity.layer.TaoheLayerInfo" parameterType="com.chinatower.common.core.dto.bdm.LayerQueryDTO">
+        SELECT
+            lyr.id layerId,
+            lyr.layer_name layerName,
+            lyr.custom_name layerCustomName
+        FROM
+            sys_layer lyr
+        WHERE
+            lyr.delete_flag IS FALSE
+          AND lyr.tenant_id = #{dto.tenantId}
+          AND lyr.industry_code = #{dto.industryCode}
+          AND lyr.create_time IS NOT NULL
+          AND lyr.layer_name IS NOT NULL
+            ${dto.dataPermissions}
+    </select>
+
+    <select id="selectLayerTbbhs" resultType="com.chinatower.gis.modules.gis.entity.layer.TaoheLayerInfo">
+        SELECT
+            LOWER ( lyrtp.tbbh_ref ) areaField,
+	        lyr.id layerId
+        FROM
+            sys_layer lyr,
+            sys_layer_type lyrtp
+        WHERE
+            lyr.delete_flag IS FALSE
+          AND lyr.layer_type_id = lyrtp.id
+          AND lyr.tenant_id = #{dto.tenantId}
+          AND lyr.industry_code = #{dto.industryCode}
+          AND lyr.id in (${layerIds})
+            ${dto.dataPermissions}
+    </select>
+
+    <select id="selectXZTBTmpValue" resultType="com.chinatower.gis.modules.gis.entity.layer.XztbCal">
+        SELECT
+            t11.bsm, t11.area calArea,  0.0 coverRatio, t11.dm serial, t11.bm tbName, relationType
+        FROM (
+                 SELECT
+                     t1.bsm,
+                     st_area(st_transform(st_intersection(t1.geom, t2.ST_Buffer), CAST ( ( FLOOR ( ( ST_X ( st_centroid ( t1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )))/calarea*t1.${areaColName} area,
+                     t1.${serialColName} dm,
+                     #{tbName}  bm,
+                     0 relationType
+                 FROM
+                     (select bsm, geom, calarea, ${areaColName}, ${serialColName} from ${tbName} offset ${offset} limit ${limit}) t1,
+                     (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+                 where ST_Overlaps(t2.ST_Buffer, t1.geom)
+                 UNION ALL
+                 SELECT
+                     t1.bsm,
+                     t1.${areaColName} as area,
+                     t1.${serialColName} dm,
+                     #{tbName}  bm,
+                     1 relationType
+                 FROM
+                     (select bsm, geom, calarea, ${areaColName}, ${serialColName} from ${tbName} offset ${offset} limit ${limit}) t1,
+                     (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+                 where ST_Contains(t2.ST_Buffer, t1.geom)
+             ) t11
+        WHERE
+            t11.area > 0.01;
+    </select>
+    <select id="selectXZTBTmpValue3" resultType="com.chinatower.gis.modules.gis.entity.layer.XztbCal">
+        SELECT
+            t11.bsm, t11.area calArea, 0.0 coverRatio, t11.dm serial, t11.bm tbName, t11.relationType
+        FROM (
+                 SELECT
+                     t1.bsm,
+                     st_area(st_transform(st_intersection(t1.geom, t2.ST_Buffer), CAST ( ( FLOOR ( ( ST_X ( st_centroid ( t1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )))/calarea*t1.${areaColName} area,
+                     t1.${serialColName} dm,
+                     #{tbName}  bm,
+                     2 relationType
+                 FROM
+                     ${tbName} t1,
+                     (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+                 WHERE st_intersects(t1.geom, t2.ST_Buffer)) t11
+        WHERE
+            t11.area > 0.01
+    </select>
+    <select id="selectXZTBTmpValue4" resultType="com.chinatower.gis.modules.gis.entity.layer.XztbCal">
+        SELECT
+            t11.bsm, t11.area calArea, 0.0 coverRatio, t11.dm serial, t11.bm tbName, t11.relationType
+        FROM (
+                 SELECT
+                     t1.bsm,
+                     st_area(st_transform(st_intersection(t1.geom, t2.ST_Buffer), CAST ( ( FLOOR ( ( ST_X ( st_centroid ( t1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )))/calarea*t1.${areaColName} area,
+                     t1.${serialColName} dm,
+                     #{tbName}  bm,
+                     3 relationType
+                 FROM
+                     ${tbName} t1,
+                     (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+                 WHERE ST_Contains(t1.geom, t2.ST_Buffer)) t11
+        WHERE
+            t11.area > 0.01
+    </select>
+    <select id="selectYJJBNTTmpValue" resultType="com.chinatower.gis.modules.gis.entity.layer.YjjbntCal">
+        SELECT
+            t11.bsm, t11.area calArea, 0.0 coverRatio, t11.bm tbName, t11.relationType
+        FROM (
+                 SELECT
+                     t1.bsm,
+                     st_area(st_transform(st_intersection(t1.geom, t2.ST_Buffer), CAST ( ( FLOOR ( ( ST_X ( st_centroid ( t1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )))/calarea*t1.${areaColName} area,
+                     #{tbName}  bm,
+                     0 relationType
+                 FROM
+                     (select bsm, geom, calarea, ${areaColName} from ${tbName} offset ${offset} limit ${limit}) t1,
+                     (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+                 WHERE ST_Overlaps(t2.ST_Buffer, t1.geom)
+                 UNION ALL
+                 SELECT
+                     t1.bsm,
+                     t1.${areaColName} area,
+                     #{tbName}  bm,
+                     1 relationType
+                 FROM
+                     (select bsm, geom, calarea, ${areaColName} from ${tbName} offset ${offset} limit ${limit}) t1,
+                     (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+                 WHERE ST_Contains(t2.ST_Buffer, t1.geom)
+             ) t11
+        WHERE
+            t11.area > 0.01
+    </select>
+    <select id="selectYJJBNTTmpValue3" resultType="com.chinatower.gis.modules.gis.entity.layer.YjjbntCal">
+        SELECT
+            t11.bsm, t11.area calArea, 0.0 coverRatio, t11.bm tbName, t11.relationType
+        FROM (
+                 SELECT
+                     t1.bsm,
+                     st_area(st_transform(st_intersection(t1.geom, t2.ST_Buffer), CAST ( ( FLOOR ( ( ST_X ( st_centroid ( t1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )))/calarea*t1.${areaColName} area,
+                     #{tbName}  bm,
+                     2 relationType
+                 FROM
+                     ${tbName} t1,
+                     (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+                 WHERE st_intersects(t1.geom, t2.ST_Buffer)) t11
+        WHERE
+            t11.area > 0.01
+    </select>
+    <select id="selectYJJBNTTmpValue4" resultType="com.chinatower.gis.modules.gis.entity.layer.YjjbntCal">
+        SELECT
+            t11.bsm, t11.area calArea, 0.0 coverRatio, t11.bm tbName, t11.relationType
+        FROM (
+                 SELECT
+                     t1.bsm,
+                     st_area(st_transform(st_intersection(t1.geom, t2.ST_Buffer), CAST ( ( FLOOR ( ( ST_X ( st_centroid ( t1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )))/calarea*t1.${areaColName} area,
+                     #{tbName}  bm,
+                     4 relationType
+                 FROM
+                     ${tbName} t1,
+                     (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+                 WHERE ST_Contains(t1.geom, t2.ST_Buffer)) t11
+        WHERE
+            t11.area > 0.01
+    </select>
+    <select id="selectTaoheAnalysisCountByLayerName" resultType="java.lang.Integer">
+        SELECT
+            COUNT(1)
+        FROM
+            ${tbName} t1
+    </select>
+    <select id="selectCalIntersectsCount" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM (
+                                 SELECT
+                                     t1.gid
+                                 FROM
+                                     ${tbName} t1,
+                                     (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+                                 WHERE
+                                     st_intersects ( t2.ST_Buffer, t1.geom ) LIMIT #{maxIntersectsCount}
+                             ) tt1
+    </select>
+    <select id="selectTableColsByTableName" resultType="java.lang.String" parameterType="java.lang.String">
+        SELECT array_to_string(
+            ARRAY(
+                SELECT
+			        '' || c.column_name
+		        FROM
+			        information_schema.columns As c
+		        WHERE
+                    table_name = #{sourcTableName}
+                    AND  c.column_name NOT IN('geom', 'gid', 'layertype','calarea', 'minx', 'miny', 'maxx', 'maxy', 'gdpdjb2')
+	        ),
+        ',') As sqlstmt
+    </select>
+
+    <select id="selectLayerTypeAndNameBylayerID2"
+            resultType="com.chinatower.gis.modules.gis.entity.layer.LayerTypeAndName"
+            parameterType="java.lang.String">
+        SELECT
+            lyr.id layer_id,
+            layer_name layerName,
+            lyrtp.type_name layerTypeName,
+            lyrtp.abbreviation layerType,
+            lyrtp.area_ref	areaColName
+        FROM
+            sys_layer lyr,
+            sys_layer_type lyrtp
+        WHERE
+            lyr.id = #{lyrid}
+          AND lyr.delete_flag = 0
+          AND lyr.layer_type_id = lyrtp.id;
+    </select>
+    <select id="selectAreaByBsm" resultType="com.chinatower.gis.modules.gis.entity.layer.YjjbntCal">
+        SELECT
+            ${areaColName} calArea,
+            st_astext ( geom ) tbName
+        FROM
+            ${tableName}
+        WHERE
+            bsm = #{bsm}
+    </select>
+    <select id="selectCalculateAea" resultType="java.lang.Double">
+        SELECT
+            st_area (
+                    st_transform (
+                        <if test="distance > 0">
+                            ST_Buffer ( tgeo.geom :: geography, ${distance} ) :: geometry,
+                        </if>
+                        <if test="distance == 0">
+                            tgeo.geom,
+                        </if>
+                            CAST ( ( FLOOR ( (ST_X ( st_centroid ( geom ) ) + 1.5 ) / 3) + 4488 ) AS INTEGER )
+                        )
+                ) overarea
+        FROM
+            ( SELECT ST_GeomFromText ( #{wkt}, ${inProject} ) AS geom ) tgeo
+    </select>
+    <select id="getLayerName" resultType="java.lang.String">
+        select custom_name from sys_layer where id = #{layerId};
+    </select>
+
+    <select id="selectTestExistTable" resultType="java.lang.Boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM pg_catalog.pg_tables
+            WHERE tablename = #{tableName}
+        );
+    </select>
+    <select id="selectListString" resultType="java.lang.String">
+        ${sql}
+    </select>
+
+    <insert id="createInOutBalanceSourceTable">
+        CREATE SEQUENCE ${tableName}_id_seq
+            INCREMENT 1
+                    START 1
+                    MINVALUE 1
+                    MAXVALUE 2147483647
+                    CACHE 1;
+
+        CREATE TABLE IF NOT EXISTS ${tableName}
+        (
+            id integer NOT NULL DEFAULT nextval('${tableName}_id_seq'::regclass),
+            geom geometry,
+            bsm	character varying(50) COLLATE pg_catalog."default",
+            dlbm	character varying(20) COLLATE pg_catalog."default",
+            dlmc	character varying(20) COLLATE pg_catalog."default",
+            calarea	double precision,
+            tbmj	double precision,
+            create_time timestamp with time zone,
+            CONSTRAINT ${tableName}_pkey PRIMARY KEY (id)
+            );
+
+        ALTER SEQUENCE ${tableName}_id_seq OWNED BY ${tableName}.id;
+        CREATE INDEX ${tableName}_geom_idx ON ${tableName} USING gist (geom);
+    </insert>
+    <delete id="deleteInOutBalanceTable">
+        DROP TABLE IF EXISTS ${tableName};
+    </delete>
+
+    <insert id="insertInOutBalanceTable">
+        INSERT INTO ${insertTableName} (geom, bsm, dlbm, dlmc, calarea, tbmj, create_time)
+        SELECT geom, bsm, dlbm, dlmc, calarea, tbmj, now() FROM ${selectTableName} WHERE DLBM IN ( ${where} );
+    </insert>
+    <insert id="createInOutBalanceResultTable">
+        CREATE SEQUENCE ${tableName}_id_seq INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+        CREATE TABLE IF	NOT EXISTS ${tableName} (
+                ID INTEGER NOT NULL DEFAULT nextval( '${tableName}_id_seq' :: regclass ),
+                geom geometry,
+                calarea DOUBLE PRECISION,
+                tbmj DOUBLE PRECISION,
+                calarea1 DOUBLE PRECISION,
+                bsm1 CHARACTER VARYING ( 50 ) COLLATE pg_catalog."default",
+                dlbm1 CHARACTER VARYING ( 20 ) COLLATE pg_catalog."default",
+                dlmc1 CHARACTER VARYING ( 20 ) COLLATE pg_catalog."default",
+                tbmj1 DOUBLE PRECISION,
+                calarea2 DOUBLE PRECISION,
+                bsm2 CHARACTER VARYING ( 50 ) COLLATE pg_catalog."default",
+                dlbm2 CHARACTER VARYING ( 20 ) COLLATE pg_catalog."default",
+                dlmc2 CHARACTER VARYING ( 20 ) COLLATE pg_catalog."default",
+                tbmj2 DOUBLE PRECISION,
+                create_time timestamp with time zone,
+                CONSTRAINT ${tableName}_pkey PRIMARY KEY ( ID )
+            );
+        ALTER SEQUENCE ${tableName}_id_seq OWNED BY ${tableName}.ID;
+        CREATE INDEX ${tableName}_geom_idx ON ${tableName} USING gist ( geom );
+    </insert>
+    <insert id="insertInOutBalanceResultTable">
+        INSERT INTO ${targetTableName} (geom, calarea, tbmj, calarea1, bsm1, dlbm1, dlmc1, tbmj1, calarea2, bsm2, dlbm2, dlmc2, tbmj2, create_time)
+        SELECT
+            geom, calarea, calarea/calarea2*tbmj2 tbmj, calarea1, bsm1, dlbm1, dlmc1, tbmj1, calarea2, bsm2, dlbm2, dlmc2, tbmj2, now()
+        FROM
+            (
+                SELECT
+                    calarea1, bsm1, dlbm1, dlmc1, tbmj1, calarea2, bsm2, dlbm2, dlmc2, tbmj2, geom,
+                    st_area(st_transform(tt1.geom, CAST ( ( FLOOR ( ( ST_X ( st_centroid ( tt1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER ))) calarea
+                FROM
+                    (
+                        SELECT
+                            t1.calarea calarea1, t1.bsm bsm1, t1.dlbm dlbm1, t1.dlmc dlmc1, t1.tbmj tbmj1, t1.geom geom1,
+                            t2.calarea calarea2, t2.bsm bsm2, t2.dlbm dlbm2, t2.dlmc dlmc2, t2.tbmj tbmj2, t2.geom geom2,
+                            st_intersection ( t1.geom, t2.geom) geom
+                        FROM
+                            ${tableName1} t1,
+                            ${tableName2} t2
+                        WHERE
+                            st_intersects ( t1.geom, t2.geom )
+                        ORDER BY
+                            t1.bsm,	t2.bsm
+                    ) tt1
+            ) ttt1
+        WHERE
+            ttt1.calarea > ${areaTolerance}
+    </insert>
+    <insert id="createjcphitem">
+        INSERT INTO t_tmp_jcphmanage (creator, create_time, update_time, delete_flag, tenant_id, industry_code, app_ver_code, guid) VALUES
+        (#{userId}, now(), now(), '0', #{tenantId}, #{industryCode}, #{appVerCode}, #{guid});
+    </insert>
+    <insert id="deleteJcphitemByGuid">
+        delete from t_tmp_jcphmanage where guid = #{guid};
+    </insert>
+    <select id="selectJcphResult" resultType="com.chinatower.gis.api.entity.layer.GetXlsjFeatureRes">
+        SELECT ${dlbmColName} bsm, SUM(tbmj) area FROM ${tableName} WHERE ${dlbmColName} IN ( ${where} ) GROUP BY ${dlbmColName}
+    </select>
+    <update id="updateJcphmanageInfo">
+        UPDATE t_tmp_jcphmanage SET update_time=now(), preLayerName = #{preLayerName}, curLayerName = #{curLayerName}, g1 = #{g1}, f1 = #{f1}, g2 = #{g2}, f2 = #{f2}, gdlc = #{gdlc}, gdlr = #{gdlr}, lc0101 = ${lc0101},  lc0102 = ${lc0102}, lc0103 = ${lc0103}, lr0101 = ${lr0101}, lr0102 = ${lr0102}, lr0103 = ${lr0103} WHERE guid = #{guid}
+    </update>
+    <update id="updateJcphmanageDeleteTable" parameterType="java.lang.String">
+        UPDATE t_tmp_jcphmanage SET delete_time=now() WHERE guid = #{guid}
+    </update>
+    <select id="selectGetInOutBalanceRes" resultType="com.chinatower.gis.api.entity.layer.GetInOutBalanceRes">
+        SELECT
+            CASE WHEN lc0101 = 0 THEN '0' ELSE CAST(lc0101 AS NUMERIC(20, 3))::VARCHAR END AS lc0101,
+            CASE WHEN lc0102 = 0 THEN '0' ELSE CAST(lc0102 AS NUMERIC(20, 3))::VARCHAR END AS lc0102,
+            CASE WHEN lc0103 = 0 THEN '0' ELSE CAST(lc0103 AS NUMERIC(20, 3))::VARCHAR END AS lc0103,
+            CASE WHEN lr0101 = 0 THEN '0' ELSE CAST(lr0101 AS NUMERIC(20, 3))::VARCHAR END AS lr0101,
+            CASE WHEN lr0102 = 0 THEN '0' ELSE CAST(lr0102 AS NUMERIC(20, 3))::VARCHAR END AS lr0102,
+            CASE WHEN lr0103 = 0 THEN '0' ELSE CAST(lr0103 AS NUMERIC(20, 3))::VARCHAR END AS lr0103
+        FROM t_tmp_jcphmanage WHERE guid = #{guid};
+    </select>
+    <select id="selectAbbreviationByTableName" resultType="java.lang.String">
+        SELECT
+            LOWER ( lyrtp.abbreviation ) layerTypeSimple
+        FROM
+            sys_layer lyr,
+            sys_layer_type lyrtp
+        WHERE
+            lyr.delete_flag IS FALSE
+          AND lyr.layer_type_id = lyrtp.id
+          AND lyr.tenant_id =  #{dto.tenantId}
+          AND lyr.industry_code = #{dto.industryCode}
+          AND lyr.layer_name = #{tableName}
+          ${dto.dataPermissions}
+    </select>
+    <select id="selectGuidByTableNames" resultType="java.lang.String">
+        SELECT guid FROM t_tmp_jcphmanage WHERE preLayerName = #{preLayerName} AND curLayerName = #{curLayerName};
+    </select>
+    <select id="selectInOutBalanceExistByGuid" resultType="java.lang.Integer" parameterType="java.lang.String">
+        SELECT count(1) FROM t_tmp_jcphmanage WHERE guid =  #{guid};
+    </select>
+    <select id="selectUpdateTimeByGuid" resultType="com.chinatower.gis.api.entity.layer.GetInOutBalanceExtendRes"
+            parameterType="java.lang.String">
+        SELECT
+            CASE WHEN lc0101 = 0 THEN '0' ELSE CAST(lc0101 AS NUMERIC(20, 3))::VARCHAR END AS lc0101,
+            CASE WHEN lc0102 = 0 THEN '0' ELSE CAST(lc0102 AS NUMERIC(20, 3))::VARCHAR END AS lc0102,
+            CASE WHEN lc0103 = 0 THEN '0' ELSE CAST(lc0103 AS NUMERIC(20, 3))::VARCHAR END AS lc0103,
+            CASE WHEN lr0101 = 0 THEN '0' ELSE CAST(lr0101 AS NUMERIC(20, 3))::VARCHAR END AS lr0101,
+            CASE WHEN lr0102 = 0 THEN '0' ELSE CAST(lr0102 AS NUMERIC(20, 3))::VARCHAR END AS lr0102,
+            CASE WHEN lr0103 = 0 THEN '0' ELSE CAST(lr0103 AS NUMERIC(20, 3))::VARCHAR END AS lr0103,
+            update_time updateTime
+        FROM t_tmp_jcphmanage WHERE guid = #{guid};
+    </select>
+    <select id="selectTableNameByGuid" resultType="java.lang.String">
+        SELECT tablename FROM t_tmp_thmanage WHERE guid = #{guid};
+    </select>
+    <select id="selectIsDeleteByGuid" resultType="java.lang.Boolean">
+        SELECT isdelete FROM t_tmp_thmanage WHERE guid = #{guid}
+    </select>
+    <select id="getLayerNamesByGuid" resultType="java.lang.String">
+        SELECT DISTINCT reftablename FROM ${newTableName};
+    </select>
+    <select id="selectIntersectAnalysis" resultType="com.chinatower.gis.api.entity.layer.IntersectAnalysisItem">
+        SELECT
+            t11.inputArea inputArea,
+            SUM ( t11.intersectArea ) intersectArea
+        FROM
+            (
+                SELECT
+                    st_area (
+                            st_transform (
+                                    t2.ST_Union,
+                                    CAST ( ( FLOOR ( ( ST_X ( st_centroid ( t1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )
+                                )
+                        ) inputArea,
+                    st_area (
+                            st_transform (
+                                    st_intersection ( t1.geom, t2.ST_Union ),
+                                    CAST ( ( FLOOR ( ( ST_X ( st_centroid ( t1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )
+                                )
+                        ) / calarea * t1.${areaField} intersectArea
+                FROM
+                    ${layerName} t1,
+                    ( SELECT ${geoSql} ) t2
+                WHERE
+                    st_intersects ( t1.geom, t2.ST_Union )
+            ) t11
+        GROUP BY
+            t11.inputArea
+    </select>
+    <select id="selectLengthByTableBsm" resultType="java.lang.Integer" parameterType="java.lang.String">
+        SELECT LENGTH(bsm) FROM ${layerName} LIMIT 1
+    </select>
+    <select id="countTableRows" resultType="java.lang.Integer" parameterType="java.lang.String">
+        SELECT COUNT(1) FROM ${layerName};
+    </select>
+    <select id="getTableNameByLayerId" resultType="java.lang.String" parameterType="java.lang.String">
+        SELECT layer_name FROM sys_layer WHERE id = #{layerId};
+    </select>
+    <select id="isIntersectingPlot" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM (
+             SELECT
+                 t1.gid
+             FROM
+                 ${tbName} t1,
+                 (SELECT ST_Buffer(ST_GeomFromText(#{wkt}, 4326)::geography, ${distance})::geometry) t2
+             WHERE
+                 st_intersects ( t2.ST_Buffer, t1.geom ) LIMIT 1
+         ) tt1
+    </select>
+    <select id="selectGeoExtent" resultType="com.chinatower.gis.modules.gis.entity.GeoExtent">
+        SELECT
+            ST_XMin(bufferGeo) AS minX,
+            ST_YMin(bufferGeo) AS minY,
+            ST_XMax(bufferGeo) AS maxX,
+            ST_YMax(bufferGeo) AS maxY
+        FROM (
+                 SELECT
+                     ST_Transform(ST_Buffer(ST_Transform(ST_GeomFromText(#{wkt}, 4326), 3857), ${distance}), 4326) AS bufferGeo
+             ) AS subquery;
+    </select>
+    <update id="autoCompareLayerFeatures">
+
+        -- 更新 polygon_tdbp_1747625694506_j2obzb 表的 bsm 字段
+        UPDATE ${curLayerName} g2
+        SET bsm = t1.g1bsm
+        FROM
+        (-- 子查询：计算交集面积与原面积的比例，并过滤 changeScale 范围
+            SELECT
+                g1.bsm AS g1bsm,
+                g2.bsm AS g2bsm,
+                ST_Area (
+                    ST_Transform (
+                        ST_Intersection ( g1.geom, g2.geom ),
+                        CAST ( ( FLOOR ( ( ST_X ( ST_Centroid ( g1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )
+                    )
+                    ) / ST_Area (
+                    ST_Transform (
+                        g1.geom,
+                        CAST ( ( FLOOR ( ( ST_X ( ST_Centroid ( g1.geom ) ) + 1.5 ) / 3 ) + 4488 ) AS INTEGER )
+                    )
+                ) AS changeScale
+            FROM
+                ${preLayerName} g1,
+                ${curLayerName} g2
+            WHERE
+                ST_Intersects ( g1.geom, g2.geom )
+            ) t1 -- 关联条件：通过 bsm 字段匹配目标表和子查询结果
+
+        WHERE
+            g2.bsm = t1.g2bsm
+          AND t1.changeScale BETWEEN (1.0 - ${tolerance}) AND (1.0 + ${tolerance});
+
+    </update>
+</mapper>

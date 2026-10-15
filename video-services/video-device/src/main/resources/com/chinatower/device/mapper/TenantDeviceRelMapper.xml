@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.TenantDeviceRelMapper">
+
+    <select id="queryTenantDeviceRelList" resultType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceRelVO"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.TenantDeviceRelVO">
+        SELECT id, device_code, device_name, tenant_id, channel_code, channel_name,industry_code,
+            app_ver_code,creator,create_time,modifier,update_time,delete_flag
+        FROM vm_tenant_device_channel_rel_t t WHERE t.delete_flag = '0'
+        <if test='tenantId != null and tenantId != ""'>
+            AND tenant_id= #{tenantId}
+        </if>
+        <if test='deviceCode != null and deviceCode != ""'>
+            AND device_code= #{deviceCode}
+        </if>
+        <if test='channelCode != null and channelCode != ""'>
+            AND channel_code= #{channelCode}
+        </if>
+        <if test='industryCode != null and industryCode != ""'>
+            AND industry_code= #{industryCode}
+        </if>
+        <if test="channelCodeList != null and channelCodeList.size()>0 ">
+            and channel_code in
+            <foreach collection="channelCodeList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        order by update_time desc
+    </select>
+
+    <insert id="addTenantDeviceRel" parameterType="java.util.List">
+        insert into vm_tenant_device_channel_rel_t(device_code,tenant_id,device_name,channel_code,channel_name,
+            industry_code,app_ver_code,creator,create_time,modifier,update_time,delete_flag)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.deviceCode},#{item.tenantId},#{item.deviceName},#{item.channelCode},#{item.channelName},
+            #{item.industryCode},#{item.appVerCode},#{item.creator},NOW(),#{item.creator},NOW(),'0')
+        </foreach>
+    </insert>
+
+    <update id="updateTenantDeviceRel" parameterType="java.util.List">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            update vm_tenant_device_channel_rel_t
+            <set>
+                <if test='item.deviceName != null and item.deviceName != ""'>
+                    device_name = #{item.deviceName, jdbcType=VARCHAR},
+                </if>
+                <if test='item.channelName != null'>
+                    channel_name = #{item.channelName, jdbcType=VARCHAR},
+                </if>
+                update_time = NOW(), modifier = #{item.creator, jdbcType=VARCHAR}
+            </set>
+            where id = #{item.id}
+        </foreach>
+    </update>
+
+    <select id="getDeviceNameList" resultType="java.lang.String"
+            parameterType="com.chinatower.platform.entity.devicemgmt.vo.DeviceInfoVO">
+        SELECT (case when length( ifnull( b.device_name, '' )) = 0 then a.device_name else b.device_name end) devname
+        FROM vm_device_info_t a left join vm_tenant_device_channel_rel_t b on a.device_code = b.device_code
+        WHERE b.tenant_id = #{tenantId} AND b.delete_flag = '0' AND a.delete_flag = '0'
+    </select>
+
+</mapper>

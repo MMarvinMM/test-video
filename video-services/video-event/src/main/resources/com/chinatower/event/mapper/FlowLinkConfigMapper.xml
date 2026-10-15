@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.FlowLinkConfigMapper">
+
+	<resultMap type="com.chinatower.event.dataobject.FlowLinkConfig" id="FlowLinkConfigResult">
+		<id property="linkId" column="link_id"/>
+		<result property="linkName" column="link_name"/>
+		<result property="createTime" column="create_time"/>
+		<result property="updateTime" column="update_time"/>
+		<result property="status" column="status"/>
+		<result property="creator" column="creator"/>
+		<result property="modifier" column="modifier"/>
+		<result property="deleteFlag" column="delete_flag"/>
+		<result property="templateId" column="template_id"/>
+		<result property="tenantId" column="tenant_id"/>
+		<result property="linkSource" column="link_source"/>
+		<result property="appVerCode" column="app_ver_code"/>
+		<result property="industryCode" column="industry_code"/>
+		<result property="realLinkType" column="real_link_type"/>
+	</resultMap>
+
+	<insert id="addFlowLinkConfig" parameterType="com.chinatower.event.dto.FlowLinkConfigModel" keyColumn="link_id" keyProperty="linkId" useGeneratedKeys="true">
+		insert into vm_flow_link_config(link_name, creator, create_time, status)
+        values (#{linkName}, #{creator}, NOW(), #{status})
+	</insert>
+
+	<select id="queryFlowLinkConfig" parameterType="com.chinatower.event.dto.FlowLinkConfigModel" resultMap="FlowLinkConfigResult">
+		select link_id, link_name, create_time, update_time, status,creator,modifier,template_id,tenant_id,app_ver_code,industry_code,link_source,real_link_type from vm_flow_link_config
+		<where>
+			delete_flag = 0
+			and tenant_id is null
+			<if test="linkId != null and linkId != ''">
+				AND link_id = #{linkId}
+			</if>
+			<if test="status != null and status != ''">
+				AND status = #{status}
+			</if>
+			<if test="linkName != null and linkName != ''">
+				AND link_name like CONCAT(CONCAT('%', #{linkName}),'%')
+			</if>
+			<if test="creator != null and creator != ''">
+				AND creator like CONCAT(CONCAT('%', #{creator}),'%')
+			</if>
+			<if test="modifier != null and modifier != ''">
+				AND modifier like CONCAT(CONCAT('%', #{modifier}),'%')
+			</if>
+			<if test="createStartTime != null">
+				AND create_time <![CDATA[ >= ]]> #{createStartTime}
+			</if>
+			<if test="createEndTime != null">
+				AND create_time <![CDATA[ <= ]]> #{createEndTime}
+			</if>
+			<if test="updateStartTime != null">
+				AND update_time <![CDATA[ >= ]]> #{updateStartTime}
+			</if>
+			<if test="updateEndTime != null">
+				AND update_time <![CDATA[ <= ]]> #{updateEndTime}
+			</if>
+			<if test="linkSource != null and linkSource != ''">
+				AND link_source =  #{linkSource}
+			</if>
+
+		</where>
+		<choose>
+			<when test="sortName == 'createTime'">
+				order by create_time
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<when test="sortName == 'updateTime'">
+				order by update_time
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<when test="sortName == 'linkId'">
+				order by link_id
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<when test="sortName == 'linkName'">
+				order by link_name
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<when test="sortName == 'creator'">
+				order by creator
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<when test="sortName == 'modifier'">
+				order by modifier
+				<if test="sort == 'desc'">
+					desc
+				</if>
+				<if test="sort == 'asc'">
+					asc
+				</if>
+			</when>
+			<otherwise>
+				order by create_time desc
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="checkLinkName" parameterType="com.chinatower.event.dto.FlowLinkConfigModel" resultType="java.lang.Integer">
+		select count(link_id) from vm_flow_link_config where link_name = #{linkName} and status = '1'
+	</select>
+
+	<update id="modifyFlowLinkConfig" parameterType="com.chinatower.event.dto.FlowLinkConfigModel">
+		update vm_flow_link_config
+		<set>
+			<if test='linkName != null and linkName != ""'>
+				link_name = #{linkName},
+			</if>
+			<if test='status != null and status != ""'>
+				status = #{status},
+			</if>
+			modifier = #{modifier},
+			update_time=NOW()
+		</set>
+		where link_id = #{linkId}
+	</update>
+
+	<delete id="deleteFlowLinkConfig" parameterType="java.lang.Long">
+ 		delete from vm_flow_link_config where link_id = #{linkId}
+ 	</delete>
+
+	<delete id="deleteFlowLinkConfigByTempId" parameterType="java.lang.Long">
+		delete from vm_flow_link_config where template_id = #{templateId}
+	</delete>
+
+	<select id="queryById" parameterType="java.util.List" resultMap="FlowLinkConfigResult">
+		select link_id, link_name from vm_flow_link_config where status = '1' and link_id in
+		<foreach collection="list" item="linkId" index="index" open="(" close=")" separator=",">
+			#{linkId}
+		</foreach>
+	</select>
+
+	<insert id="addFlowLinkConfigs" parameterType="com.chinatower.event.dto.FlowLinkConfigModel">
+		insert into vm_flow_link_config(link_id,link_name,  create_time, status,creator,template_id,tenant_id,app_ver_code,industry_code,link_source,real_link_type)
+		values
+		<foreach collection="linkConfigList" item="item" index="index" separator=",">
+			(
+			#{item.linkId,jdbcType=BIGINT},
+			#{item.linkName,jdbcType=VARCHAR},
+			NOW(),
+			1,
+			#{item.creator,jdbcType=VARCHAR},
+			#{item.templateId,jdbcType=BIGINT},
+			#{item.tenantId,jdbcType=VARCHAR},
+			#{item.appVerCode,jdbcType=VARCHAR},
+			#{item.industryCode,jdbcType=VARCHAR},
+			0,
+			#{item.realLinkType,jdbcType=BIGINT})
+		</foreach>
+	</insert>
+</mapper>

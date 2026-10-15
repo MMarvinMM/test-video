@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.event.mapper.ThirdPartyAlarmMapper">
+
+
+
+  <!-- 批量插入-->
+  <insert id="insertBatch" parameterType="com.chinatower.event.entity.vo.ThirdPartyAlarmVo">
+    <if test="list != null and list.size() > 0">
+      INSERT INTO `vm_third_party_alarm`
+        (`tenant_id`, `warning_source_name`, `alarm_type`, `modifier`, `create_time`, `update_time`, `delete_flag`, `industry_code`, `app_ver_code`, `creator`)
+        VALUES
+          <foreach collection="list" index="" item="item" separator=",">
+            (
+            #{item.tenantId},
+            #{item.warningSourceName},
+            #{item.alarmType},
+            #{item.modifier},
+            now(),
+            #{item.updateTime},
+            0,
+            #{item.industryCode},
+            #{item.appVerCode},
+            #{item.creator}
+            )
+          </foreach>;
+     </if>
+  </insert>
+
+  <!-- 根据 租户ID、行业编码查询详情 -->
+  <select id="details" resultType="com.chinatower.event.entity.vo.ThirdPartyAlarmVo">
+      SELECT `id`, `tenant_id`, `warning_source_name`, `alarm_type`, `modifier`, `create_time`, `update_time`, `delete_flag`, `industry_code`, `app_ver_code`, `creator`
+      FROM `vm_third_party_alarm`
+      WHERE
+      delete_flag = 0
+      <if test="tenantId != null and tenantId !=''">
+          AND  tenant_id = #{tenantId}
+      </if>
+      <if test="industryCode != null and industryCode !=''">
+          AND  industry_code = #{industryCode}
+      </if>
+  </select>
+
+    <!--  根据租户id逻辑删除-->
+    <update id="updateByTenantId" parameterType="java.lang.String">
+        UPDATE `vm_third_party_alarm`
+        SET
+        `delete_flag` = 1,
+        `update_time` = now()
+        WHERE `tenant_id` = #{tenantId} and `industry_code` = #{industryCode}
+    </update>
+
+    <!--  判断该客户是否开启第三方告警  -->
+    <select id="isOpenThirdPartyAlarm" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT is_open FROM `sys_tenant_third_alarm_config` WHERE tenant_id = #{tenantId} and industry_code = #{industryCode}
+    </select>
+
+    <!--  判断第三方告警配置表中 该租户是否有第三方告警数据  -->
+    <select id="tenantThirdPartyAlarm" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM vm_third_party_alarm  WHERE tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0
+    </select>
+
+    <!--  根据告警类型、租户ID和行业编码在流程模板关联告警类型表中查找对应的数据  -->
+    <select id="isThirdAlarmType" parameterType="java.lang.String" resultType="java.lang.Integer">
+        select COUNT(1) from vm_flow_template_alarm_type
+        WHERE warning_source = '11'
+        and delete_flag = 0
+        and alarm_type = #{alarmType}
+        and tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+    </select>
+</mapper>

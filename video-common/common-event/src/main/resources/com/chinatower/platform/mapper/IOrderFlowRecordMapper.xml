@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IOrderFlowRecordMapper">
+    <insert id="insertAlarmOrderRecordList"
+            parameterType="com.chinatower.platform.entity.VmAlarmOrderRecordDTO">
+        insert into ${tableName} (
+        order_flow_id,
+        order_id,
+        link_id,
+        link_name,
+        flow_record_name,
+        flow_node_time,
+        flow_end_time,
+        if_current_link,
+        process_id,
+        process_name,
+        if_timeout,
+        group_id,
+        process_order_id,
+        approve_order_id,
+        remark,
+        time_limit,
+        delete_flag,
+        flow_link_type,
+        real_link_type,
+        enable_acceptance_mode,
+        accept_process_id
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.orderFlowId,jdbcType=VARCHAR},
+            #{item.orderId,jdbcType=VARCHAR},
+            #{item.linkId,jdbcType=VARCHAR},
+            #{item.linkName,jdbcType=VARCHAR},
+            #{item.flowRecordName,jdbcType=VARCHAR},
+            #{item.flowNodeTime,jdbcType=VARCHAR},
+            #{item.flowEndTime,jdbcType=VARCHAR},
+            #{item.ifCurrentLink,jdbcType=VARCHAR},
+            #{item.processId,jdbcType=VARCHAR},
+            #{item.processName,jdbcType=VARCHAR},
+            #{item.ifTimeout,jdbcType=VARCHAR},
+            #{item.groupId,jdbcType=VARCHAR},
+            #{item.processOrderId,jdbcType=VARCHAR},
+            #{item.approveOrderId,jdbcType=VARCHAR},
+            #{item.remark,jdbcType=VARCHAR},
+            #{item.timeLimit},
+            '0',
+            #{item.flowLinkType},
+            #{item.realLinkType},
+            #{item.enableAcceptanceMode},
+            #{item.acceptProcessId}
+            )
+        </foreach>
+    </insert>
+</mapper>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.auth.project.mapper.FingerprintMapper">
+
+
+
+
+    <!-- 插入或更新指纹登录开关状态 -->
+    <insert id="upsertFingerprintEnabled">
+        INSERT INTO vm_fingerprint_switch_t (user_id, device_id, fingerprint_enabled, enabled_time, creator, create_time)
+        VALUES (#{userId}, #{deviceId}, #{fingerprintEnabled},
+                IF(#{fingerprintEnabled} = 1, NOW(), NULL), #{creator}, NOW())
+            ON DUPLICATE KEY UPDATE
+                                 fingerprint_enabled = #{fingerprintEnabled},
+                                 enabled_time = IF(#{fingerprintEnabled} = 1 AND (enabled_time IS NULL OR fingerprint_enabled = 0), NOW(), enabled_time),
+                                 modifier = #{creator},
+                                 update_time = NOW(),
+                                 delete_flag = 0
+    </insert>
+
+    <!-- 查询指纹登录完整信息（开关状态、开启时间） -->
+    <select id="selectFingerprintInfo" resultType="com.chinatower.platform.auth.project.entity.FingerprintVO">
+        SELECT fingerprint_enabled AS fingerprintEnabled,
+               enabled_time AS enabledTime
+        FROM vm_fingerprint_switch_t
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+          AND delete_flag = 0
+    </select>
+
+    <!-- 更新指纹开启时间 -->
+    <update id="updateEnabledTime">
+        UPDATE vm_fingerprint_switch_t
+        SET enabled_time = NOW(),
+            update_time = NOW()
+        WHERE user_id = #{userId}
+          AND device_id = #{deviceId}
+          AND delete_flag = 0
+    </update>
+
+
+</mapper>

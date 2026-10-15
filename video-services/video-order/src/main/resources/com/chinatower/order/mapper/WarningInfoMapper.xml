@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.WarningInfoMapper">
+
+    <update id="transferOverDueRemindInfo">
+        update vm_overdue_remind_t
+        set industry_code = #{targetIndustryCode}
+        where SUBSTRING(warning_order_id, 9) like concat(#{tenantId}, '%') and industry_code = #{sourceIndustryCode}
+    </update>
+
+    <update id="transferAlarmFlowConfig">
+        update vm_alarm_flow_config
+        set industry_code = #{targetIndustryCode}, app_ver_code = #{targetAppVerCode}
+        where tenant_id = #{tenantId} and industry_code = #{sourceIndustryCode} and app_ver_code = #{sourceAppVerCode}
+    </update>
+
+    <update id="callTransferIndustryWarnInfo" statementType="CALLABLE">
+        call transferIndustryWarnInfo(#{tenantId, mode=IN}, #{sourceIndustryCode, mode=IN}, #{targetIndustryCode, mode=IN});
+    </update>
+
+    <update id="transferIndustryOrderInfo" statementType="CALLABLE">
+        call transferIndustryOrderInfo(#{tenantId, mode=IN}, #{sourceIndustryCode, mode=IN}, #{targetIndustryCode, mode=IN},
+        #{startDate, mode=IN}, #{endDate, mode=IN});
+    </update>
+</mapper>

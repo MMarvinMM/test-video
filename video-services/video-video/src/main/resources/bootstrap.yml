@@ -1,0 +1,31 @@
+# Tomcat
+server:
+  port: 9210
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: video-video
+  profiles:
+    # 环境配置
+    active: local
+  main:
+    allow-bean-definition-overriding: true
+  jackson:
+    # 时区配置
+    time-zone: GMT+8
+  datasource:
+    dynamic:
+      primary: base # 指定主数据源
+
+# mybatis配置
+mybatis:
+  # 搜索指定包别名
+  typeAliasesPackage: com.chinatower.video
+  # 配置mapper的扫描，找到所有的mapper.xml映射文件
+  mapperLocations: classpath:mapper/**/*.xml
+  # 重点！！！spring boot集成mybatis的方式打印sql
+
+jasypt:
+  encryptor:
+    bootstrap: false

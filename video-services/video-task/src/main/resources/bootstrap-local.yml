@@ -1,0 +1,186 @@
+#最大连接数
+http:
+  maxTotal: 100
+  #并发数
+  defaultMaxPerRoute: 20
+  #创建连接的最长时间
+  connectTimeout: 1000
+  #从连接池中获取到连接的最长时间
+  connectionRequestTimeout: 500
+  #数据传输的最长时间
+  socketTimeout: 10000
+  #提交请求前测试连接是否可用
+  staleConnectionCheckEnabled: true
+  #可用空闲连接过期时间,重用空闲连接时会先检查是否空闲时间超过这个时间，如果超过，释放socket重新建立
+  validateAfterInactivity: 3000000
+
+server:
+  port: 8888
+  servlet:
+    context-path: /
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 800
+    min-spare-threads: 30
+logging:
+  level:
+    root: info
+    com.chinatower: debug
+    com.alibaba.nacos.client.naming: error
+  #pattern:
+  #console: '%d{yyyy-MM-dd HH:mm:ss.SSS,GMT+08} %5level ${PID:- } - %logger : %msg%n'
+spring:
+  application:
+    name: video-task
+  datasource:
+    dynamic:
+      primary: master
+      datasource:
+        master:
+          url: jdbc:mysql://10.43.86.10:3306/video_platform_statistic?characterEncoding=utf8&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai
+          username: root
+          password: CFVTjmmoSXN56Rol
+          driver-class-name: com.mysql.cj.jdbc.Driver
+        slave:
+          url: jdbc:mysql://10.43.86.9:3306/video_platform?useUnicode=true&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
+          username: root
+          password: CFVTjmmoSXN56Rol
+          driver-class-name: com.mysql.cj.jdbc.Driver
+        base:
+          url: jdbc:mysql://10.43.86.8:3306/video_platform_base?useUnicode=true&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
+          username: root
+          password: CFVTjmmoSXN56Rol
+          driver-class-name: com.mysql.cj.jdbc.Driver
+    druid:
+      initialSize: 5
+      minIdle: 10
+      maxActive: 20
+      maxWait: 60000
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      maxEvictableIdleTimeMillis: 900000
+      validationQuery: SELECT 1 FROM DUAL
+      testWhileIdle: true
+      testOnBorrow: true
+      testOnReturn: false
+  messages:
+    basename: i18n/messages
+  servlet:
+    multipart:
+      max-file-size:  30MB
+      max-request-size:  100MB
+  devtools:
+    restart:
+      enabled: false
+seata:
+  application-id: video-task
+tower:
+  mongodb:
+    enable: true
+    primary:
+      cluster: false
+      host: 117.78.10.90
+      username: ebike
+      password: ebike
+      database: ebike
+      port: 27011
+      min-pool-size: 2
+      max-pool-size: 10
+      #超时时间 单位秒
+      connect-timeout: 15
+  redis:
+    enabled: true
+    max-pool-idex: 10
+    max-pool-total: 10
+    min-pool-idex: 10
+    max-wait-millis: 5000
+    command-timeout: 10000
+    primary:
+      host: 112.126.60.3
+      port: 9001
+      password: 1qaz@WSX
+token:
+  header: Authorization
+  secret: abcdefghijklmnopqrstuvwxyz
+  expireTime: 1440
+  #生产环境不要配置，仅用于测试
+  universalCaptcha: 6666
+mybatis:
+  mapperLocations: classpath*:mapper/**/*.xml
+  configuration:
+    cache-enabled: true
+    use-generated-keys: false
+    default-executor-type: reuse
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    map-underscore-to-camel-case: true
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  #实体扫描，多个package用逗号或者分号分隔
+  #typeAliasesPackage: com.chinatower.**.domain
+
+
+pagehelper:
+  helperDialect: mysql
+  reasonable: true
+  supportMethodsArguments: true
+  params: count=countSql
+xss:
+  enabled: true
+  excludes: /system/notice/*
+  urlPatterns: /system/*,/monitor/*,/tool/*
+
+
+gen:
+  author: wangzic
+  packageName: com.chinatower.idmm.project.modules.cust
+  tablePrefix: bs_,tb_
+
+
+#xxl:
+#  job:
+#    enable: true
+#    accessToken:
+#    admin:
+#      addresses: http://127.0.0.1:19080/job
+#    executor:
+#      appname: video-task
+#      address:
+#      ip:
+#      port: 9999
+#      logpath: logs/xxl-job/jobhandler
+#      logretentiondays: 30
+
+maxPageSize:
+  mongodb: 20000
+  mongodb2: 10000
+  oracle: 5000
+
+
+jpush:
+  appKey: f1b58f25ea85f34ed4ceb587
+  masterSecret: 52470257a29020ab71ad00e0
+
+
+BaiDuAPPID: 20629412
+BaiDuAPIKey: zOvzGAABkwyBnHh14pZGHOlo
+BaiDuAPISecretKey: q0S3O5Q6nYv6IGU0nfPLWsKLR2HRrYi4
+
+invitationCodeTime: 86400
+invitationCodeSpecifiedTime: 3600
+invitationCodeSpecifyTheNumber: 6
+
+
+obs:
+  ak: 9Z8MVPQI4IG1CXHEUPV5
+  sk: 5yDN2ZLG4u59QHzwVbCryyFscDUNgB6oc4TmXwYN
+  endPoint: obs.cn-north-4.myhuaweicloud.com
+  bucketName: powerexchange-fs
+  suffixRules: jpg,bmp,pcx,tif,gif,jpeg,tga,exif,fpx,svg,psd,cdr,pcd,dxf,ufo,eps,ai,png,hdri,raw,wmf,flic,emf,ico,xlsx,xls,pdf,doc,docx
+
+#附件上传组件配置
+attachment:
+  privateKey: 724ced0c07a5156d1955cf4bf1f2a1ab7a9f2c944a53d0618544b1295b1ff9b1
+  sysCode: CT00064
+  visibilityLevel: 1002
+  url: http://114.116.254.193:18765/ChinatowerFileService

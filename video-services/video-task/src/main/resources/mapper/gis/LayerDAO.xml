@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.gis.dao.LayerDAO">
+
+<!--    <delete id="executeSql" parameterType="java.lang.String">-->
+<!--        ${executeSql}-->
+<!--    </delete>-->
+    <delete id="executeTypetableback">
+        create table ${typetableback} as select * from sys_layer_type;
+    </delete>
+    <delete id="executeTypefieldstableback">
+        create table ${typefieldstableback} as select * from sys_layer_type_fields;
+    </delete>
+
+<!--    <select id="selectSql"  parameterType="java.lang.String" resultType="java.lang.String">-->
+<!--        ${selectSql}-->
+<!--    </select>-->
+    <select id="selectAbbreviation" resultType="java.lang.String">
+        SELECT DISTINCT abbreviation
+        FROM
+            sys_layer_type
+        WHERE
+            abbreviation NOT IN ('xztb' , 'yjjbnt', 'stbhhx', 'jsydgzq', 'tdbp', 'slzy')
+        ORDER BY abbreviation;
+    </select>
+
+    <insert id="insertAbbreviation1">
+        <foreach collection="abbs" item="abb" separator=";">
+            update sys_layer_type set
+            add_other_field_values_flag = 1,
+            super_type_name = 'qt',
+            initial_type_name = null,
+            not_covered_label = null,
+            covered_label = null,
+            covered_field_code = null,
+            unique_field_code = 'bsm',
+            area_ref = null,
+            label = 'bsm',
+            tbbh_ref = 'bsm'
+            where abbreviation = #{abb}
+        </foreach>
+    </insert>
+    <insert id="insertAbbreviation2">
+        <foreach collection="abbs" item="abb" separator=";">
+            delete from sys_layer_type_fields where abbreviation = #{abb}
+        </foreach>
+    </insert>
+    <insert id="insertAbbreviation3">
+        <foreach collection="abbs" item="abb" separator=";">
+            INSERT INTO sys_layer_type_fields
+            (id, abbreviation, code, name, remark, type, chart_length, not_null_flag, filter_type, filter_index, identify_index, result_index, delete_flag) VALUES (
+            UUID(),
+            #{abb},
+            'bsm',
+            '标识码',
+            '标识码字段信息，值来自于“地块编号”字段',
+            3,
+            50,
+            1,
+            0,
+            1,
+            1,
+            1,
+            0
+            )
+        </foreach>
+    </insert>
+    <insert id="insertAbbreviation4">
+        <foreach collection="abbs" item="abb" separator=";">
+            INSERT INTO sys_layer_type_fields
+            (id, abbreviation, code, name, remark, type, chart_length, not_null_flag, filter_type, filter_index, identify_index, result_index, delete_flag) VALUES (
+            UUID(),
+            #{abb},
+            'ysdm',
+            '要素代码',
+            '要素代码字段信息',
+            3,
+            20,
+            0,
+            0,
+            2,
+            0,
+            2,
+            0
+            )
+        </foreach>
+    </insert>
+    <insert id="insertAbbreviation5">
+        <foreach collection="abbs" item="abb" separator=";">
+            INSERT INTO sys_layer_type_fields
+            (id, abbreviation, code, name, remark, type, chart_length, not_null_flag, filter_type, filter_index, identify_index, result_index, delete_flag) VALUES (
+            UUID(),
+            #{abb},
+            'xzqdm',
+            '行政区代码',
+            '行政区代码字段信息',
+            3,
+            50,
+            0,
+            0,
+            3,
+            0,
+            3,
+            0
+            )
+        </foreach>
+    </insert>
+    <insert id="insertAbbreviation6">
+        <foreach collection="abbs" item="abb" separator=";">            INSERT INTO sys_layer_type_fields
+            (id, abbreviation, code, name, remark, type, chart_length, not_null_flag, filter_type, filter_index, identify_index, result_index, delete_flag) VALUES (
+            UUID(),
+            #{abb},
+            'properties',
+            '属性json字符串',
+            '属性json字符串字段信息，固有字段，不支持类型编辑，列举出来仅为结果列表排序使用',
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            0
+            )
+        </foreach>
+    </insert>
+
+</mapper>

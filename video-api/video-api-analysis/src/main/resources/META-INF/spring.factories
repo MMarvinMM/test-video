@@ -1,0 +1,5 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.chinatower.analysis.api.lowalt.factory.LowaltDeviceAnalysisFallbackFactory,\
+  com.chinatower.analysis.api.factory.DeviceAnalysisFallbackFactory,\
+  com.chinatower.analysis.api.factory.CheckpointFallbackFactory,\
+  com.chinatower.analysis.api.factory.AnalysisFallbackFactory

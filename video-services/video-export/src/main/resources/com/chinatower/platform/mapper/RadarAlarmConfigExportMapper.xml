@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.RadarAlarmConfigExportMapper">
+
+  <select id="getRadarAlarmBlackWhiteExportList" resultType="com.chinatower.platform.entity.RadarAlarmBlackWhiteExportVO">
+    select ship_name shipName, mmsi MMSI
+    from vm_radar_alarm_black_white_list
+    where template_id = #{templateId} and list_type = #{listType}
+  </select>
+</mapper>

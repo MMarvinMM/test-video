@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysEnforcementInfoMapper">
+
+	<resultMap type="com.chinatower.platform.entity.admin.SysEnforcementInfo" id="SysEnforcementInfoResult">
+		<id     property="userId"       column="user_id"      />
+		<result property="userType"     column="user_type"  />
+		<result property="userName"     column="user_name"    />
+		<result property="nickName"     column="nick_name"    />
+		<result property="enforcement"  column="enforcement"  />
+		<result property="adopt"        column="adopt"  />
+		<result property="login"        column="login"      />
+		<result property="createBy"     column="create_by"    />
+		<result property="createTime"   column="create_time"  />
+		<result property="updateBy"     column="update_by"    />
+		<result property="updateTime"   column="update_time"  />
+	</resultMap>
+
+	<sql id="selectEnforcementInfoVo">
+        select DISTINCT u.user_id, u.user_name, u.user_type, u.nick_name, i.enforcement, i.adopt ,i.login , i.create_by, i.create_time,i.update_by, i.update_time
+        from sys_user u
+        	left join sys_dept d ON FIND_IN_SET(d.DEPT_ID,u.DEPT_ID)
+		    left join sys_enforcement_info i ON i.user_id = u.user_id
+    </sql>
+
+    <select id="selectEnforcementInfoList" parameterType="com.chinatower.platform.entity.admin.SysEnforcementInfo" resultMap="SysEnforcementInfoResult">
+		<include refid="selectEnforcementInfoVo"/>
+		where u.del_flag = '0' AND d.DEL_FLAG = 0
+		<if test="userType != null and userType != ''">
+			AND u.USER_TYPE = #{userType}
+		</if>
+		<if test="userName != null and userName != ''">
+			AND u.user_name like CONCAT(CONCAT('%', #{userName}),'%')
+		</if>
+        <if test="nickName != null and nickName != ''">
+            AND u.nick_name like CONCAT(CONCAT('%', #{nickName}),'%')
+        </if>
+		<if test="tenantId != null and tenantId != ''">
+			AND u.tenant_id = #{tenantId}
+		</if>
+		<if test="enforcement != null and enforcement != ''">
+			AND i.enforcement like CONCAT(CONCAT('%', #{enforcement}),'%')
+		</if>
+		<!-- 数据范围过滤 -->
+		${dataScope}
+        ORDER BY i.create_time DESC
+	</select>
+
+	<select id="selectEnforcementInfoById" parameterType="com.chinatower.platform.entity.admin.SysEnforcementInfo" resultMap="SysEnforcementInfoResult">
+		<include refid="selectEnforcementInfoVo"/>
+		where u.del_flag = '0' AND d.DEL_FLAG = 0
+		and  u.user_id = #{userId}
+		<!-- 数据范围过滤 -->
+		${dataScope}
+	</select>
+
+	<select id="selectById" parameterType="String" resultMap="SysEnforcementInfoResult">
+		select i.user_id, i.enforcement, i.adopt ,i.login , i.create_by, i.create_time,i.update_by, i.update_time
+        	from sys_enforcement_info i
+		where i.user_id = #{userId}
+	</select>
+
+	<insert id="insertEnforcementInfo" parameterType="com.chinatower.platform.entity.admin.SysEnforcementInfo" >
+ 		insert into sys_enforcement_info(
+        	user_id,
+ 			<if test="enforcement != null and enforcement != ''">enforcement,</if>
+ 			<if test="adopt != null and adopt != ''">adopt,</if>
+ 			<if test="login != null and login != ''">login,</if>
+ 			<if test="createBy != null and createBy != ''">create_by,</if>
+ 			create_time
+ 		)values(
+        #{userId},
+ 			<if test="enforcement != null and enforcement != ''">#{enforcement},</if>
+ 			<if test="adopt != null and adopt != ''">#{adopt},</if>
+ 			<if test="login != null and login != ''">#{login},</if>
+ 			<if test="createBy != null and createBy != ''">#{createBy},</if>
+ 			now()
+ 		)
+	</insert>
+
+	<update id="updateEnforcementInfo" parameterType="com.chinatower.platform.entity.admin.SysEnforcementInfo">
+ 		update sys_enforcement_info
+ 		<set>
+			enforcement =#{enforcement},
+			<if test="adopt != null and adopt != ''">adopt = #{adopt},</if>
+			<if test="login != null and login != ''">login = #{login},</if>
+ 			<if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+			update_time = now()
+ 		</set>
+ 		where user_id = #{userId}
+	</update>
+
+
+</mapper>

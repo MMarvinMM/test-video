@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.event.mapper.SysAlarmTagsMapper">
+
+    <select id="getAllTagsByTenantId" resultType="com.chinatower.event.entity.dto.AlarmTagsTypeRelDTO">
+        select tag_id, tag_name
+        from sys_alarm_tags
+        where  tenant_id = #{tenantId}
+          and delete_flag = '0'
+        <if test='industryCode != null and industryCode != ""'>
+            AND industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <select id="getVisibleTags" resultType="com.chinatower.event.entity.dto.AlarmTagsTypeRelDTO">
+        select tag_id, tag_name
+        from sys_alarm_tags
+        where  tenant_id = #{tenantId}
+        and delete_flag = '0'
+        <if test='industryCode != null and industryCode != ""'>
+            AND industry_code = #{industryCode}
+            AND tags.tag_id IN (
+            SELECT
+            tag_id
+            FROM
+            sys_alarm_tags_type_rel
+            WHERE
+            alarm_type_id = (
+                SELECT
+                alarm_type_id
+                FROM
+                sys_alarm_type_industry_rel
+                WHERE
+                tenant_id = #{tenantId}
+                AND industry_code = #{industryCode}
+                AND is_visible = '1000'
+                )
+            )
+        </if>
+    </select>
+
+    <select id="getByIds" resultType="java.lang.Long">
+
+        select tag_id
+        from sys_alarm_tags
+        where delete_flag = '0'
+        and tenant_id = #{tenantId}
+        and tag_id in
+        <foreach collection="idList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getAlarmTypeByIds" resultType="com.chinatower.event.entity.dto.AlarmTagsTypeRelDTO">
+
+        select t.tag_id,rel.type_value
+        from sys_alarm_tags t
+        left join sys_alarm_tags_type_rel rel on rel.tag_id = t.tag_id and rel.tenant_id=t.tenant_id
+        where t.delete_flag = '0' and rel.delete_flag = '0'
+        and t.tenant_id = #{tenantId}
+        and t.tag_id in
+        <foreach collection="idList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

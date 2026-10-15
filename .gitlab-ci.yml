@@ -1,0 +1,39 @@
+include: []
+stages:
+  - check
+
+.allow_failure_rule:
+  - if: '${SONAR_ALLOW_FAILURE} == "true"'
+    allow_failure: true
+  - if: '${SONAR_ALLOW_FAILURE} == "false"'
+    allow_failure: false
+
+sonarqube-check:
+  stage: check
+  image:
+    name: sonar-scanner:v1
+    entrypoint: [""]
+  tags:
+    - sonar-scanner
+  variables:
+    GIT_DEPTH: 0
+    SONAR_PROJECT_KEY: "${CI_PROJECT_NAMESPACE}_${CI_PROJECT_NAME}"
+  script:
+    - sonar-scanner
+      -Dsonar.projectKey=${SONAR_PROJECT_KEY}
+      -Dsonar.sources=.
+      -Dsonar.host.url=${SONAR_HOST_URL}
+      -Dsonar.qualitygate.wait=true
+      -Dsonar.qualitygate.timeout=300
+      -Dsonar.token=${SONAR_TOKEN}
+      -Dsonar.java.binaries=.
+      -Dsonar.exclusions=**/target/test-classes/**,**/target/generated-sources/**
+      -Dsonar.javascript.node.maxspace=4096
+      -Dsonar.ws.timeout=300
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "dev"'
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "dev"'
+      when: on_success
+    - when: never
+

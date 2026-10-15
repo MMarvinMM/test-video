@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.analysis.modules.workbench.dao.CheckpointDAO">
+    <select id="getCheckpointEventNumByDay" parameterType="com.chinatower.analysis.api.entity.CheckpointConditionVO"
+            resultType="java.lang.String">
+        SELECT IFNULL(a.warning_num, 0) num
+        FROM vm_statistics_checkpoint_event_day a
+        WHERE `year` = YEAR(NOW())
+        AND `month` = MONTH(NOW())
+        AND `day` = DAY(NOW())
+        AND a.device_code = #{deviceCode}
+        AND a.device_code in
+        <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        ${dataScope}
+    </select>
+
+    <select id="getCaptureRecord" parameterType="com.chinatower.analysis.api.entity.CheckpointBatchVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointAlarmVO">
+        SELECT  a.alarm_id,
+                a.alarm_type,
+                a.alarm_time,
+                a.province_name,
+                a.province_code,
+                a.city_name,
+                a.city_code,
+                a.county_code,
+                a.county_name,
+                a.longitude,
+                a.latitude,
+                a.alarm_body,
+                a.channel_code,
+                a.channel_name,
+                a.device_code,
+                a.device_name,
+                a.pan,
+                a.tilt,
+                a.zoom,
+                a.alarm_code,
+                a.algorithm_code,
+                a.alarm_video_url,
+                a.original_picture_url,
+                a.alarm_picture_url,
+                a.create_time,
+                a.delete_flag,
+                a.importance_level,
+                a.task_id,
+                a.vehicle_number,
+                a.vehicle_type,
+                a.vehicle_num_color,
+                a.vehicle_color
+        FROM vm_checkpoint_warning_order_t a
+        <where>
+        AND a.delete_flag = 0
+        AND a.device_code in
+        <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        <if test='vehicleNumber != null and vehicleNumber != ""'>
+            AND a.vehicle_number = #{vehicleNumber}
+        </if>
+        <if test="vehicleNumberList != null and vehicleNumberList.size()>0 ">
+            AND a.vehicle_number in
+            <foreach collection="vehicleNumberList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        <if test='deviceCodes != null and deviceCodes.size()>0'>
+            AND a.device_code in
+            <foreach item="deviceCode" index="index" collection="deviceCodes" open="(" separator="," close=")">
+                #{deviceCode}
+            </foreach>
+        </if>
+        <if test='deviceName != null and deviceName != ""'>
+            AND a.device_name like CONCAT('%', #{deviceName}, '%')
+        </if>
+        <if test='channelCodes != null and channelCodes != ""'>
+            AND a.channel_code in
+            <foreach item="channelCode" index="index" collection="channelCodes" open="(" separator="," close=")">
+                #{channelCode}
+            </foreach>
+        </if>
+        <if test='keywords != null and keywords != ""'>
+            AND (a.device_name like CONCAT('%', #{keywords}, '%') or
+                a.vehicle_number like CONCAT('%', #{keywords}, '%'))
+        </if>
+        <if test='queryStartTime != null and queryStartTime != ""
+            and queryEndTime != null and queryEndTime != ""'>
+            AND a.alarm_time >= #{queryStartTime} AND a.alarm_time <![CDATA[<=]]> #{queryEndTime}
+        </if>
+            ${dataScope}
+        </where>
+        ORDER BY a.alarm_time DESC
+    </select>
+
+    <select id="getTrafficTrendStatisticsForYear" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointTrendDataVO">
+        SELECT sum(a.warning_num) num, a.month label
+        FROM vm_statistics_checkpoint_event_month a
+        WHERE `year` = YEAR(NOW())
+        AND a.device_code in
+        <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        ${dataScope}
+        GROUP BY a.month
+        ORDER BY num DESC
+    </select>
+
+    <select id="getTrafficTrendStatisticsForYearByTime" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointTrendDataVO">
+        SELECT cc.assigned_date AS label,IFNULL(SUM(t.today_all),0) AS num FROM(
+        (SELECT distinct date_format(assigned_date,'%Y-%m') assigned_date
+        FROM
+        (SELECT adddate('2019-01-01',t3.i*1000 + t2.i*100 + t1.i*10 + t0.i) assigned_date
+        FROM
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3
+        ) c
+        <where>
+            <if test=' queryStartTime != null and queryStartTime != "" '>
+                and assigned_date between  SUBSTR(#{queryStartTime},1,10) and SUBSTR(#{queryEndTime},1,10)
+            </if>
+        </where>
+        ) cc
+        LEFT JOIN
+        (select date_format( a.create_date, '%Y-%m' ) as create_date,SUM(warning_num) as today_all  from vm_statistics_checkpoint_event_day a
+        <where>
+            <if test=' queryStartTime != null and queryStartTime != "" '>
+                and a.create_date  >= #{queryStartTime}
+                and a.create_date <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            AND a.device_code in
+            <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            ${dataScope}
+        </where>
+        GROUP BY date_format( a.create_date, '%Y-%m' ) ) t
+        ON  t.create_date = cc.assigned_date)
+        GROUP BY cc.assigned_date
+        ORDER BY cc.assigned_date
+    </select>
+
+
+    <select id="getTrafficTrendStatisticsForMonth" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointTrendDataVO">
+        SELECT sum(a.warning_num) num, a.day label
+        FROM vm_statistics_checkpoint_event_day a
+        WHERE `year` = YEAR(NOW())
+        AND `month` = MONTH(NOW())
+        AND a.device_code in
+        <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        ${dataScope}
+        GROUP BY a.day
+        ORDER BY num DESC
+    </select>
+
+    <select id="getTrafficTrendStatisticsForMonthByTime" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointTrendDataVO">
+        SELECT cc.assigned_date AS label,IFNULL(SUM(t.today_all),0) AS num FROM(
+        (SELECT date_format(assigned_date,'%Y-%m-%d') assigned_date
+        FROM
+        (SELECT adddate('2019-01-01',t3.i*1000 + t2.i*100 + t1.i*10 + t0.i) assigned_date
+        FROM
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+        (select 0 i union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3
+        ) c
+        <where>
+            <if test=' queryStartTime != null and queryStartTime != "" '>
+                and assigned_date between  SUBSTR(#{queryStartTime},1,10) and SUBSTR(#{queryEndTime},1,10)
+            </if>
+        </where>
+        ) cc
+        LEFT JOIN
+        (select date_format( a.create_date, '%Y-%m-%d' ) as create_date,SUM(warning_num) as today_all  from vm_statistics_checkpoint_event_day a
+        <where>
+            <if test=' queryStartTime != null and queryStartTime != "" '>
+                and a.create_date  >= #{queryStartTime}
+                and a.create_date <![CDATA[<=]]> #{queryEndTime}
+            </if>
+            AND a.device_code in
+            <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            ${dataScope}
+        </where>
+        GROUP BY date_format( a.create_date, '%Y-%m-%d' ) ) t
+        ON  date_format(t.create_date,'%Y-%m-%d') = cc.assigned_date)
+        GROUP BY cc.assigned_date
+        ORDER BY date_format(cc.assigned_date,'%Y-%m-%d')
+    </select>
+
+    <select id="getTrafficTrendStatisticsForDayByTime" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointTrendDataVO">
+        SELECT t1.label,IFNULL(t2.num,0) AS num FROM (
+        SELECT 0 AS `hour`,'0:00-1:00' AS label UNION
+        SELECT 1 AS `hour`,'1:00-2:00' AS label UNION
+        SELECT 2 AS `hour`,'2:00-3:00' AS label UNION
+        SELECT 3 AS `hour`,'3:00-4:00' AS label UNION
+        SELECT 4 AS `hour`,'4:00-5:00' AS label UNION
+        SELECT 5 AS `hour`,'5:00-6:00' AS label UNION
+        SELECT 6 AS `hour`,'6:00-7:00' AS label UNION
+        SELECT 7 AS `hour`,'7:00-8:00' AS label UNION
+        SELECT 8 AS `hour`,'8:00-9:00' AS label UNION
+        SELECT 9 AS `hour`,'9:00-10:00' AS label UNION
+        SELECT 10 AS `hour`,'10:00-11:00' AS label UNION
+        SELECT 11 AS `hour`,'11:00-12:00' AS label UNION
+        SELECT 12 AS `hour`,'12:00-13:00' AS label UNION
+        SELECT 13 AS `hour`,'13:00-14:00' AS label UNION
+        SELECT 14 AS `hour`,'14:00-15:00' AS label UNION
+        SELECT 15 AS `hour`,'15:00-16:00' AS label UNION
+        SELECT 16 AS `hour`,'16:00-17:00' AS label UNION
+        SELECT 17 AS `hour`,'17:00-18:00' AS label UNION
+        SELECT 18 AS `hour`,'18:00-19:00' AS label UNION
+        SELECT 19 AS `hour`,'19:00-20:00' AS label UNION
+        SELECT 20 AS `hour`,'20:00-21:00' AS label UNION
+        SELECT 21 AS `hour`,'21:00-22:00' AS label UNION
+        SELECT 22 AS `hour`,'22:00-23:00' AS label UNION
+        SELECT 23 AS `hour`,'23:00-24:00' AS label) t1
+        LEFT JOIN
+        (SELECT warning_hour, SUM(warning_num) AS num
+        FROM vm_statistics_checkpoint_event_hour a
+        <where>
+            AND a.device_code in
+            <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            <if test='queryStartTime != null and queryStartTime != "" '>
+                AND a.create_date <![CDATA[ >= ]]> #{queryStartTime}
+            </if>
+            <if test='queryEndTime != null and queryEndTime != "" '>
+                AND a.create_date <![CDATA[ <= ]]> #{queryEndTime}
+            </if>
+            ${dataScope}
+        </where>
+        GROUP BY warning_hour
+        ORDER BY warning_hour) t2 ON t1.`hour` = t2.warning_hour
+        ORDER BY t1.`hour`
+    </select>
+
+
+    <select id="getHighFrequencyPeriodStatistics" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointTrendDataVO">
+        SELECT sum(a.warning_num) num,
+                (CASE a.warning_hour
+                WHEN 0 THEN '0:00-1:00'
+                WHEN 1 THEN '1:00-2:00'
+                WHEN 2 THEN '2:00-3:00'
+                WHEN 3 THEN '3:00-4:00'
+                WHEN 4 THEN '4:00-5:00'
+                WHEN 5 THEN '5:00-6:00'
+                WHEN 6 THEN '6:00-7:00'
+                WHEN 7 THEN '7:00-8:00'
+                WHEN 8 THEN '8:00-9:00'
+                WHEN 9 THEN '9:00-10:00'
+                WHEN 10 THEN '10:00-11:00'
+                WHEN 11 THEN '11:00-12:00'
+                WHEN 12 THEN '12:00-13:00'
+                WHEN 13 THEN '13:00-14:00'
+                WHEN 14 THEN '14:00-15:00'
+                WHEN 15 THEN '15:00-16:00'
+                WHEN 16 THEN '16:00-17:00'
+                WHEN 17 THEN '17:00-18:00'
+                WHEN 18 THEN '18:00-19:00'
+                WHEN 19 THEN '19:00-20:00'
+                WHEN 20 THEN '20:00-21:00'
+                WHEN 21 THEN '21:00-22:00'
+                WHEN 22 THEN '22:00-23:00'
+                WHEN 23 THEN '23:00-24:00' END) label
+        FROM vm_statistics_checkpoint_event_hour a
+        <where>
+        AND a.device_code in
+        <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        <if test='dimensionFlag == "1" '>
+            AND `year` = YEAR(NOW())
+        </if>
+        <if test='dimensionFlag == "2" '>
+            AND `year` = YEAR(NOW())
+            AND `month` = MONTH(NOW())
+        </if>
+        <if test='dimensionFlag == "3" '>
+            AND `year` = YEAR(NOW())
+            AND `month` = MONTH(NOW())
+            AND `day` = DAY(NOW())
+        </if>
+            ${dataScope}
+        </where>
+        GROUP BY a.warning_hour
+        ORDER BY num DESC
+    </select>
+
+    <select id="getHighFrequencyPeriodStatisticsByTime" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointTrendDataVO">
+        SELECT t1.label,IFNULL(t2.num,0) AS num FROM (
+        SELECT 0 AS `hour`,'0:00-1:00' AS label UNION
+        SELECT 1 AS `hour`,'1:00-2:00' AS label UNION
+        SELECT 2 AS `hour`,'2:00-3:00' AS label UNION
+        SELECT 3 AS `hour`,'3:00-4:00' AS label UNION
+        SELECT 4 AS `hour`,'4:00-5:00' AS label UNION
+        SELECT 5 AS `hour`,'5:00-6:00' AS label UNION
+        SELECT 6 AS `hour`,'6:00-7:00' AS label UNION
+        SELECT 7 AS `hour`,'7:00-8:00' AS label UNION
+        SELECT 8 AS `hour`,'8:00-9:00' AS label UNION
+        SELECT 9 AS `hour`,'9:00-10:00' AS label UNION
+        SELECT 10 AS `hour`,'10:00-11:00' AS label UNION
+        SELECT 11 AS `hour`,'11:00-12:00' AS label UNION
+        SELECT 12 AS `hour`,'12:00-13:00' AS label UNION
+        SELECT 13 AS `hour`,'13:00-14:00' AS label UNION
+        SELECT 14 AS `hour`,'14:00-15:00' AS label UNION
+        SELECT 15 AS `hour`,'15:00-16:00' AS label UNION
+        SELECT 16 AS `hour`,'16:00-17:00' AS label UNION
+        SELECT 17 AS `hour`,'17:00-18:00' AS label UNION
+        SELECT 18 AS `hour`,'18:00-19:00' AS label UNION
+        SELECT 19 AS `hour`,'19:00-20:00' AS label UNION
+        SELECT 20 AS `hour`,'20:00-21:00' AS label UNION
+        SELECT 21 AS `hour`,'21:00-22:00' AS label UNION
+        SELECT 22 AS `hour`,'22:00-23:00' AS label UNION
+        SELECT 23 AS `hour`,'23:00-24:00' AS label) t1
+        LEFT JOIN
+        (SELECT warning_hour, SUM(warning_num) AS num
+        FROM vm_statistics_checkpoint_event_hour a
+        <where>
+            AND a.device_code in
+            <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            <if test='queryStartTime != null and queryStartTime != "" '>
+                AND a.create_date <![CDATA[ >= ]]> #{queryStartTime}
+            </if>
+            <if test='queryEndTime != null and queryEndTime != "" '>
+                AND a.create_date <![CDATA[ <= ]]> #{queryEndTime}
+            </if>
+            ${dataScope}
+        </where>
+        GROUP BY warning_hour
+        ORDER BY warning_hour) t2 ON t1.`hour` = t2.warning_hour
+        ORDER BY t1.`hour`
+    </select>
+
+
+    <select id="getTrafficFlowRankingStatisticsForDay" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointDeviceRankingDataVO">
+        SELECT a.device_code, a.device_name, a.warning_num num
+        FROM vm_statistics_checkpoint_event_day a
+        WHERE `year` = YEAR(NOW())
+          AND `month` = MONTH(NOW())
+          AND `day` = DAY(NOW())
+          AND a.device_code in
+          <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+              #{item}
+          </foreach>
+        ${dataScope}
+        ORDER BY num DESC
+    </select>
+
+    <select id="getTrafficFlowRankingStatisticsForMonth" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointDeviceRankingDataVO">
+        SELECT a.device_code, a.device_name, a.warning_num num
+        FROM vm_statistics_checkpoint_event_month a
+        WHERE `year` = YEAR(NOW())
+        AND `month` = MONTH(NOW())
+        AND a.device_code in
+        <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        ${dataScope}
+        ORDER BY num DESC
+    </select>
+
+    <select id="getTrafficFlowRankingStatisticsForYear" parameterType="com.chinatower.analysis.api.entity.CheckpointStatisticsConditionVO"
+            resultType="com.chinatower.analysis.api.entity.CheckpointDeviceRankingDataVO">
+        SELECT a.device_code, a.device_name, a.warning_num num
+        FROM vm_statistics_checkpoint_event_year a
+        WHERE `year` = YEAR(NOW())
+        AND a.device_code in
+        <foreach collection="validDeviceCodes" item="item" index="index" open="(" separator="," close=") ">
+            #{item}
+        </foreach>
+        ${dataScope}
+        ORDER BY num DESC
+    </select>
+
+    <select id="getCheckpointDeviceList" resultType="java.lang.String" parameterType="java.lang.String">
+        SELECT t.device_code
+        FROM vm_checkpoint_device_info_t t, vm_device_info_t d
+        WHERE t.delete_flag = '0'
+          AND t.device_code = d.device_code
+          AND d.delete_flag = '0'
+          AND t.tenant_id = #{tenantId}
+          AND EXISTS(SELECT 1 FROM
+                                  vm_order_devices a,
+                                  vm_order_customer b
+                     WHERE a.delete_flag = '0'
+                       AND b.delete_flag = '0'
+                       AND a.order_code = b.order_code
+                       AND b.ord_status in(0, 1, 2)
+                       AND a.device_code = t.device_code)
+    </select>
+
+</mapper>

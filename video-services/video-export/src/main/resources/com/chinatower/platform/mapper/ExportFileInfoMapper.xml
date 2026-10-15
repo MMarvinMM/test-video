@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.ExportFileInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.platform.entity.export.ExportFileInfo">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="fileName" column="file_name" jdbcType="VARCHAR"/>
+            <result property="fileUrl" column="file_url" jdbcType="VARCHAR"/>
+            <result property="exportModule" column="export_module" jdbcType="VARCHAR"/>
+            <result property="sqlId" column="sql_id" jdbcType="BIGINT"/>
+            <result property="isDownload" column="is_download" jdbcType="TINYINT"/>
+            <result property="delFlag" column="del_flag" jdbcType="TINYINT"/>
+            <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateBy" column="update_by" jdbcType="VARCHAR"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,file_name,file_url,
+        export_module,sql_id,is_download,
+        del_flag,create_by,create_time,
+        update_by,update_time
+    </sql>
+    <sql id="selectExportFileInfoVo">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM bs_export_file_info t
+        WHERE t.del_flag = '0'
+    </sql>
+    <!--R-ZBZB-202109280789713 web-admin拆分改造-->
+    <select id="selectExportFileInfoList" parameterType="com.chinatower.platform.entity.export.ExportFileInfo" resultType="com.chinatower.platform.entity.export.ExportFileInfo">
+        <include refid="selectExportFileInfoVo"/>
+        <if test="id != null "> AND t.id = #{id}</if>
+        <if test="fileName != null  and fileName != ''"> AND INSTR(t.file_name, #{fileName}) > 0 </if>
+        <if test="fileUrl != null  and fileUrl != ''"> AND t.file_url = #{fileUrl}</if>
+        <if test="createBy != null  and createBy != ''"> AND t.create_by = #{createBy}</if>
+        <if test="createTime != null "> AND t.create_time = #{createTime}</if>
+        <if test="exportModule != null  and exportModule != ''"> AND t.export_module = #{exportModule}</if>
+        <if test="sqlId != null "> AND t.sql_id = #{sqlId}</if>
+        <if test="isDownload != null"> AND t.is_download = #{isDownload}</if>
+        ORDER BY t.id DESC
+    </select>
+
+    <!--R-ZBZB-202109280789713 web-admin拆分改造-->
+    <select id="selectExportFileInfoCount" parameterType="com.chinatower.platform.entity.export.ExportFileInfo" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM bs_export_file_info t WHERE t.del_flag = '0'
+        <if test="id != null "> AND t.id = #{id}</if>
+        <if test="fileName != null  and fileName != ''"> AND INSTR(t.file_name, #{fileName}) > 0 </if>
+        <if test="fileUrl != null  and fileUrl != ''"> AND t.file_url = #{fileUrl}</if>
+        <if test="createBy != null  and createBy != ''"> AND t.create_by = #{createBy}</if>
+        <if test="createTime != null "> AND t.create_time = #{createTime}</if>
+        <if test="exportModule != null  and exportModule != ''"> AND t.export_module = #{exportModule}</if>
+        <if test="sqlId != null "> AND t.sql_id = #{sqlId}</if>
+        <if test="isDownload != null"> AND t.is_download = #{isDownload}</if>
+        ORDER BY t.id DESC
+    </select>
+
+    <!--R-ZBZB-202109280789713 web-admin拆分改造-->
+    <update id="updateBatchDownloadFlag" parameterType="java.util.List">
+        update bs_export_file_info t set t.is_download = 1
+        where t.id  in
+        <foreach item="fileId" collection="fileIds" open="(" separator="," close=")">
+            #{fileId}
+        </foreach>
+    </update>
+</mapper>

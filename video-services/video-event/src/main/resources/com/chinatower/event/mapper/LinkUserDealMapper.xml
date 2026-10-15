@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.LinkUserDealMapper">
+
+	<resultMap type="com.chinatower.event.dataobject.LinkUserDeal" id="LinkUserDealResult">
+		<id property="id" column="id"/>
+		<result property="warningOrderId" column="warning_order_id"/>
+		<result property="linkId" column="link_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="status" column="status"/>
+	</resultMap>
+
+	<insert id="addLinkUserDeal">
+		insert into vm_link_user_deal_${tableSuffix}(warning_order_id, link_id, user_id, status) values
+		<foreach collection ="list" item="linkUserDeal" index="index" separator =",">
+			(#{linkUserDeal.warningOrderId}, #{linkUserDeal.linkId}, #{linkUserDeal.userId}, '0')
+		</foreach>
+	</insert>
+
+	<select id="queryLinkUserDeal" parameterType="com.chinatower.event.dto.LinkUserDealModel" resultMap="LinkUserDealResult">
+		select id, warning_order_id, link_id, user_id, status from vm_link_user_deal_${tableSuffix}
+		<where>
+			<if test="warningOrderId != null and warningOrderId != ''">
+				AND warning_order_id = #{warningOrderId}
+			</if>
+			<if test="linkId != null and linkId != ''">
+				AND link_id = #{linkId}
+			</if>
+			<if test="userId != null and userId != ''">
+				AND user_id = #{userId}
+			</if>
+		</where>
+	</select>
+
+	<update id="modifyLinkUserDeal" parameterType="com.chinatower.event.dto.LinkUserDealModel">
+		update vm_link_user_deal_${tableSuffix} set status = #{status} where warning_order_id = #{warningOrderId} and link_id = #{linkId}
+	</update>
+
+	<select id="checkTableExist" resultType="java.lang.Integer">
+		select count(1) from information_schema.tables where table_schema = #{tableSchema} and table_name = #{tableName}
+	</select>
+
+	<update id="createTable">
+		create table vm_link_user_deal_${tableSuffix} (
+			id bigint(16) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+			warning_order_id varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL  COMMENT '告警ID',
+			link_id bigint(16)  NOT NULL COMMENT '处理环节',
+			user_id varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci COMMENT '用户ID',
+			status varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '1结束 0未结束',
+<!--			PRIMARY KEY (id) USING BTREE,-->
+<!--			KEY idx_user_id (user_id) USING BTREE,-->
+<!--			KEY idx_link_id (link_id) USING BTREE,-->
+<!--			KEY idx_warning_order_id (warning_order_id) USING BTREE-->
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='流程环节用户处理表'
+	</update>
+
+
+	<update id="createNewTable" parameterType="java.lang.String">
+		CREATE TABLE IF NOT EXISTS ${tableNewName} LIKE ${tableOldName}
+	</update>
+
+</mapper>

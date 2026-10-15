@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.alarm.dao.AlarmPushDAO">
+
+    <select id="getOrderInfoByIds" resultType="com.chinatower.event.entity.vo.OrderInfoVO">
+        SELECT
+            a.task_id AS taskId,
+            a.alarm_body AS alarmBody,
+            a.warning_order_id AS warningOrderId,
+            a.warning_type_id AS warningTypeId,
+            a.warning_source AS warningSource,
+            IF(a.alarm_time IS NULL, '', DATE_FORMAT(a.alarm_time, '%Y-%m-%d %H:%i:%s')) AS alarmTime,
+            a.province_code AS provinceId,
+            a.city_code AS cityId,
+            a.county_code AS countyId,
+            a.province_name AS provinceName,
+            a.city_name AS cityName,
+            a.county_name AS countyName,
+            a.address,
+            a.longitude,
+            a.latitude,
+            a.emergency_level AS emergencyLevel,
+            a.importance_level AS importanceLevel,
+            a.tenant_id AS tenantId,
+            a.tenant_name AS tenantName,
+            a.device_code AS deviceCode,
+            a.channel_code AS channelCode,
+            a.channel_name AS channelName,
+            a.device_name AS deviceName,
+            a.device_address AS deviceAddress,
+            a.alarm_code AS alarmCode,
+            a.description,
+            a.remark,
+            IFNULL(a.video_url, '') AS videoUrl,
+            IFNULL(a.file_img_url_src, '') AS fileImgUrlSrc,
+            IFNULL(a.file_img_url_icon, '') AS fileImgUrlIcon,
+            IFNULL(a.grid_id, '') AS gridId,
+            IFNULL(a.grid_name, '') AS gridName,
+            a.extra_field AS extraField,
+            a.industry_code AS tradeId,
+            a.app_ver_code AS appVerCode,
+            a.hori_azimuth_angle AS horiAzimuthAngle,
+            a.feature_pan AS featurePan,
+            a.feature_tilt AS featureTilt,
+            IFNULL(a.confidence_level, '') AS confidenceLevel,
+            IFNULL(a.front_alarm_pic_url, '') AS frontAlarmPicUrl,
+            IFNULL(a.front_alarm_vedio_url, '') AS frontAlarmVedioUrl,
+            IFNULL(a.comp_confidence_level, '') AS compConfidenceLevel,
+            a.confidence_level_min AS confidenceLevelMin,
+            a.confidence_level_max AS confidenceLevelMax,
+            a.enlarge_flag AS enlargeFlag,
+            a.preset_id AS presetId,
+            a.camera_alarm_type AS cameraAlarmType,
+            a.is_second_judge AS isSecondJudge,
+            a.second_judge_result AS secondJudgeResult,
+            a.is_second_identify AS isSecondIdentify,
+            a.second_identify_result AS secondIdentifyResult,
+            a.linkage_algorithm AS linkageAlgorithm,
+            a.notice_resource AS noticeResource,
+            a.msg_type AS msgType,
+            IFNULL(a.ptz_p, '') AS pan,
+            IFNULL(a.ptz_t, '') AS tilt,
+            IFNULL(a.ptz_z, '') AS zoom,
+            a.device_pitch AS devicePitch,
+            a.device_horizontal AS deviceHorizontal,
+            a.algorithm_code AS algorithmCode,
+            a.pitch_angle AS pitchAngle,
+            a.hori_field_angle AS horiFieldAngle,
+            a.vertical_field_angle AS verticalFieldAngle,
+            a.alarm_param AS alarmParam,
+            a.alarm_param_value AS alarmParamValue
+        FROM ${tableName} a
+        WHERE a.warning_order_id IN
+        <foreach collection="orderIds" item="orderId" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+    </select>
+
+</mapper>

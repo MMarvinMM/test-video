@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.platform.project.system.mapper.SysPersonalityMapper" >
+    <resultMap id="BaseResultMap" type="com.chinatower.platform.project.system.domain.vo.SysInfoSetVO" >
+        <id column="set_id" property="setId" jdbcType="VARCHAR" />
+        <result column="set_name" property="setName" jdbcType="VARCHAR" />
+        <result column="set_value" property="setValue" jdbcType="VARCHAR" />
+        <result column="remarks" property="remarks" jdbcType="VARCHAR" />
+        <result column="creator" property="creator" jdbcType="VARCHAR" />
+        <result column="tenant_id" property="tenantId" jdbcType="VARCHAR" />
+        <result property="appVerCode" column="app_ver_code"/>
+        <result property="industryCode" column="industry_code"/>
+    </resultMap>
+    <sql id="Base_Column_List" >
+        set_id, set_name, set_value, remarks, create_by, create_time, tenant_id
+    </sql>
+
+    <select id="getInfoSetList" resultMap="BaseResultMap" parameterType="com.chinatower.platform.project.system.domain.vo.SysInfoSetVO">
+        select  * from  sys_info_set
+        WHERE 1 = 1
+        <if test="vo.setName != null and vo.setName != ''">
+            AND set_name =  #{vo.setName}
+        </if>
+        <if test="vo.type != null and vo.type != ''">
+            AND type =  #{vo.type}
+        </if>
+        <if test="vo.creator != null and vo.creator != ''">
+            AND creator =  #{vo.creator}
+        </if>
+        <if test="vo.tenantId != null and vo.tenantId != ''">
+            AND tenant_id =  #{vo.tenantId}
+        </if>
+        <if test="vo.deptId != null and vo.deptId != ''">
+            AND dept_id =  #{vo.deptId}
+        </if>
+        <if test="vo.industryCode != null and vo.industryCode != ''">
+            AND industry_code =  #{vo.industryCode}
+        </if>
+        ${vo.dataScope}
+    </select>
+
+    <select id="selectOne" resultMap="BaseResultMap" >
+        select  * from  sys_info_set
+        WHERE  tenant_id =  #{tenantId} AND type =  #{type} AND set_name =  #{setName} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+        limit 1
+    </select>
+
+    <select id="getInfoSetListTwo" resultMap="BaseResultMap" parameterType="com.chinatower.platform.project.system.domain.vo.SysInfoSetVO">
+        select  * from  sys_info_set
+        WHERE 1 = 1
+        <if test="vo.type != null and vo.type != ''">
+            AND type =  #{vo.type}
+        </if>
+        <if test="vo.creator != null and vo.creator != ''">
+            AND creator =  #{vo.creator}
+        </if>
+        <if test="vo.tenantId != null and vo.tenantId != ''">
+            AND tenant_id =  #{vo.tenantId}
+        </if>
+    </select>
+    <select id="findBannerTitle" resultType="java.lang.String">
+        SELECT banner_title
+        FROM sys_industry_ver_conf
+        WHERE
+            industry_code = #{industryCode}
+            and app_ver_code = #{appVerCode}
+            and accept_node = #{platformCode}
+            and delete_flag = 0
+
+    </select>
+
+
+    <insert id="insert" parameterType="com.chinatower.platform.project.system.domain.vo.SysInfoSetVO" >
+        insert into sys_info_set (set_id, set_name, set_value, type,
+        remarks, creator, create_time, tenant_id,app_ver_code,industry_code,dept_id
+        )
+        values (#{setId,jdbcType=VARCHAR}, #{setName,jdbcType=VARCHAR}, #{setValue,jdbcType=VARCHAR}, #{type,jdbcType=VARCHAR},
+        #{remarks,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{tenantId,jdbcType=VARCHAR},
+         #{appVerCode,jdbcType=VARCHAR}, #{industryCode,jdbcType=VARCHAR},#{deptId,jdbcType=VARCHAR})
+    </insert>
+    <update id="updateById" parameterType="com.chinatower.platform.project.system.domain.vo.SysInfoSetVO" >
+        update sys_info_set
+        <set >
+            <if test="setName != null" >
+                set_name = #{setName,jdbcType=VARCHAR},
+            </if>
+            <if test="setValue != null" >
+                set_value = #{setValue,jdbcType=VARCHAR},
+            </if>
+            <if test="remarks != null" >
+                remarks = #{remarks,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null" >
+                creator = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null" >
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="tenantId != null" >
+                tenant_id = #{tenantId,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where set_id = #{setId,jdbcType=VARCHAR}
+        ${dataScope}
+    </update>
+
+    <insert id="saveSets">
+        insert into sys_info_set(set_id,set_name,set_value,type,creator,create_time, tenant_id,industry_code,app_ver_code,dept_id) VALUES
+        <foreach collection="volist" item="vo" separator=",">
+            (#{vo.setId},#{vo.setName},#{vo.setValue},#{vo.type},#{createBy},now(), #{vo.tenantId},#{vo.industryCode},#{vo.appVerCode},#{vo.deptId})
+        </foreach>
+    </insert>
+
+    <delete id="delete" parameterType="java.lang.String">
+        delete from sys_info_set where creator = #{createBy} AND type = #{type} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+    </delete>
+    <!--根据租户id删除-->
+    <delete id="deleteByTenantId" parameterType="java.lang.String">
+        delete from sys_info_set where tenant_id = #{tenantId} AND type = #{type} and industry_code = #{industryCode} and app_ver_code = #{appVerCode}
+    </delete>
+
+    <delete id="deleteBySysInfoSetVO">
+        delete  from sys_info_set
+        where
+            type = #{type}
+        <if test="createBy != null and createBy != ''">
+            and creator = #{createBy}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            and tenant_id = #{tenantId}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            and industry_code = #{industryCode}
+        </if>
+        <if test="appVerCode != null and appVerCode != ''">
+            and app_ver_code = #{appVerCode}
+        </if>
+        <if test="deptId != null and deptId != ''">
+            and dept_id = #{deptId}
+        </if>
+    </delete>
+</mapper>

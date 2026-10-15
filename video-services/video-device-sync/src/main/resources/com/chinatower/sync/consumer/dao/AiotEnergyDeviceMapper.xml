@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.AiotEnergyDeviceDAO">
+
+    <select id="queryDeviceCodeList" resultType="java.lang.String">
+        select device_code
+        from `vm_aiot_energy_device_info_t`
+        where device_code in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="insertDeviceBatch" parameterType="com.chinatower.sync.consumer.item.AiotEnergyDeviceReport">
+        INSERT INTO `vm_aiot_energy_device_info_t`
+        (`device_name`, `device_code`, `device_type`, `station_code`, `station_name`, `station_pub_code`,
+        `model`, `factory`, `status`, `net_status`, `remark`, `dev_type`, `province_id`, `city_id`, `county_id`,
+        `town_code`, `longitude`, `latitude`, `location`, `resource`, `crew_province_id`,
+        `crew_city_id`, `crew_county_id`, `business_type`, `online_status`, `del_flag`,
+        `collect_protocol`, `create_time`, `create_by`, `update_time`, `update_by`, `access_node`)
+        VALUES
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.devName}, #{item.devCode}, #{item.deviceType}, #{item.stationCode}, #{item.stationName}, #{item.stationPubCode},
+            #{item.model}, #{item.factory}, #{item.status}, #{item.netStatus}, #{item.remark}, #{item.devType}, #{item.provinceId}, #{item.cityId}, #{item.countyId},
+            #{item.townCode}, #{item.longitude}, #{item.latitude}, #{item.location}, #{item.resource}, #{item.crewProvinceId},
+            #{item.crewCityId}, #{item.crewCountyId}, #{item.businessType}, #{item.onlineStatus}, #{item.delFlag},
+            #{item.collectProtocol}, #{item.createTime}, #{item.createBy}, #{item.updateTime}, #{item.updateBy}, #{item.locationCode})
+        </foreach>
+    </insert>
+
+    <select id="queryValidOrderDeviceCodeList" resultType="java.lang.String">
+        select distinct device_code from `vm_order_energy_devices` where ord_status in (0,1,2)
+    </select>
+
+    <select id="getAllDeviceCodeList" resultType="java.lang.String">
+        select distinct device_code from `vm_aiot_energy_device_info_t`
+    </select>
+
+    <update id="updateDeviceBatch" parameterType="com.chinatower.sync.consumer.item.AiotEnergyDeviceReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_aiot_energy_device_info_t
+            set device_name = #{item.devName},
+            device_type = #{item.deviceType},
+            station_code= #{item.stationCode},
+            station_name = #{item.stationName},
+            station_pub_code = #{item.stationPubCode},
+            model = #{item.model},
+            factory = #{item.factory},
+            status = #{item.status},
+            net_status = #{item.netStatus},
+            remark = #{item.remark},
+            dev_type = #{item.devType},
+            province_id = #{item.provinceId},
+            city_id = #{item.cityId},
+            county_id = #{item.countyId},
+            town_code = #{item.townCode},
+            longitude = #{item.longitude},
+            latitude = #{item.latitude},
+            location = #{item.location},
+            resource = #{item.resource},
+            crew_province_id = #{item.crewProvinceId},
+            crew_city_id = #{item.crewCityId},
+            crew_county_id = #{item.crewCountyId},
+            business_type = #{item.businessType},
+            online_status = #{item.onlineStatus},
+            del_flag = #{item.delFlag},
+            collect_protocol = #{item.collectProtocol},
+            create_time = #{item.createTime},
+            create_by = #{item.createBy},
+            update_time = #{item.updateTime},
+            update_by = #{item.updateBy},
+            access_node = #{item.locationCode}
+            where device_code = #{item.devCode}
+        </foreach>
+    </update>
+</mapper>

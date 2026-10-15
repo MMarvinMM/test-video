@@ -1,0 +1,3089 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.IotDeviceMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.device.dataobject.IotDeviceDO">
+        <id column="iot_device_id" property="iotDeviceId" />
+        <result column="device_code" property="deviceCode" />
+        <result column="device_name" property="deviceName" />
+        <result column="device_status" property="deviceStatus" />
+        <result column="province_id" property="provinceId" />
+        <result column="city_id" property="cityId" />
+        <result column="county_id" property="countyId" />
+        <result column="category_code" property="categoryCode" />
+        <result column="remark" property="remark" />
+        <result column="site_code" property="siteCode" />
+        <result column="site_name" property="siteName" />
+        <result column="public_site_code" property="publicSiteCode" />
+        <result column="model_code" property="modelCode" />
+        <result column="creator" property="creator" />
+        <result column="creator_date" property="createTime" />
+        <result column="modifier" property="modifier" />
+        <result column="modifier_date" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="height" property="height" />
+        <result column="location" property="location" />
+        <result column="longitude" property="longitude" />
+        <result column="latitude" property="latitude" />
+        <result column="area_code" property="areaCode" />
+        <result column="adm_code" property="admCode" />
+        <result column="device_model_code" property="deviceModelCode" />
+        <result column="app_mod_flag" property="appModFlag" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        iot_device_id, device_code, device_name, device_status, province_id, city_id, county_id, category_code, remark, site_code, site_name, public_site_code, model_code, creator, creator_date, modifier, modifier_date, delete_flag, height, location, longitude, latitude, area_code, adm_code, device_model_code, app_mod_flag
+    </sql>
+
+    <resultMap id="RadarDeviceMap" type="com.chinatower.device.entity.vo.RadarDeviceVO">
+        <result column="radar_device_code" property="radarId" jdbcType="VARCHAR"/>
+        <collection property="devices" ofType="com.chinatower.device.entity.vo.RadarDeviceInfoVO">
+            <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+            <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+            <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+            <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+            <result column="height" property="height" jdbcType="VARCHAR"/>
+            <result column="pan" property="pan" jdbcType="VARCHAR"/>
+            <result column="tilt" property="tilt" jdbcType="VARCHAR"/>
+            <result column="zoom" property="zoom" jdbcType="VARCHAR"/>
+            <result column="min_focus" property="focus" jdbcType="VARCHAR"/>
+            <result column="horiz_view_range" property="viewHorizon" jdbcType="VARCHAR"/>
+            <result column="verti_view_range" property="viewVertical" jdbcType="VARCHAR"/>
+            <collection property="channels"  ofType="com.chinatower.device.entity.vo.RadarChannelInfoVO">
+                <result column="channel_code" property="channelCode" jdbcType="VARCHAR"/>
+                <result column="channel_name" property="channelName" jdbcType="VARCHAR"/>
+                <result column="visual_range" property="visualRange" jdbcType="VARCHAR"/>
+                <result column="horiz_range" property="horizRange" jdbcType="VARCHAR"/>
+                <result column="verti_range" property="vertiRange" jdbcType="VARCHAR"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <resultMap id="treeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="province_id" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="city_id" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                <result column="county_id" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+                <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                    <result column="town_code" property="code" jdbcType="VARCHAR"/>
+                    <result column="townName" property="name" jdbcType="VARCHAR"/>
+                    <result column="townLevel" property="level" jdbcType="VARCHAR"/>
+                    <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                        <result column="deviceLevel" property="level" jdbcType="VARCHAR"/>
+                        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+                        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+                        <result column="code" property="code" jdbcType="VARCHAR"/>
+                        <result column="name" property="name" jdbcType="VARCHAR"/>
+                        <result column="device_alias" property="deviceAlias" jdbcType="VARCHAR"/>
+                        <result column="device_status" property="status" jdbcType="VARCHAR"/>
+                        <result column="model_code" property="modelCode" jdbcType="VARCHAR"/>
+                        <result column="modelName" property="modelName" jdbcType="VARCHAR"/>
+                        <result column="device_model_code" property="deviceModelCode" jdbcType="VARCHAR"/>
+                        <result column="w_zone" property="wZone" jdbcType="VARCHAR"/>
+                        <result column="device_period" property="devicePeriod" jdbcType="VARCHAR"/>
+                        <result column="par_angle" property="parAngle" jdbcType="VARCHAR"/>
+                        <result column="location" property="location" jdbcType="VARCHAR"/>
+                        <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+                        <result column="tagCollect" property="tagCollect" jdbcType="VARCHAR"/>
+                        <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+                        <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+                        <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+                        <result column="device_type" property="deviceType" jdbcType="VARCHAR"/>
+                        <result column="deviceTypeName" property="deviceTypeName" jdbcType="VARCHAR"/>
+                        <result column="height" property="height" jdbcType="VARCHAR"/>
+                    </collection>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <resultMap id="deviceChannelTreeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="province_id" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="city_id" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                <result column="county_id" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+                <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                    <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+                    <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+                    <result column="code" property="code" jdbcType="VARCHAR"/>
+                    <result column="name" property="name" jdbcType="VARCHAR"/>
+                    <result column="device_alias" property="deviceAlias" jdbcType="VARCHAR"/>
+                    <result column="device_status" property="status" jdbcType="VARCHAR"/>
+                    <result column="model_code" property="modelCode" jdbcType="VARCHAR"/>
+                    <result column="modelName" property="modelName" jdbcType="VARCHAR"/>
+                    <result column="device_model_code" property="deviceModelCode" jdbcType="VARCHAR"/>
+                    <result column="w_zone" property="wZone" jdbcType="VARCHAR"/>
+                    <result column="device_period" property="devicePeriod" jdbcType="VARCHAR"/>
+                    <result column="par_angle" property="parAngle" jdbcType="VARCHAR"/>
+                    <result column="location" property="location" jdbcType="VARCHAR"/>
+                    <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+                    <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+                    <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+                    <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+                    <result column="device_type" property="deviceType" jdbcType="VARCHAR"/>
+                    <result column="deviceTypeName" property="deviceTypeName" jdbcType="VARCHAR"/>
+                    <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                        <result column="channel_code" property="channelCode" jdbcType="VARCHAR"/>
+                        <result column="channel_name" property="channelName" jdbcType="VARCHAR"/>
+                    </collection>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <resultMap id="alarmTypeTreeMap" type="com.chinatower.platform.entity.device.PageAlarmTypeVO">
+        <result column="device_type" property="deviceType" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.PageAlarmTypeVO">
+            <result column="alarmTypeCode" property="alarmTypeCode" jdbcType="VARCHAR"/>
+            <result column="alarmTypeName" property="alarmTypeName" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="deviceTreeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="province_id" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="city_id" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                <result column="county_id" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+                <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                    <result column="town_code" property="code" jdbcType="VARCHAR"/>
+                    <result column="townName" property="name" jdbcType="VARCHAR"/>
+                    <result column="townLevel" property="level" jdbcType="VARCHAR"/>
+                    <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                        <result column="radarLevel" property="level" jdbcType="VARCHAR"/>
+                        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+                        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+                        <result column="device_status" property="status" jdbcType="VARCHAR"/>
+                        <result column="model_code" property="modelCode" jdbcType="VARCHAR"/>
+                        <result column="location" property="location" jdbcType="VARCHAR"/>
+                        <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+                        <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+                        <result column="code" property="code" jdbcType="VARCHAR"/>
+                        <result column="name" property="name" jdbcType="VARCHAR"/>
+                        <result column="w_zone" property="wZone" jdbcType="VARCHAR"/>
+                        <result column="device_period" property="devicePeriod" jdbcType="VARCHAR"/>
+                        <result column="par_angle" property="parAngle" jdbcType="VARCHAR"/>
+                        <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+                    </collection>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <resultMap id="orgTreeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="org_id" property="code" jdbcType="VARCHAR" />
+        <result column="org_name" property="name" jdbcType="VARCHAR" />
+        <result column="org_level" property="level" jdbcType="VARCHAR" />
+        <result column="parent_org_id" property="parentCode" jdbcType="VARCHAR" />
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="device_code" property="code" jdbcType="VARCHAR" />
+            <result column="device_name" property="name" jdbcType="VARCHAR" />
+            <result column="device_status" property="status" jdbcType="VARCHAR"/>
+            <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+            <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+            <result column="devLevel" property="level" jdbcType="VARCHAR"/>
+            <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+            <result column="device_code" property="deviceCode" jdbcType="VARCHAR" />
+            <result column="device_name" property="deviceName" jdbcType="VARCHAR" />
+            <result column="model_code" property="modelCode" jdbcType="VARCHAR"/>
+            <result column="modelName" property="modelName" jdbcType="VARCHAR"/>
+            <result column="device_model_code" property="deviceModelCode" jdbcType="VARCHAR"/>
+            <result column="w_zone" property="wZone" jdbcType="VARCHAR"/>
+            <result column="device_period" property="devicePeriod" jdbcType="VARCHAR"/>
+            <result column="par_angle" property="parAngle" jdbcType="VARCHAR"/>
+            <result column="location" property="location" jdbcType="VARCHAR"/>
+            <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="siteAndAreaDeviceTree" type="com.chinatower.device.entity.vo.IotDeviceVO">
+        <result column="site_code" property="siteCode" jdbcType="VARCHAR" />
+        <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+        <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.device.entity.vo.IotDeviceVO">
+            <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+            <result column="model_code" property="modelCode" jdbcType="VARCHAR"/>
+            <result column="device_type" property="deviceType" jdbcType="VARCHAR"/>
+            <result column="device_model_code" property="deviceModelCode" jdbcType="VARCHAR"/>
+            <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+            <result column="province_id" property="provinceId" jdbcType="VARCHAR"/>
+            <result column="city_id" property="cityId" jdbcType="VARCHAR"/>
+            <result column="county_id" property="countyId" jdbcType="VARCHAR"/>
+            <result column="town_code" property="townCode" jdbcType="VARCHAR"/>
+            <result column="device_status" property="deviceStatus" jdbcType="INTEGER"/>
+            <result column="location" property="location" jdbcType="VARCHAR"/>
+            <result column="height" property="height" jdbcType="VARCHAR"/>
+            <result column="modelName" property="modelName" jdbcType="VARCHAR"/>
+            <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+            <result column="deviceTypeName" property="deviceTypeName" jdbcType="VARCHAR"/>
+            <result column="device_period" property="devicePeriod" jdbcType="VARCHAR"/>
+            <result column="w_zone" property="wZone" jdbcType="VARCHAR"/>
+            <result column="par_angle" property="parAngle" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="siteDeviceTree" type="com.chinatower.device.entity.vo.IotDeviceVO">
+        <result column="site_code" property="siteCode" jdbcType="VARCHAR" />
+        <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+        <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.device.entity.vo.IotDeviceVO">
+            <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+            <result column="model_code" property="modelCode" jdbcType="VARCHAR"/>
+            <result column="device_type" property="deviceType" jdbcType="VARCHAR"/>
+            <result column="device_model_code" property="deviceModelCode" jdbcType="VARCHAR"/>
+            <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+            <result column="province_id" property="provinceId" jdbcType="VARCHAR"/>
+            <result column="city_id" property="cityId" jdbcType="VARCHAR"/>
+            <result column="county_id" property="countyId" jdbcType="VARCHAR"/>
+            <result column="town_code" property="townCode" jdbcType="VARCHAR"/>
+            <result column="device_status" property="deviceStatus" jdbcType="INTEGER"/>
+            <result column="location" property="location" jdbcType="VARCHAR"/>
+            <result column="height" property="height" jdbcType="VARCHAR"/>
+            <result column="modelName" property="modelName" jdbcType="VARCHAR"/>
+            <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+            <result column="deviceTypeName" property="deviceTypeName" jdbcType="VARCHAR"/>
+            <result column="device_period" property="devicePeriod" jdbcType="VARCHAR"/>
+            <result column="w_zone" property="wZone" jdbcType="VARCHAR"/>
+            <result column="par_angle" property="parAngle" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="siteAndAreaDeviceTreeNew" type="com.chinatower.industry.vo.IndustryDeviceTree">
+        <result column="site_code" property="siteCode" jdbcType="VARCHAR" />
+        <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+        <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.industry.vo.IndustryDeviceTree">
+            <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+            <result column="model_code" property="modelCode" jdbcType="VARCHAR"/>
+            <result column="device_type" property="deviceType" jdbcType="VARCHAR"/>
+            <result column="device_model_code" property="deviceModelCode" jdbcType="VARCHAR"/>
+            <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+            <result column="province_id" property="provinceId" jdbcType="VARCHAR"/>
+            <result column="city_id" property="cityId" jdbcType="VARCHAR"/>
+            <result column="county_id" property="countyId" jdbcType="VARCHAR"/>
+            <result column="town_code" property="townCode" jdbcType="VARCHAR"/>
+            <result column="device_status" property="deviceStatus" jdbcType="INTEGER"/>
+            <result column="location" property="location" jdbcType="VARCHAR"/>
+            <result column="height" property="height" jdbcType="VARCHAR"/>
+            <result column="modelName" property="modelName" jdbcType="VARCHAR"/>
+            <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+            <result column="deviceTypeName" property="deviceTypeName" jdbcType="VARCHAR"/>
+            <result column="device_period" property="devicePeriod" jdbcType="VARCHAR"/>
+            <result column="w_zone" property="wZone" jdbcType="VARCHAR"/>
+            <result column="par_angle" property="parAngle" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+
+    <select id="getIotMonitorTree" resultMap="treeMap">
+        select * from (
+        select distinct m.device_code,
+        m.device_status,
+        (case when length(IFNULL(dr.device_name, '')) = 0 then m.device_name else dr.device_name end) as device_name,
+        m.longitude,
+        m.latitude,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.model_code,
+        m.device_type,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        m.height,
+        m.w_zone,
+        m.device_period,
+        m.par_angle,
+        m.location,
+        m.site_code,
+        pro.area_name as provinceName,
+        city.area_name as cityName,
+        county.area_name as countyName,
+        town.area_name as townName,
+        '1' as prolevel,
+        '2' as citylevel,
+        '3' as countrylevel,
+        '4' as townLevel,
+        '5' as deviceLevel,
+        m.device_code as code,
+        m.device_name as name,
+        (case when length(IFNULL(dr.device_name, '')) = 0 then m.device_name else dr.device_name end) as device_alias,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        </if>
+        osd.ord_status as orderStatus
+        from vm_order_sensor_devices osd
+        left join vm_iot_device_t m on m.device_code = osd.device_code and m.category_code = 2
+        left join sys_area pro on pro.area_code = m.province_id
+        left join sys_area city on city.area_code = m.city_id
+        left join sys_area county on county.area_code = m.county_id
+        left join sys_area town on town.area_code = m.town_code
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        <if test='(param.deptIds !=null and param.deptIds.size() > 0) or (param.dataScope != null and param.dataScope.contains("dept_id"))'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = osd.device_code and osd.tenant_id = vod.tenant_id and vod.device_type = 8
+            and vod.delete_flag = '0'
+        </if>
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code and art.coll_obj_type = '7' and art.user_id = #{param.userId}
+        </if>
+        where osd.delete_flag= '0' and m.delete_flag= '0'
+        and osd.category_code = 2
+        and osd.tenant_id =#{param.tenantId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            <if test='param.isArTagFlag != null and param.isArTagFlag != "" and param.isArTagFlag == "0" '>
+                and art.coll_obj_code IS NOT NULL
+            </if>
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test='param.needDevice != null and "true".toString() == param.needDevice.toString()'>
+            and m.device_status != 2
+        </if>
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and osd.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and osd.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        <if test='param.hasLinkConf!= null and param.hasLinkConf != "" '>
+            AND
+            <if test='param.hasLinkConf == "1" '>exists</if>
+            <if test='param.hasLinkConf == "0" '>not exists</if>
+            (
+            select 1 from vm_tenant_iot_device_conf_t ac
+            where ac.device_code = m.device_code
+            and ac.tenant_id = osd.tenant_id
+            )
+        </if>
+        ${param.dataScope}
+        order by m.province_id, m.city_id, m.county_id,m.device_code
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_alias like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="getIotMonitorOrgTree" resultMap="orgTreeMap">
+        select * from (
+        select distinct
+        gg.dept_id as org_id,
+        gg.dept_name as org_name,
+        gg.dept_level as org_level,
+        gg.parent_id as parent_org_id,
+        m.device_code,
+        m.device_status,
+        m.longitude,
+        m.latitude,
+        m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        m.w_zone,
+        m.device_period,
+        m.par_angle,
+        m.location,
+        m.site_code,
+        concat(gg.dept_level + 1) AS devLevel,
+        (case when length(IFNULL(dr.device_name, '')) = 0 then m.device_name else dr.device_name end) as device_name,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        osd.ord_status as orderStatus
+        from sys_dept gg
+        left join vm_organ_device_rel_t dd on dd.dept_id = gg.dept_id and dd.device_type = 8 and dd.delete_flag = 0
+        left join vm_order_sensor_devices osd on osd.device_code = dd.device_code and osd.delete_flag = 0
+        and osd.tenant_id = dd.tenant_id and osd.industry_code = dd.industry_code
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = 2
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        where
+        gg.del_flag = 0 and dd.device_code IS NOT NULL and dd.device_code != ''
+        and osd.tenant_id = #{param.tenantId} and osd.category_code = 2
+        and m.device_status != 2
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and osd.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and osd.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        ${param.dataScope}
+        order by gg.dept_id,m.device_code
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="queryIotDeviceByArea" resultMap="siteAndAreaDeviceTree">
+        select DISTINCT m.site_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.device_code as deviceCode,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.height,
+        m.device_status,
+        m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices osd
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = 2
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        where
+        osd.delete_flag = 0 and osd.ord_status in (0,1,2) and osd.category_code = 2
+        and m.delete_flag= '0'
+        and m.device_status != 2
+        <if test='param.provinceId != null and param.provinceId != ""'>
+            AND m.province_id = #{param.provinceId}
+        </if>
+        <if test='param.cityId != null and param.cityId != ""'>
+            AND m.city_id = #{param.cityId}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND m.county_id = #{param.countyId}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND m.town_code = #{param.townCode}
+        </if>
+        ${param.dataScope}
+        group by m.site_code, m.device_code
+    </select>
+
+    <select id="queryIotDeviceSites" resultMap="siteAndAreaDeviceTreeNew">
+        select DISTINCT m.site_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.device_code,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.height,
+        m.device_status,
+        m.model_code,
+        m.device_period,
+        m.w_zone,
+        m.par_angle,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices osd
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = 2
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        where
+        osd.delete_flag = 0 and osd.ord_status in (0,1,2) and osd.category_code = 2
+        and m.delete_flag= '0'
+        and m.device_status != 2
+        <if test='param.provinceId != null and param.provinceId != ""'>
+            AND m.province_id = #{param.provinceId}
+        </if>
+        <if test='param.cityId != null and param.cityId != ""'>
+            AND m.city_id = #{param.cityId}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND m.county_id = #{param.countyId}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND m.town_code = #{param.townCode}
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        group by m.site_code, m.device_code
+    </select>
+
+    <select id="queryIotDeviceBySite" resultMap="siteAndAreaDeviceTree">
+        select distinct m.device_code,
+        m.model_code,
+        m.device_type,
+        m.device_model_code,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.site_code,
+        m.device_status,
+        m.latitude,
+        m.longitude,
+        m.location,
+        m.height,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices osd
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = 2
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        where
+        osd.delete_flag = 0 and osd.ord_status in (0,1,2) and osd.category_code = 2
+        and m.delete_flag= '0'
+        and m.device_status != 2
+        <if test='param.siteCode!= null and param.siteCode != "" '>
+            AND m.site_code = #{param.siteCode}
+        </if>
+        <if test='param.deviceCode!= null and param.deviceCode != "" '>
+            AND m.device_code = #{param.deviceCode}
+        </if>
+        ${param.dataScope}
+    </select>
+
+    <select id="queryIotDeviceBySiteCode" resultMap="siteAndAreaDeviceTree">
+        select distinct m.device_code,
+        m.model_code,
+        m.device_type,
+        m.device_model_code,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.site_code,
+        m.device_status,
+        m.latitude,
+        m.longitude,
+        m.location,
+        m.height,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices osd
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = 2
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        where
+        osd.delete_flag = 0 and osd.ord_status in (0,1,2) and osd.category_code = 2
+        and m.delete_flag= '0'
+        and m.device_status != 2
+        <if test='param.siteCode!= null and param.siteCode != "" '>
+            AND m.site_code = #{param.siteCode}
+        </if>
+        <if test='param.deviceCode!= null and param.deviceCode != "" '>
+            AND m.device_code = #{param.deviceCode}
+        </if>
+        ${param.dataScope}
+    </select>
+
+    <select id="queryRadarDeviceByArea" resultMap="siteDeviceTree">
+        select DISTINCT m.site_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.device_code as device_code,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.province_id,
+        m.device_type,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.height,
+        m.w_zone,
+        m.device_status,
+        m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices osd
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = 1
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '8' AND dct.user_id = #{param.userId}
+        where
+        osd.delete_flag = 0 and osd.ord_status in (0,1,2) and osd.category_code = 1
+        and m.delete_flag= '0'
+        and m.device_status != 2
+        <if test='param.provinceId != null and param.provinceId != ""'>
+            AND m.province_id = #{param.provinceId}
+        </if>
+        <if test='param.cityId != null and param.cityId != ""'>
+            AND m.city_id = #{param.cityId}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND m.county_id = #{param.countyId}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND m.town_code = #{param.townCode}
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        group by m.site_code, m.device_code
+    </select>
+
+    <select id="queryRadarDeviceBySite" resultMap="siteAndAreaDeviceTree">
+        select
+        m.device_code,
+        m.model_code,
+        m.device_model_code,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.site_code,
+        m.device_status,
+        m.latitude,
+        m.longitude,
+        m.location,
+        m.height,
+        m.device_period,
+        m.w_zone,
+        m.par_angle,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices osd
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = 1
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '8' AND dct.user_id = #{param.userId}
+        where
+        osd.delete_flag = 0 and osd.ord_status in (0,1,2) and osd.category_code = 1
+        and m.delete_flag= '0'
+        and m.device_status != 2
+        <if test='param.siteCode!= null and param.siteCode != "" '>
+            AND m.site_code = #{param.siteCode}
+        </if>
+        <if test='param.deviceCode!= null and param.deviceCode != "" '>
+            AND m.device_code = #{param.deviceCode}
+        </if>
+        ${param.dataScope}
+    </select>
+
+    <select id="getRadarMonitorOrgTree" resultMap="orgTreeMap">
+        select * from (
+        select distinct
+        gg.dept_id as org_id,
+        gg.dept_name as org_name,
+        gg.dept_level as org_level,
+        gg.parent_id as parent_org_id,
+        m.device_code,
+        m.device_status,
+        m.longitude,
+        m.latitude,
+        m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        m.w_zone,
+        m.device_period,
+        m.par_angle,
+        m.location,
+        m.site_code,
+        concat(gg.dept_level + 1) AS devLevel,
+        (case when length(IFNULL(dr.device_name, '')) = 0 then m.device_name else dr.device_name end) as device_name,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        osd.ord_status as orderStatus
+        from sys_dept gg
+        left join vm_organ_device_rel_t dd on dd.dept_id = gg.dept_id and dd.device_type = 10 and dd.delete_flag = 0
+        left join vm_order_sensor_devices osd on osd.device_code = dd.device_code and osd.delete_flag = 0
+        and osd.tenant_id = dd.tenant_id and osd.industry_code = dd.industry_code
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = 1
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '8' AND dct.user_id = #{param.userId}
+        where
+        gg.del_flag = 0 and dd.device_code IS NOT NULL and dd.device_code != ''
+        and osd.tenant_id =#{param.tenantId} and osd.category_code = 1
+        and m.delete_flag= '0'
+        and m.device_status != 2
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test="param.deviceCodeList != null and param.deviceCodeList.size() > 0">
+            and m.device_code in
+            <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and osd.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and osd.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        ${param.dataScope}
+        order by gg.dept_id,m.device_code
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="getRadarMonitorTree" resultMap="treeMap" parameterType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        select distinct
+        m.device_code,
+        m.device_status,
+        m.device_name,
+        m.longitude,
+        m.latitude,
+        m.province_id,
+         m.city_id,
+         m.county_id,
+         m.town_code,
+         m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+         m.device_model_code,
+         m.w_zone,
+         m.device_period,
+         m.par_angle,
+         m.location,
+         m.site_code,
+         pro.area_name as provinceName,
+        city.area_name as cityName,
+        county.area_name as countyName,
+        town.area_name as townName,
+        '1' as prolevel,
+        '2' as citylevel,
+        '3' as countrylevel,
+        '4' as townLevel,
+        '5' as deviceLevel,
+        m.device_code as code,
+        m.device_name as name,
+        (case when length(IFNULL(dr.device_name, '')) = 0 then m.device_name else dr.device_name end) as device_alias,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        </if>
+        osd.ord_status as orderStatus
+        from vm_order_sensor_devices osd
+        left join vm_iot_device_t m on m.device_code = osd.device_code and m.category_code = 1
+        left join sys_area pro on pro.area_code = m.province_id
+        left join sys_area city on city.area_code = m.city_id
+        left join sys_area county on county.area_code = m.county_id
+        left join sys_area town on town.area_code = m.town_code
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '8' AND dct.user_id = #{param.userId}
+        <if test='(param.deptIds !=null and param.deptIds.size() > 0) or (param.dataScope != null and param.dataScope.contains("dept_id"))'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = osd.device_code and osd.tenant_id = vod.tenant_id and vod.device_type = 10
+            and vod.delete_flag = '0'
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code and art.coll_obj_type = '8' and art.user_id = #{param.userId}
+        </if>
+        where osd.delete_flag= '0' and m.delete_flag= '0' and osd.category_code = 1
+        and osd.tenant_id =#{param.tenantId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test='param.needDevice != null and "true".toString() == param.needDevice.toString()'>
+            and m.device_status != 2
+        </if>
+        <if test='param.arTagFlag != null and param.arTagFlag == 1'>
+            <if test='param.isArTagFlag != null and param.isArTagFlag != "" and param.isArTagFlag == "0" '>
+                and art.coll_obj_code IS NOT NULL
+            </if>
+        </if>
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test="param.deviceCodeList != null and param.deviceCodeList.size() > 0">
+            and m.device_code in
+            <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and m.device_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and osd.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and osd.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        ${param.dataScope}
+        order by m.province_id, m.city_id, m.county_id,m.device_code
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_alias like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="getDeviceMonitorTree" resultMap="treeMap">
+        select distinct m.device_code,m.device_status,m.device_name,m.longitude, m.latitude,
+                        m.province_id, m.city_id,m.county_id,m.town_code,
+                        pro.area_name as provinceName,city.area_name as cityName,
+                        county.area_name as countyName,town.area_name as townName,m.device_code as code,m.device_name as name,
+                        '1' as prolevel,'2' as citylevel,'3' as countrylevel,'4' as townLevel
+        from vm_order_devices osd
+                 left join vm_device_info_t m on m.device_code = osd.device_code
+                 left join sys_area pro on pro.area_code = m.province_id
+                 left join sys_area city on city.area_code = m.city_id
+                 left join sys_area county on county.area_code = m.county_id
+                 left join sys_area town on town.area_code = m.town_code
+        <if test='(param.deptIds !=null and param.deptIds.size() > 0) or (param.dataScope != null and param.dataScope.contains("dept_id"))'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = osd.device_code and osd.tenant_id = vod.tenant_id and vod.device_type = 4
+            and vod.delete_flag = '0'
+        </if>
+        where osd.delete_flag= '0'
+        and m.delete_flag= '0'
+        and m.province_id is not null
+        and osd.ord_status in (0, 1, 2)
+        <if test='param.tenantId != null and param.tenantId != ""'>
+        and osd.tenant_id = #{param.tenantId}
+        </if>
+            ${param.dataScope}
+        order by m.province_id, m.city_id, m.county_id,m.device_code
+    </select>
+
+    <select id="getDeviceChannelMonitorTree" resultMap="deviceChannelTreeMap">
+        select distinct m.device_code,m.device_status,m.device_name,m.longitude, m.latitude, c.channel_code, c.channel_name,
+        m.province_id, m.city_id,m.county_id,
+        pro.area_name as provinceName,city.area_name as cityName,
+        county.area_name as countyName,m.device_code as code,m.device_name as name,
+        '1' as prolevel,'2' as citylevel,'3' as countrylevel
+        from vm_order_devices osd
+        left join vm_device_info_t m on m.device_code = osd.device_code
+        left join sys_area pro on pro.area_code = m.province_id
+        left join sys_area city on city.area_code = m.city_id
+        left join sys_area county on county.area_code = m.county_id
+        left join vm_channel_info_t c on m.device_code = c.device_code
+        <if test='(param.deptIds !=null and param.deptIds.size() > 0) or (param.dataScope != null and param.dataScope.contains("dept_id"))'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = osd.device_code and osd.tenant_id = vod.tenant_id and vod.device_type = 4
+            and vod.delete_flag = '0'
+        </if>
+        where osd.delete_flag= '0'
+        and m.delete_flag= '0'
+        and m.province_id is not null
+        and osd.ord_status in (0, 1, 2)
+        <if test='param.tenantId != null and param.tenantId != ""'>
+            and osd.tenant_id = #{param.tenantId}
+        </if>
+        <if test='param.tenantIdList != null and param.tenantIdList.size() > 0'>
+            and osd.tenant_id in
+            <foreach collection="param.tenantIdList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test="platformCode != null and platformCode != ''">
+            and m.access_node = #{platformCode}
+        </if>
+        ${param.dataScope}
+        order by m.province_id, m.city_id, m.county_id,m.device_code,c.channel_code
+    </select>
+
+    <select id="getDeviceChannelList" resultType="com.chinatower.platform.entity.device.DeviceTreeVO">
+        select m.device_code, m.device_name, c.channel_code, c.channel_name, m.province_id, m.city_id, m.county_id,
+        pro.area_name as provinceName,city.area_name as cityName, county.area_name as countyName
+        from vm_order_devices osd
+        left join vm_device_info_t m on m.device_code = osd.device_code
+        left join sys_area pro on pro.area_code = m.province_id
+        left join sys_area city on city.area_code = m.city_id
+        left join sys_area county on county.area_code = m.county_id
+        left join vm_channel_info_t c on m.device_code = c.device_code
+        <if test='(param.deptIds !=null and param.deptIds.size() > 0) or (param.dataScope != null and param.dataScope.contains("dept_id"))'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = osd.device_code and osd.tenant_id = vod.tenant_id and vod.device_type = 4
+            and vod.delete_flag = '0'
+        </if>
+        where osd.delete_flag= '0'
+        and m.delete_flag= '0'
+        and m.province_id is not null
+        and osd.ord_status in (0, 1, 2)
+        <if test='param.tenantId != null and param.tenantId != ""'>
+            and osd.tenant_id = #{param.tenantId}
+        </if>
+        <if test='param.tenantIdList != null and param.tenantIdList.size() > 0'>
+            and osd.tenant_id in
+            <foreach collection="param.tenantIdList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test="platformCode != null and platformCode != ''">
+            and m.access_node = #{platformCode}
+        </if>
+        order by m.province_id, m.city_id, m.county_id,m.device_code,c.channel_code
+    </select>
+
+    <select id="getIotInfoByDeviceType" resultType="com.chinatower.platform.entity.device.PageIotDeviceVO">
+        select DISTINCT
+        od.device_code,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.longitude,
+        m.latitude,
+        m.device_status
+        from vm_order_sensor_devices od
+        left join vm_iot_device_t m on m.device_code = od.device_code
+        left JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        where od.delete_flag = '0' and m.delete_flag = '0'
+        and od.category_code = 2
+        and od.ord_status in (0, 1, 2)
+        and od.tenant_id =#{param.tenantId}
+        <if test='param.deviceTypeList !=null and param.deviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        ${param.dataScope}
+    </select>
+
+    <select id="getAlarmTypeList" resultMap="alarmTypeTreeMap" parameterType="com.chinatower.platform.entity.device.PageIotDeviceDTO">
+        select
+        m.device_type,
+        sat.type_value as alarmTypeCode,
+        sat.type_name as alarmTypeName
+        from vm_order_sensor_devices od
+        inner join vm_iot_device_t m on m.device_code = od.device_code
+        inner join vm_sensor_monitor_status s on od.device_code = s.device_code
+        inner join vm_sensor_monitor_config t on s.monitor_code = t.monitor_code
+        inner join sys_alarm_type sat on t.alarm_type = sat.type_value
+        where od.delete_flag = '0' and m.delete_flag = '0' and s.delete_flag = '0' and t.delete_flag = '0'
+        and sat.delete_flag = '0' and od.category_code = 2
+        and od.ord_status in (0, 1, 2)
+        <if test='param.deviceTypeList !=null and param.deviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        ${param.dataScope}
+    </select>
+
+    <select id="queryIotDeviceInfo" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        select DISTINCT
+        m.iot_device_id,
+        m.device_code as deviceCode,
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end deviceName,
+        m.device_status,
+        m.device_type as deviceType,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        m.category_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.site_code,
+        m.height,
+        m.model_code,
+        m.device_model_code,
+        m.device_period,
+        m.w_zone,
+        m.par_angle,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id,
+        town.area_code as town_code,
+        town.area_name as town_name,
+        case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from vm_order_sensor_devices od
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 2
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        LEFT JOIN sys_area pro on pro.area_code = m.province_id
+        LEFT JOIN sys_area city on city.area_code = m.city_id
+        LEFT JOIN sys_area county on county.area_code = m.county_id
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.user_id = #{param.userId} and dct.coll_obj_type = '7'
+        LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code
+        and art.coll_obj_type = '7' and art.user_id = #{param.userId}
+        where od.delete_flag = '0'
+        and od.category_code = 2
+        and od.ord_status in (0,1,2)
+        and m.delete_flag = '0'
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code = #{param.deviceCode}
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.deviceType != null and param.deviceType != ""'>
+            and m.device_type = #{param.deviceType}
+        </if>
+
+        <if test='param.deviceTypeList != null and param.deviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        ${param.dataScope}
+        <choose>
+            <when test="param.sortName == 'deviceCode'">
+                order by m.device_code
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by pro.area_code, city.area_code, county.area_code,m.device_code
+            </otherwise>
+        </choose>
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="queryRadarDeviceInfo" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        select distinct
+        m.iot_device_id,
+        m.device_code as deviceCode,
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end deviceName,
+        m.device_status,
+        m.device_type as deviceType,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        m.category_code,
+        m.site_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.model_code,
+        m.device_model_code,
+        m.device_period,
+        m.w_zone,
+        m.par_angle,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id,
+        town.area_code as town_code,
+        town.area_name as town_name,
+        case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from vm_order_sensor_devices od
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 1
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        LEFT JOIN sys_area pro on pro.area_code = m.province_id
+        LEFT JOIN sys_area city on city.area_code = m.city_id
+        LEFT JOIN sys_area county on county.area_code = m.county_id
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.user_id = #{param.userId} and dct.coll_obj_type = '8'
+        LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code
+        and art.coll_obj_type = '8' and art.user_id = #{param.userId}
+        where od.delete_flag = '0'
+        and od.category_code = 1
+        and od.ord_status in (0,1,2)
+        and m.delete_flag = '0'
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code = #{param.deviceCode}
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.deviceType != null and param.deviceType != ""'>
+            and m.device_type = #{param.deviceType}
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        ${param.dataScope}
+        <choose>
+            <when test="param.sortName == 'deviceCode'">
+                order by m.device_code
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by pro.area_code, city.area_code, county.area_code,m.device_code
+            </otherwise>
+        </choose>
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="queryIotDeviceList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        SELECT DISTINCT
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        (CASE WHEN m.device_status = '0' THEN '在线'
+        WHEN m.device_status = '1' THEN '离线'
+        END) deviceStatusName,
+        m.device_type as deviceType,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        m.category_code,
+        od.ord_status as orderStatus,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id,
+        town.area_code as town_code,
+        town.area_name as town_name,
+        <if test="param.isMonitorFlag != null and param.isMonitorFlag != ''">
+            case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        </if>
+        (CASE
+        WHEN (
+        SELECT count(*) > 0
+        FROM vm_tenant_iot_device_conf_t ac
+        WHERE ac.device_code = m.device_code
+        AND ac.tenant_id = od.tenant_id
+        )
+        THEN '1'
+        ELSE '0'
+        END) AS hasLinkConf
+        FROM vm_order_sensor_devices od
+            LEFT JOIN vm_order_customer oc on od.order_code = oc.order_code
+            LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 2
+            LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+                      and ten.tenant_id = od.tenant_id
+                      and ten.delete_flag='0' and ten.industry_code = od.industry_code
+            LEFT JOIN sys_area pro on pro.area_code = m.province_id
+            LEFT JOIN sys_area city on city.area_code = m.city_id
+            LEFT JOIN sys_area county on county.area_code = m.county_id
+            LEFT JOIN sys_area town on town.area_code = m.town_code
+        <if test='param.deptIds !=null and param.deptIds.size() > 0 or param.dataScope.contains("dept_id")'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+                      and vod.delete_flag = '0'
+                      and vod.tenant_id = od.tenant_id
+        </if>
+        <if test="param.isMonitorFlag != null and param.isMonitorFlag != ''">
+            left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+            AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        </if>
+        where od.delete_flag = '0' and m.delete_flag = '0'
+        and od.category_code = 2
+        and od.tenant_id =#{param.tenantId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+               and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+               and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.deviceType != null and param.deviceType != ""'>
+               and m.device_type = #{param.deviceType}
+        </if>
+        <if test='param.deviceTypeList != null and param.deviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+               and m.model_code = #{param.modelCode}
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and od.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and od.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        <if test='param.hasLinkConf!= null and param.hasLinkConf != "" '>
+            AND
+            <if test='param.hasLinkConf == "1" '>exists</if>
+            <if test='param.hasLinkConf == "0" '>not exists</if>
+            (
+            select 1 from vm_tenant_iot_device_conf_t ac
+            where ac.device_code = m.device_code
+            and ac.tenant_id = od.tenant_id
+            )
+        </if>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+        <choose>
+            <when test="param.sortName == 'deviceCode'">
+                order by od.device_code
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by pro.area_code, city.area_code, county.area_code,od.device_code
+            </otherwise>
+        </choose>
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+
+    <select id="querySensorList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        SELECT DISTINCT
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        m.height,
+        m.device_type,
+        m.category_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.model_code,
+        m.site_code,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id
+        FROM vm_order_sensor_devices od
+        LEFT JOIN vm_order_customer oc on od.order_code = oc.order_code
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 2
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        LEFT JOIN sys_area pro on pro.area_code = m.province_id
+        LEFT JOIN sys_area city on city.area_code = m.city_id
+        LEFT JOIN sys_area county on county.area_code = m.county_id
+        where od.delete_flag = '0' and m.delete_flag = '0'
+        and od.category_code = 2
+        and od.ord_status in (0,1,2)
+        <if test='param.deviceCodeList !=null and param.deviceCodeList.size() > 0'>
+            and m.device_code in
+            <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        ${param.dataScope}
+    </select>
+
+    <select id="queryRadarList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        SELECT DISTINCT
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        m.category_code,
+        m.site_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.w_zone as wZone,
+        m.device_period as devicePeriod,
+        m.par_angle as parAngle,
+        m.model_code,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id
+        FROM vm_order_sensor_devices od
+            LEFT JOIN vm_order_customer oc on od.order_code = oc.order_code
+            LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 1
+            LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+                      and ten.tenant_id = od.tenant_id
+                      and ten.delete_flag='0' and ten.industry_code = od.industry_code
+            LEFT JOIN sys_area pro on pro.area_code = m.province_id
+            LEFT JOIN sys_area city on city.area_code = m.city_id
+            LEFT JOIN sys_area county on county.area_code = m.county_id
+        where od.delete_flag = '0' and m.delete_flag = '0'
+        and od.category_code = 1
+        and od.ord_status in (0,1,2)
+        <if test='param.deviceCodeList !=null and param.deviceCodeList.size() > 0'>
+            and od.device_code in
+            <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        )dt
+    </select>
+
+    <select id="getSensorDeviceCount" resultType="com.chinatower.device.entity.vo.SensorDeviceCountVO">
+        select
+        count(distinct(iot.device_code)) as totalCount,
+        count(distinct case when iot.device_status = 0 then iot.device_code end) as onlineCount,
+        count(distinct case when iot.device_status = 1 then iot.device_code end) as offlineCount
+        from vm_order_sensor_devices o
+        inner join vm_iot_device_t iot on o.device_code = iot.device_code and o.category_code = iot.category_code
+        where o.delete_flag = '0' and iot.delete_flag = '0' and o.ord_status in (0,1,2)
+        <if test='param.categoryCode != null'>
+            AND iot.category_code = #{param.categoryCode}
+        </if>
+        ${param.dataScope}
+    </select>
+
+    <select id="getIotOrRadarDeviceTree" resultMap="deviceTreeMap" parameterType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        select distinct
+        m.device_code,
+        m.device_status,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.longitude,
+        m.latitude,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.model_code,
+        m.location,
+        pro.area_name as provinceName,
+        city.area_name as cityName,
+        county.area_name as countyName,
+        town.area_name as townName,
+        '1' as prolevel,
+        '2' as citylevel,
+        '3' as countrylevel,
+        '4' as townLevel,
+        '5' as radarLevel,
+        m.device_code as code,
+        m.device_name as name,
+        m.w_zone,
+        m.device_period,
+        m.par_angle,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from vm_order_sensor_devices osd
+        left join vm_iot_device_t m on m.device_code = osd.device_code and m.category_code = #{param.categoryCode}
+        left join sys_area pro on pro.area_code = m.province_id
+        left join sys_area city on city.area_code = m.city_id
+        left join sys_area county on county.area_code = m.county_id
+        left join sys_area town on town.area_code = m.town_code
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.user_id = #{param.userId}
+        <if test="param.categoryCode != null and param.categoryCode == '2'">
+            AND dct.coll_obj_type = '7'
+        </if>
+        <if test="param.categoryCode != null and param.categoryCode == '1'">
+            AND dct.coll_obj_type = '8'
+        </if>
+        where osd.delete_flag= '0'
+        and m.delete_flag= '0'
+        and osd.category_code = #{param.categoryCode}
+        and osd.ord_status in (0, 1, 2)
+        ${param.dataScope}
+        order by m.province_id, m.city_id, m.county_id,m.device_code
+        )dt
+    </select>
+
+    <select id="queryIotDeviceListSimple" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        SELECT DISTINCT
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        m.category_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        od.tenant_id,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        ten.town_code,
+        ten.town_name,
+        m.site_code,
+        m.site_name,
+        m.adm_code
+        FROM vm_order_sensor_devices od LEFT JOIN vm_order_customer oc on od.order_code = oc.order_code
+            JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 2
+        <if test='param.appVerCode!= null and param.appVerCode != ""'>
+            LEFT JOIN vm_order_package op on op.order_code = od.order_code
+        </if>
+            LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+                  and ten.tenant_id = od.tenant_id
+                  and ten.delete_flag='0' and ten.industry_code = od.industry_code
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+                  and vod.delete_flag = '0'
+                  and vod.tenant_id = od.tenant_id
+            where od.delete_flag = '0' and m.delete_flag = '0'
+                and od.tenant_id =#{param.tenantId}
+                and od.ord_status in (0, 1, 2)
+                and od.category_code = 2
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+                and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <if test='param.hasLinkConf!= null and param.hasLinkConf != "" '>
+            AND
+            <if test='param.hasLinkConf == "1" '>exists</if>
+            <if test='param.hasLinkConf == "0" '>not exists</if>
+            (
+            select 1 from vm_tenant_iot_device_conf_t ac
+            where ac.device_code = m.device_code
+            and ac.tenant_id = od.tenant_id
+            )
+        </if>
+        <if test='param.appVerCode!= null and param.appVerCode != ""'>
+            and op.app_ver_code = #{param.appVerCode}
+        </if>
+        ${param.dataScope}
+        order by  m.province_id,m.city_id,m.county_id,od.device_code
+    </select>
+    <select id="queryIndIotDeviceListSimple" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        SELECT DISTINCT
+        m.iot_device_id,
+        m.device_code,
+        m.device_name,
+        m.device_status,
+        m.category_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.site_code,
+        m.site_name,
+        m.adm_code
+        FROM vm_order_sensor_devices od LEFT JOIN vm_order_customer oc on od.order_code = oc.order_code
+        JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 2
+        LEFT JOIN vm_order_package op on op.order_code = od.order_code
+        where od.delete_flag = '0' and m.delete_flag = '0'
+        and od.category_code = 2
+        <if test='param.tenantId!= null and param.tenantId != ""'>
+            and od.tenant_id =#{param.tenantId}
+        </if>
+        and od.ord_status in (0, 1, 2)
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <if test='param.appVerCode!= null and param.appVerCode != ""'>
+            and op.app_ver_code = #{param.appVerCode}
+        </if>
+        ${param.dataScope}
+        order by  m.province_id,m.city_id,m.county_id,od.device_code
+    </select>
+    <select id="querySensorAttr" resultType="com.chinatower.device.entity.vo.SensorAttrVO">
+        select s.device_code,s.monitor_code as attr_code,c.monitor_name as attr_name,c.monitor_units as attr_units, s.sensor_code
+          from vm_sensor_monitor_status s
+          inner join vm_sensor_monitor_config c on s.monitor_code = c.monitor_code
+        <where>
+            <choose>
+                <when test='deviceCodes !=null and deviceCodes.size() > 0'>
+                    and s.device_code in
+                    <foreach collection="deviceCodes" open="(" close=")" separator="," index="index" item="id">
+                        #{id}
+                    </foreach>
+                </when>
+                <when test='deviceCode != null and deviceCode != ""'>
+                    and s.device_code = #{deviceCode}
+                </when>
+                <otherwise></otherwise>
+            </choose>
+            and s.status = 1 and s.delete_flag = '0' and c.delete_flag = '0'
+            ${dataScope}
+        </where>
+    </select>
+
+    <select id="queryRadarListPage" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        SELECT distinct
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        (CASE WHEN m.device_status = '0' THEN '在线'
+        WHEN m.device_status = '1' THEN '离线'
+        WHEN m.device_status = '2' THEN '从未连接'
+        END) deviceStatusName,
+        m.category_code,
+        od.ord_status as orderStatus,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        m.w_zone,
+        m.device_period,
+        m.par_angle,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id,
+        town.area_code as town_code,
+        town.area_name as town_name,
+        <if test="param.isMonitorFlag != null and param.isMonitorFlag != ''">
+            case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        </if>
+        st.tenant_name as tenantName
+        FROM vm_order_sensor_devices od
+        LEFT JOIN vm_order_customer oc on od.order_code = oc.order_code
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = 1
+        LEFT JOIN sys_tenant_info st on st.tenant_id = od.tenant_id
+        LEFT JOIN sys_area pro on pro.area_code = m.province_id
+        LEFT JOIN sys_area city on city.area_code = m.city_id
+        LEFT JOIN sys_area county on county.area_code = m.county_id
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        <if test="param.isMonitorFlag != null and param.isMonitorFlag != ''">
+            left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+            AND dct.coll_obj_type = '8' AND dct.user_id = #{param.userId}
+        </if>
+        LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+        and vod.delete_flag = '0'
+        and vod.tenant_id = od.tenant_id
+        where od.delete_flag = '0' and m.delete_flag = '0' and od.category_code = 1
+        and od.tenant_id =#{param.tenantId}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <if test='param.deviceTypeList != null and param.deviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="deviceType">
+                #{deviceType}
+            </foreach>
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and od.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and od.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+        <choose>
+            <when test="param.sortName == 'deviceCode'">
+                order by od.device_code
+            </when>
+            <when test="param.sortName == 'deviceName'">
+                order by device_name
+            </when>
+            <when test="param.sortName == 'deviceStatus'">
+                order by m.device_status
+            </when>
+            <when test="param.sortName == 'modelCode'">
+                order by m.model_code
+            </when>
+            <when test="param.sortName == 'orgName'">
+                order by vod.dept_id
+            </when>
+            <when test="param.sortName == 'orderStatus'">
+                order by od.ord_status
+            </when>
+            <when test="param.sortName == 'provinceName'">
+                order by provinceName
+            </when>
+            <when test="param.sortName == 'cityName'">
+                order by cityName
+            </when>
+            <when test="param.sortName == 'countyName'">
+                order by countyName
+            </when>
+            <when test="param.sortName == 'townName'">
+                order by town_name
+            </when>
+            <otherwise>
+                order by m.device_code
+            </otherwise>
+        </choose>
+        <if test="param.sort == 'desc'">
+            desc
+        </if>
+        <if test="param.sort == 'asc'">
+            asc
+        </if>
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="queryRadarOrIotDeviceList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from (
+        SELECT distinct
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        m.category_code,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '1'
+        WHEN od.ord_status = '3' THEN '3'
+        WHEN od.ord_status = '4' THEN '4'
+        END ) orderStatus,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.model_code,
+        <if test="categoryCode != null and categoryCode == 1">
+            m.device_model_code,
+            m.w_zone,
+            m.device_period,
+            m.par_angle,
+            (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        </if>
+        <if test="categoryCode != null and categoryCode == 2">
+            m.device_type,
+            (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+            (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        </if>
+        <if test="param.userLatitude != null and param.userLatitude != '' and param.userLongitude != null and param.userLongitude != ''">
+            IFNULL(ROUND(ST_DISTANCE(POINT(#{param.userLongitude},#{param.userLatitude}),POINT(m.longitude,m.latitude))*111195,0),100000000) as rangeMeter,
+            CAST(ST_DISTANCE(POINT(#{param.userLongitude},#{param.userLatitude}),POINT(m.longitude,m.latitude))*111195 as DECIMAL(65,2)) as distance,
+        </if>
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id,
+        town.area_code as town_code,
+        town.area_name as town_name
+        from vm_order_sensor_devices od
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = #{categoryCode}
+        LEFT JOIN sys_area pro on pro.area_code = m.province_id
+        LEFT JOIN sys_area city on city.area_code = m.city_id
+        LEFT JOIN sys_area county on county.area_code = m.county_id
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        <if test="categoryCode != null and categoryCode != '' and categoryCode == 2">
+            LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+            AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        </if>
+        <if test="categoryCode != null and categoryCode != '' and categoryCode == 1">
+            LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+            AND dct.coll_obj_type = '8' AND dct.user_id = #{param.userId}
+        </if>
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        <if test='categoryCode == 1 and param.deptIds !=null and param.deptIds.size() > 0 or param.dataScope.contains("dept_id")'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+            and vod.delete_flag = '0'
+            and vod.tenant_id = od.tenant_id
+            and vod.industry_code = od.industry_code
+            and vod.device_type = 10
+        </if>
+        <if test='categoryCode == 2 and param.deptIds !=null and param.deptIds.size() > 0 or param.dataScope.contains("dept_id")'>
+            LEFT JOIN vm_organ_device_rel_t vod on vod.device_code = m.device_code
+            and vod.delete_flag = '0'
+            and vod.tenant_id = od.tenant_id
+            and vod.industry_code = od.industry_code
+            and vod.device_type = 8
+        </if>
+        where od.delete_flag = '0' and m.delete_flag = '0' and od.category_code = #{categoryCode}
+        <if test='param.deptIds !=null and param.deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="param.deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0"'>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test="param.deviceTypeCodeList != null and param.deviceTypeCodeList.size() >0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeCodeList" item="deviceTypeCode" open="(" close=")" separator="," index="index">
+                #{deviceTypeCode}
+            </foreach>
+        </if>
+        <if test="param.modelCodeList != null and param.modelCodeList.size() >0">
+            and m.model_code in
+            <foreach collection="param.modelCodeList" item="modelCode" open="(" close=")" separator="," index="index">
+                #{modelCode}
+            </foreach>
+        </if>
+        <if test='param.provinceId != null and param.provinceId != ""'>
+            AND m.province_id = #{param.provinceId}
+        </if>
+        <if test='param.cityId != null and param.cityId != ""'>
+            AND m.city_id = #{param.cityId}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND m.county_id = #{param.countyId}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND m.town_code = #{param.townCode}
+        </if>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.modelCode != null and param.modelCode != ""'>
+            and m.model_code = #{param.modelCode}
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and od.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and od.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        ${param.dataScope}
+        <choose>
+            <when test="param.userLatitude != null and param.userLatitude != '' and param.userLongitude != null and param.userLongitude != ''">
+                order by distance,m.device_status,cast(od.device_code as UNSIGNED),od.device_code
+            </when>
+            <otherwise>
+                order by m.device_status,cast(od.device_code as UNSIGNED),od.device_code
+            </otherwise>
+        </choose>
+        ) dt
+        <where>
+            <if test='param.deviceName != null and param.deviceName != ""'>
+                dt.device_name like CONCAT('%', #{param.deviceName}, '%')
+            </if>
+            <if test="param.codeOrName !=null and param.codeOrName !=''">
+                and ((dt.deviceCode like CONCAT('%', #{param.codeOrName}, '%')) or (dt.device_name like CONCAT('%', #{param.codeOrName}, '%')))
+            </if>
+        </where>
+    </select>
+
+    <select id="getRadarDeviceConfigInfoNew" resultMap="RadarDeviceMap">
+        select
+            s.device_code radar_device_code,
+            m.device_code,
+            m.device_name,
+            m.latitude,
+            m.longitude,
+            m.height,
+            dm.min_focus,
+            dm.horiz_view_range,
+            dm.verti_view_range,
+            vc.channel_code,
+            vc.channel_name,
+            vc.visual_range,
+            vc.horiz_range,
+            vc.verti_range
+        from vm_order_sensor_devices s
+            inner join vm_order_devices o on s.tenant_id = o.tenant_id and s.industry_code = o.industry_code
+            left join vm_device_info_t m on o.device_code = m.device_code
+            left join vm_device_model_t dm on dm.device_model_code = m.device_model_code
+            left join vm_channel_info_t vc on vc.device_code = m.device_code
+        where s.ord_status in (0,1,2) and s.category_code = 1 and s.delete_flag = 0
+            and o.ord_status in (0,1,2) and o.delete_flag = 0
+            and s.device_code in
+        <foreach collection="deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+            #{item}
+        </foreach>
+            group by s.device_code, m.device_code, vc.channel_code
+    </select>
+
+    <select id="getIotDeviceByDept" resultType="com.chinatower.device.entity.vo.IotDeviceEntity"
+            parameterType="com.chinatower.device.entity.vo.IotDeviceEntity">
+        SELECT DISTINCT
+            t1.device_code as deviceCode,
+            t1.device_name as deviceName,
+            t1.device_status as deviceStatus,
+            t1.device_type as deviceType,
+            t1.longitude,
+            t1.latitude,
+            t1.location,
+            t1.height,
+            t1.model_code as modelCode,
+            t1.device_model_code as deviceModelCode
+        FROM
+            vm_order_sensor_devices c
+            INNER JOIN vm_iot_device_t t1 ON c.device_code = t1.device_code
+        <if test='deptId != null and deptId != ""'>
+            INNER JOIN vm_organ_device_rel_t t ON c.tenant_id = t.tenant_id
+                AND c.device_code = t.device_code
+        </if>
+        WHERE c.category_code = '2'
+            AND c.ord_status IN ( 0, 1, 2 )
+            AND t1.delete_flag = '0'
+            <if test='deviceType != null and deviceType != ""'>
+                and t1.device_type = #{deviceType}
+            </if>
+            <if test='deviceStatus != null and deviceStatus != ""'>
+                and t1.device_status = #{deviceStatus}
+            </if>
+            <if test='deviceCode != null and deviceCode != ""'>
+                and t1.device_code = #{deviceCode}
+            </if>
+            <if test='deviceName != null and deviceName != ""'>
+                and t1.device_name like CONCAT('%',#{deviceName},'%')
+            </if>
+            <if test='deptId != null and deptId != ""'>
+              AND t.dept_id = #{deptId}
+            </if>
+            ${dataScope}
+    </select>
+
+    <!-- mybatis嵌套查询  -->
+    <resultMap id="iotResultMap" type="com.chinatower.device.entity.vo.IotDeviceTypeData">
+        <result column="deviceType" property="deviceType" jdbcType="VARCHAR"/>
+        <collection property="iotDevices" ofType="com.chinatower.device.entity.vo.IotDeviceAreaEntity">
+            <result column="deviceCode" property="deviceCode" jdbcType="VARCHAR"/>
+            <result column="deviceName" property="deviceName" jdbcType="VARCHAR"/>
+            <result column="deviceStatus" property="deviceStatus" jdbcType="VARCHAR"/>
+            <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+            <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+            <result column="location" property="location" jdbcType="VARCHAR"/>
+            <result column="height" property="height" jdbcType="VARCHAR"/>
+            <result column="provinceId" property="provinceId" jdbcType="VARCHAR"/>
+            <result column="cityId" property="cityId" jdbcType="VARCHAR"/>
+            <result column="countyId" property="countyId" jdbcType="VARCHAR"/>
+            <result column="townCode" property="townCode" jdbcType="VARCHAR"/>
+            <collection property="devices" ofType="com.chinatower.device.entity.vo.DeviceEntity">
+                <result column="cameraCode" property="cameraCode" jdbcType="VARCHAR"/>
+                <result column="cameraName" property="cameraName" jdbcType="VARCHAR"/>
+                <result column="cameraStatus" property="cameraStatus" jdbcType="VARCHAR"/>
+                <result column="cameraLongitude" property="cameraLongitude" jdbcType="VARCHAR"/>
+                <result column="cameraLatitude" property="cameraLatitude" jdbcType="VARCHAR"/>
+                <result column="cameraLocation" property="cameraLocation" jdbcType="VARCHAR"/>
+                <result column="channelCode" property="channelCode" jdbcType="VARCHAR"/>
+                <result column="channelName" property="channelName" jdbcType="VARCHAR"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="getIotGroupByDeviceType" parameterType="com.chinatower.device.entity.vo.IotDeviceAreaEntity"
+            resultMap="iotResultMap">
+        SELECT DISTINCT
+            CASE
+            WHEN
+            t1.device_type IS NULL THEN
+            '' ELSE t1.device_type
+            END AS deviceType,
+            t1.device_code AS deviceCode,
+            t1.device_name AS deviceName,
+            t1.device_status AS deviceStatus,
+            t1.longitude,
+            t1.latitude,
+            t1.location,
+            t1.height,
+            t1.province_id AS provinceId,
+            t1.city_id AS cityId,
+            t1.county_id AS countyId,
+            t1.town_code AS townCode,
+            vdi.device_code AS cameraCode,
+            vdi.device_name AS cameraName,
+            vdi.device_status AS cameraStatus,
+            vdi.longitude AS cameraLongitude,
+            vdi.latitude AS cameraLatitude,
+            vdi.location AS cameraLocation,
+            vic.channel_code AS channelCode,
+            ca.channel_name AS channelName
+        FROM
+            vm_order_sensor_devices c
+            INNER JOIN vm_iot_device_t t1 ON c.device_code = t1.device_code
+            LEFT JOIN vm_tenant_iot_device_conf_t vit ON vit.device_code = c.device_code and vit.tenant_id = c.tenant_id and vit.industry_code = c.industry_code
+            LEFT JOIN vm_tenant_iot_conf_rel_t vic ON vit.iot_device_conf_id = vic.iot_device_conf_id
+            LEFT JOIN vm_device_info_t vdi ON vdi.device_code = vic.device_code
+            LEFT JOIN vm_channel_info_t ca ON ca.channel_code = vic.channel_code
+        WHERE
+            c.category_code = '2'
+            AND c.ord_status IN ( 0, 1, 2 )
+            AND t1.delete_flag = '0'
+        <if test='deviceType != null and deviceType != ""'>
+            and t1.device_type = #{deviceType}
+        </if>
+        <if test='provinceId != null and provinceId != ""'>
+            and t1.province_id = #{provinceId}
+        </if>
+        <if test='cityId != null and cityId != ""'>
+            and t1.city_id = #{cityId}
+        </if>
+        <if test='countyId != null and countyId != ""'>
+            and t1.county_id = #{countyId}
+        </if>
+        <if test='townCode != null and townCode != ""'>
+            and t1.town_code = #{townCode}
+        </if>
+        ${dataScope}
+    </select>
+
+    <select id="pageIotMonitorDeviceCode" parameterType="com.chinatower.platform.entity.device.PageIotMonitorDTO"
+            resultType="java.lang.String">
+        select o.device_code
+        from vm_order_sensor_devices o
+        inner join vm_sensor_monitor_status s on o.device_code = s.device_code
+        inner join vm_sensor_monitor_config c on c.monitor_code = s.monitor_code
+        where o.ord_status in (0,1,2) and o.category_code = 2
+        <if test='param.deviceCodeList !=null and param.deviceCodeList.size() > 0'>
+            and o.device_code in
+            <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.monitorCode != null and param.monitorCode != ""'>
+            and c.monitor_code = #{param.monitorCode}
+        </if>
+        ${param.dataScope}
+        group by o.device_code
+    </select>
+
+    <resultMap id="iotMonitorResultMap" type="com.chinatower.platform.entity.device.PageIotMonitorVO">
+        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+        <collection property="monitorInfoList" ofType="com.chinatower.platform.entity.device.PageIotMonitorSubVO">
+            <result column="monitor_code" property="monitorCode" jdbcType="VARCHAR"/>
+            <result column="monitor_name" property="monitorName" jdbcType="VARCHAR"/>
+            <result column="monitor_units" property="monitorUnits" jdbcType="VARCHAR"/>
+            <result column="alarm_type" property="alarmType" jdbcType="VARCHAR"/>
+            <result column="type_name" property="alarmTypeName" jdbcType="VARCHAR"/>
+        </collection>
+    </resultMap>
+
+    <select id="queryIotDevDistanceInfo" resultType="com.chinatower.platform.entity.device.DeviceDistanceVO">
+        select
+        t.device_code,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then t.device_name else rel.device_name end ) name,
+        t.location,
+        ST_Distance_Sphere(
+        ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+        ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+        ) as distance,
+        t.longitude,
+        t.latitude,
+        t.w_zone,
+        t.height,
+        t.device_type,
+        t.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = t.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = t.model_code limit 1) modelName,
+        <if test='param.userId != null and param.userId != "" '>
+            case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        </if>
+        t.device_status
+        from vm_order_sensor_devices o
+        inner join vm_iot_device_t t on t.device_code = o.device_code and t.category_code = 2
+        LEFT JOIN vm_tenant_iot_device_rel_t rel ON rel.device_code = o.device_code and rel.category_code = 2
+            and rel.tenant_id = o.tenant_id and rel.delete_flag = '0' and rel.industry_code = o.industry_code
+        <if test='param.userId != null and param.userId != "" '>
+            left join vm_user_device_collection_t dct on dct.coll_obj_code = t.device_code AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        </if>
+        and rel.tenant_id = o.tenant_id
+        and rel.industry_code = o.industry_code
+        and rel.category_code = 2
+        where o.delete_flag = '0'
+        and t.delete_flag = '0'
+        <if test="param.withAllStatus == null or param.withAllStatus != 1 ">
+            and t.device_status != 2
+        </if>
+        and o.category_code = 2
+        and o.ord_status in (0,1,2)
+        <if test="param.radius != -1">
+            and ST_Distance_Sphere(
+            ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+            ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+            )  <![CDATA[<=]]> #{param.radius}
+        </if>
+        <if test='param.searchName != null and param.searchName != "" '>
+            AND (t.site_code like CONCAT('%', #{param.searchName}, '%') OR t.device_name like CONCAT('%', #{param.searchName}, '%'))
+        </if>
+        ${param.dataScope}
+        group by t.device_code
+        order by t.iot_device_id
+        <if test='param.limitSize != null'>
+            limit #{param.limitSize}
+        </if>
+    </select>
+
+    <select id="queryIotDevDistanceInfo4Calculate" resultType="com.chinatower.platform.entity.device.DeviceDistanceVO">
+        select
+        t.device_code,
+        t.device_name as name,
+        t.location,
+        ST_Distance_Sphere(
+        ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+        ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+        ) as distance,
+        t.longitude,
+        t.latitude,
+        t.w_zone,
+        t.height,
+        t.device_type,
+        t.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = t.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = t.model_code limit 1) modelName,
+        t.device_status
+        from vm_iot_device_t t
+        where t.delete_flag = '0' and t.device_status != 2 and t.category_code = 2
+        <if test="param.radius != -1">
+            and ST_Distance_Sphere(
+            ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+            ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+            )  <![CDATA[<=]]> #{param.radius}
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0 ">
+            AND t.device_type IN
+            <foreach collection="param.deviceTypeList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        group by t.device_code
+        order by distance asc, t.device_code
+    </select>
+
+    <select id="queryRadarDevDistanceInfo" resultType="com.chinatower.platform.entity.device.DeviceDistanceVO">
+        select
+        t.device_code,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then t.device_name else rel.device_name end ) name,
+        t.location,
+        ST_Distance_Sphere(
+        ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+        ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+        ) as distance,
+        t.longitude,
+        t.latitude,
+        t.w_zone,
+        t.height,
+        t.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = t.model_code limit 1) modelName,
+        <if test='param.userId != null and param.userId != "" '>
+            case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        </if>
+        t.device_status
+        from vm_order_sensor_devices o
+        inner join vm_iot_device_t t on t.device_code = o.device_code and t.category_code = 1
+        LEFT JOIN vm_tenant_iot_device_rel_t rel ON rel.device_code = o.device_code and rel.category_code = 1
+        and rel.tenant_id = o.tenant_id and rel.delete_flag = '0' and rel.industry_code = o.industry_code
+        <if test='param.userId != null and param.userId != "" '>
+            left join vm_user_device_collection_t dct on dct.coll_obj_code = t.device_code AND dct.coll_obj_type = '8' AND dct.user_id = #{param.userId}
+        </if>
+        and rel.tenant_id = o.tenant_id
+        and rel.industry_code = o.industry_code
+        and rel.category_code = 1
+        where o.delete_flag = '0'
+        and t.delete_flag = '0'
+        <if test="param.withAllStatus == null or param.withAllStatus != 1 ">
+            and t.device_status != 2
+        </if>
+        and o.category_code = 1
+        and o.ord_status in (0,1,2)
+        <if test="param.radius != -1">
+            and ST_Distance_Sphere(
+            ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+            ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+            )  <![CDATA[<=]]> #{param.radius}
+        </if>
+        <if test='param.searchName != null and param.searchName != "" '>
+            AND (t.site_code like CONCAT('%', #{param.searchName}, '%') OR t.device_name like CONCAT('%', #{param.searchName}, '%'))
+        </if>
+        ${param.dataScope}
+        group by t.device_code
+        order by t.iot_device_id
+        <if test='param.limitSize != null'>
+            limit #{param.limitSize}
+        </if>
+    </select>
+
+    <select id="pageIotMonitorInfo" resultMap="iotMonitorResultMap">
+        select s.device_code, c.monitor_code, c.monitor_name, c.monitor_units
+        from vm_sensor_monitor_status s
+        inner join vm_sensor_monitor_config c on c.monitor_code = s.monitor_code
+        where s.device_code in
+        <foreach collection="deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryRadarDeviceByCode" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select
+        m.iot_device_id,
+        m.device_code,
+        m.model_code,
+        m.device_model_code,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.category_code,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.site_code,
+        m.device_status,
+        m.latitude,
+        m.longitude,
+        m.location,
+        m.height,
+        m.w_zone,
+        m.device_period,
+        m.par_angle,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '1'
+        WHEN od.ord_status = '3' THEN '3'
+        WHEN od.ord_status = '4' THEN '4'
+        END ) orderStatus,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'radar_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices od
+        left join vm_iot_device_t m on od.device_code = m.device_code and m.category_code = 1
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = od.tenant_id and dr.delete_flag = '0' and dr.industry_code = od.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '8' AND dct.user_id = #{param.userId}
+        LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code
+        and art.coll_obj_type = '8' and art.user_id = #{param.userId}
+        where
+        od.delete_flag = 0 and od.category_code = 1
+        and m.delete_flag= '0'
+        and od.device_code = #{param.deviceCode}
+        ${param.dataScope}
+        limit 1
+    </select>
+
+    <select id="queryIotDeviceByCode" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select
+        m.iot_device_id,
+        m.device_code,
+        m.model_code,
+        m.device_model_code,
+        m.category_code,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.site_code,
+        m.device_status,
+        m.latitude,
+        m.longitude,
+        m.location,
+        m.height,
+        m.w_zone,
+        m.device_period,
+        m.par_angle,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '1'
+        WHEN od.ord_status = '3' THEN '3'
+        WHEN od.ord_status = '4' THEN '4'
+        END ) orderStatus,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        case when IFNULL(art.id,0) = 0 then '0' else '1' end tagCollect,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices od
+        left join vm_iot_device_t m on od.device_code = m.device_code and m.category_code = 2
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = od.tenant_id and dr.delete_flag = '0' and dr.industry_code = od.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        LEFT JOIN vm_ar_tags_tree_user_rel art on art.coll_obj_code = m.device_code
+        and art.coll_obj_type = '7' and art.user_id = #{param.userId}
+        where
+        od.delete_flag = 0 and od.category_code = 2
+        and m.delete_flag= '0'
+        and od.device_code = #{param.deviceCode}
+        ${param.dataScope}
+        limit 1
+    </select>
+
+    <select id="queryDeviceListByKeyWord" resultType="com.chinatower.device.entity.vo.DeviceComprehensiveVO">
+        select * from (
+        select DISTINCT
+        m.device_code,
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end device_name,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.site_code,
+        m.device_status
+        from vm_order_sensor_devices od
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = #{param.categoryCode}
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        where od.delete_flag = '0'
+        and od.category_code = #{param.categoryCode}
+        and od.ord_status in (0,1,2)
+        and m.delete_flag = '0'
+        <if test="param.longitude != null and param.longitude != ''">
+            and m.longitude like CONCAT('%', #{param.longitude}, '%')
+        </if>
+        <if test="param.latitude != null and param.latitude != ''">
+            and m.latitude like CONCAT('%', #{param.latitude}, '%')
+        </if>
+        ${param.dataScope}
+        order by m.province_id, m.city_id, m.county_id,m.device_code
+        ) dt
+        <where>
+            <if test="param.keyWord !=null and param.keyWord !=''">
+                and ((dt.device_code = #{param.keyWord}) or (dt.device_name like CONCAT('%', #{param.keyWord}, '%')))
+            </if>
+        </where>
+    </select>
+
+    <select id="queryIotList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select * from vm_iot_device_t order by device_code
+    </select>
+
+    <select id="queryUavList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select
+        id as iotDeviceId,
+        device_code,
+        longitude,
+        latitude
+        from vm_uav_device_info_t order by device_code
+    </select>
+
+    <select id="queryHornList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select
+        id as iotDeviceId,
+        device_code,
+        longitude,
+        latitude
+        from vm_horn_device_info_t order by device_code
+    </select>
+
+    <select id="queryRecorderList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        select
+        id as iotDeviceId,
+        device_code,
+        longitude,
+        latitude
+        from vm_recorder_device_info_t order by device_code
+    </select>
+
+    <update id="updateIotDeviceBatch">
+        <foreach collection="list" item="item" separator=";">
+            update
+            vm_iot_device_t
+            set
+            <if test='item.provinceId != null and item.provinceId != ""'>
+                province_id = #{item.provinceId},
+            </if>
+            <if test='item.cityId != null and item.cityId != ""'>
+                city_id = #{item.cityId},
+            </if>
+            <if test='item.countyId != null and item.countyId != ""'>
+                county_id = #{item.countyId},
+            </if>
+            <if test='item.townCode != null and item.townCode != ""'>
+                town_code = #{item.townCode},
+            </if>
+            <if test='item.townName != null and item.townName != ""'>
+                town_name = #{item.townName},
+            </if>
+            <if test='item.location != null and item.location != ""'>
+                location = #{item.location},
+            </if>
+            update_time = now()
+            where iot_device_id = #{item.iotDeviceId}
+        </foreach>
+    </update>
+
+    <update id="updateUavDeviceBatch">
+        <foreach collection="list" item="item" separator=";">
+            update
+            vm_uav_device_info_t
+            set
+            <if test='item.provinceId != null and item.provinceId != ""'>
+                province_code = #{item.provinceId},
+            </if>
+            <if test='item.cityId != null and item.cityId != ""'>
+                city_code = #{item.cityId},
+            </if>
+            <if test='item.countyId != null and item.countyId != ""'>
+                county_code = #{item.countyId},
+            </if>
+            <if test='item.townCode != null and item.townCode != ""'>
+                town_code = #{item.townCode},
+            </if>
+            <if test='item.location != null and item.location != ""'>
+                location = #{item.location},
+            </if>
+            update_time = now()
+            where id = #{item.iotDeviceId}
+        </foreach>
+    </update>
+
+    <update id="updateRecorderDeviceBatch">
+        <foreach collection="list" item="item" separator=";">
+            update
+            vm_recorder_device_info_t
+            set
+            <if test='item.provinceId != null and item.provinceId != ""'>
+                province_code = #{item.provinceId},
+            </if>
+            <if test='item.cityId != null and item.cityId != ""'>
+                city_code = #{item.cityId},
+            </if>
+            <if test='item.countyId != null and item.countyId != ""'>
+                county_code = #{item.countyId},
+            </if>
+            <if test='item.townCode != null and item.townCode != ""'>
+                town_code = #{item.townCode},
+            </if>
+            <if test='item.location != null and item.location != ""'>
+                location = #{item.location},
+            </if>
+            update_time = now()
+            where id = #{item.iotDeviceId}
+        </foreach>
+    </update>
+
+    <update id="updateHornDeviceBatch">
+        <foreach collection="list" item="item" separator=";">
+            update
+            vm_horn_device_info_t
+            set
+            <if test='item.provinceId != null and item.provinceId != ""'>
+                province_code = #{item.provinceId},
+            </if>
+            <if test='item.cityId != null and item.cityId != ""'>
+                city_code = #{item.cityId},
+            </if>
+            <if test='item.countyId != null and item.countyId != ""'>
+                county_code = #{item.countyId},
+            </if>
+            <if test='item.townCode != null and item.townCode != ""'>
+                town_code = #{item.townCode},
+            </if>
+            <if test='item.location != null and item.location != ""'>
+                location = #{item.location},
+            </if>
+            update_time = now()
+            where id = #{item.iotDeviceId}
+        </foreach>
+    </update>
+
+    <select id="querySensorStatusInfo" resultType="com.chinatower.platform.entity.device.SensorStatusInfoVO">
+        select s.device_code, s.sensor_code, s.monitor_code, s.status monitorStatus, c.monitor_name, c.monitor_units
+        from vm_sensor_monitor_status s
+        inner join vm_sensor_monitor_config c on s.monitor_code = c.monitor_code
+        where s.delete_flag = '0' and c.delete_flag = '0' and s.device_code in
+        <foreach collection="param.deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+            #{item}
+        </foreach>
+        <if test="param.monitorStatus != null">
+            and s.status = #{param.monitorStatus}
+        </if>
+        order by s.id
+    </select>
+
+    <select id="getSensorDeviceTypeByCode" resultType="com.chinatower.device.dataobject.SensorDeviceTypeVO">
+        select type_code, type_name
+        from vm_sensor_device_type
+        where type_code in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and delete_flag = 0
+    </select>
+
+    <select id="queryMonitorInfoByDeviceCodes" resultType="com.chinatower.device.entity.vo.SensorMonitorRelInfoVo">
+        select distinct s.sensor_code, s.monitor_code, c.monitor_name, c.monitor_units
+        from vm_sensor_monitor_status s
+        inner join vm_sensor_monitor_config c on s.monitor_code = c.monitor_code
+        <where>
+            <choose>
+                <when test='deviceCodes !=null and deviceCodes.size() > 0'>
+                    and s.device_code in
+                    <foreach collection="deviceCodes" open="(" close=")" separator="," index="index" item="id">
+                        #{id}
+                    </foreach>
+                </when>
+                <when test='deviceCode != null and deviceCode != ""'>
+                    and s.device_code = #{deviceCode}
+                </when>
+                <otherwise></otherwise>
+            </choose>
+            and s.status = 1 and s.delete_flag = '0' and c.delete_flag = '0'
+        </where>
+    </select>
+
+    <select id="qrySensorMonitor" resultType="com.chinatower.device.entity.dto.SenSorMonitorConfigDO">
+        SELECT
+            smf.monitor_code,
+            smf.monitor_name,
+            smf.monitor_units
+        FROM vm_sensor_monitor_config smf
+        WHERE smf.delete_flag = 0
+        order by smf.create_time desc
+    </select>
+
+    <select id="queryIotRadarList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        SELECT DISTINCT
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        m.device_type as deviceType,
+        m.category_code,
+        od.ord_status as orderStatus,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.model_code,
+        od.tenant_id as tenantId
+        FROM vm_order_sensor_devices od
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = #{param.categoryCode}
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        where od.delete_flag = '0' and m.delete_flag = '0'
+            and od.category_code = #{param.categoryCode}
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceCodeList != null and param.deviceCodeList.size()>0'>
+            and od.device_code in
+            <foreach item="deviceCode" index="index" collection="param.deviceCodeList" open="(" separator="," close=")">
+                #{deviceCode}
+            </foreach>
+        </if>
+        <choose>
+            <when test='param.orderStatus == "1"'>
+                and od.ord_status in (0, 1, 2)
+            </when>
+            <otherwise>
+                <if test='param.orderStatus != null and param.orderStatus != ""'>
+                    and od.ord_status = #{param.orderStatus}
+                </if>
+            </otherwise>
+        </choose>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+    </select>
+
+
+    <select id="queryIotRadarDeviceList" resultType="com.chinatower.device.entity.vo.IotDeviceVO">
+        SELECT DISTINCT
+        m.iot_device_id,
+        od.device_code as deviceCode,
+        (
+        case when length(IFNULL(ten.device_name, '')) = 0
+        then m.device_name else ten.device_name end
+        ) device_name,
+        m.device_status,
+        (CASE WHEN m.device_status = '0' THEN '在线'
+        WHEN m.device_status = '1' THEN '离线'
+        END) deviceStatusName,
+        m.device_type as deviceType,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        m.category_code,
+        od.ord_status as orderStatus,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.height,
+        m.w_zone as wZone,
+        m.model_code,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        od.tenant_id as tenantId,
+        pro.area_name as provinceName,
+        pro.area_code as province_id,
+        city.area_name as cityName,
+        city.area_code as city_id,
+        county.area_name as countyName,
+        county.area_code as county_id,
+        town.area_code as town_code,
+        town.area_name as town_name
+        FROM vm_order_sensor_devices od
+        LEFT JOIN vm_iot_device_t m on m.device_code = od.device_code and m.category_code = #{param.categoryCode}
+        LEFT JOIN vm_tenant_iot_device_rel_t ten on ten.device_code = od.device_code
+        and ten.tenant_id = od.tenant_id
+        and ten.delete_flag='0' and ten.industry_code = od.industry_code
+        LEFT JOIN sys_area pro on pro.area_code = m.province_id
+        LEFT JOIN sys_area city on city.area_code = m.city_id
+        LEFT JOIN sys_area county on county.area_code = m.county_id
+        LEFT JOIN sys_area town on town.area_code = m.town_code
+        where od.delete_flag = '0' and m.delete_flag = '0'
+        and od.ord_status in (0, 1, 2)
+        and od.category_code = #{param.categoryCode}
+        and od.tenant_id =#{param.tenantId}
+        <choose>
+            <when test='param.provinceId != null and param.provinceId != ""'>
+                AND m.province_id = #{param.provinceId}
+            </when>
+            <when test='param.cityId != null and param.cityId != ""'>
+                AND m.city_id = #{param.cityId}
+            </when>
+            <when test='param.countyId != null and param.countyId != ""'>
+                AND m.county_id = #{param.countyId}
+            </when>
+            <when test='param.townCode != null and param.townCode != ""'>
+                AND m.town_code = #{param.townCode}
+            </when>
+        </choose>
+        <if test='param.deviceCode != null and param.deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{param.deviceCode}, '%')
+        </if>
+        <if test='param.deviceStatus != null'>
+            and m.device_status = #{param.deviceStatus}
+        </if>
+        <if test='param.deviceType != null and param.deviceType != ""'>
+            and m.device_type = #{param.deviceType}
+        </if>
+        <if test='param.deviceTypeList != null and param.deviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="deviceType">
+                #{deviceType}
+            </foreach>
+        </if>
+        <if test='param.radarDeviceTypeList != null and param.radarDeviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.radarDeviceTypeList" open="(" close=")" separator="," index="index" item="deviceType">
+                #{deviceType}
+            </foreach>
+        </if>
+        <if test='param.iotDeviceTypeList != null and param.iotDeviceTypeList.size() > 0'>
+            and m.device_type in
+            <foreach collection="param.iotDeviceTypeList" open="(" close=")" separator="," index="index" item="deviceType">
+                #{deviceType}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+        order by pro.area_code, city.area_code, county.area_code,od.device_code
+    </select>
+
+
+    <select id="queryIotRadarSiteList" resultType="com.chinatower.industry.vo.IndustryDeviceTree">
+      select DISTINCT dt.site_code, dt.longitude, dt.latitude from ( select DISTINCT m.site_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.device_code,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.height,
+        m.device_status,
+        m.model_code,
+        m.device_period,
+        m.w_zone,
+        m.par_angle,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices osd
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = #{param.categoryCode}
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        where
+        osd.delete_flag = 0 and osd.ord_status in (0,1,2) and osd.category_code = #{param.categoryCode}
+        and m.delete_flag= '0'
+        and m.device_status != 2
+        <if test='param.provinceId != null and param.provinceId != ""'>
+            AND m.province_id = #{param.provinceId}
+        </if>
+        <if test='param.cityId != null and param.cityId != ""'>
+            AND m.city_id = #{param.cityId}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND m.county_id = #{param.countyId}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND m.town_code = #{param.townCode}
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test="param.siteCodeList != null and param.siteCodeList.size() > 0">
+            and m.site_code in
+            <foreach collection="param.siteCodeList" open="(" close=")" separator="," index="index" item="siteCode">
+                #{siteCode}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        group by m.site_code, m.device_code) dt
+        where 1 = 1
+            <if test='param.keyWords != null and param.keyWords !=""'>
+                and (dt.device_name like concat('%',#{param.keyWords},'%') or dt.device_code like  concat('%',#{param.keyWords},'%'))
+            </if>
+    </select>
+
+    <select id="queryIotRadarDeviceSites" resultMap="siteAndAreaDeviceTreeNew">
+       select * from (select DISTINCT m.site_code,
+        m.longitude,
+        m.latitude,
+        m.location,
+        m.device_code,
+        (case when length(IFNULL(dr.device_name, '')) = 0
+        then m.device_name else dr.device_name end ) as device_name,
+        m.province_id,
+        m.city_id,
+        m.county_id,
+        m.town_code,
+        m.height,
+        m.device_status,
+        m.model_code,
+        m.device_period,
+        m.w_zone,
+        m.par_angle,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_model_type' AND DICT_VALUE = m.device_type limit 1) deviceTypeName,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'iot_device_mfgr_code' AND DICT_VALUE = m.model_code limit 1) modelName,
+        m.device_model_code,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        from
+        vm_order_sensor_devices osd
+        left join vm_iot_device_t m on osd.device_code = m.device_code and m.category_code = #{param.categoryCode}
+        and m.delete_flag = 0
+        left join vm_tenant_iot_device_rel_t dr on dr.device_code = m.device_code
+        and dr.tenant_id = osd.tenant_id and dr.delete_flag = '0' and dr.industry_code = osd.industry_code
+        left join vm_user_device_collection_t dct on dct.coll_obj_code = m.device_code
+        AND dct.coll_obj_type = '7' AND dct.user_id = #{param.userId}
+        where
+        osd.delete_flag = 0 and osd.ord_status in (0,1,2) and osd.category_code = #{param.categoryCode}
+        and m.delete_flag= '0'
+        and m.device_status != 2
+        <if test='param.provinceId != null and param.provinceId != ""'>
+            AND m.province_id = #{param.provinceId}
+        </if>
+        <if test='param.cityId != null and param.cityId != ""'>
+            AND m.city_id = #{param.cityId}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND m.county_id = #{param.countyId}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND m.town_code = #{param.townCode}
+        </if>
+        <if test="param.deviceTypeList != null and param.deviceTypeList.size() > 0">
+            and m.device_type in
+            <foreach collection="param.deviceTypeList" open="(" close=")" separator="," index="index" item="type">
+                #{type}
+            </foreach>
+        </if>
+        <if test="param.siteCodeList != null and param.siteCodeList.size() > 0">
+            and m.site_code in
+            <foreach collection="param.siteCodeList" open="(" close=")" separator="," index="index" item="siteCode">
+                #{siteCode}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        group by m.site_code, m.device_code) dt
+        where 1 = 1
+        <if test='param.keyWords != null and param.keyWords !=""'>
+            and (dt.device_name like concat('%',#{param.keyWords},'%') or dt.device_code like  concat('%',#{param.keyWords},'%'))
+        </if>
+    </select>
+</mapper>

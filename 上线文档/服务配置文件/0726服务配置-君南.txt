@@ -1,0 +1,21 @@
+1、以下服务，修改运行参数
+video-system、video-device、video-video、video-msg、video-bdm、ttview-system
+1）删除
+--spring.cloud.nacos.username=nacos
+--spring.cloud.nacos.password=aKMriWY7
+--spring.cloud.nacos.discovery.server-addr=10.19.30.175:8848
+--spring.cloud.nacos.config.server-addr=10.19.30.175:8848
+2）增加
+--spring.application.name=video-system（与上面服务对应）
+3）修改
+--spring.profiles.active=pro 为 --spring.profiles.active=prod
+
+
+2、以下服务，增加数据存储配置
+video-system、video-device、video-video、video-msg、video-bdm、ttview-system
+
+配置项：video-prod
+
+挂载路径						子路径								权限
+/app/bootstrap-prod.yml			public.yml							只读
+/app/application-prod.yml		video-system.yml（与上面服务对应）	只读

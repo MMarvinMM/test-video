@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.video.modules.videopreset.mapper.OrderAlgorithmConfigMapper">
+
+    <!-- 校验摄像机与算法的订购关系是否存在（algorithm_type=1 摄像机算法配置） -->
+    <select id="countCameraAlgorithmRelation" resultType="int">
+        SELECT COUNT(1)
+        FROM vm_order_algorithm_config
+        WHERE delete_flag = 0
+          AND algorithm_type = 1
+          AND tenant_id = #{tenantId}
+          <if test="acceptNode != null and acceptNode != ''">
+              AND accept_node = #{acceptNode}
+          </if>
+          <if test="industryCode != null and industryCode != ''">
+              AND industry_code = #{industryCode}
+          </if>
+          AND device_code = #{deviceCode}
+          AND algorithm_code = #{algorithmCode}
+    </select>
+
+    <!-- 查询满足条件的算法编码集合（结果集2，用于与vm_order_algorithms结果集1取交集） -->
+    <select id="getOrderAlgorithmConfigCodes" resultType="java.lang.String">
+        SELECT DISTINCT algorithm_code
+        FROM vm_order_algorithm_config
+        WHERE delete_flag = 0
+        <if test="algorithmType != null">
+            AND algorithm_type = #{algorithmType}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test="acceptNode != null and acceptNode != ''">
+            AND accept_node = #{acceptNode}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND industry_code = #{industryCode}
+        </if>
+    </select>
+
+    <!-- 查询满足条件的 设备编码+算法编码 对（结果集2，按设备区分，用于与vm_order_algorithms结果集1按设备+算法取交集） -->
+    <select id="getOrderAlgorithmConfigDeviceCodes" resultType="com.chinatower.common.core.domain.OrderAlgorithmConfigDO">
+        SELECT DISTINCT device_code, algorithm_code
+        FROM vm_order_algorithm_config
+        WHERE delete_flag = 0
+        <if test="algorithmType != null">
+            AND algorithm_type = #{algorithmType}
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND tenant_id = #{tenantId}
+        </if>
+        <if test="acceptNode != null and acceptNode != ''">
+            AND accept_node = #{acceptNode}
+        </if>
+        <if test="industryCode != null and industryCode != ''">
+            AND industry_code = #{industryCode}
+        </if>
+    </select>
+
+</mapper>

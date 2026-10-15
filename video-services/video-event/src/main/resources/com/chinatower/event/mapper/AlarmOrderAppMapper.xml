@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.AlarmOrderAppMapper">
+    <!-- 查询待办列表条件 -->
+    <sql id="queryOrderList">
+        <if test='param.tenantId!= null and param.tenantId != "" '>
+            AND dataTable.tenant_id = #{param.tenantId}
+        </if>
+        <if test='param.searchType == "0"'>
+            <!-- 查询本人上报告警 -->
+            AND dataTable.creator = #{param.userId} AND dataTable.warning_source = '2'
+        </if>
+        <!-- 查询条件增加设备编码 -->
+        <if test='param.deviceCodeParm != null and param.deviceCodeParm != ""'>
+            AND dataTable.device_code = #{param.deviceCodeParm,jdbcType=VARCHAR}
+        </if>
+        <!-- 查询条件增加通道编码 -->
+        <if test='param.channelCodeParm != null and param.channelCodeParm != ""'>
+            AND dataTable.channel_code = #{param.channelCodeParm,jdbcType=VARCHAR}
+        </if>
+        <if test='param.ifTimeOut == "1"'>
+            <!-- 已超期 -->
+            AND (((dataTable.time_limit IS NOT NULL AND (TIMESTAMPDIFF(SECOND,dataTable.flow_node_time,NOW()) >= dataTable.time_limit) and dataTable.enable_acceptance_mode != '1')
+            or (dataTable.time_limit_acceptance IS NOT NULL AND (TIMESTAMPDIFF(SECOND,dataTable.flow_node_time,NOW()) >= dataTable.time_limit_acceptance) and dataTable.enable_acceptance_mode = '1')))
+        </if>
+        <if test='param.ifTimeOut == "2"'>
+            <!-- 未超期 -->
+            AND (((dataTable.time_limit IS NULL OR (TIMESTAMPDIFF(SECOND,dataTable.flow_node_time,NOW()) <![CDATA[<]]> dataTable.time_limit)) and dataTable.enable_acceptance_mode != '1')
+            or ((dataTable.time_limit_acceptance IS NULL OR (TIMESTAMPDIFF(SECOND,dataTable.flow_node_time,NOW()) <![CDATA[<]]> dataTable.time_limit_acceptance)) and dataTable.enable_acceptance_mode = '1'))
+        </if>
+        <if test='param.warningTypeId != null and param.warningTypeId !=""'>
+            AND dataTable.warning_type_id = #{param.warningTypeId,jdbcType=VARCHAR}
+        </if>
+        <if test='param.emergencyLevel != null and param.emergencyLevel !=""'>
+            AND dataTable.emergency_level = #{param.emergencyLevel,jdbcType=VARCHAR}
+        </if>
+        <if test='param.alarmTimeStart != null and param.alarmTimeStart != ""'>
+            AND dataTable.alarm_time <![CDATA[>=]]> #{param.alarmTimeStart}
+        </if>
+        <if test='param.alarmTimeEnd != null and param.alarmTimeEnd != ""'>
+            AND dataTable.alarm_time <![CDATA[<=]]> #{param.alarmTimeEnd}
+        </if>
+        <if test='param.alarmBody != null and param.alarmBody != ""'>
+            AND (dataTable.alarm_body like concat('%',#{param.alarmBody,jdbcType=VARCHAR},'%') OR dataTable.warning_order_id like
+            concat('%',#{param.alarmBody,jdbcType=VARCHAR},'%'))
+        </if>
+        <if test="param.provinceId != null and param.provinceId != ''">
+            and dataTable.province_code = #{param.provinceId}
+        </if>
+        <if test='param.cityId != null and param.cityId != ""'>
+            AND dataTable.city_code = #{param.cityId,jdbcType=VARCHAR}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND dataTable.county_code = #{param.countyId,jdbcType=VARCHAR}
+        </if>
+        <if test='param.enableAcceptanceMode != null and param.enableAcceptanceMode != ""'>
+            AND dataTable.enable_acceptance_mode = #{param.enableAcceptanceMode,jdbcType=VARCHAR}
+        </if>
+        <if test="param.warningSource != null and param.warningSource != '' ">
+            and dataTable.warning_source = #{param.warningSource}
+        </if>
+        <if test="param.orderStatusList != null and param.orderStatusList.size()>0 ">
+            and (dataTable.order_status in
+            <foreach collection="param.orderStatusList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            <if test="param.enableAcceptanceMode != null and param.enableAcceptanceMode != '' ">
+                or dataTable.enable_acceptance_mode = #{param.enableAcceptanceMode}
+            </if>
+            <if test="param.enableAcceptanceMode == null or param.enableAcceptanceMode == '' ">
+                and dataTable.enable_acceptance_mode != '1'
+            </if>
+            )
+        </if>
+        <if test='param.orderStatus != null and param.orderStatus != ""'>
+            AND dataTable.order_status = #{param.orderStatus,jdbcType=VARCHAR}
+        </if>
+        <!-- 20211208 zzh 增加告警重要等级 -->
+        <if test='param.importanceLevel != null and param.importanceLevel != ""'>
+            AND dataTable.importance_level = #{param.importanceLevel}
+        </if>
+        <if test='param.enableAcceptanceMode != null and param.enableAcceptanceMode != ""'>
+            and dataTable.enable_acceptance_mode = #{param.enableAcceptanceMode}
+        </if>
+        <!--增加是否3D放大 -->
+        <if test='param.enlargeFlag != null and param.enlargeFlag !=""'>
+            AND dataTable.enlarge_flag = #{param.enlargeFlag,jdbcType=VARCHAR}
+        </if>
+        <!--AI告警 -->
+        <!--<if test='param.noticeResource != null and param.noticeResource !=""'>
+            AND dataTable.notice_resource = #{param.noticeResource,jdbcType=CHAR}
+        </if>-->
+        <!--摄像机厂家 -->
+        <if test="param.devList != null and param.devList.size()>0 ">
+            and
+            <foreach collection="param.devList" item="item" index="index" open="(" close=")" separator="or">
+                dataTable.device_code = #{item.deviceCode}
+            </foreach>
+        </if>
+        <if test='param.orgIdList != null and param.orgIdList.size() > 0'>
+            and(
+            <if test='param.satelliteList != null and param.satelliteList.size() > 0'>
+                (dataTable.county_code in
+                <foreach collection="param.satelliteList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item.countyId}
+                </foreach>
+                and dataTable.warning_source = '9')
+                or
+            </if>
+            <if test='param.radarList != null and param.radarList.size() > 0'>
+                (dataTable.county_code in
+                <foreach collection="param.radarList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item.countyId}
+                </foreach>
+                and dataTable.warning_source = '10')
+                or
+            </if>
+            <if test='param.deviceCodeList != null and param.deviceCodeList.size() > 0'>
+                (dataTable.device_code in
+                <foreach collection="param.deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                and dataTable.warning_source in ('1','3','4','8','12'))
+            </if>
+            <if test='param.orgUserListString != null and param.orgUserListString !=""'>
+                <if test='(param.satelliteList != null and param.satelliteList.size() > 0)
+                or (param.radarList != null and param.radarList.size() > 0)
+                or (param.deviceCodeList != null and param.deviceCodeList.size() > 0)'>or</if>
+                (dataTable.warning_source = '2'
+                AND FIND_IN_SET(dataTable.find_name, #{param.orgUserListString}))
+            </if>
+            )
+        </if>
+        <!-- 模块：1-事件处置；2-事件研判；3-事件调度；4-事件核实 -->
+        <choose>
+            <when test='param.orderType == "1"'>
+                <include refid="queryOrderListForHandle" />
+            </when>
+            <when test='param.orderType == "2"'>
+                <include refid="queryOrderListForJugde" />
+            </when>
+            <when test='param.orderType == "3"'>
+                <include refid="queryOrderListForDispatch" />
+            </when>
+            <when test='param.orderType == "4"'>
+                <include refid="queryOrderListForCheck" />
+            </when>
+            <otherwise>
+                <!-- 兼容旧版APP，默认查询处置 -->
+                <include refid="queryOrderListForHandle" />
+            </otherwise>
+        </choose>
+        <if test="param.warningOrderIds != null and param.warningOrderIds.size()>0 ">
+            and dataTable.warning_order_id in
+            <foreach collection="param.warningOrderIds" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <include refid="com.chinatower.event.mapper.WarningOrderMapper.warningTypeIdFilter">
+            <property name="alias" value="dataTable"/>
+        </include>
+        <include refid="com.chinatower.event.mapper.WarningOrderMapper.subScenesOnlyFilter">
+            <property name="alias" value="dataTable"/>
+        </include>
+        <if test='param.confidenceLevel != null and param.confidenceLevel !=""'>
+            <!--AND convert(dataTable.confidence_level_min, FLOAT) <![CDATA[>=]]> #{param.confidenceLevel,jdbcType=FLOAT}-->
+            AND (((dataTable.comp_confidence_level is null or dataTable.comp_confidence_level = '')
+            and dataTable.confidence_level_min <![CDATA[>=]]>#{param.confidenceLevel})
+            or dataTable.comp_confidence_level <![CDATA[>=]]> #{param.confidenceLevel})
+        </if>
+        <!-- 20240408 v1.6.50 增加告警原因 -->
+        <if test="param.alarmReasonList != null and param.alarmReasonList.size()>0 ">
+            and dataTable.alarm_reason in
+            <foreach collection="param.alarmReasonList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+    <!-- 事件处置条件 -->
+    <sql id="queryOrderListForHandle">
+        <if test='param.searchType == "1"'>
+            <!-- 全部 -->
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询全部处置告警 -->
+                    AND dataTable.order_status in ('4','5','6')
+                </when>
+                <otherwise>
+                    AND ((dataTable.order_status = '4'
+            <!-- and (FIND_IN_SET(concat(dataTable.flow_id,'-',dataTable.link_id),#{param.flowLinkIds})
+            or dataTable.process_id like concat('%,', #{param.userId}, ',%'))) -->
+
+            and
+            ((FIND_IN_SET(concat( dataTable.flow_id, '-', dataTable.link_id ), #{param.flowLinkIds})
+            and dataTable.before_dispatch_flag ='0')
+            or
+            (dataTable.process_id LIKE concat( '%', #{param.userId}, '%' )
+            ))
+            )
+            OR (EXISTS (SELECT 1 FROM ${param.flowTableName} r
+            WHERE r.order_id = dataTable.warning_order_id and r.link_id ='4' AND r.if_current_link = '0'
+            AND r.process_id = #{param.userId})  AND dataTable.order_status in ('5','6'))
+            )
+        </otherwise>
+    </choose>
+</if>
+<if test='param.searchType == "2"'>
+    <!-- 待处置 -->
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询全部待处置告警 -->
+                    AND (dataTable.order_status = '4')
+                </when>
+                <otherwise>
+                    AND dataTable.order_status = '4'
+                    <!-- and (FIND_IN_SET(concat(dataTable.flow_id,'-',dataTable.link_id),#{param.flowLinkIds})
+                    or dataTable.process_id like concat('%,', #{param.userId}, ',%')) -->
+                    and
+                    ((FIND_IN_SET(concat( dataTable.flow_id, '-', dataTable.link_id ), #{param.flowLinkIds})
+                    and dataTable.before_dispatch_flag ='0')
+                    or
+                    (dataTable.process_id LIKE concat( '%', #{param.userId}, '%' )
+                    ))
+                </otherwise>
+            </choose>
+        </if>
+        <if test='param.searchType == "3"'>
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询已处置告警 -->
+                    AND dataTable.order_status in ('5','6')
+                </when>
+                <otherwise>
+                    <!-- 已处置 -->
+                    AND EXISTS (SELECT 1 FROM ${param.flowTableName} r
+                    WHERE r.order_id = dataTable.warning_order_id and r.link_id ='4' AND r.if_current_link = '0'
+                    AND r.process_id = #{param.userId})
+                    AND dataTable.order_status in ('5','6')
+                </otherwise>
+            </choose>
+        </if>
+    </sql>
+
+    <!-- 事件研判条件 -->
+    <sql id="queryOrderListForJugde">
+        <if test='param.searchType == "1" and !param.isAdmin'>
+            <!-- 全部-包含待研判已研判 -->
+            AND ((dataTable.order_status = '1'
+            <!-- and (FIND_IN_SET(concat(dataTable.flow_id,'-',dataTable.link_id),#{param.flowLinkIds})
+            or dataTable.process_id like concat('%,', #{param.userId}, ',%'))) -->
+            and
+            ((FIND_IN_SET(concat( dataTable.flow_id, '-', dataTable.link_id ), #{param.flowLinkIds})
+            and dataTable.before_dispatch_flag ='0')
+            or
+            (dataTable.process_id LIKE concat( '%', #{param.userId}, '%' )
+            ))
+            )
+            OR (EXISTS (SELECT 1 FROM ${param.flowTableName} r
+            WHERE r.order_id = dataTable.warning_order_id and r.link_id ='1' AND r.if_current_link = '0'
+            AND r.process_id = #{param.userId})
+            AND dataTable.order_status in ('0','7','2','4','5','6')))
+        </if>
+        <if test='param.searchType == "2"'>
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询待研判告警 -->
+                    AND dataTable.order_status = '1'
+                </when>
+                <otherwise>
+                    <!-- 待研判 -->
+                    AND dataTable.order_status = '1'
+                    <!-- and (FIND_IN_SET(concat(dataTable.flow_id,'-',dataTable.link_id),#{param.flowLinkIds})
+                    or dataTable.process_id like concat('%,', #{param.userId}, ',%')) -->
+                    and
+                    ((FIND_IN_SET(concat( dataTable.flow_id, '-', dataTable.link_id ), #{param.flowLinkIds})
+                    and dataTable.before_dispatch_flag ='0')
+                    or
+                    (dataTable.process_id LIKE concat( '%', #{param.userId}, '%' )
+                    ))
+                </otherwise>
+            </choose>
+        </if>
+        <if test='param.searchType == "3"'>
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询已研判告警 -->
+                    AND dataTable.order_status in ('0','7','2','4','5','6')
+                </when>
+                <otherwise>
+                    <!-- 已研判-本人已研判的告警 -->
+                    AND EXISTS (SELECT 1 FROM ${param.flowTableName} r
+                    WHERE r.order_id = dataTable.warning_order_id and r.link_id ='1' AND r.if_current_link = '0'
+                    AND r.process_id = #{param.userId})
+                    AND dataTable.order_status in ('0','7','2','4','5','6')
+                </otherwise>
+            </choose>
+        </if>
+    </sql>
+
+    <!-- 事件调度条件 -->
+    <sql id="queryOrderListForDispatch">
+        <if test='param.searchType == "1"'>
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询全部调度告警 -->
+                    AND dataTable.order_status in ('2','4','5','6')
+                </when>
+                <otherwise>
+                    <!-- 全部 -->
+                    AND ((dataTable.order_status = '2'
+                    <!--and (FIND_IN_SET(concat(dataTable.flow_id,'-',dataTable.link_id),#{param.flowLinkIds})
+                    or dataTable.process_id like concat('%,', #{param.userId}, ',%')))-->
+                    and
+                    ((FIND_IN_SET(concat( dataTable.flow_id, '-', dataTable.link_id ), #{param.flowLinkIds})
+                    and dataTable.before_dispatch_flag ='0')
+                    or
+                    (dataTable.process_id LIKE concat( '%', #{param.userId}, '%' )
+                    ))
+                    )
+                    OR (EXISTS (SELECT 1 FROM ${param.flowTableName} r
+                    WHERE r.order_id = dataTable.warning_order_id and r.link_id ='2' AND r.if_current_link = '0'
+                    AND r.process_id = #{param.userId})  AND dataTable.order_status in ('4','5','6'))
+                    )
+                </otherwise>
+            </choose>
+        </if>
+        <if test='param.searchType == "2"'>
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询待调度告警 -->
+                    AND dataTable.order_status = '2'
+                </when>
+                <otherwise>
+                    <!-- 待调度 -->
+                    AND dataTable.order_status = '2'
+                    <!-- and (FIND_IN_SET(concat(dataTable.flow_id,'-',dataTable.link_id),#{param.flowLinkIds})
+                    or dataTable.process_id like concat('%,', #{param.userId}, ',%')) -->
+                    and
+                    ((FIND_IN_SET(concat( dataTable.flow_id, '-', dataTable.link_id ), #{param.flowLinkIds})
+                    and dataTable.before_dispatch_flag ='0')
+                    or
+                    (dataTable.process_id LIKE concat( '%', #{param.userId}, '%' )
+                    ))
+                </otherwise>
+            </choose>
+        </if>
+        <if test='param.searchType == "3"'>
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询已调度告警 -->
+                    AND dataTable.order_status in ('4','5','6')
+                </when>
+                <otherwise>
+                    <!-- 已调度 -->
+                    AND EXISTS (SELECT 1 FROM ${param.flowTableName} r
+                    WHERE r.order_id = dataTable.warning_order_id and r.link_id ='2' AND r.if_current_link = '0'
+                    AND r.process_id = #{param.userId})
+                    AND dataTable.order_status in ('4','5','6')
+                </otherwise>
+            </choose>
+        </if>
+    </sql>
+
+    <!-- 事件核实条件 -->
+    <sql id="queryOrderListForCheck">
+        <if test='param.searchType == "1"'>
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询核实告警 -->
+                    AND dataTable.order_status in ('5','6')
+                </when>
+                <otherwise>
+                    <!-- 全部 -->
+                    AND ((dataTable.order_status = '5'
+                    <!-- and (FIND_IN_SET(concat(dataTable.flow_id,'-',dataTable.link_id),#{param.flowLinkIds})
+                    or dataTable.process_id like concat('%,', #{param.userId}, ',%'))) -->
+                    and
+                    ((FIND_IN_SET(concat( dataTable.flow_id, '-', dataTable.link_id ), #{param.flowLinkIds})
+                    and dataTable.before_dispatch_flag ='0')
+                    or
+                    (dataTable.process_id LIKE concat( '%', #{param.userId}, '%' )
+                    ))
+                    )
+                    OR (EXISTS (SELECT 1 FROM ${param.flowTableName} r
+                    WHERE r.order_id = dataTable.warning_order_id and r.link_id ='5' AND r.if_current_link = '0'
+                    AND r.process_id = #{param.userId}) and dataTable.order_status = '6'))
+                </otherwise>
+            </choose>
+        </if>
+        <if test='param.searchType == "2"'>
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询待核实告警 -->
+                    AND dataTable.order_status = '5'
+                </when>
+                <otherwise>
+                    <!-- 待核实 -->
+                    AND dataTable.order_status = '5'
+                    <!-- and (FIND_IN_SET(concat(dataTable.flow_id,'-',dataTable.link_id),#{param.flowLinkIds})
+                    or dataTable.process_id like concat('%,', #{param.userId}, ',%'))-->
+                    and
+                    ((FIND_IN_SET(concat( dataTable.flow_id, '-', dataTable.link_id ), #{param.flowLinkIds})
+                    and dataTable.before_dispatch_flag ='0')
+                    or
+                    (dataTable.process_id LIKE concat( '%', #{param.userId}, '%' )
+                    ))
+                </otherwise>
+            </choose>
+        </if>
+        <if test='param.searchType == "3"'>
+
+            <choose>
+                <when test="param.isAdmin">
+                    <!-- 管理员查询已核实告警 -->
+                    AND dataTable.order_status = '6'
+                </when>
+                <otherwise>
+                    <!-- 已核实 -->
+                    AND EXISTS (SELECT 1 FROM ${param.flowTableName} r
+                    WHERE r.order_id = dataTable.warning_order_id and r.link_id ='5' AND r.if_current_link = '0'
+                    AND r.process_id = #{param.userId})
+                    AND dataTable.order_status = '6'
+                </otherwise>
+            </choose>
+        </if>
+    </sql>
+    <!-- 封装查询参数 -->
+    <sql id="searchField">
+        dataTable.alarm_body AS alarmBody,
+        dataTable.warning_order_id AS orderId,
+        dataTable.warning_type_id AS warningTypeId,
+        IFNULL(DATE_FORMAT(dataTable.alarm_time,'%Y-%m-%d %H:%i:%S'),'') AS alarmTime,
+        IFNULL(DATE_FORMAT(dataTable.flow_node_time,'%Y-%m-%d %H:%i:%S'),'') AS flowNodeTime,
+        dataTable.order_status AS orderStatus,
+        dataTable.warning_source AS warningSource,
+        dataTable.address,
+        dataTable.description,
+        dataTable.remark,
+        dataTable.find_name AS findName,
+        dataTable.find_mobile AS findMobile,
+        dataTable.longitude,
+        dataTable.latitude,
+        dataTable.file_img_url_src AS imgUrl,
+        dataTable.file_img_url_icon AS fileImgUrlIcon,
+        dataTable.importance_level AS importanceLevel,
+        dataTable.tenant_id AS tenantId,
+        DATE_FORMAT(dataTable.create_time,'%Y-%m-%d %H:%i:%S') AS createDate,
+        dataTable.tenant_name AS tenantName,
+        dataTable.flow_node_time AS reciveTime,
+        IFNULL(dataTable.process_name,'') AS processName,
+        DATE_FORMAT(dataTable.flow_node_time,'%Y-%m-%d %H:%i:%S') AS flowNodeTime,
+        dataTable.time_limit AS timeLimit,
+        dataTable.process_id AS processId,
+        dataTable.group_id AS groupId,
+        dataTable.province_code as provinceId,
+        dataTable.province_name as provinceName,
+        dataTable.city_code as cityId,
+        dataTable.city_name as cityName,
+        dataTable.link_id as linkId,
+        dataTable.flow_template as flowTemplate,
+        dataTable.before_dispatch_flag as beforeDispatchFlag,
+        dataTable.flow_id as flowId,
+        dataTable.real_link_type as realLinkType,
+        dataTable.enable_acceptance_mode as enableAcceptanceMode,
+        dataTable.time_limit_acceptance as timeLimitAcceptance,
+        dataTable.enlarge_flag AS enlargeFlag
+    </sql>
+    <update id="updateOrderAlarmType">
+        update ${tableName} set warning_type_id = #{warningTypeId},address=#{address},
+        latitude=#{latitude},longitude=#{longitude},importance_level=#{importanceLevel} where warning_order_id = #{warningOrderId}
+    </update>
+
+    <select id="getOrderList" parameterType="com.chinatower.event.dto.AppOrderListByUserDTO" resultType="com.chinatower.event.entity.vo.WarningOrderListVO">
+        SELECT
+        <if test='param.userLongitude != null and param.userLongitude !="" and param.userLatitude != null and param.userLatitude !=""'>
+            ST_DISTANCE(POINT(#{param.userLongitude},#{param.userLatitude}),POINT(dataTable.longitude,dataTable.latitude))*111195 AS userDistance,
+        </if>
+        <include refid="searchField"/>
+        FROM ${param.tableName} dataTable
+        WHERE dataTable.delete_flag = '0'
+        <include refid="queryOrderList" />
+        ${param.dataScope}
+        <choose>
+            <when test='param.sortFlag!= null and param.sortFlag!= "" and param.sortFlag =="1" and param.userLongitude != null and param.userLongitude !="" and param.userLatitude != null and param.userLatitude !=""'>
+                order by userDistance asc
+            </when>
+            <otherwise>
+                order by dataTable.alarm_time desc
+            </otherwise>
+        </choose>
+        limit #{param.offset},#{param.limit}
+    </select>
+
+    <select id="getOrderListCount" resultType="int" parameterType="com.chinatower.event.dto.AppOrderListByUserDTO" >
+        SELECT count(1)
+        FROM ${param.tableName} dataTable
+        WHERE dataTable.delete_flag = '0'
+        <include refid="queryOrderList" />
+        ${param.dataScope}
+    </select>
+
+    <select id="getOrderAlarmByTenantCode"
+            resultType="com.chinatower.event.entity.vo.ReceiveAlarmVO">
+        SELECT
+        b.alarm_body as alarmBody,b.tenant_id as tenantId,b.device_code as deviceCode
+        FROM
+        ${tableName} b
+        WHERE b.delete_flag = '0' AND  to_days(b.alarm_time) = to_days(now()) AND  b.warning_type_id ='1212116' AND b.warning_source = '1'
+        ${dataScope}
+        <if test='tenantId != null and tenantId !=""'>
+            AND b.tenant_id = #{tenantId}
+        </if>
+    </select>
+</mapper>

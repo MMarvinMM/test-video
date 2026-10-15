@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.SysDeptDeviceMapper">
+    <select id="getCameras" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT dt.device_code
+        from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_device_info_t it ON it.device_code = dt.device_code
+        left join vm_order_devices od on it.device_code = od.device_code
+       WHERE dt.TENANT_ID=#{tenantId}  and d.DEPT_ID in
+        <foreach collection="deptIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+         and dt.industry_code=#{industryCode} and  dt.device_type NOT IN(8,9,10)
+        and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} and od.industry_code=#{industryCode}
+    </select>
+
+    <select id="getRaders" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT it.device_code,IFNULL(id.device_name,it.device_name) device_name,it.province_id,it.city_id,it.town_code,it.county_id
+        from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_iot_device_t it ON it.device_code = dt.device_code
+        left join vm_order_sensor_devices od on it.device_code = od.device_code
+        LEFT JOIN vm_tenant_iot_device_rel_t id ON id.device_code = it.device_code and d.TENANT_ID = id.TENANT_ID
+        WHERE dt.device_type = 10 and it.category_code=1 and dt.TENANT_ID=#{tenantId} and dt.industry_code=#{industryCode}
+        and d.DEPT_ID in
+        <foreach collection="deptIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and it.device_code is not null
+        and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} and od.industry_code=#{industryCode} AND od.category_code=1
+        ${dataScope}
+    </select>
+
+    <select id="getSensors" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT it.device_code
+        from sys_dept d LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_iot_device_t it ON it.device_code = dt.device_code
+        left join vm_order_sensor_devices od on it.device_code = od.device_code
+        WHERE dt.device_type = 8 and it.category_code=2 and dt.TENANT_ID=#{tenantId} and dt.industry_code=#{industryCode}
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND d.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        and od.ord_status IN(0,1,2) AND od.tenant_id=#{tenantId} and od.industry_code=#{industryCode} AND od.category_code=2
+        ${dataScope}
+    </select>
+
+    <select id="getSatellites" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        rt.province_code province_id,
+        rt.city_code     city_id,
+        rt.county_code   county_id,
+        rt.street_code   town_code
+        from sys_dept d
+        LEFT JOIN vm_organ_street_rel_t rt ON rt.DEPT_ID = d.DEPT_ID
+        left join vm_order_services_rel od on od.provice_code = rt.province_code
+        and od.city_code = rt.city_code
+        and od.county_code = rt.county_code
+        WHERE rt.category_code = 9
+        and rt.TENANT_ID = #{tenantId}
+        and rt.industry_code = #{industryCode}
+        <if test='deptIdList != null and deptIdList.size() > 0 '>
+            AND rt.DEPT_ID IN
+            <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+        </if>
+        and od.ord_status IN (0, 1, 2)
+        AND od.tenant_id = #{tenantId}
+        and od.industry_code = #{industryCode}
+        AND od.service_code = 9
+            ${dataScope}
+    </select>
+
+    <select id="getUavs" resultType="com.chinatower.system.api.model.SysDeptDeviceVO">
+        SELECT DISTINCT
+        dd.device_code
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dd ON d.dept_id = dd.dept_id
+        AND dd.device_type = 11
+        LEFT JOIN vm_uav_device_info_t de ON dd.device_code = de.device_code
+        LEFT JOIN vm_order_uav_devices vod ON vod.device_code = de.device_code
+        WHERE dd.device_code IS NOT NULL
+        and dd.TENANT_ID=#{tenantId}
+        and dd.industry_code=#{industryCode}
+        and d.DEPT_ID in
+        <foreach collection="deptIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        AND vod.ord_status IN (0,1,2) AND vod.tenant_id=#{tenantId} and vod.industry_code=#{industryCode}
+    </select>
+
+    <select id="getUserNameByDeptId" resultType="java.lang.String">
+        SELECT
+            u.user_name
+        FROM
+            sys_user u
+            LEFT JOIN (
+                WITH RECURSIVE cte AS (
+                SELECT 1 AS n
+                UNION ALL
+                SELECT n + 1 FROM cte WHERE n <![CDATA[<]]> 50
+                )
+                SELECT
+                u2.user_id,
+                SUBSTRING_INDEX(SUBSTRING_INDEX(u2.DEPT_ID, ',', cte.n), ',', -1) AS dept_id
+                FROM sys_user u2
+                JOIN cte ON cte.n <![CDATA[<=]]> (LENGTH(u2.DEPT_ID) - LENGTH(REPLACE(u2.DEPT_ID, ',', '')) + 1)
+                WHERE u2.DEL_FLAG = '0'
+                AND u2.STATUS = '0'
+            ) ud ON u.user_id = ud.user_id
+            LEFT JOIN sys_dept d ON ud.dept_id = d.DEPT_ID AND d.DEL_FLAG = '0'
+        WHERE
+            u.DEL_FLAG = '0' and u.STATUS = '0'
+            <if test='tenantId != null and tenantId !=""'>
+                AND u.tenant_id = #{tenantId}
+            </if>
+            <if test='deptIdList != null and deptIdList.size() > 0 '>
+                AND d.DEPT_ID IN
+                <foreach collection="deptIdList" item="item" index="index" open="(" separator="," close=") ">
+                    #{item}
+                </foreach>
+            </if>
+    </select>
+
+    <select id="getCamerasOrganDetails" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT DISTINCT
+        dt.device_code AS deviceCode,
+        GROUP_CONCAT(DISTINCT dt.id ) AS id,
+        GROUP_CONCAT(DISTINCT dt.DEPT_ID ) AS orgId,
+        GROUP_CONCAT(DISTINCT d.DEPT_NAME SEPARATOR ', ' ) AS orgName
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_device_info_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_devices od ON it.device_code = od.device_code
+        WHERE
+        dt.TENANT_ID = #{tenantId}
+        AND dt.industry_code = #{industryCode}
+        AND dt.device_type NOT IN ( 8, 9, 10 )
+        AND od.ord_status IN ( 0, 1, 2 )
+        AND od.tenant_id = #{tenantId}
+        AND od.industry_code = #{industryCode}
+        <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+            and dt.device_code in
+            <foreach item="item" index="index" collection="deviceCodeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY
+        dt.device_code
+    </select>
+
+    <select id="getSensorsOrganDetails" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT DISTINCT
+        it.device_code AS deviceCode,
+        GROUP_CONCAT( DISTINCT dt.id ) AS id,
+        GROUP_CONCAT( DISTINCT dt.DEPT_ID ) AS orgId,
+        GROUP_CONCAT( DISTINCT d.DEPT_NAME SEPARATOR ', ' ) AS orgName
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_iot_device_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_sensor_devices od ON it.device_code = od.device_code
+        WHERE
+        dt.device_type = 8
+        AND it.category_code = 2
+        <if test='deviceCodeList != null and deviceCodeList.size() > 0'>
+            and it.device_code in
+            <foreach item="item" index="index" collection="deviceCodeList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        AND dt.TENANT_ID = #{tenantId}
+        AND dt.industry_code = #{industryCode}
+        AND od.ord_status IN ( 0, 1, 2 )
+        AND od.tenant_id = #{tenantId}
+        AND od.industry_code = #{industryCode}
+        AND od.category_code = 2
+        GROUP BY
+        it.device_code
+    </select>
+
+    <select id="getRadersOrganDetails" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT DISTINCT
+        it.device_code AS deviceCode,
+        it.province_id AS provinceCode,
+        it.city_id AS cityCode,
+        it.town_code AS townCode,
+        it.county_id AS countyCode,
+        CONCAT(it.province_id, '-', it.city_id, '-', it.county_id) AS regionName,
+        GROUP_CONCAT(DISTINCT dt.id) as id, GROUP_CONCAT(DISTINCT dt.DEPT_ID) as orgId,
+        GROUP_CONCAT(DISTINCT d.DEPT_NAME separator ', ') as orgName
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_device_rel_t dt ON d.DEPT_ID = dt.dept_id
+        LEFT JOIN vm_iot_device_t it ON it.device_code = dt.device_code
+        LEFT JOIN vm_order_sensor_devices od ON it.device_code = od.device_code
+        LEFT JOIN vm_tenant_iot_device_rel_t id ON id.device_code = it.device_code
+        AND d.TENANT_ID = id.TENANT_ID
+        WHERE
+        dt.device_type = 10
+        AND it.category_code = 1
+        <if test='regionCodeList != null and regionCodeList.size() > 0'>
+            AND (
+            <foreach item="item" collection="regionCodeList" open="" separator=" OR " close="">
+                (
+                CONCAT(it.province_id, '-', it.city_id, '-', it.county_id) = #{item} OR
+                CONCAT(it.province_id, '-', it.city_id) = #{item} OR
+                it.province_id = #{item}
+                )
+            </foreach>
+            )
+        </if>
+        AND dt.TENANT_ID = #{tenantId}
+        AND dt.industry_code = #{industryCode}
+        AND it.device_code IS NOT NULL
+        AND od.ord_status IN ( 0, 1, 2 )
+        AND od.tenant_id = #{tenantId}
+        AND od.industry_code = #{industryCode}
+        AND od.category_code =1
+        GROUP BY it.province_id,it.city_id,it.county_id,it.town_code
+    </select>
+
+    <select id="getSatellitesOrganDetails" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT DISTINCT
+        rt.province_code AS provinceCode,
+        rt.city_code AS cityCode,
+        rt.county_code AS countyCode,
+        rt.street_code AS townCode,
+        CONCAT(rt.province_code, '-', rt.city_code, '-', rt.county_code) AS regionName,
+        GROUP_CONCAT( DISTINCT rt.id ) AS id,
+        GROUP_CONCAT( DISTINCT rt.DEPT_ID ) AS orgId,
+        GROUP_CONCAT( DISTINCT d.DEPT_NAME SEPARATOR ', ' ) AS orgName
+        FROM
+        sys_dept d
+        LEFT JOIN vm_organ_street_rel_t rt ON rt.DEPT_ID = d.DEPT_ID
+        LEFT JOIN vm_order_services_rel od ON od.provice_code = rt.province_code
+        AND od.city_code = rt.city_code
+        AND od.county_code = rt.county_code
+        WHERE
+        rt.category_code = 9
+        <if test='regionCodeList != null and regionCodeList.size() > 0'>
+            AND (
+            <foreach item="item" collection="regionCodeList" open="" separator=" OR " close="">
+                (
+                CONCAT(rt.province_code, '-', rt.city_code, '-', rt.county_code) = #{item} OR
+                CONCAT(rt.province_code, '-', rt.city_code) = #{item} OR
+                rt.province_code = #{item}
+                )
+            </foreach>
+            )
+        </if>
+        AND rt.TENANT_ID = #{tenantId}
+        AND rt.industry_code = #{industryCode}
+        AND od.ord_status IN ( 0, 1, 2 )
+        AND od.tenant_id = #{tenantId}
+        AND od.industry_code = #{industryCode}
+        AND od.service_code = 9
+        GROUP BY rt.province_code, rt.city_code, rt.county_code, rt.street_code
+    </select>
+
+    <select id="getOrganUserDetails" resultType="java.util.Map">
+        SELECT
+        u.user_name AS userName,
+        GROUP_CONCAT( d.DEPT_NAME ) AS orgName
+        FROM
+        sys_user u
+        LEFT JOIN (
+            WITH RECURSIVE cte AS (
+            SELECT 1 AS n
+            UNION ALL
+            SELECT n + 1 FROM cte WHERE n <![CDATA[<]]> 50
+            )
+            SELECT
+            u2.user_id,
+            SUBSTRING_INDEX(SUBSTRING_INDEX(u2.DEPT_ID, ',', cte.n), ',', -1) AS dept_id
+            FROM sys_user u2
+            JOIN cte ON cte.n <![CDATA[<=]]> (LENGTH(u2.DEPT_ID) - LENGTH(REPLACE(u2.DEPT_ID, ',', '')) + 1)
+            WHERE u2.DEL_FLAG = '0'
+            AND u2.`STATUS` = '0'
+        ) ud ON u.user_id = ud.user_id
+        LEFT JOIN sys_dept d ON ud.dept_id = d.DEPT_ID AND d.DEL_FLAG = '0'
+        WHERE
+        u.DEL_FLAG = '0'
+        AND u.`STATUS` = '0'
+        <if test='userNameList != null and userNameList.size() > 0'>
+            and u.USER_NAME IN
+            <foreach item="item" index="index" collection="userNameList" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY
+        u.USER_NAME
+    </select>
+
+</mapper>

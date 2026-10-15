@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.SysOperLogMapper">
+
+    <insert id="insertOperlog" parameterType="com.chinatower.platform.entity.log.SysOperLog">
+        insert into sys_oper_log_${operMonth}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null  and title != ''">title,</if>
+            <if test="businessType != null  and businessType != ''">business_type,</if>
+            <if test="method != null  and method != ''">method,</if>
+            <if test="requestMethod != null  and requestMethod != ''">request_method,</if>
+            <if test="operatorType != null  and operatorType != ''">operator_type,</if>
+            <if test="operName != null  and operName != ''">oper_name,</if>
+            <if test="deptName != null  and deptName != ''">dept_name,</if>
+            <if test="operUrl != null  and operUrl != ''">oper_url,</if>
+            <if test="operIp != null  and operIp != ''">oper_ip,</if>
+            <if test="operLocation != null  and operLocation != ''">oper_location,</if>
+            <if test="operParam != null  and operParam != ''">oper_param,</if>
+            <if test="jsonResult != null  and jsonResult != ''">json_result,</if>
+            <if test="status != null ">status,</if>
+            <if test="errorMsg != null  and errorMsg != ''">error_msg,</if>
+            <if test="operTime != null  ">oper_time,</if>
+            <if test="createBy != null  ">create_by,</if>
+            <if test="createTime != null  ">create_time,</if>
+            <if test="traceId != null  ">trace_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null  and title != ''">#{title},</if>
+            <if test="businessType != null  and businessType != ''">#{businessType},</if>
+            <if test="method != null  and method != ''">#{method},</if>
+            <if test="requestMethod != null  and requestMethod != ''">#{requestMethod},</if>
+            <if test="operatorType != null  and operatorType != ''">#{operatorType},</if>
+            <if test="operName != null  and operName != ''">#{operName},</if>
+            <if test="deptName != null  and deptName != ''">#{deptName},</if>
+            <if test="operUrl != null  and operUrl != ''">#{operUrl},</if>
+            <if test="operIp != null  and operIp != ''">#{operIp},</if>
+            <if test="operLocation != null  and operLocation != ''">#{operLocation},</if>
+            <if test="operParam != null  and operParam != ''">#{operParam},</if>
+            <if test="jsonResult != null  and jsonResult != ''">#{jsonResult},</if>
+            <if test="status != null ">#{status},</if>
+            <if test="errorMsg != null  and errorMsg != ''">#{errorMsg},</if>
+            <if test="operTime != null ">#{operTime},</if>
+            <if test="createBy != null ">#{createBy},</if>
+            <if test="createTime != null  ">#{createTime},</if>
+            <if test="traceId != null  ">#{traceId},</if>
+        </trim>
+    </insert>
+
+    <select id="selectOperLogList" parameterType="com.chinatower.platform.entity.log.SysOperLog"
+            resultType="com.chinatower.platform.entity.log.SysOperLog">
+        select oper_id, title, business_type, method, request_method, operator_type, oper_name, dept_name, oper_url, oper_ip, oper_location, oper_param, json_result, status, error_msg, oper_time
+        from sys_oper_log_${operMonth}
+        <where>
+            <if test="operId != null and operId != ''">
+                AND oper_id = #{operId}
+            </if>
+            <if test="title != null and title != ''">
+                AND title like CONCAT(CONCAT('%', #{title}),'%')
+            </if>
+            <if test="businessType != null">
+                AND business_type = #{businessType}
+            </if>
+            <if test="businessTypes != null and businessTypes.length > 0">
+                AND business_type in
+                <foreach collection="businessTypes" item="businessType" open="(" separator="," close=")">
+                    #{businessType}
+                </foreach>
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="operName != null and operName != ''">
+                AND oper_name like CONCAT(CONCAT('%', #{operName}),'%')
+            </if>
+            <if test="operParam != null and operParam != ''">
+                AND oper_param like CONCAT(CONCAT('%', #{operParam}),'%')
+            </if>
+            <if test="beginTime != null and beginTime != ''"><!-- 开始时间检索 -->
+                AND oper_time &gt;= STR_TO_DATE(CONCAT(#{beginTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+            <if test="endTime != null and endTime != ''"><!-- 结束时间检索 -->
+                AND oper_time &lt;= STR_TO_DATE(CONCAT(#{endTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+            </if>
+        </where>
+        order by oper_time desc
+    </select>
+
+    <select id="selectTableCount" parameterType = "string" resultType="int">
+        select count(1) from information_schema.tables  where  table_name= #{tableName}
+    </select>
+
+    <update id="createTable" parameterType = "string" statementType="STATEMENT">
+        create table ${tableName}
+        (
+            OPER_ID        bigint auto_increment comment '日志主键' primary key,
+            TITLE          varchar(100) null comment '模块标题',
+            BUSINESS_TYPE  decimal(11)  null comment '业务类型（0其它 1新增 2修改 3删除）',
+            METHOD         varchar(120) null comment '方法名称',
+            REQUEST_METHOD varchar(10)  null comment '请求方式',
+            OPERATOR_TYPE  decimal(11)  null comment '操作类别（0其它 1后台用户 2手机端用户）',
+            OPER_NAME      varchar(50)  null comment '操作人员',
+            DEPT_NAME      varchar(50)  null comment '部门名称',
+            OPER_URL       varchar(300) null comment '请求URL',
+            OPER_IP        varchar(50)  null comment '主机地址',
+            OPER_LOCATION  varchar(300) null comment '操作地点',
+            OPER_PARAM     text         null comment '请求参数',
+            JSON_RESULT    text         null comment '返回参数',
+            STATUS         decimal(11)  null comment '操作状态（0正常 1异常）',
+            ERROR_MSG      text         null comment '错误消息',
+            OPER_TIME      datetime     null comment '操作时间',
+            TRACE_ID       varchar(200) null comment '跟踪ID',
+            CREATE_BY      varchar(64)  NULL DEFAULT NULL COMMENT '创建者',
+            CREATE_TIME    datetime     NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+            UPDATE_BY      varchar(64)  NULL DEFAULT NULL COMMENT '更新者',
+            UPDATE_TIME    datetime     NULL DEFAULT NULL COMMENT '更新时间'
+        ) comment '操作日志记录';
+    </update>
+
+
+    <insert id="saveOperlog" parameterType="com.chinatower.platform.entity.log.SysOperLog">
+        insert into sys_oper_log_${operMonth}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null  and title != ''">title,</if>
+            <if test="businessType != null">business_type,</if>
+            <if test="method != null  and method != ''">method,</if>
+            <if test="requestMethod != null  and requestMethod != ''">request_method,</if>
+            <if test="operatorType != null">operator_type,</if>
+            <if test="operName != null  and operName != ''">oper_name,</if>
+            <if test="deptName != null  and deptName != ''">dept_name,</if>
+            <if test="operUrl != null  and operUrl != ''">oper_url,</if>
+            <if test="operIp != null  and operIp != ''">oper_ip,</if>
+            <if test="operLocation != null  and operLocation != ''">oper_location,</if>
+            <if test="operParam != null  and operParam != ''">oper_param,</if>
+            <if test="jsonResult != null  and jsonResult != ''">json_result,</if>
+            <if test="status != null ">status,</if>
+            <if test="errorMsg != null  and errorMsg != ''">error_msg,</if>
+            <if test="operTime != null  ">oper_time,</if>
+            <if test="createBy != null  ">create_by,</if>
+            <if test="traceId != null  ">trace_id,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null  and title != ''">#{title},</if>
+            <if test="businessType != null">#{businessType},</if>
+            <if test="method != null  and method != ''">#{method},</if>
+            <if test="requestMethod != null  and requestMethod != ''">#{requestMethod},</if>
+            <if test="operatorType != null">#{operatorType},</if>
+            <if test="operName != null  and operName != ''">#{operName},</if>
+            <if test="deptName != null  and deptName != ''">#{deptName},</if>
+            <if test="operUrl != null  and operUrl != ''">#{operUrl},</if>
+            <if test="operIp != null  and operIp != ''">#{operIp},</if>
+            <if test="operLocation != null  and operLocation != ''">#{operLocation},</if>
+            <if test="operParam != null  and operParam != ''">#{operParam},</if>
+            <if test="jsonResult != null  and jsonResult != ''">#{jsonResult},</if>
+            <if test="status != null ">#{status},</if>
+            <if test="errorMsg != null  and errorMsg != ''">#{errorMsg},</if>
+            <if test="operTime != null ">#{operTime},</if>
+            <if test="createBy != null ">#{createBy},</if>
+            <if test="traceId != null  ">#{traceId},</if>
+            #{createTime}
+
+        </trim>
+    </insert>
+</mapper>

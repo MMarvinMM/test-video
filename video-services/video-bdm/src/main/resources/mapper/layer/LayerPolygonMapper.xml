@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.LayerPolygonMapper">
+
+    <!-- 通用查询映射结果 -->
+
+    <resultMap id="BaseResultMap" type="com.chinatower.bdm.modules.layer.domain.LayerPolygon" >
+        <result column="id" property="id" />
+        <result column="layer_id" property="layerId" />
+        <result column="pattern_spot_name" property="patternSpotName" />
+        <result column="feature_id" property="featureId" />
+        <result column="custom_name" property="customName" />
+        <result column="spot_area" property="spotArea" />
+        <result column="properties" property="properties" />
+        <result column="geometry" property="geometry" />
+        <result column="creator" property="creator" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier" property="modifier" />
+        <result column="update_time" property="updateTime" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="app_ver_code" property="appVerCode" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,
+                layer_id,
+                pattern_spot_name,
+                feature_id,
+                custom_name,
+                spot_area,
+                properties,
+                geometry,
+                creator,
+                create_time,
+                modifier,
+                update_time,
+                tenant_id,
+                industry_code,
+                app_ver_code
+    </sql>
+    <select id="selectList" resultMap="BaseResultMap" parameterType="com.chinatower.bdm.modules.layer.domain.LayerPolygon">
+        select
+        <include refid="Base_Column_List"></include>
+        from sys_layer_polygon
+        <where>
+            <if test="null != id and '' != id">
+                and id = #{id}
+            </if>
+            <if test="null != layerId and '' != layerId">
+                and layer_id = #{layerId}
+            </if>
+            <if test="null != featureId and '' != featureId">
+                and feature_id = #{featureId}
+            </if>
+            <if test="null != tenantId and '' != tenantId">
+                and tenant_id = #{tenantId}
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                and industry_code = #{industryCode}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteLayerId">
+        delete from sys_layer_polygon where layer_id = #{id}
+    </delete>
+
+    <select id="selectListCount" resultType="java.lang.Integer">
+        select count(1)
+        from sys_layer_polygon
+        where
+        tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+        and feature_id in
+        <foreach item="item"  collection="featureIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </select>
+    <select id="selectCount" resultType="java.lang.Integer">
+        select count(1)
+        from sys_layer_polygon
+        where
+            layer_id = #{layerId}
+        and tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+    </select>
+    <delete id="deleteLayerIds">
+        delete from sys_layer_polygon
+        where
+        tenant_id = #{tenantId}
+        and industry_code = #{industryCode}
+        and layer_id in
+        <foreach item="item"  collection="layerIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <insert id="saveBatch" parameterType="com.chinatower.bdm.modules.layer.domain.LayerPolygon">
+        insert into `sys_layer_polygon`(`id`,`layer_id`,`pattern_spot_name`,`feature_id`,`custom_name`,`spot_area`,`properties`,`geometry`,`creator`,`create_time`,`modifier`,`update_time`,`tenant_id`,`industry_code`,`app_ver_code`)
+        values
+        <foreach collection="list" item="layerType" separator=",">
+            (#{layerType.id},#{layerType.layerId},#{layerType.patternSpotName},#{layerType.featureId},#{layerType.customName},#{layerType.spotArea},#{layerType.properties},#{layerType.geometry},#{layerType.creator},#{layerType.createTime},#{layerType.modifier},#{layerType.updateTime},#{layerType.tenantId},#{layerType.industryCode},#{layerType.appVerCode})
+        </foreach>
+    </insert>
+
+    <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.chinatower.bdm.modules.layer.domain.LayerPolygon">
+        INSERT INTO sys_layer_polygon
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="null != layerId and '' != layerId">
+                layer_id,
+            </if>
+            <if test="null != patternSpotName and '' != patternSpotName">
+                pattern_spot_name,
+            </if>
+            <if test="null != featureId and '' != featureId">
+                feature_id,
+            </if>
+            <if test="null != customName and '' != customName">
+                custom_name,
+            </if>
+            <if test="null != spotArea and '' != spotArea">
+                spot_area,
+            </if>
+            <if test="null != properties and '' != properties">
+                properties,
+            </if>
+            <if test="null != geometry and '' != geometry">
+                geometry,
+            </if>
+            <if test="null != creator and '' != creator">
+                creator,
+            </if>
+            <if test="null != createTime">
+                create_time,
+            </if>
+            <if test="null != modifier and '' != modifier">
+                modifier,
+            </if>
+            <if test="null != updateTime">
+                update_time,
+            </if>
+            <if test="null != tenantId and '' != tenantId">
+                tenant_id,
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                industry_code,
+            </if>
+            <if test="null != appVerCode and '' != appVerCode">
+                app_ver_code
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="null != layerId and '' != layerId">
+                #{layerId},
+            </if>
+            <if test="null != patternSpotName and '' != patternSpotName">
+                #{patternSpotName},
+            </if>
+            <if test="null != featureId and '' != featureId">
+                #{featureId},
+            </if>
+            <if test="null != customName and '' != customName">
+                #{customName},
+            </if>
+            <if test="null != spotArea and '' != spotArea">
+                #{spotArea},
+            </if>
+            <if test="null != properties and '' != properties">
+                #{properties},
+            </if>
+            <if test="null != geometry and '' != geometry">
+                #{geometry},
+            </if>
+            <if test="null != creator and '' != creator">
+                #{creator},
+            </if>
+            <if test="null != createTime">
+                #{createTime},
+            </if>
+            <if test="null != modifier and '' != modifier">
+                #{modifier},
+            </if>
+            <if test="null != updateTime">
+                #{updateTime},
+            </if>
+            <if test="null != tenantId and '' != tenantId">
+                #{tenantId},
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                #{industryCode},
+            </if>
+            <if test="null != appVerCode and '' != appVerCode">
+                #{appVerCode}
+            </if>
+        </trim>
+    </insert>
+</mapper>

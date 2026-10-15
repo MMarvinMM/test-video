@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.SysSceneAlarmMapper">
+
+    <select id="selectSceneAlarmRelationByTaskId" resultType="com.chinatower.receive.vo.entity.SceneAlarmRelationVO">
+        SELECT
+            config.scene_name AS sceneName,
+            config.scene_id AS sceneCode,
+            config.algorithm_code AS algorithmCode,
+            config.type_value AS alarmType,
+            rel.alarm_type algorithmAlarmType,
+            vac.model_config AS modelConfig
+        FROM vm_algorithm_config vac
+        INNER JOIN sys_scene_config config ON FIND_IN_SET(config.scene_id, vac.scene_code) > 0
+            AND config.delete_flag = 0
+        LEFT JOIN sys_scene_alarm_rel rel ON rel.scene_id = config.scene_id
+            AND rel.delete_flag = 0
+        WHERE vac.task_id = #{taskId}
+            AND vac.delete_flag = 0
+        <if test="alarmTypeList != null and alarmTypeList.size() > 0">
+            AND rel.alarm_type IN
+            <foreach collection="alarmTypeList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <foreach collection="customers" item="customer" index="index" open="and (" close=")" separator="or">
+            ( config.tenant_id = #{customer.tenantId}
+            and config.industry_code = #{customer.industryCode} )
+        </foreach>
+        ORDER BY config.scene_name, rel.alarm_type
+    </select>
+
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.ISysMapper">
+
+    <select id="selectUserByDeptId" resultType="com.chinatower.platform.entity.admin.SysUser">
+		SELECT * from sys_user WHERE del_flag = '0' and DEPT_ID like concat(#{deptId},'%')
+	</select>
+
+    <select id="selectUserOnlyByUserName" parameterType="String" resultType="com.chinatower.platform.entity.admin.SysUser">
+		select * from sys_user u
+		where u.del_flag = '0' AND u.user_name = #{userName}
+	</select>
+	<select id="getByIndustryCode" parameterType="java.lang.String" resultType="com.chinatower.platform.entity.admin.SysIndustryConf">
+		select industry_id, industry_code, industry_name, industry_desc, create_time, update_time, status, creator, modifier from sys_industry_conf
+		where industry_code = #{industryCode}
+		<if test='localNode != null and localNode != ""'>
+			and	accept_node =#{localNode}
+		</if>
+		and delete_flag = 0 limit 1
+	</select>
+</mapper>

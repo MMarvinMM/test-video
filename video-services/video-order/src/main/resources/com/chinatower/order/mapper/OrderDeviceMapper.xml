@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderDeviceMapper">
+
+
+    <select id="getValidDev" resultType="java.lang.String">
+
+        SELECT DISTINCT
+            device_code
+        FROM
+            vm_order_devices
+        WHERE
+            tenant_id = #{customerCode}
+            AND delete_flag = '0'
+
+    </select>
+
+    <select id="getValidChn" resultType="java.lang.String">
+        SELECT DISTINCT
+            channel_code
+        FROM
+            vm_order_devices
+        WHERE
+            tenant_id = #{customerCode}
+            AND delete_flag = '0'
+
+    </select>
+    <select id="getDeviceInfoByList" resultType="com.chinatower.platform.entity.order.OrderDevicesVO">
+
+        select
+            b.device_code,b.device_name,b.site_name,b.location,b.longitude,b.latitude, t.order_code, t.package_code
+        from vm_device_info_t b
+        left join
+            vm_order_devices t on t.device_code = b.device_code
+        where
+            t.order_code in
+            <foreach collection="orderCodeList" item="orderCode" index="index" open="(" close=")" separator=",">
+                #{orderCode}
+            </foreach>
+            AND t.package_code in
+            <foreach collection="packageCodeList" item="packageCode" index="index" open="(" close=")" separator=",">
+                #{packageCode}
+            </foreach>
+            AND t.delete_flag = '0'
+    </select>
+
+    <select id="findDeviceCodeByUser" resultType="java.lang.String">
+        SELECT
+            distinct od.device_code
+        FROM vm_order_devices od
+             left join vm_order_package op on op.package_code = od.package_code
+             LEFT JOIN vm_order_customer co ON co.order_code = od.order_code
+        WHERE
+            op.app_ver_code = #{appVerCode}
+            AND co.user_id =  #{userId}
+            AND co.delete_flag = '0'
+            AND op.delete_flag = '0'
+    </select>
+
+    <select id="getOrderCode" resultType="com.chinatower.common.core.dto.VideoOrderResp">
+        select package_code,tenant_id,order_code,industry_code,app_ver_code
+        from vm_order_devices
+        where tenant_id = #{tenantId}
+        and device_code = #{deviceCode}
+        <if test="industryCode != null and industryCode != ''">
+            and industry_code = #{industryCode}
+        </if>
+        and delete_flag = '0'
+        and ord_status in (0,1,2)
+        order by update_time desc
+    </select>
+
+    <select id="getByTenantIdAndIndustryCode" resultType="com.chinatower.platform.entity.order.OrderDevicesVO">
+        select * from vm_order_devices where tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = 0
+    </select>
+
+    <update id="cancelByOrderCode">
+        update vm_order_devices
+        set ord_status = 3, update_time = now()
+        where order_code = #{orderCode} and ord_status in (0,1,2);
+    </update>
+
+    <select id="getTenantDeviceList" resultType="com.chinatower.system.api.model.DeviceTreeVO">
+        SELECT
+            de.province_id,
+            de.city_id,
+            de.county_id,
+            de.device_code,
+            de.device_name,
+            ord.industry_code,
+            ord.app_ver_code as appVersion,
+            de.town_code town_code
+        FROM
+            vm_order_devices ord
+                JOIN vm_device_info_t de ON de.device_code = ord.device_code
+        WHERE
+            de.delete_flag = '0'
+          AND de.province_id != ''
+	AND de.province_id IS NOT NULL
+	AND de.city_id != ''
+	AND de.city_id IS NOT NULL
+	AND de.county_id != ''
+	AND de.county_id IS NOT NULL
+	AND ord.order_code = #{orderCode}
+	and ord.ord_status in (0,1,2)
+        ORDER BY
+            de.province_id,
+            de.city_id,
+            de.county_id,
+            de.town_code
+    </select>
+
+    <select id="getAllAreaInfo" resultType="com.chinatower.platform.entity.admin.SysArea">
+        SELECT AREA_CODE, AREA_NAME, AREA_PARENT_CODE, AREA_PARENT_NAME, DEPT_ID FROM sys_area ar WHERE ar.DEL_FLAG = '0' ORDER BY ar.AREA_CODE
+    </select>
+
+
+    <select id="getDeviceInfoByOrderCodeAndPackageCode" resultType="com.chinatower.platform.entity.order.OrderDevicesVO">
+        SELECT
+            distinct
+            a.device_code,
+            a.order_code,
+            a.package_code
+        FROM vm_order_devices a
+        WHERE
+            a.order_code = #{orderCode}
+          AND a.package_code = #{packageCode}
+          AND a.delete_flag = '0'
+            ${dataScope}
+        ORDER BY a.create_time,a.id desc
+    </select>
+
+    <select id="getDeviceInfoByDeviceCodes" resultType="com.chinatower.platform.entity.order.OrderDevicesVO">
+
+        SELECT
+        b.device_code,
+        b.device_name,
+        b.site_name,
+        b.location,
+        b.longitude,
+        b.latitude
+        FROM vm_device_info_t b
+        where b.device_code in
+        <foreach collection="deviceCodes" item="deviceCode" index="index" open="(" close=")" separator=",">
+            #{deviceCode}
+        </foreach>
+    </select>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO `vm_order_devices`
+        (`order_code`, `package_code`, `tenant_id`, `device_code`, `device_name`, `move_sign`, `industry_code`,
+        `app_ver_code`, `ord_status`, `delete_flag`, `create_time`, `update_time`, `accept_node`, `access_node`)
+        VALUES
+        <foreach collection="list" item="item" separator="," >
+            (
+            #{item.orderCode}, #{item.packageCode}, #{item.tenantId}, #{item.deviceCode}, #{item.deviceName}, #{item.moveSign}, #{item.industryCode},
+            #{item.appVerCode}, #{item.ordStatus}, #{item.deleteFlag}, #{item.createTime}, #{item.updateTime}, #{item.acceptNode}, #{item.accessNode}
+            )
+        </foreach>
+    </insert>
+</mapper>

@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.WarningOrderMapper">
+
+    <insert id="insertWarningOrders" parameterType="com.chinatower.receive.vo.dto.ReceiveAlarmDTO">
+        INSERT INTO ${tableName} (
+        warning_order_id,warning_source,report_type,task_id,warning_type_id,
+        alarm_time,tenant_id,tenant_name,province_name,province_code,
+        city_name,city_code,county_code,county_name,longitude,
+        latitude,alarm_body,channel_code,channel_name,device_code,
+        device_name,ptz_p,ptz_t,ptz_z,remark,
+        description,address,alarm_code,voice,link_id,
+        link_name,flow_node_time,process_id,process_name,group_id,
+        creator,time_limit,algorithm_code,emergency_level,order_status,
+        flow_template,find_name,find_mobile,grid_id,grid_name,
+        video_url,file_img_url_src,file_img_url_icon,modifier_date,create_time,
+        delete_flag,importance_level,judge_result,judge_type,flow_id,role_id,industry_code,app_ver_code,
+        alarm_param,alarm_param_value, extra_field, sub_scenes, hori_azimuth_angle,confidence_level,confidence_level_min,confidence_level_max,comp_confidence_level,msg_type,
+        msg_id,notice_resource,front_alarm_pic_url,front_alarm_vedio_url,preset_id,camera_alarm_type,is_second_judge,second_judge_result,town_code,town_name,feature_pan,
+        feature_tilt,real_link_type,enlarge_flag,before_dispatch_flag,enable_acceptance_mode,time_limit_acceptance,device_pitch,device_horizontal,alarm_reason,is_second_identify,
+        second_identify_result,linkage_algorithm,transparent_fields,pitch_angle,hori_field_angle,vertical_field_angle,device_address,flight_route_id,task_record_id
+        ) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.warningOrderId}, #{item.warningSource}, #{item.reportType}, #{item.taskId},#{item.alarmType},
+            #{item.alarmTime},#{item.tenantId},#{item.tenantName},#{item.provinceName},#{item.provinceCode},
+            #{item.cityName},#{item.cityCode},#{item.countyCode},#{item.countyName},#{item.longitude},
+            #{item.latitude},#{item.alarmBody},#{item.channelCode},#{item.channelName},#{item.deviceCode},
+            #{item.deviceName},#{item.pan},#{item.tilt},#{item.zoom},#{item.remark},
+            #{item.description},#{item.address},#{item.alarmCode},#{item.voice},#{item.linkId},
+            #{item.linkName},#{item.flowNodeTime},#{item.processId},#{item.processName},#{item.groupId},
+            #{item.createUser},#{item.timeLimit},#{item.algorithmCode},#{item.emergencyLevel},#{item.orderStatus},
+            #{item.flowTemplate},#{item.findName},#{item.findMobile},#{item.gridId},#{item.gridName},
+            #{item.alarmVideoUrl},#{item.originalPictureUrl},#{item.alarmPictureUrl},now(),now(),
+            '0',#{item.importanceLevel},#{item.judgeResult},#{item.judgeType},#{item.flowId},#{item.roleId},#{item.industryCode},#{item.appVerCode},
+            #{item.alarmParam},#{item.alarmParamValue},#{item.extraField},#{item.subScenes},#{item.horiAzimuthAngle},#{item.confidenceLevel},#{item.confidenceLevelMin},#{item.confidenceLevelMax},#{item.compConfidenceLevel},#{item.msgType}
+            <choose>
+                <when test='item.extraInfo != null and item.extraInfo != ""'>
+                    ,#{item.extraInfo.msgId},#{item.extraInfo.noticeResource},#{item.extraInfo.frontAlarmPicUrl},#{item.extraInfo.frontAlarmVedioUrl},#{item.extraInfo.presetId}
+                </when>
+                <otherwise>
+                    ,null,null,null,null,null
+                </otherwise>
+            </choose>
+            ,#{item.cameraAlarmType},#{item.isSecondJudge},#{item.secondJudgeResult},#{item.townCode},#{item.townName},#{item.featurePan},#{item.featureTilt},#{item.realLinkType},#{item.enlargeFlag},#{item.beforeDispatchFlag},#{item.enableAcceptanceMode},
+             #{item.timeLimitAcceptance},#{item.devicePitch},#{item.deviceHorizontal},#{item.alarmReason},#{item.isSecondIdentify},#{item.secondIdentifyResult},#{item.linkageAlgorithm},#{item.transparentFields},#{item.pitchAngle},#{item.horiFieldAngle},
+            #{item.verticalFieldAngle},#{item.deviceAddress},#{item.flightRouteId},#{item.taskRecordId}
+            )
+        </foreach>
+    </insert>
+
+    <update id="createNewTable" parameterType="java.lang.String">
+        CREATE TABLE IF NOT EXISTS ${tableNewName} LIKE ${tableOldName}
+    </update>
+
+    <!-- 查询智能体扩展字段，供回调与已落库气象合并 -->
+    <select id="selectAgentExtendField" resultType="java.lang.String">
+        SELECT agent_extend_field
+        FROM ${tableName}
+        WHERE warning_order_id = #{warningOrderId}
+        LIMIT 1
+    </select>
+
+    <!-- 回写 AI 告警分级研判结果（研判完成）：独立字段 risk_level/scene_code + 智能体扩展字段 -->
+    <update id="updateAiJudgeResult">
+        UPDATE ${tableName}
+        SET risk_level = #{riskLevel},
+            scene_code = #{sceneCode},
+            agent_extend_field = #{agentExtendField},
+            ai_judge_status = #{aiJudgeStatus},
+            modifier_date = NOW()
+        WHERE warning_order_id = #{warningOrderId}
+    </update>
+
+    <!-- 同步更新收藏表中的 AI 研判字段，保证我的收藏列表筛选/排序与工单一致 -->
+    <update id="updateAiJudgeResultOnCollection">
+        UPDATE vm_warning_order_collection_t
+        SET risk_level = #{riskLevel},
+            scene_code = #{sceneCode},
+            agent_extend_field = #{agentExtendField},
+            ai_judge_status = #{aiJudgeStatus},
+            modifier_date = NOW()
+        WHERE warning_order_id = #{warningOrderId}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 上报成功后同步收藏表场景模板与未研判状态 -->
+    <update id="updateAiJudgePendingOnCollection">
+        UPDATE vm_warning_order_collection_t
+        SET scene_template = #{sceneTemplate},
+            ai_judge_status = #{aiJudgeStatus},
+            modifier_date = NOW()
+        WHERE warning_order_id = #{warningOrderId}
+          AND delete_flag = '0'
+    </update>
+
+    <!-- 上报成功后标记未研判，并写入场景模板（来自配置表） -->
+    <update id="updateAiJudgePending">
+        UPDATE ${tableName}
+        SET scene_template = #{sceneTemplate},
+            ai_judge_status = #{aiJudgeStatus},
+            modifier_date = NOW()
+        WHERE warning_order_id = #{warningOrderId}
+    </update>
+
+    <!-- 仅更新研判状态 -->
+    <update id="updateAiJudgeStatus">
+        UPDATE ${tableName}
+        SET ai_judge_status = #{aiJudgeStatus},
+            modifier_date = NOW()
+        WHERE warning_order_id = #{warningOrderId}
+    </update>
+
+    <select id="getUserIdByTenantIdBatch" resultType="com.chinatower.receive.vo.entity.UserInfoVO" parameterType="java.util.List">
+        select USER_ID,tenant_id from sys_user where is_tenant_admin = '1' and DEL_FLAG = '0' and STATUS = '0'
+        <if test="tenantIds!= null and tenantIds.size() > 0 ">
+            AND tenant_id in
+            <foreach collection="tenantIds" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getAlarmOrder" resultType="com.chinatower.receive.vo.dto.WarnOrderStatusDTO"
+            parameterType="com.chinatower.receive.vo.entity.AlarmOrderReceiveDTO">
+        SELECT a.alarm_body AS alarmBody,
+        a.warning_order_id AS orderId,
+        a.warning_type_id AS warningTypeId,
+        IF(a.alarm_time IS NULL,'',DATE_FORMAT(a.alarm_time,'%Y-%m-%d %H:%i:%s')) as alarmTime,
+        IF(a.create_time IS NULL,'',DATE_FORMAT(a.create_time,'%Y-%m-%d %H:%i:%s')) as createTime,
+        a.province_code AS provinceId,
+        a.city_code AS cityId,
+        a.county_code AS countyId,
+        a.address,
+        a.longitude,
+        a.latitude,
+        a.emergency_level AS emergencyLevel,
+        a.tenant_id AS tenantId,
+        a.device_code AS deviceCode,
+        a.device_name AS deviceName,
+        a.channel_code AS channelCode,
+        a.channel_name AS channelName,
+        a.alarm_code AS alarmCode,
+        a.order_status AS orderStatus,
+        a.warning_source AS warningSource,
+        a.org_record AS orgRecord,
+        a.user_record AS userRecord,
+        a.flow_template AS flowTemplate,
+        a.flow_id AS flowId,
+        a.link_name AS linkName,
+        a.process_id AS processId,
+        a.process_name AS processName,
+        a.time_limit AS timeLimit,
+        a.app_ver_code as tradeVerCode,
+        a.industry_code as industryCode,
+        a.link_id as linkId,
+        a.real_link_type as realLinkType,
+        a.judge_result as judgeResult,
+        a.grid_id as gridId
+        from ${tableName} a
+        where 1 = 1
+        <if test='orderId!= null and orderId != "" and orderId != "0"'>
+            and a.warning_order_id = #{orderId}
+        </if>
+        <if test='tenantId != null and tenantId != ""'>
+            AND a.tenant_id = #{tenantId}
+        </if>
+        <if test='orderStatus != null and orderStatus != "" '>
+            AND a.order_status = #{orderStatus}
+        </if>
+        <if test='deleteFlag!= null and deleteFlag != ""'>
+            AND a.delete_flag = #{deleteFlag}
+        </if>
+        <if test='linkId != null and linkId != ""'>
+            AND a.link_id = #{linkId}
+        </if>
+        <if test='enableAcceptanceMode != null and enableAcceptanceMode != ""'>
+            AND a.enable_acceptance_mode = #{enableAcceptanceMode}
+        </if>
+
+    </select>
+
+    <select id="queryLicensePlateList" parameterType="java.util.Map" resultType="com.chinatower.bdm.api.entity.CheckpointVehicleLicensePlate">
+        SELECT
+        t.tenant_id,
+        t.industry_code,
+        t.app_ver_code,
+        t.vehicle_number,
+        t.black_or_white,
+        t.vehicle_type,
+        t.valid_period
+        FROM
+        vm_checkpoint_vehicle_license_plate_t t
+        WHERE
+        t.delete_flag = 0
+        AND t.vehicle_number = #{vehicleNumber}
+        <if test="tenantId != null and tenantId.size() > 0 ">
+            AND t.tenant_id in
+            <foreach collection="tenantId" item="tenantId" index="index" open="(" close=")" separator=",">
+                #{tenantId}
+            </foreach>
+        </if>
+        <if test="industryCode != null and industryCode.size() > 0 ">
+            AND t.industry_code in
+            <foreach collection="industryCode" item="industryCode" index="index" open="(" close=")" separator=",">
+                #{industryCode}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getBlackWhiteJson" parameterType="java.util.Map" resultType="com.chinatower.bdm.api.entity.CheckpointVehicleLicensePlate">
+        SELECT
+        IFNULL(pt.vehicle_number,'') AS vehicleNumber,
+        IFNULL(pt.app_ver_code,'') AS appVerCode,
+        IFNULL(pt.valid_period,'') AS validPeriod,
+        IFNULL(pt.black_or_white,'') AS blackOrWhite
+        FROM
+        vm_algorithm_give_config ac
+        LEFT JOIN vm_algorithm_give_license_rel_t t ON t.config_id = ac.id
+        LEFT JOIN vm_checkpoint_vehicle_license_plate_t pt ON pt.vehicle_number = t.vehicle_number
+        AND pt.black_or_white = t.black_or_white AND pt.delete_flag = 0
+        WHERE
+        ac.`status` = '0' AND ac.delete_flag = 0
+        AND ac.device_code = #{deviceCode}
+        AND ac.alarm_type = #{alarmType}
+        <if test="tenantId != null and tenantId.size() > 0 ">
+            AND ac.tenant_id in
+            <foreach collection="tenantId" item="tenantId" index="index" open="(" close=")" separator=",">
+                #{tenantId}
+            </foreach>
+        </if>
+        <if test="industryCode != null and industryCode.size() > 0 ">
+            AND ac.industry_code in
+            <foreach collection="industryCode" item="industryCode" index="index" open="(" close=")" separator=",">
+                #{industryCode}
+            </foreach>
+        </if>
+    </select>
+</mapper>

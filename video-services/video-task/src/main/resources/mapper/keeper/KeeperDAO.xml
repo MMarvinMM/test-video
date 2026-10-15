@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.keeper.dao.KeeperDAO">
+
+    <select id="getInspectionConfList"
+            resultType="com.chinatower.platform.modules.keeper.entity.InspectionTaskVO">
+        SELECT conf_id,cnof_name,tenant_id,grid_id,grid_name,2 AS task_status,
+            level_start_time AS start_time,level_end_time AS end_time,is_repeat,
+            keeper_id,keeper_name,conf_desc,industry_code,app_ver_code,inspection_period,
+            CONCAT_WS(' ',DATE_FORMAT(NOW(),'%Y-%m-%d'),DATE_FORMAT(data_time,'%H:%i:%s')) AS create_time
+        FROM bm_inspection_conf
+        WHERE DATE_FORMAT(level_end_time,'%Y-%m-%d')>= DATE_FORMAT(NOW(),'%Y-%m-%d')
+        AND DATE_FORMAT(NOW(),'%Y-%m-%d')>= DATE_FORMAT(level_start_time,'%Y-%m-%d')
+        AND is_repeat='1'
+        AND delete_flag = 0 AND conf_status in (0,1)
+        AND MOD(TO_DAYS(DATE_FORMAT(NOW(), '%Y-%m-%d'))- TO_DAYS(DATE_FORMAT(level_start_time, '%Y-%m-%d')),level_day_count)='0'
+        UNION ALL
+        SELECT conf_id,cnof_name,tenant_id,grid_id,grid_name,2 AS task_status,
+        level_start_time AS start_time,level_end_time AS end_time,is_repeat,
+        if(keeper_id LIKE ',%', NULL,keeper_id) AS keeper_id,if(keeper_name LIKE ',%', NULL,keeper_name) AS keeper_name,
+        conf_desc,industry_code,app_ver_code,inspection_period,
+        CONCAT_WS(' ',DATE_FORMAT(level_end_time,'%Y-%m-%d'),DATE_FORMAT(data_time,'%H:%i:%s')) AS create_time
+        FROM bm_inspection_conf
+        WHERE DATE_FORMAT(level_end_time,'%Y-%m-%d' )>= DATE_FORMAT( now(),'%Y-%m-%d' )
+        AND DATE_FORMAT(now(),'%Y-%m-%d')>=DATE_FORMAT(level_start_time,'%Y-%m-%d')
+        AND no_repeat_over='0'
+        AND delete_flag = 0 AND conf_status = 0
+        AND is_repeat='0'
+    </select>
+
+    <insert id="insertInspectionTask">
+        INSERT INTO bm_inspection_task
+	    (task_id, conf_id,cnof_name, tenant_id, grid_id, grid_name, task_status, start_time, end_time,
+	    keeper_id, keeper_name, create_time,conf_desc,industry_code,app_ver_code,delete_flag,send_flag,
+        inspection_start_time,inspection_end_time) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.taskId},#{item.confId},#{item.cnofName},#{item.tenantId},#{item.gridId},#{item.gridName},
+            #{item.taskStatus},#{item.startTime},#{item.endTime},#{item.keeperId},#{item.keeperName},#{item.createTime},
+            #{item.confDesc},#{item.industryCode},#{item.appVerCode},0,0,#{item.inspectionStartTime},
+            #{item.inspectionEndTime})
+        </foreach>
+    </insert>
+
+    <update id="updateNoRepeatConfStatus">
+        UPDATE bm_inspection_conf a SET a.no_repeat_over = '1'
+        WHERE a.is_repeat = '0' AND a.no_repeat_over = '0' AND a.delete_flag = 0
+        AND DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s')>= DATE_FORMAT(a.create_time,'%Y-%m-%d %H:%i:%s')
+        AND DATE_FORMAT(a.level_end_time,'%Y-%m-%d' )>= DATE_FORMAT( now(),'%Y-%m-%d' )
+        AND DATE_FORMAT(now(),'%Y-%m-%d')>=DATE_FORMAT(a.level_start_time,'%Y-%m-%d')
+    </update>
+
+    <update id="updateRepeatConfStatus">
+        UPDATE bm_inspection_conf a SET a.conf_status = '0'
+        WHERE a.is_repeat = '1' AND a.delete_flag = 0
+          AND DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s')>= DATE_FORMAT(a.create_time,'%Y-%m-%d %H:%i:%s')
+          AND DATE_FORMAT(a.level_end_time,'%Y-%m-%d' )>= DATE_FORMAT( now(),'%Y-%m-%d' )
+          AND DATE_FORMAT(now(),'%Y-%m-%d')>=DATE_FORMAT(a.level_start_time,'%Y-%m-%d')
+    </update>
+
+    <update id="updateStatusIn">
+        update bm_attendance_line
+        set sign_in_status ='3'
+        where sign_in_status is null
+          and attendance_date = date_sub(date_format(now(), '%Y-%m-%d'), interval 1 day)
+    </update>
+
+    <update id="updateStatusOut">
+        update bm_attendance_line
+        set sign_out_status ='6'
+        where sign_out_status is null
+          and attendance_date = date_sub(date_format(now(), '%Y-%m-%d'), interval 1 day)
+    </update>
+    <update id="updateTaskWatchStatus">
+        update bm_inspection_task set send_flag = 1 where task_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <insert id="insertAttendanceLine">
+        INSERT INTO bm_attendance_line
+        (attendance_id,tenant_id, keeper_id, keeper_name,attendance_date, create_time, sign_in_time, sign_out_time,sign_begin,sign_end,bus_in_time,bus_out_time)
+        SELECT UUID_SHORT(),a.tenant_id,b.keeper_id,b.keeper_name, NOW(),NOW(), a.sign_over,a.sign_close,a.sign_begin,a.sign_end,a.sign_in_time,a.sign_out_time
+        FROM bm_attendance_set a , bm_gridkeeper b
+        WHERE a.tenant_id = b.tenant_id
+        AND a.industry_code = b.industry_code
+        AND a.delete_flag = 0
+        AND b.delete_flag = 0
+    </insert>
+
+
+    <select id="getKeeperInfo" resultType="com.chinatower.platform.modules.keeper.entity.BmAttendanceLineTaskVO">
+        SELECT a.tenant_id,a.industry_code as industry_code,a.app_ver_code,b.keeper_id,b.keeper_name, a.sign_over as sign_in_time,
+               a.sign_close as sign_out_time,a.sign_begin,a.sign_end,a.sign_in_time as bus_in_time,a.sign_out_time as bus_out_time,
+               c.grid_id
+        FROM bm_attendance_set a , bm_gridkeeper b
+        LEFT JOIN bm_grid_keeper_ref c on b.keeper_id = c.keeper_id
+        WHERE a.tenant_id = b.tenant_id
+          AND a.industry_code = b.industry_code
+          AND a.delete_flag = 0
+          AND b.delete_flag = 0
+          AND c.delete_flag = 0
+          AND FIND_IN_SET(#{weekDay},a.on_weekdays)
+    </select>
+    <select id="getInspectionConfListTest"
+            resultType="com.chinatower.platform.modules.keeper.entity.InspectionTaskVO">
+        SELECT conf_id,cnof_name,tenant_id,grid_id,grid_name,2 AS task_status,level_start_time AS start_time,level_end_time AS end_time,
+               keeper_id,keeper_name,conf_desc,industry_code,app_ver_code,CONCAT_WS(' ',DATE_FORMAT(NOW(),'%Y-%m-%d'),DATE_FORMAT(data_time,'%H:%i:%s')) AS create_time
+        FROM bm_inspection_conf
+        WHERE DATE_FORMAT(level_end_time,'%Y-%m-%d')>= DATE_FORMAT(#{format},'%Y-%m-%d')
+          AND DATE_FORMAT(#{format},'%Y-%m-%d')>= DATE_FORMAT(level_start_time,'%Y-%m-%d')
+          AND no_repeat_over='0' AND is_repeat='1'
+          AND delete_flag = 0
+          AND MOD(TO_DAYS(DATE_FORMAT(#{format}, '%Y-%m-%d'))- TO_DAYS(DATE_FORMAT(level_start_time, '%Y-%m-%d')),level_day_count)='0'
+        UNION ALL
+        SELECT conf_id,cnof_name,tenant_id,grid_id,grid_name,2 AS task_status,level_start_time AS start_time,level_end_time AS end_time,
+               if(keeper_id LIKE ',%', NULL,keeper_id) AS keeper_id,if(keeper_name LIKE ',%', NULL,keeper_name) AS keeper_name,conf_desc,industry_code,app_ver_code,DATE_FORMAT(NOW(),'%Y-%m-%d %H:%i:%s') AS create_time
+        FROM bm_inspection_conf
+        WHERE DATE_FORMAT(level_end_time,'%Y-%m-%d' )>= DATE_FORMAT( #{format},'%Y-%m-%d' )
+          AND DATE_FORMAT(#{format},'%Y-%m-%d')>=DATE_FORMAT(level_start_time,'%Y-%m-%d')
+          AND no_repeat_over='0'
+          AND delete_flag = 0
+          AND is_repeat='0'
+    </select>
+
+    <select id="selectDictDataByType" resultType="java.lang.String">
+        select dict_value
+        from sys_dict_data
+        where status = '0' and dict_type = #{dictType} and dict_label = #{week}
+    </select>
+    <select id="getUserIdByKeerperList"  resultType="com.chinatower.platform.modules.keeper.entity.KeeperVO">
+        SELECT staff_id,keeper_id FROM bm_gridkeeper WHERE delete_flag = 0 AND keeper_id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="insertAttendanceLineInfo">
+        INSERT INTO bm_attendance_line
+        (attendance_id,tenant_id, industry_code,app_ver_code,keeper_id, keeper_name,attendance_date, create_time, sign_in_time, sign_out_time,sign_begin,sign_end,bus_in_time,bus_out_time,grid_id)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (UUID_SHORT(),#{item.tenantId},#{item.industryCode},#{item.appVerCode},#{item.keeperId},#{item.keeperName},NOW(),NOW(),
+            CAST(#{item.signInTime} AS TIME),
+            CAST(#{item.signOutTime} AS TIME),
+            CAST(#{item.signBegin} AS TIME),
+            CAST(#{item.signEnd} AS TIME),
+            CAST(#{item.busInTime} AS TIME),
+            CAST(#{item.busOutTime} AS TIME),#{item.gridId})
+        </foreach>
+    </insert>
+
+</mapper>

@@ -1,0 +1,1094 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.layer.mapper.LayerMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.bdm.modules.layer.domain.Layer" >
+        <result column="id" property="id" />
+        <result column="layer_name" property="layerName" />
+        <result column="layer_type_id" property="layerTypeId" />
+        <result column="layer_namespace" property="layerNamespace" />
+        <result column="geoserver_url" property="geoserverUrl" />
+        <result column="custom_name" property="customName" />
+        <result column="layer_color" property="layerColor" />
+        <result column="creator" property="creator" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier" property="modifier" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="industry_code" property="industryCode" />
+        <result column="app_ver_code" property="appVerCode" />
+        <result column="file_id" property="fileId" />
+        <result column="game_key" property="gameKey" />
+        <result column="maxx" property="maxx" />
+        <result column="maxy" property="maxy" />
+        <result column="minx" property="minx" />
+        <result column="miny" property="miny" />
+        <result column="file_url" property="fileUrl" />
+        <result column="file_name" property="fileName" />
+        <result column="type_name" property="layerTypeName" />
+        <result column="abbreviation" property="abbreviation" />
+        <result column="nest_flag" property="nestFlag" />
+        <result column="nodeCode" property="nodeCode" />
+        <result column="node_code" property="nodeCode" />
+        <result column="geo_type" property="geoType" />
+        <result column="notes" property="notes" />
+        <result column="upload_type" property="uploadType" />
+        <result column="publish_status" property="publishStatus" />
+        <result column="obs_url" property="obsUrl" />
+        <result column="origin_url" property="originUrl" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+                id,
+                layer_name,
+                layer_type_id,
+                layer_namespace,
+                geoserver_url,
+                custom_name,
+                layer_color,
+                creator,
+                create_time,
+                modifier,
+                update_time,
+                delete_flag,
+                tenant_id,
+                industry_code,
+                app_ver_code,
+                file_id,
+                game_key,
+                maxx,
+                maxy,
+                minx,
+                miny,
+                file_url,
+                file_name
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        select
+            l.id,
+            l.layer_name,
+            l.layer_type_id,
+            l.layer_namespace,
+            l.geoserver_url,
+            l.custom_name,
+            l.layer_color,
+            l.creator,
+            l.create_time,
+            l.modifier,
+            l.update_time,
+            l.delete_flag,
+            l.tenant_id,
+            l.industry_code,
+            l.app_ver_code,
+            l.file_id,
+            l.game_key,
+            l.maxx,
+            l.maxy,
+            l.minx,
+            l.miny,
+            l.file_url,
+            l.file_name,
+            l.category,
+            l.accept_node nodeCode,
+            p.platform_name,
+            l.nest_flag,
+            lt.type_name,
+            lt.abbreviation,
+            l.notes,
+            l.obs_url,
+            l.upload_type,
+            l.publish_status,
+            l.origin_url
+        from sys_layer l LEFT JOIN vm_platform_data_config p ON l.accept_node = p.platform_code AND l.delete_flag = 0
+        LEFT JOIN sys_layer_type lt on l.layer_type_id = lt.id
+        where l.id = #{id} and l.delete_flag = 0
+    </select>
+    <select id="selectCustomNameCount" resultType="java.lang.Integer">
+        select count(1)
+        from sys_layer
+        where
+          delete_flag = 0
+          and tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+          and custom_name = #{customName}
+          AND category = #{category}
+    </select>
+    <select id="selectLayerTypeIdCount" resultType="java.lang.Integer">
+        select count(1)
+        from sys_layer
+        where
+            delete_flag = 0
+          and tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+          and layer_type_id = #{layerTypeId}
+    </select>
+
+    <select id="list"  resultType="com.chinatower.common.core.dto.bdm.LayerResponseDTO">
+        select
+            l.id,
+            l.tenant_id tenantId,
+            l.industry_code industryCode,
+            l.geoserver_url geoserverUrl,
+            l.view_url viewUrl,
+            l.layer_name layerName,
+            l.layer_namespace layerNamespace,
+            l.app_ver_code appVerCode,
+            <if test='dto.arTagFlag != null and dto.arTagFlag == 1'>
+                case when IFNULL(ar.id,0) = 0 then 0 else 1 end markFlag,
+            </if>
+            <choose>
+                <when test="dto.orderByColumn == 'customName'">
+                    CASE WHEN SUBSTRING(l.custom_name, 1, 1) REGEXP '[一-龥]' THEN firstPinyin(l.custom_name)
+                    ELSE SUBSTRING(l.custom_name, 1, 1) END AS customNamePrd,
+                </when>
+                <otherwise>
+
+                </otherwise>
+            </choose>
+            l.custom_name customName,
+            l.creator,
+            l.modifier,
+            l.create_time createTime,
+            l.update_time updateTime,
+            lt.type_name layerTypeName,
+            lt.abbreviation,
+            ic.industry_name industryName,
+            ti.tenant_name tenantName,
+            l.game_key gameKey,
+            l.maxx maxx,
+            l.maxy maxy,
+            l.minx minx,
+            l.miny miny,
+            l.root_geoserver_url rootGeoserverUrl,
+            l.layer_type_id layerTypeId,
+            l.polygon_count polygonCount,
+            l.layer_area layerArea,
+            l.category category,
+            l.geo_type geoType,
+            l.nest_flag nestFlag,
+            l.file_url fileUrl,
+            l.notes notes,
+            l.obs_url obsUrl,
+            l.file_name fileName,
+            l.upload_type uploadType,
+            l.publish_status publishStatus,
+            l.origin_url originUrl
+        from sys_layer l
+        left join sys_layer_type lt on l.layer_type_id = lt.id
+        left join sys_tenant_info ti on l.tenant_id = ti.tenant_id and ti.del_flag = 0
+        left join sys_industry_conf ic on ic.delete_flag = 0 and l.industry_code = ic.industry_code and ic.accept_node = #{acceptNode}
+        <if test='dto.arTagFlag != null and dto.arTagFlag == 1'>
+        left join vm_ar_tags_user_rel ar on l.id = ar.tag_id and ar.user_id = #{dto.userName}
+        </if>
+        where l.delete_flag = 0
+            <if test="dto.id != null and dto.id != ''">
+                and l.id = #{dto.id}
+            </if>
+            <if test="dto.layerTypeId != null and dto.layerTypeId != ''">
+                and lt.id = #{dto.layerTypeId}
+            </if>
+            <if test="dto.category != null and dto.category != ''">
+                and l.category = #{dto.category}
+            </if>
+            <if test="dto.category == null and dto.categoryList == null">
+                and l.category = 1
+            </if>
+            <if test="dto.categoryList != null and dto.categoryList.size() > 0">
+                and l.category IN
+                <foreach collection="dto.categoryList" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="dto.abbreviation != null and dto.abbreviation != ''">
+                and lt.abbreviation = #{dto.abbreviation}
+            </if>
+            <if test="dto.industryCode != null and dto.industryCode != ''">
+                and ic.industry_code = #{dto.industryCode}
+            </if>
+            <if test="dto.customName != null and dto.customName != ''">
+                and l.custom_name like concat('%',#{dto.customName},'%')
+            </if>
+            <if test="dto.creator != null and dto.creator != ''">
+                and l.creator like concat('%',#{dto.creator},'%')
+            </if>
+            <if test="dto.modifier != null and dto.modifier != ''">
+                and l.modifier like concat('%',#{dto.modifier},'%')
+            </if>
+            <if test="dto.tenantId != null and dto.tenantId != ''">
+                and l.tenant_id = #{dto.tenantId}
+            </if>
+            <if test="dto.createBeginTime != null and dto.createBeginTime != ''">
+                and l.create_time between #{dto.createBeginTime} and #{dto.createEndTime}
+            </if>
+            <if test="dto.updateBeginTime != null and dto.updateBeginTime != ''">
+                and l.update_time between #{dto.updateBeginTime} and #{dto.updateEndTime}
+            </if>
+            <if test="dto.nestFlag != null and dto.nestFlag != ''">
+                and l.nest_flag = #{dto.nestFlag}
+            </if>
+            <if test="dto.uploadType != null and dto.uploadType != ''">
+                and l.upload_type = #{dto.uploadType}
+            </if>
+            <if test="dto.publishStatus != null and dto.publishStatus != ''">
+                and l.publish_status = #{dto.publishStatus}
+            </if>
+            <if test="dto.publishStatusFlag != null and dto.publishStatusFlag != ''">
+                and (l.publish_status = '1' or l.publish_status is null)
+            </if>
+            ${dto.dataPermissions}
+            <choose>
+                <when test="dto.orderByColumn == 'customName'">
+                    ORDER BY IF(customNamePrd RLIKE '^[a-z]', 1, 2)
+                </when>
+                <when test="dto.orderByColumn != null and dto.orderByColumn != ''">
+                    order by ${orderBy}
+                </when>
+                <otherwise>
+                    <if test="dto.orderByColumn == null or dto.orderByColumn == ''">
+                        order by l.create_time desc
+                    </if>
+                </otherwise>
+            </choose>
+
+    </select>
+
+    <select id="baseLayerList"  resultType="com.chinatower.common.core.dto.bdm.LayerResponseDTO">
+        select
+        l.id,
+        l.tenant_id tenantId,
+        l.geoserver_url geoserverUrl,
+        l.view_url viewUrl,
+        l.layer_name layerName,
+        l.layer_namespace layerNamespace,
+        l.app_ver_code appVerCode,
+        l.custom_name customName,
+        l.creator,
+        l.modifier,
+        l.create_time createTime,
+        l.update_time updateTime,
+        lt.type_name layerTypeName,
+        lt.abbreviation,
+        lt.tbbh_ref tbbhRef,
+        lt.area_ref areaRef,
+        l.game_key gameKey,
+        l.maxx maxx,
+        l.maxy maxy,
+        l.minx minx,
+        l.miny miny,
+        l.root_geoserver_url rootGeoserverUrl,
+        l.layer_type_id layerTypeId,
+        l.polygon_count polygonCount,
+        l.layer_area layerArea,
+        l.category category,
+        l.geo_type geoType,
+        l.nest_flag nestFlag,
+        l.file_url fileUrl
+        from sys_layer l
+        left join sys_layer_type lt on l.layer_type_id = lt.id
+        where l.delete_flag = 0
+        <if test="dto.layerId != null and dto.layerId != ''">
+            and l.id = #{dto.layerId}
+        </if>
+        <if test="dto.layerTypeId != null and dto.layerTypeId != ''">
+            and lt.id = #{dto.layerTypeId}
+        </if>
+        <if test="dto.abbreviation != null and dto.abbreviation != ''">
+            and lt.abbreviation = #{dto.abbreviation}
+        </if>
+        <if test="dto.industryCode != null and dto.industryCode != ''">
+            and l.industry_code = #{dto.industryCode}
+        </if>
+        <if test="dto.customName != null and dto.customName != ''">
+            and l.custom_name like concat('%',#{dto.customName},'%')
+        </if>
+        <if test="dto.tenantId != null and dto.tenantId != ''">
+            and l.tenant_id = #{dto.tenantId}
+        </if>
+        <if test="dto.layerIds != null and dto.layerIds.size() > 0">
+            and l.id in
+            <foreach collection="dto.layerIds" item="layerId" open="(" separator="," close=")">
+                #{layerId}
+            </foreach>
+        </if>
+        ${dto.dataPermissions}
+
+    </select>
+
+    <select id="abbreviationLayersAreaAndCount" resultType="com.chinatower.common.core.dto.bdm.LayerCountAndAreaDTO">
+        select
+            sum(layer_area) layerArea,
+            sum(polygon_count) polygonCount
+        from sys_layer l
+        left join sys_layer_type lt on l.layer_type_id = lt.id
+        where l.delete_flag = 0
+        <if test="dto.abbreviation != null and dto.abbreviation != ''">
+            and lt.abbreviation = #{dto.abbreviation}
+        </if>
+        <if test="dto.industryCode != null and dto.industryCode != ''">
+            and l.industry_code = #{dto.industryCode}
+        </if>
+        <if test="dto.tenantId != null and dto.tenantId != ''">
+            and l.tenant_id = #{dto.tenantId}
+        </if>
+        ${dto.dataPermissions}
+    </select>
+
+    <select id="abbreviationLayerNames" resultType="java.lang.String">
+        select
+        l.layer_name
+        from sys_layer l
+        left join sys_layer_type lt on l.layer_type_id = lt.id
+        where l.delete_flag = 0
+        <if test="dto.abbreviation != null and dto.abbreviation != ''">
+            and lt.abbreviation = #{dto.abbreviation}
+        </if>
+        <if test="dto.industryCode != null and dto.industryCode != ''">
+            and l.industry_code = #{dto.industryCode}
+        </if>
+        <if test="dto.tenantId != null and dto.tenantId != ''">
+            and l.tenant_id = #{dto.tenantId}
+        </if>
+        ${dto.dataPermissions}
+    </select>
+
+    <update id="editLayer">
+        UPDATE sys_layer
+        set id = #{newId},
+            layer_name = #{bakLayerName},
+            delete_flag = 1,
+            update_time=now()
+        where id = #{layerId}
+    </update>
+
+    <select id="bakMaxLayerNameNumber" resultType="java.lang.Integer">
+        SELECT
+            max( id_number )
+        FROM
+            ( SELECT substring( layer_name, length( #{layerName} ) + 1 ) id_number FROM sys_layer WHERE layer_name LIKE concat(#{layerName},'%') ) t
+    </select>
+
+    <update id="updateById" parameterType="com.chinatower.bdm.modules.layer.domain.Layer">
+        UPDATE sys_layer
+        <set>
+            <if test="null != layerName and '' != layerName">layer_name = #{layerName}</if>
+            <if test="null != layerTypeId and '' != layerTypeId">,layer_type_id = #{layerTypeId}</if>
+            <if test="null != layerNamespace and '' != layerNamespace">,layer_namespace = #{layerNamespace}</if>
+            <if test="null != geoserverUrl and '' != geoserverUrl">,geoserver_url = #{geoserverUrl}</if>
+            <if test="null != customName and '' != customName">,custom_name = #{customName}</if>
+            <if test="null != layerColor and '' != layerColor">,layer_color = #{layerColor}</if>
+            <if test="null != creator and '' != creator">,creator = #{creator}</if>
+            <if test="null != createTime">,create_time = #{createTime}</if>
+            <if test="null != modifier and '' != modifier">,modifier = #{modifier}</if>
+            <if test="null != updateTime">,update_time = #{updateTime}</if>
+            <if test="null != deleteFlag">,delete_flag = #{deleteFlag}</if>
+            <if test="null != tenantId and '' != tenantId">,tenant_id = #{tenantId}</if>
+            <if test="null != industryCode and '' != industryCode">,industry_code = #{industryCode}</if>
+            <if test="null != appVerCode and '' != appVerCode">,app_ver_code = #{appVerCode}</if>
+            <if test="null != fileId and '' != fileId">,file_id = #{fileId}</if>
+            <if test="null != gameKey and '' != gameKey">,game_key = #{gameKey}</if>
+            <if test="null != maxx">,maxx = #{maxx}</if>
+            <if test="null != maxy">,maxy = #{maxy}</if>
+            <if test="null != minx">,minx = #{minx}</if>
+            <if test="null != miny">,miny = #{miny}</if>
+            <if test="null != polygonCount">,polygon_count = #{polygonCount}</if>
+            <if test="null != layerArea">,layer_area = #{layerArea}</if>
+            <if test="null != fileUrl and '' != fileUrl">,file_url = #{fileUrl}</if>
+            <if test="null != fileName and '' != fileName">,file_name = #{fileName}</if>
+            <if test="null != notes">,notes = #{notes}</if>
+            <if test="null != obsUrl and '' != obsUrl">,obs_url = #{obsUrl}</if>
+            <if test="null != originUrl and '' != originUrl">,origin_url = #{originUrl}</if>
+            <if test="null != uploadType and '' != uploadType">,upload_type = #{uploadType}</if>
+            <if test="null != publishStatus and '' != publishStatus">,publish_status = #{publishStatus}</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="com.chinatower.bdm.modules.layer.domain.Layer">
+        INSERT INTO sys_layer
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="null != id and '' != id">
+                id
+            </if>
+            <if test="null != layerName and '' != layerName">
+                ,layer_name
+            </if>
+            <if test="null != layerTypeId and '' != layerTypeId">
+                ,layer_type_id
+            </if>
+            <if test="null != layerNamespace and '' != layerNamespace">
+                ,layer_namespace
+            </if>
+            <if test="null != geoserverUrl and '' != geoserverUrl">
+                ,geoserver_url
+            </if>
+            <if test="null != viewUrl and '' != viewUrl">
+                ,view_url
+            </if>
+            <if test="null != customName and '' != customName">
+                ,custom_name
+            </if>
+            <if test="null != layerColor and '' != layerColor">
+                ,layer_color
+            </if>
+            <if test="null != creator and '' != creator">
+                ,creator
+            </if>
+            <if test="null != createTime">
+                ,create_time
+            </if>
+            <if test="null != modifier and '' != modifier">
+                ,modifier
+            </if>
+            <if test="null != updateTime">
+                ,update_time
+            </if>
+            <if test="null != deleteFlag">
+                ,delete_flag
+            </if>
+            <if test="null != tenantId and '' != tenantId">
+                ,tenant_id
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                ,industry_code
+            </if>
+            <if test="null != appVerCode and '' != appVerCode">
+                ,app_ver_code
+            </if>
+            <if test="null != fileId and '' != fileId">
+                ,file_id
+            </if>
+            <if test="null != gameKey and '' != gameKey">
+                ,game_key
+            </if>
+            <if test="null != maxx">
+                ,maxx
+            </if>
+            <if test="null != maxy">
+                ,maxy
+            </if>
+            <if test="null != minx">
+                ,minx
+            </if>
+            <if test="null != miny">
+                ,miny
+            </if>
+            <if test="null != fileUrl and '' != fileUrl">
+                ,file_url
+            </if>
+            <if test="null != fileName and '' != fileName">
+                ,file_name
+            </if>
+            <if test="null != layerArea">
+                ,layer_area
+            </if>
+            <if test="null != polygonCount">
+                ,polygon_count
+            </if>
+            <if test="null != rootGeoserverUrl and '' != rootGeoserverUrl">
+                ,root_geoserver_url
+            </if>
+            <if test="null != rootLayerName and '' != rootLayerName">
+                ,root_layer_name
+            </if>
+            <if test="null != geoType and '' != geoType">
+                ,geo_type
+            </if>
+            <if test="null != category and '' != category">
+                ,category
+            </if>
+            <if test="null != nodeCode and '' != nodeCode">
+                ,accept_node
+            </if>
+            <if test="null != nestFlag and '' != nestFlag">
+                ,nest_flag
+            </if>
+            <if test="null != notes and '' != notes">
+                ,notes
+            </if>
+            <if test="null != uploadType and '' != uploadType">
+                ,upload_type
+            </if>
+            <if test="null != publishStatus and '' != publishStatus">
+                ,publish_status
+            </if>
+            <if test="null != obsUrl and '' != obsUrl">
+                ,obs_url
+            </if>
+            <if test="null != originUrl and '' != originUrl">
+                ,origin_url
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="null != id and '' != id">
+                #{id}
+            </if>
+            <if test="null != layerName and '' != layerName">
+                ,#{layerName}
+            </if>
+            <if test="null != layerTypeId and '' != layerTypeId">
+                ,#{layerTypeId}
+            </if>
+            <if test="null != layerNamespace and '' != layerNamespace">
+                ,#{layerNamespace}
+            </if>
+            <if test="null != geoserverUrl and '' != geoserverUrl">
+                ,#{geoserverUrl}
+            </if>
+            <if test="null != viewUrl and '' != viewUrl">
+                ,#{viewUrl}
+            </if>
+            <if test="null != customName and '' != customName">
+                ,#{customName}
+            </if>
+            <if test="null != layerColor and '' != layerColor">
+                ,#{layerColor}
+            </if>
+            <if test="null != creator and '' != creator">
+                ,#{creator}
+            </if>
+            <if test="null != createTime">
+                ,#{createTime}
+            </if>
+            <if test="null != modifier and '' != modifier">
+                ,#{modifier}
+            </if>
+            <if test="null != updateTime">
+                ,#{updateTime}
+            </if>
+            <if test="null != deleteFlag">
+                ,#{deleteFlag}
+            </if>
+            <if test="null != tenantId and '' != tenantId">
+                ,#{tenantId}
+            </if>
+            <if test="null != industryCode and '' != industryCode">
+                ,#{industryCode}
+            </if>
+            <if test="null != appVerCode and '' != appVerCode">
+                ,#{appVerCode}
+            </if>
+            <if test="null != fileId and '' != fileId">
+                ,#{fileId}
+            </if>
+            <if test="null != gameKey and '' != gameKey">
+                ,#{gameKey}
+            </if>
+            <if test="null != maxx">
+                ,#{maxx}
+            </if>
+            <if test="null != maxy">
+                ,#{maxy}
+            </if>
+            <if test="null != minx">
+                ,#{minx}
+            </if>
+            <if test="null != miny">
+                ,#{miny}
+            </if>
+            <if test="null != fileUrl and '' != fileUrl">
+                ,#{fileUrl}
+            </if>
+            <if test="null != fileName and '' != fileName">
+                ,#{fileName}
+            </if>
+            <if test="null != layerArea">
+                ,#{layerArea}
+            </if>
+            <if test="null != polygonCount">
+                ,#{polygonCount}
+            </if>
+            <if test="null != rootGeoserverUrl and '' != rootGeoserverUrl">
+                ,#{rootGeoserverUrl}
+            </if>
+            <if test="null != rootLayerName and '' != rootLayerName">
+                ,#{rootLayerName}
+            </if>
+            <if test="null != geoType and '' != geoType">
+                ,#{geoType}
+            </if>
+            <if test="null != category and '' != category">
+                ,#{category}
+            </if>
+            <if test="null != nodeCode and '' != nodeCode">
+                ,#{nodeCode}
+            </if>
+            <if test="null != nestFlag and '' != nestFlag">
+                ,#{nestFlag}
+            </if>
+            <if test="null != notes and '' != notes">
+                ,#{notes}
+            </if>
+            <if test="null != uploadType and '' != uploadType">
+                ,#{uploadType}
+            </if>
+            <if test="null != publishStatus and '' != publishStatus">
+                ,#{publishStatus}
+            </if>
+            <if test="null != obsUrl and '' != obsUrl">
+                ,#{obsUrl}
+            </if>
+            <if test="null != originUrl and '' != originUrl">
+                ,#{originUrl}
+            </if>
+        </trim>
+    </insert>
+
+    <select id="selectByTypeIds" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"></include>
+        from sys_layer
+        where
+        delete_flag = 0
+        and layer_type_id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <update id="deleteBatchIds">
+        update  sys_layer
+        set delete_flag = 1
+        where id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+    <update id="updateNestFlag">
+        UPDATE sys_layer
+        SET nest_flag = #{nestFlag},modifier = #{username}, update_time = now()
+        WHERE id = #{id}
+    </update>
+    <update id="updateNestByLayerTypeIds">
+        UPDATE sys_layer
+        SET nest_flag = 1,update_time = now()
+        WHERE id IN (SELECT tt.id
+        from (SELECT t.*
+        FROM (SELECT id,
+        layer_type_id,
+        create_time,
+        ROW_NUMBER() OVER(PARTITION BY accept_node,tenant_id,industry_code,layer_type_id ORDER BY create_time asc) as rn
+        FROM sys_layer
+        WHERE delete_flag = 0
+        AND layer_type_id in
+        <foreach item="item" collection="typeIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        ORDER BY accept_node, tenant_id, industry_code, layer_type_id, create_time asc) t
+        where t.rn = 1) tt) AND tenant_id = #{tenantId} AND industry_code = #{industryCode};
+    </update>
+
+    <select id="getPolygonAttrDict" resultType="com.chinatower.bdm.api.entity.PolygonAttrDictVO">
+        SELECT
+            `code`,
+            `name`
+        FROM
+            sys_layer_polygon_attr_dict
+        WHERE
+            delete_flag = 0
+    </select>
+
+    <select id="getLayerTypeAttrFilter" resultType="com.chinatower.bdm.api.entity.LayerTypeAttrTilterVO">
+        SELECT
+            abbreviation,
+            filter_type,
+            filter_attr_key,
+            filter_attr_value,
+            show_type,
+            is_show
+        FROM
+            sys_layer_type_attr_filter
+        WHERE delete_flag = 0
+        <if test="null != abbreviation and '' != abbreviation">
+            AND abbreviation = #{abbreviation}
+        </if>
+    </select>
+
+    <select id="getLayerArea" resultType="com.chinatower.bdm.api.entity.LayerAreaVO">
+        SELECT
+            t1.layer_type_id,
+            t2.type_name AS layerTypeName,
+            cast( sum( t1.layer_area ) AS DECIMAL ( 19, 0 ) ) AS area
+        FROM
+            sys_layer t1,
+            sys_layer_type t2
+        WHERE
+            t1.layer_type_id = t2.id
+            AND t1.delete_flag = 0
+            AND t2.delete_flag = 0
+            <if test="null != layerTypeId and '' != layerTypeId">
+                AND t2.id = #{layerTypeId}
+            </if>
+            <if test="null != abbreviation and '' != abbreviation">
+                AND t2.abbreviation = #{abbreviation}
+            </if>
+            ${dataPermissions}
+        GROUP BY
+            t1.layer_type_id,
+            t2.type_name
+    </select>
+
+    <select id="getDeviceByPolygon" parameterType="com.chinatower.bdm.api.entity.InspectionRouteRelLayerSdkVO"
+            resultType="com.chinatower.bdm.api.entity.InspectionRouteRelLayerSdkVO">
+        SELECT
+            t1.device_code,
+            t1.channel_code,
+            t2.longitude,
+            t2.latitude
+        FROM
+            vm_polygon_patch_config t1,
+            vm_device_info_t t2
+        WHERE
+            t1.device_code = t2.device_code
+          AND t1.delete_flag = 0
+          AND t2.delete_flag = 0
+          AND t1.layer_id = #{layerId}
+          AND t1.feature_id = #{featureId}
+            ${dataScope}
+          order by t1.create_time desc
+            limit 1
+    </select>
+
+    <select id="getPolygonLayers" parameterType="com.chinatower.bdm.api.entity.InspectionRouteRelLayerSdkVO"
+            resultType="com.chinatower.bdm.api.entity.InspectionRouteRelLayerSdkVO">
+        SELECT
+            t1.layer_id
+        FROM
+            vm_polygon_patch_config t1,
+            vm_device_info_t t2
+        WHERE
+            t1.device_code = t2.device_code
+          AND t1.delete_flag = 0
+          AND t2.delete_flag = 0
+            ${dataScope}
+    </select>
+
+    <select id="getPolygonFeatures" parameterType="com.chinatower.bdm.api.entity.InspectionRouteRelLayerSdkVO"
+            resultType="com.chinatower.bdm.api.entity.InspectionRouteRelLayerSdkVO">
+        SELECT
+            t1.feature_id
+        FROM
+            vm_polygon_patch_config t1,
+            vm_device_info_t t2
+        WHERE
+            t1.device_code = t2.device_code
+          AND t1.delete_flag = 0
+          AND t2.delete_flag = 0
+        <if test="null != layerId and '' != layerId">
+            AND t1.layer_id = #{layerId}
+        </if>
+            ${dataScope}
+    </select>
+    <select id="selectByTypeIdAndNestFlag" resultType="com.chinatower.bdm.modules.layer.domain.Layer">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_layer WHERE layer_type_id = #{layerTypeId} AND nest_flag = 1 AND delete_flag = 0
+        AND tenant_id = #{tenantId} AND industry_code = #{industryCode} AND accept_node = #{nodeCode}
+    </select>
+    <select id="getCustomNameCount" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM sys_layer WHERE custom_name = #{customName}
+        AND tenant_id = #{tenantId} AND industry_code = #{industryCode} AND accept_node = #{nodeCode}
+        AND category = 2
+        AND delete_flag = 0
+    </select>
+    <select id="selectByTypeIdsAndTenant" resultType="com.chinatower.bdm.modules.layer.domain.Layer">
+        select
+        <include refid="Base_Column_List"></include>
+        from sys_layer
+        where
+        delete_flag = 0
+        and layer_type_id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND tenant_id = #{tenantId}
+        AND industry_code = #{industryCode}
+        AND accept_node = #{nodeCode}
+    </select>
+    <select id="selectNestTypeIdByIds" resultType="java.lang.String">
+        SELECT
+        layer_type_id
+        FROM
+        sys_layer WHERE delete_flag = 0 AND nest_flag = 1 AND id IN
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getNoNestByLayerTypeIds" resultType="java.lang.String">
+        SELECT
+        layer_type_id
+        FROM
+        sys_layer WHERE delete_flag = 0 AND nest_flag = 1 AND layer_type_id IN
+        <foreach item="item"  collection="typeIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND tenant_id = #{tenantId} AND industry_code = #{industryCode}
+    </select>
+
+    <select id="layerAreaCount" resultType="com.chinatower.bdm.api.entity.LayerAreaCountVO">
+        SELECT
+            id layerId,
+            layer_name layerName,
+            layer_area layerArea,
+            polygon_count polygonCount
+        FROM sys_layer
+        WHERE delete_flag = 0
+        and id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <delete id="mineralsLayerDelete">
+        update sys_layer l
+        left join sys_layer_type t on l.layer_type_id = t.id
+        set l.delete_flag = 1,l.update_time = now()
+        where t.abbreviation = 'tewc'
+        AND l.tenant_id = #{tenantId}
+        AND l.industry_code = #{industryCode}
+        and l.delete_flag = 0
+    </delete>
+
+
+    <select id="mineralsLayerTypeId" resultType="java.lang.String">
+        select t.id  from sys_layer_type t
+        where t.abbreviation = 'tewc'
+          and t.delete_flag = 0
+          limit 1
+    </select>
+
+    <select id="mineralsLayerId" resultType="java.lang.String">
+        select
+            l.id
+        from sys_layer l
+        left join sys_layer_type t on l.layer_type_id = t.id
+        where t.abbreviation = #{dto.abbreviation}
+          AND l.tenant_id = #{dto.tenantId}
+          AND l.industry_code = #{dto.industryCode}
+          and l.delete_flag = 0
+          and l.nest_flag = 1
+          and l.category = 1
+          ${dto.dataPermissions}
+            limit 1
+    </select>
+
+    <select id="getAbbreviationLayerName" resultType="java.lang.String">
+        select
+               layer_name
+        from sys_layer l
+        left join sys_layer_type t on l.layer_type_id = t.id
+        where t.abbreviation = #{abbreviation}
+            AND l.tenant_id = #{tenantId}
+            AND l.industry_code = #{industryCode}
+            and l.delete_flag = 0
+            and l.nest_flag = 1
+            and l.category = 1
+            limit 1
+    </select>
+    <select id="layerNameCount" resultType="java.lang.Integer">
+        select
+            count(1) count
+        from sys_layer l
+        where l.tenant_id = #{dto.tenantId}
+          AND l.industry_code = #{dto.industryCode}
+          and l.delete_flag = 0
+          and l.layer_name in
+          <foreach collection="layerNames" item="layerName" open="(" separator="," close=")">
+             #{layerName}
+          </foreach>
+        ${dto.dataPermissions}
+    </select>
+    <select id="selectNestLayerByTypeIds" resultType="com.chinatower.bdm.modules.layer.domain.Layer">
+        select
+        l.id,
+        l.layer_name,
+        l.layer_type_id,
+        l.layer_namespace,
+        l.geoserver_url,
+        l.custom_name,
+        l.layer_color,
+        l.creator,
+        l.create_time,
+        l.modifier,
+        l.update_time,
+        l.delete_flag,
+        l.tenant_id,
+        l.industry_code,
+        l.app_ver_code,
+        l.file_id,
+        l.game_key,
+        l.maxx,
+        l.maxy,
+        l.minx,
+        l.miny,
+        l.file_url,
+        l.file_name,
+        l.category,
+        l.accept_node nodeCode,
+        p.platform_name,
+        l.nest_flag,
+        lt.type_name layerTypeName,
+        lt.abbreviation
+        from sys_layer l LEFT JOIN vm_platform_data_config p ON l.accept_node = p.platform_code AND l.delete_flag = 0
+        LEFT JOIN sys_layer_type lt ON l.layer_type_id = lt.id
+        where l.delete_flag = 0 AND l.nest_flag = 1
+        AND l.layer_type_id in
+        <foreach item="item"  collection="typeIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="findLayerByLayerIds" resultType="com.chinatower.bdm.modules.layer.domain.Layer">
+        select
+            l.id,
+            l.layer_name,
+            l.layer_type_id,
+            l.layer_namespace,
+            l.geoserver_url,
+            l.custom_name,
+            l.layer_color,
+            l.creator,
+            l.create_time,
+            l.modifier,
+            l.update_time,
+            l.delete_flag,
+            l.tenant_id,
+            l.industry_code,
+            l.app_ver_code,
+            l.file_id,
+            l.game_key,
+            l.maxx,
+            l.maxy,
+            l.minx,
+            l.miny,
+            l.file_url,
+            l.file_name,
+            l.category,
+            l.accept_node nodeCode,
+            p.platform_name,
+            l.nest_flag,
+            lt.type_name layerTypeName,
+            lt.abbreviation
+        from sys_layer l
+        LEFT JOIN vm_platform_data_config p ON l.accept_node = p.platform_code AND l.delete_flag = 0
+        LEFT JOIN sys_layer_type lt ON l.layer_type_id = lt.id
+        where l.id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectByLayerIds" resultMap="BaseResultMap">
+        select
+        l.id,
+        l.geo_type,
+        l.layer_type_id layer_type_id,
+        t.abbreviation
+        from sys_layer l
+        left join sys_layer_type t on l.layer_type_id = t.id
+        where
+        l.delete_flag = 0
+        and l.id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="layerList" resultType="com.chinatower.bdm.modules.layer.domain.layerTree">
+        SELECT
+            l.id,
+            l.custom_name AS label,
+            CASE
+                WHEN l.category = 1 THEN l.layer_type_id
+                ELSE l.category
+                END AS parentId,
+            l.category
+        FROM sys_layer l
+        WHERE l.delete_flag = 0
+          AND l.tenant_id = #{tenantId}
+          AND l.industry_code = #{industryCode}
+            ${dataPermissions}
+    </select>
+
+    <select id="layerTypeList" resultType="com.chinatower.bdm.modules.layer.domain.layerTree">
+        select sl.id,
+               sl.type_name as label,
+               1               parentId
+        from sys_layer_type sl
+        where sl.delete_flag = 0 and
+              ((sl.category = 1 and sl.tenant_id = #{tenantId} and sl.industry_code = #{industryCode})
+           or (sl.category = 0 and sl.industry_code = '999999'))
+    </select>
+
+    <insert id="addDataPermissions">
+        INSERT INTO vm_organ_layer_rel_t (tenant_id, dept_id, layer_id, create_by, create_time, delete_flag,
+                                            APP_VER_CODE, industry_code)
+        SELECT d.TENANT_ID     AS tenant_id,
+               d.dept_id       AS dept_id,
+               #{id}           AS layer_id,
+               #{creator}      AS create_by,
+               NOW()           AS create_time,
+               0               AS delete_flag,
+               d.APP_VER_CODE  AS APP_VER_CODE,
+               d.INDUSTRY_CODE AS industry_code
+        FROM sys_dept d
+        WHERE d.DEL_FLAG = 0
+          AND d.TENANT_ID = #{tenantId}
+          AND d.APP_VER_CODE = #{appVerCode}
+          AND d.INDUSTRY_CODE = #{industryCode};
+    </insert>
+    <delete id="delDataPermissions">
+        delete from vm_organ_layer_rel_t
+        where layer_id in
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+    <update id="deleteInspectionRouteFenceByLayerIds">
+        UPDATE sys_inspection_route_fence_rel SET delete_flag = 1 WHERE delete_flag = 0 AND layer_id IN
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+    <update id="deletePolygonPatchAlgoAreaByLayerIds">
+        UPDATE vm_polygon_patch_algo_area_rela SET delete_flag = 1 WHERE polygon_id IN
+        (SELECT polygon_id FROM vm_polygon_patch_config WHERE delete_flag = 0 AND layer_id IN
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        )
+    </update>
+    <update id="deletePolygonPatchByLayerIds">
+        UPDATE vm_polygon_patch_config SET delete_flag = 1 WHERE delete_flag = 0 AND layer_id IN
+        <foreach item="item"  collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="getLayerCount" resultType="com.chinatower.common.core.dto.bdm.LayerCountRes">
+        SELECT
+            l.category,
+            count( l.id ) as layerCount
+        FROM
+            sys_layer l
+            LEFT JOIN sys_layer_type lt on l.layer_type_id = lt.id
+            LEFT JOIN sys_tenant_info ti on l.tenant_id = ti.tenant_id and ti.del_flag = 0
+            LEFT JOIN sys_industry_conf ic on ic.delete_flag = 0 and l.industry_code = ic.industry_code and ic.accept_node = #{platformCode}
+        WHERE
+            l.delete_flag = 0
+            <if test='industryCode != null and industryCode !=""'>
+                AND l.industry_code = #{industryCode}
+            </if>
+            <if test='tenantId != null and tenantId !=""'>
+                AND l.tenant_id = #{tenantId}
+            </if>
+            <if test='category != null and category != "" '>
+                AND l.category = #{category}
+            </if>
+            <if test='category != null and category == "2"'>
+                AND (l.upload_type = '1' OR ( l.upload_type = '2' AND l.publish_status = '1' ))
+            </if>
+        ${dataPermissions}
+        GROUP BY l.category
+    </select>
+</mapper>

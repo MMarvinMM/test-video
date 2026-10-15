@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.VmHornContentMapper">
+
+    <insert id="add" useGeneratedKeys="true" keyColumn="id" keyProperty="id"  parameterType="com.chinatower.device.entity.vo.VmHornContentVO">
+        insert into vm_horn_content_conf(content_title, content_type, content_value, file_name, file_duration, file_type, base_file_url,
+                                         audit_status, tenant_id, industry_code, creator, modifier, auditor, delete_flag,
+                                         create_time, update_time, audit_time,app_ver_code,resource_id)
+        values(#{contentTitle}, #{contentType}, #{contentValue}, #{fileName}, #{fileDuration}, #{fileType}, #{baseFileUrl},
+               #{auditStatus}, #{tenantId}, #{industryCode}, #{creator}, #{modifier}, #{auditor},
+               #{deleteFlag}, #{createTime}, #{updateTime}, #{auditTime},#{appVerCode},#{resourceId})
+    </insert>
+
+    <update id="update" parameterType="com.chinatower.device.entity.vo.VmHornContentVO">
+        update vm_horn_content_conf
+            <set>
+                content_title = #{contentTitle},
+                content_type = #{contentType},
+                content_value = #{contentValue},
+                file_name = #{fileName},
+                file_duration = #{fileDuration},
+                file_type = #{fileType},
+                <if test="tenantId != null and tenantId != ''"> tenant_id = #{tenantId},</if>
+                <if test="industryCode != null and industryCode != ''"> industry_code = #{industryCode},</if>
+                resource_id = #{resourceId},
+                base_file_url = #{baseFileUrl},
+                file_url = '',
+                update_time = #{updateTime},
+                modifier = #{modifier}
+            </set>
+        where id = #{id}
+    </update>
+
+    <update id="audit" parameterType="com.chinatower.device.entity.vo.VmHornContentVO">
+        update vm_horn_content_conf
+        set audit_status = #{auditStatus},audit_time = #{auditTime},auditor = #{auditor} where id = #{id}
+    </update>
+    <delete id="delete">
+        update vm_horn_content_conf set delete_flag = 1,
+        update_time = #{param.updateTime},modifier = #{param.modifier}
+        where id in
+        <foreach collection="resourceIds" item="resourceId" open="(" separator="," close=")">
+            #{resourceId}
+        </foreach>
+    </delete>
+
+
+    <select id="titleExist" resultType="java.lang.Integer" parameterType="com.chinatower.device.entity.vo.VmHornContentVO">
+        select count(1) from vm_horn_content_conf
+        where delete_flag = 0
+        and industry_code = #{industryCode}
+        and tenant_id = #{tenantId}
+        and content_title = #{contentTitle}
+    </select>
+
+    <sql id="basicSelectSql">
+        select id,content_title, content_type, content_value, file_name, file_duration,file_url,base_file_url, file_md5,
+               audit_status, tenant_id, industry_code, creator, modifier, auditor,
+               create_time, update_time, audit_time,app_ver_code,resource_id,
+                CASE
+                    WHEN content_type = '1' THEN 1
+                    WHEN file_url IS NOT NULL AND file_url != '' THEN 1
+                ELSE 0
+                END AS canOperate
+            from vm_horn_content_conf a where delete_flag = 0 ${dataScope}
+    </sql>
+
+    <select id="list" resultType="com.chinatower.device.entity.dto.VmHornContentConfDTO" parameterType="com.chinatower.device.entity.dto.VmHornContentConfRequestListDTO">
+        <include refid="basicSelectSql"/>
+        <if test="contentTitle != null and contentTitle != ''">and content_title like concat('%',#{contentTitle},'%')</if>
+        <if test="contentType != null">and content_type = #{contentType}</if>
+        <if test="auditStatus != null and auditStatus != ''">and audit_status = #{auditStatus}</if>
+        <if test="fileType != null and fileType != ''">and file_type = #{fileType}</if>
+        <if test="queryType != null and queryType == 'uav'">and ((content_type = 0 and file_type = 1) or (content_type = 1))</if>
+        <if test="creator != null and creator != ''">and creator like concat('%',#{creator},'%')</if>
+        <if test="createTimeStart != null and createTimeEnd != null">and create_time between #{createTimeStart} and #{createTimeEnd}</if>
+        <if test="modifier != null and modifier != ''">and modifier like concat('%',#{modifier},'%')</if>
+        <if test="updateTimeStart != null and updateTimeEnd != null">and update_time between #{updateTimeStart} and #{updateTimeEnd}</if>
+        <if test="auditor != null and auditor != ''">and auditor like concat('%',#{auditor},'%')</if>
+        <if test="auditTimeStart != null and auditTimeEnd != null">and audit_time between #{auditTimeStart} and #{auditTimeEnd}</if>
+        <if test="tenantId != null and tenantId != ''">and tenant_id = #{tenantId}</if>
+        <if test="industryCode != null and industryCode != ''">and industry_code = #{industryCode}</if>
+        <if test="idList != null and idList.size() > 0">
+            and id in
+            <foreach collection="idList" item="item" open=" (" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <choose>
+            <when test="sortName == 'createTime'">
+                order by create_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'auditTime'">
+                order by audit_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'updateTime'">
+                order by update_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <otherwise>
+                order by create_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="getListByContentType" resultType="com.chinatower.device.entity.dto.VmHornContentConfDTO" parameterType="com.chinatower.device.entity.dto.VmHornContentRequestDTO">
+        <include refid="basicSelectSql"/>
+        and audit_status = 1
+        <if test="tenantId != null and tenantId != ''">and tenant_id = #{tenantId}</if>
+        <if test="industryCode != null and industryCode != ''">and industry_code = #{industryCode}</if>
+        <choose>
+            <when test="type != null and type == 0">
+                and content_type = 0
+                and file_url is not null and file_url !=''
+                <if test="param != null and param != ''">
+                    and (content_title like concat('%',#{param},'%') or file_name like concat('%',#{param},'%'))
+                </if>
+            </when>
+            <when test="type != null and type == 1">
+                and content_type = 1
+                <if test="param != null and param != ''">
+                    and (content_title like concat('%',#{param},'%') or content_value like concat('%',#{param},'%'))
+                </if>
+            </when>
+            <otherwise></otherwise>
+        </choose>
+        order by create_time desc
+    </select>
+    <select id="getHornContentByResourceId" resultType="com.chinatower.device.entity.dto.VmHornContentConfDTO"
+            parameterType="java.lang.Long">
+        select * from vm_horn_content_conf where delete_flag = 0 and id = #{id}
+    </select>
+    <select id="selectContentTypeByResourceIds" resultType="com.chinatower.device.entity.dto.VmHornContentConfDTO"
+            parameterType="java.lang.String">
+        select content_type,resource_id, base_file_url
+        from vm_horn_content_conf where delete_flag = 0 and content_type = 0 and id in
+          <foreach collection="resourceIds" item="resourceId" open="(" separator="," close=")">
+              #{resourceId}
+          </foreach>
+    </select>
+
+    <select id="selectByTaskIds" resultType="com.chinatower.device.entity.dto.VmHornContentConfDTO">
+        select id,content_title,content_type,content_value,file_name,file_duration,file_url,file_md5,audit_status
+        ,tenant_id,industry_code,app_ver_code,resource_id
+        from vm_horn_content_conf
+        where id in
+        <foreach collection="taskIds" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="contentHasRel" resultType="java.lang.Integer" parameterType="com.chinatower.device.entity.dto.VmHornContentConfDTO">
+        select count(1) from vm_horn_content_conf a
+        inner join vm_horn_task_content_rel r on a.id = r.content_id
+        inner join vm_horn_task_conf c on r.task_id = c.id and c.delete_flag = 0
+            where a.delete_flag = 0
+            and a.id in
+            <foreach collection="ids" item="id" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+    </select>
+
+    <select id="detail" resultType="com.chinatower.device.entity.dto.VmHornContentConfDTO"
+            parameterType="com.chinatower.device.entity.dto.VmHornContentConfRequestListDTO">
+        <include refid="basicSelectSql"/>
+         and id = #{id}
+    </select>
+
+    <select id="countNotApprovedContent" resultType="java.lang.Integer">
+        select count(*)
+        from vm_horn_content_conf
+        where delete_flag = 0 and audit_status != 1 and id in
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>

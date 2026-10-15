@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.VmAlarmTypeSuppressMapper">
+
+	<resultMap id="BaseResultMap" type="com.chinatower.event.vo.entity.VmAlarmTypeSuppressVO">
+		<id column="collection_id" jdbcType="INTEGER" property="collectionId" />
+		<result column="alarm_suppress_id" jdbcType="INTEGER" property="alarmSuppressId" />
+		<result column="alarm_type_class_id" jdbcType="VARCHAR" property="alarmTypeClassId" />
+		<result column="alarm_type_id" jdbcType="VARCHAR" property="alarmTypeId" />
+		<result column="type_value" jdbcType="VARCHAR" property="typeValue" />
+		<result column="threshold_value" jdbcType="VARCHAR" property="thresholdValue" />
+		<result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+		<result column="creater_by" jdbcType="VARCHAR" property="createrBy" />
+		<result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+		<result column="update_by" jdbcType="VARCHAR" property="updateBy" />
+		<result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+		<result column="delete_flag" jdbcType="VARCHAR" property="deleteFlag" />
+	</resultMap>
+
+	<insert id="insert" keyColumn="collection_id" keyProperty="collectionId" useGeneratedKeys="true" >
+		insert into vm_alarm_type_suppress ( alarm_suppress_id, alarm_type_class_id, alarm_type_id, type_value, threshold_value, tenant_id, creater_by, create_time, update_by, update_time )
+		values ( #{alarmSuppressId,jdbcType=INTEGER}, #{alarmTypeClassId,jdbcType=VARCHAR}, #{alarmTypeId,jdbcType=VARCHAR}, #{typeValue,jdbcType=VARCHAR}, #{thresholdValue,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR}, #{createrBy,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{updateBy,jdbcType=VARCHAR}, #{updateTime,jdbcType=TIMESTAMP} )
+	</insert>
+    <insert id="batchInsert" parameterType="java.util.List">
+		insert into vm_alarm_type_suppress ( alarm_suppress_id, alarm_type_class_id, alarm_type_id, type_value, threshold_value, tenant_id, creater_by, create_time, update_by, update_time ) values
+		<foreach collection="list" item="item" separator="," >
+		 ( #{item.alarmSuppressId,jdbcType=INTEGER}, #{item.alarmTypeClassId,jdbcType=VARCHAR}, #{item.alarmTypeId,jdbcType=VARCHAR}, #{item.typeValue,jdbcType=VARCHAR}, #{item.thresholdValue,jdbcType=VARCHAR}, #{item.tenantId,jdbcType=VARCHAR}, #{item.createrBy,jdbcType=VARCHAR}, now(), #{item.updateBy,jdbcType=VARCHAR}, #{item.updateTime,jdbcType=TIMESTAMP} )
+		</foreach>
+	</insert>
+
+    <delete id="deleteByPrimaryKey" >
+		<!--delete from  vm_alarm_type_suppress where collection_id = #{collectionId}-->
+	</delete>
+	<delete id="deleteByStrategyId">
+		update vm_alarm_type_suppress
+		set delete_flag = '1',update_time =now() ,update_by=#{updateBy}
+		where alarm_suppress_id = #{id}
+	</delete>
+
+	<update id="update" >
+		update vm_alarm_type_suppress
+		<set>
+			<if test="alarmSuppressId!=null">alarm_suppress_id = #{alarmSuppressId,jdbcType=INTEGER}, </if>
+			<if test="alarmTypeClassId!=null and alarmTypeClassId!=''">alarm_type_class_id = #{alarmTypeClassId,jdbcType=VARCHAR}, </if>
+			<if test="alarmTypeId!=null and alarmTypeId!=''">alarm_type_id = #{alarmTypeId,jdbcType=VARCHAR}, </if>
+			<if test="typeValue!=null and typeValue!=''">type_value = #{typeValue,jdbcType=VARCHAR}, </if>
+			<if test="tenantId!=null and tenantId!=''">tenant_id = #{tenantId,jdbcType=VARCHAR}, </if>
+			<if test="createrBy!=null and createrBy!=''">creater_by = #{createrBy,jdbcType=VARCHAR}, </if>
+			<if test="createTime!=null">create_time = #{createTime,jdbcType=TIMESTAMP}, </if>
+			<if test="updateBy!=null and updateBy!=''">update_by = #{updateBy,jdbcType=VARCHAR}, </if>
+			<if test="updateTime!=null">update_time = #{updateTime,jdbcType=TIMESTAMP}, </if>
+			<if test="deleteFlag!=null and deleteFlag!=''">delete_flag = #{deleteFlag,jdbcType=VARCHAR}, </if>
+		</set>
+		where collection_id=#{collectionId}
+
+	</update>
+
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap" >
+		SELECT collection_id,
+		 alarm_suppress_id,
+		 alarm_type_class_id,
+		 alarm_type_id,
+		 type_value,
+		 threshold_value,
+		 tenant_id,
+		 creater_by,
+		 create_time,
+		 update_by,
+		 update_time,
+		 delete_flag
+	FROM vm_alarm_type_suppress
+	WHERE collection_id = #{collectionId,jdbcType=INTEGER}
+	</select>
+
+	<select id="selectAll" resultMap="BaseResultMap" >
+		SELECT collection_id,
+		alarm_suppress_id,
+		alarm_type_class_id,
+		alarm_type_id,
+		type_value,
+		threshold_value,
+		tenant_id,
+		creater_by,
+		create_time,
+		update_by,
+		update_time,
+		delete_flag
+		FROM vm_alarm_type_suppress
+		WHERE delete_flag = '0'
+		<if test="collectionId!=null "> and vm_alarm_type_suppress.collection_id = #{collectionId,jdbcType=INTEGER}</if>
+		<if test="alarmSuppressId!=null "> and vm_alarm_type_suppress.alarm_suppress_id = #{alarmSuppressId,jdbcType=INTEGER}</if>
+		<if test="alarmTypeClassId!=null and alarmTypeClassId!=''"> and vm_alarm_type_suppress.alarm_type_class_id = #{alarmTypeClassId,jdbcType=VARCHAR}</if>
+		<if test="alarmTypeId!=null and alarmTypeId!=''"> and vm_alarm_type_suppress.alarm_type_id = #{alarmTypeId,jdbcType=VARCHAR}</if>
+		<if test="typeValue!=null and typeValue!=''"> and vm_alarm_type_suppress.type_value = #{typeValue,jdbcType=VARCHAR}</if>
+		<if test="tenantId!=null and tenantId!=''"> and vm_alarm_type_suppress.tenant_id = #{tenantId,jdbcType=VARCHAR}</if>
+		<if test="createrBy!=null and createrBy!=''"> and vm_alarm_type_suppress.creater_by = #{createrBy,jdbcType=VARCHAR}</if>
+		<if test="createTime!=null "> and vm_alarm_type_suppress.create_time = #{createTime,jdbcType=TIMESTAMP}</if>
+		<if test=" startDate!=null and startDate!='' and endDate!=null and endDate!='' "> and vm_alarm_type_suppress.create_time BETWEEN #{startDate} and #{endDate}</if>
+		<if test="updateBy!=null and updateBy!=''"> and vm_alarm_type_suppress.update_by = #{updateBy,jdbcType=VARCHAR}</if>
+		<if test="updateTime!=null "> and vm_alarm_type_suppress.update_time = #{updateTime,jdbcType=TIMESTAMP}</if>
+		<if test="deleteFlag!=null and deleteFlag!=''"> and vm_alarm_type_suppress.delete_flag = #{deleteFlag,jdbcType=VARCHAR}</if>
+		<if test="strategyIdList!=null and strategyIdList.size()>0"> and alarm_suppress_id in
+			<foreach collection="strategyIdList" item="strategyId" index="index" open="(" close=")" separator=",">
+				#{strategyId}
+			</foreach>
+		</if>
+		<choose>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				order by create_time asc
+			</when>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				order by create_time desc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				order by update_time asc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				order by update_time desc
+			</when>
+            <otherwise>
+                order by collection_id desc
+            </otherwise>
+      </choose>
+
+	</select>
+
+	<select id="selectList" resultMap="BaseResultMap" >
+		SELECT collection_id,
+		alarm_suppress_id,
+		alarm_type_class_id,
+		alarm_type_id,
+		type_value,
+		threshold_value,
+		tenant_id,
+		creater_by,
+		create_time,
+		update_by,
+		update_time,
+		delete_flag
+		FROM vm_alarm_type_suppress
+		WHERE delete_flag ='0'
+		<if test="id!=null and id!='' ">
+			and alarm_suppress_id = #{id}
+		</if>
+		<if test="strategyIdList!=null ">
+			and alarm_suppress_id in
+			<foreach collection="strategyIdList" item="strategyId" index="index" open="(" close=")" separator=",">
+				#{strategyId}
+			</foreach>
+		</if>
+		<choose>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='asc'">
+				order by create_time asc
+			</when>
+			<when test="createDateOrder != null and createDateOrder != '' and createDateOrder =='desc'">
+				order by create_time desc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='asc'">
+				order by update_time asc
+			</when>
+			<when test="updateDateOrder != null and updateDateOrder != '' and updateDateOrder =='desc'">
+				order by update_time desc
+			</when>
+          	<otherwise>
+              	order by collection_id desc
+          	</otherwise>
+      </choose>
+	</select>
+</mapper>

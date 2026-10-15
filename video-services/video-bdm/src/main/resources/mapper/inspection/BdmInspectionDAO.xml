@@ -1,0 +1,923 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.bdm.modules.inspection.dao.BdmInspectionDAO">
+
+    <select id="findOne" resultType="com.chinatower.bdm.api.entity.InspectionConfVO">
+        SELECT
+        a.conf_desc,
+        a.conf_fj_id,
+        a.keeper_id,
+        a.keeper_name as keeper_name,
+        b.grid_name,
+        a.conf_id,
+        a.cnof_name,
+        a.grid_id,
+        a.area_id,
+        a.is_repeat,
+        a.inspection_level,
+        a.inspection_type,
+        a.inspection_warn,
+        a.tenant_id,
+        a.inspection_time,
+        a.creator,
+        a.create_time,
+        a.modifier,
+        a.update_time,
+        a.delete_flag,
+        DATE_FORMAT(a.level_start_time,'%Y-%m-%d') as level_start_time,
+        DATE_FORMAT(a.level_end_time,'%Y-%m-%d') as level_end_time,
+        a.level_count,
+        a.level_day_count,
+        a.is_repeat AS is_repeat_name,
+        a.is_appoint,
+        a.inspection_warn AS inspection_warn_name,
+        a.is_appoint AS is_appoint_name,
+        a.inspection_type AS inspection_type_name,
+        a.data_time,
+        a.is_assign,
+        a.industry_code,
+        a.app_ver_code,
+        a.conf_status,inspection_period
+        FROM
+        bm_inspection_conf a LEFT JOIN bm_grid b ON a.grid_id = b.grid_id
+        where a.delete_flag = 0 and a.conf_id = #{confId,jdbcType=VARCHAR}
+    </select>
+
+    <update id="deleteConf" parameterType="com.chinatower.bdm.api.entity.InspctionConfStatusParam">
+        update bm_inspection_conf
+        <set>
+            delete_flag = 1,update_time = now(),
+            <if test="modifier != null">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where conf_id = #{confId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="checkConf" resultType="java.lang.String" parameterType="com.chinatower.bdm.api.entity.InspectionConfVO">
+        SELECT a.conf_id
+        FROM bm_inspection_conf a
+        where a.cnof_name=#{cnofName,jdbcType=VARCHAR} and a.delete_flag = 0
+        <if test='confId != null and confId != ""'>
+            and conf_id != #{confId}
+        </if>
+        ${dataScope}
+        limit 1
+    </select>
+
+    <insert id="insertConfInfoList" parameterType="java.util.ArrayList" useGeneratedKeys="true" >
+        insert into bm_inspection_conf (conf_id,cnof_name, grid_id, grid_name, area_id,
+        is_repeat, inspection_level, inspection_type,inspection_warn, tenant_id, inspection_time,
+        creator,create_time, level_start_time,level_end_time, level_count, level_day_count,is_appoint,
+        keeper_id,keeper_name,conf_status,conf_desc,conf_fj_id,no_repeat_over,industry_code,app_ver_code
+        )
+        values
+        <foreach collection="inspectionList" item="item" index="index" separator=",">
+            (UUID_SHORT(),#{item.cnofName,jdbcType=VARCHAR}, #{item.gridId,jdbcType=VARCHAR},#{item.gridName,jdbcType=VARCHAR}, #{item.areaId,jdbcType=VARCHAR},
+            #{item.isRepeat,jdbcType=VARCHAR}, #{item.inspectionLevel,jdbcType=VARCHAR}, #{item.inspectionType,jdbcType=VARCHAR},
+            #{item.inspectionWarn,jdbcType=VARCHAR}, #{item.tenantId,jdbcType=VARCHAR}, #{item.inspectionTime,jdbcType=TIMESTAMP},
+            #{item.createBy,jdbcType=VARCHAR}, now(), #{item.levelStartTime,jdbcType=TIMESTAMP},
+            #{item.levelEndTime,jdbcType=TIMESTAMP}, #{item.levelCount,jdbcType=VARCHAR}, #{item.levelDayCount,jdbcType=VARCHAR},
+            #{item.isAppoint,jdbcType=VARCHAR},#{item.keeperId,jdbcType=VARCHAR},#{item.keeperName,jdbcType=VARCHAR},
+            #{item.confStatus,jdbcType=VARCHAR},#{item.confDesc,jdbcType=VARCHAR},#{item.confFjId,jdbcType=VARCHAR},#{item.noRepeatOver,jdbcType=VARCHAR},
+            #{item.industryCode,jdbcType=VARCHAR},#{item.appVerCode,jdbcType=VARCHAR},
+            )
+        </foreach>
+    </insert>
+
+<!--    <insert id="insertConfInfo">-->
+    <insert id="insertConfInfo" keyColumn="conf_id" keyProperty="confId" useGeneratedKeys="true"
+            parameterType="com.chinatower.bdm.api.entity.InspectionConfVO">
+        insert into bm_inspection_conf
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            conf_id,
+            <if test='cnofName != null and cnofName != ""'> cnof_name, </if>
+            <if test='gridId != null and gridId != ""'> grid_id, </if>
+            <if test='gridName != null and gridName !=""'> grid_name, </if>
+            <if test='areaId != null and areaId != ""'> area_id, </if>
+            <if test='isRepeat != null and isRepeat != ""'> is_repeat, </if>
+            <if test='inspectionLevel != null and inspectionLevel !=""'> inspection_level, </if>
+            <if test='inspectionType != null and inspectionType != ""'> inspection_type, </if>
+            <if test='inspectionWarn != null and inspectionWarn != ""'> inspection_warn, </if>
+            <if test='tenantId != null and tenantId != ""'> tenant_id, </if>
+            <if test='inspectionTime != null and inspectionTime !=""'> inspection_time, </if>
+            <if test='creator != null and creator !=""'> creator, </if>
+            create_time,
+            delete_flag,
+            <if test='levelStartTime != null and levelStartTime !=""'> level_start_time, </if>
+            <if test='levelEndTime != null and levelEndTime !=""'> level_end_time, </if>
+            <if test='levelCount != null and levelCount !=""'> level_count, </if>
+            <if test='levelDayCount != null and levelDayCount != ""'> level_day_count, </if>
+            <if test='isAppoint != null and isAppoint !=""'> is_appoint, </if>
+            <if test='keeperId != null and keeperId !=""'> keeper_id, </if>
+            <if test='keeperName != null and keeperName !=""'> keeper_name, </if>
+            conf_status,
+            <if test='confDesc != null and confDesc !=""'> conf_desc, </if>
+            <if test='confFjId != null and confFjId !=""'> conf_fj_id, </if>
+            no_repeat_over,
+            <if test='dataTime != null and dataTime !=""'> data_time, </if>
+            <if test='isAssign != null and isAssign !=""'> is_assign, </if>
+            <if test='industryCode != null and industryCode !=""'> industry_code, </if>
+            <if test='appVerCode != null and appVerCode !=""'> app_ver_code, </if>
+            <if test='inspectionPeriod != null and inspectionPeriod !=""'> inspection_period, </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            #{confId,jdbcType=VARCHAR},
+            <if test='cnofName != null and cnofName != ""'> #{cnofName,jdbcType=VARCHAR}, </if>
+            <if test='gridId != null and gridId != ""'> #{gridId,jdbcType=VARCHAR}, </if>
+            <if test='gridName != null and gridName !=""'> #{gridName,jdbcType=VARCHAR}, </if>
+            <if test='areaId != null and areaId != ""'> #{areaId,jdbcType=VARCHAR}, </if>
+            <if test='isRepeat != null and isRepeat != ""'> #{isRepeat,jdbcType=VARCHAR}, </if>
+            <if test='inspectionLevel != null and inspectionLevel !=""'> #{inspectionLevel,jdbcType=VARCHAR}, </if>
+            <if test='inspectionType != null and inspectionType != ""'> #{inspectionType,jdbcType=VARCHAR}, </if>
+            <if test='inspectionWarn != null and inspectionWarn != ""'> #{inspectionWarn,jdbcType=VARCHAR}, </if>
+            <if test='tenantId != null and tenantId != ""'> #{tenantId,jdbcType=VARCHAR}, </if>
+            <if test='inspectionTime != null and inspectionTime !=""'> #{inspectionTime}, </if>
+            <if test='creator != null and creator !=""'> #{creator,jdbcType=VARCHAR}, </if>
+            #{createTime},
+            0,
+            <if test='levelStartTime != null and levelStartTime !=""'> #{levelStartTime}, </if>
+            <if test='levelEndTime != null and levelEndTime !=""'> #{levelEndTime}, </if>
+            <if test='levelCount != null and levelCount !=""'> #{levelCount,jdbcType=VARCHAR}, </if>
+            <if test='levelDayCount != null and levelDayCount != ""'> #{levelDayCount,jdbcType=VARCHAR}, </if>
+            <if test='isAppoint != null and isAppoint !=""'> #{isAppoint,jdbcType=VARCHAR}, </if>
+            <if test='keeperId != null and keeperId !=""'> #{keeperId,jdbcType=VARCHAR}, </if>
+            <if test='keeperName != null and keeperName !=""'> #{keeperName,jdbcType=VARCHAR}, </if>
+            '0',
+            <if test='confDesc != null and confDesc !=""'> #{confDesc,jdbcType=VARCHAR}, </if>
+            <if test='confFjId != null and confFjId !=""'> #{confFjId,jdbcType=VARCHAR}, </if>
+            '0',
+            <if test='dataTime != null and dataTime !=""'> #{dataTime}, </if>
+            <if test='isAssign != null and isAssign !=""'> #{isAssign,jdbcType=VARCHAR}, </if>
+            <if test='industryCode != null and industryCode !=""'> #{industryCode,jdbcType=VARCHAR}, </if>
+            <if test='appVerCode != null and appVerCode !=""'> #{appVerCode,jdbcType=VARCHAR}, </if>
+            <if test='inspectionPeriod != null and inspectionPeriod !=""'> #{inspectionPeriod,jdbcType=VARCHAR}, </if>
+        </trim>
+    </insert>
+
+    <insert id="batchInsertTaskInfo"  parameterType="com.chinatower.bdm.api.entity.InspectionConfVO">
+        INSERT INTO bm_inspection_task
+        (task_id, conf_id,cnof_name, tenant_id, grid_id, grid_name, task_status, start_time, end_time,
+        keeper_id, keeper_name, create_time,conf_desc,industry_code,app_ver_code,delete_flag,send_flag,
+        inspection_start_time,inspection_end_time) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.taskId},#{item.confId},#{item.cnofName},#{item.tenantId},#{item.gridId},#{item.gridName},'2',
+            #{item.levelStartTime},#{item.levelEndTime},#{item.keeperId},#{item.keeperName},#{item.dataTime},
+            #{item.confDesc},#{item.industryCode},#{item.appVerCode},0,0,
+            #{item.inspectionStartTime},#{item.inspectionEndTime})
+        </foreach>
+    </insert>
+
+    <update id="updateConfInfo">
+        update bm_inspection_conf
+        <set>
+            <if test='cnofName != null and cnofName != ""'> cnof_name = #{cnofName,jdbcType=VARCHAR}, </if>
+            <!--<if test='gridId != null and gridId != ""'> grid_id = #{gridId,jdbcType=VARCHAR}, </if>
+            <if test='gridName != null and gridName !=""'> grid_name = #{gridName,jdbcType=VARCHAR}, </if>-->
+            <if test='areaId != null and areaId != ""'> area_id = #{areaId,jdbcType=VARCHAR}, </if>
+            <if test='isRepeat != null and isRepeat != ""'> is_repeat = #{isRepeat,jdbcType=VARCHAR}, </if>
+            <if test='inspectionLevel != null and inspectionLevel !=""'> inspection_level = #{inspectionLevel,jdbcType=VARCHAR}, </if>
+            <if test='inspectionType != null and inspectionType != ""'> inspection_type = #{inspectionType,jdbcType=VARCHAR}, </if>
+            <if test='inspectionWarn != null and inspectionWarn != ""'> inspection_warn = #{inspectionWarn,jdbcType=VARCHAR}, </if>
+            <if test='tenantId != null and tenantId != ""'> tenant_id = #{tenantId,jdbcType=VARCHAR}, </if>
+            <if test='inspectionTime != null and inspectionTime !=""'> inspection_time = #{inspectionTime,jdbcType=TIMESTAMP}, </if>
+            <if test='modifier != null and modifier !=""'> modifier = #{modifier,jdbcType=VARCHAR}, </if>
+            update_time = #{updateTime},
+            <if test='deleteFlag != null and deleteFlag!=""'> delete_flag = #{deleteFlag,jdbcType=INTEGER}, </if>
+            <if test='levelStartTime != null and levelStartTime !=""'> level_start_time = #{levelStartTime,jdbcType=TIMESTAMP}, </if>
+            <if test='levelEndTime != null and levelEndTime !=""'> level_end_time = #{levelEndTime,jdbcType=TIMESTAMP}, </if>
+            <if test='levelCount != null and levelCount !=""'> level_count = #{levelCount,jdbcType=VARCHAR}, </if>
+            <if test='levelDayCount != null and levelDayCount != ""'> level_day_count = #{levelDayCount,jdbcType=VARCHAR}, </if>
+            <if test='isAppoint != null and isAppoint !=""'> is_appoint = #{isAppoint,jdbcType=VARCHAR}, </if>
+            <if test='keeperId != null and keeperId !=""'> keeper_id = #{keeperId,jdbcType=VARCHAR}, </if>
+            <if test='keeperName != null and keeperName !=""'> keeper_name = #{keeperName,jdbcType=VARCHAR}, </if>
+            <if test='confStatus != null and confStatus !=""'> conf_status = #{confStatus,jdbcType=VARCHAR}, </if>
+            <if test='confDesc != null and confDesc !=""'> conf_desc = #{confDesc,jdbcType=VARCHAR}, </if>
+            <if test='confFjId != null and confFjId !=""'> conf_fj_id = #{confFjId,jdbcType=VARCHAR}, </if>
+            <if test='noRepeatOver != null and noRepeatOver !=""'> no_repeat_over = #{noRepeatOver,jdbcType=VARCHAR}, </if>
+            <if test='dataTime != null and dataTime !=""'> data_time = #{dataTime,jdbcType=TIMESTAMP}, </if>
+            <if test='isAssign != null and isAssign !=""'> is_assign = #{isAssign,jdbcType=VARCHAR}, </if>
+            <if test='inspectionPeriod != null and inspectionPeriod !=""'> inspection_period = #{inspectionPeriod,jdbcType=VARCHAR}, </if>
+        </set>
+        where conf_id = #{confId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="getConfList" resultType="com.chinatower.bdm.api.entity.InspectionConfListVO" parameterType="com.chinatower.bdm.api.entity.InspectionConfParam">
+        SELECT a.conf_id, a.cnof_name, a.grid_id, b.grid_name, a.keeper_name, a.creator, a.create_time, a.modifier,
+            a.update_time, a.delete_flag, a.conf_status, a.data_time, a.is_assign
+        FROM bm_inspection_conf a LEFT JOIN bm_grid b ON a.grid_id = b.grid_id
+        <where> a.delete_flag = 0 AND a.tenant_id = #{tenantId} AND a.industry_code = #{industryCode}
+        <if test='gridId!= null and gridId != "" '>
+            AND a.grid_id = #{gridId,jdbcType=VARCHAR}
+        </if>
+        <if test='cnofName!= null and cnofName != "" '>
+            AND a.cnof_name LIKE CONCAT('%', #{cnofName}, '%')
+        </if>
+        <if test='keeperName!= null and keeperName != "" '>
+            AND a.keeper_name LIKE CONCAT('%', #{keeperName}, '%')
+        </if>
+        <if test='confStatus!= null and confStatus != "" '>
+            AND a.conf_status = #{confStatus}
+        </if>
+        <if test='creator!= null and creator != "" '>
+            AND a.creator LIKE CONCAT('%', #{creator}, '%')
+        </if>
+        <if test='modifier!= null and modifier != "" '>
+            AND a.modifier LIKE CONCAT('%', #{modifier}, '%')
+        </if>
+        <if test="createStartDate != null and createStartDate != ''">
+            <![CDATA[and DATE_FORMAT(a.create_time,'%Y-%m-%d') >= #{createStartDate}]]>
+        </if>
+        <if test="createEndDate != null and createEndDate != ''">
+            <![CDATA[and DATE_FORMAT(a.create_time,'%Y-%m-%d') <= #{createEndDate}]]>
+        </if>
+        <if test="modifyStartDate != null and modifyStartDate != ''">
+            <![CDATA[and DATE_FORMAT(a.update_time,'%Y-%m-%d') >= #{modifyStartDate}]]>
+        </if>
+        <if test="modifyEndDate != null and modifyEndDate != ''">
+            <![CDATA[and DATE_FORMAT(a.update_time,'%Y-%m-%d') <= #{modifyEndDate}]]>
+        </if>
+        </where>
+        <if test='sort == "desc" and "1" == sortFlag '>
+            order by a.create_time DESC
+        </if>
+        <if test='sort == "desc" and "2" == sortFlag '>
+            order by a.update_time DESC
+        </if>
+        <if test='sort == "asc" and "1" == sortFlag '>
+            order by a.create_time ASC
+        </if>
+        <if test='sort == "asc" and "2" == sortFlag '>
+            order by a.update_time ASC
+        </if>
+    </select>
+
+
+    <select id="getTaskList" resultType="com.chinatower.bdm.api.entity.InspectionTaskListVO" parameterType="com.chinatower.bdm.api.entity.InspectionTaskParam">
+        SELECT
+        a.task_id,
+        a.conf_id,
+        a.cnof_name as task_name,
+        a.grid_id,
+        a.keeper_name,
+        a.start_time,
+        a.end_time,
+        a.inspection_time,
+        a.create_time,
+        a.task_status,
+        a.conf_desc as task_desc,
+        a.retroaction,
+        DATE_FORMAT(a.create_time,'%Y-%m-%d') create_date,
+        a.inspection_start_time,
+        a.inspection_end_time,
+        a.feedback_keeper_id,
+        a.feedback_end,
+        b.keeper_name feedbackKeeperName,
+        c.grid_name gridName
+        FROM
+        bm_inspection_task a
+        left join bm_gridkeeper b on a.feedback_keeper_id = b.keeper_id
+        left join bm_grid c on a.grid_id = c.grid_id
+        WHERE a.send_flag = 1
+
+        <choose>
+            <when test=' flag == "3" '>
+                AND ((a.task_status = '1'  and  a.feedback_keeper_id = #{feedbackKeeperId,jdbcType=VARCHAR}) or  a.task_status = '2')
+            </when>
+
+            <otherwise>
+                <if test='taskStatus!= null and taskStatus != "" '>
+                    AND a.task_status = #{taskStatus,jdbcType=VARCHAR}
+                </if>
+                <if test='feedbackKeeperId!= null and feedbackKeeperId != "" '>
+                    AND a.feedback_keeper_id = #{feedbackKeeperId,jdbcType=VARCHAR}
+                </if>
+            </otherwise>
+        </choose>
+
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test="deleteFlag != null">
+            AND a.delete_flag = #{deleteFlag}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            and DATE_FORMAT(a.inspection_time,'%Y-%m-%d') >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            and DATE_FORMAT(a.inspection_time,'%Y-%m-%d') <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="createStartTime != null and createStartTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') >= #{createStartTime}
+        </if>
+        <if test="createEndTime != null and createEndTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') <![CDATA[<=]]> #{createEndTime}
+        </if>
+        <if test='gridId!= null and gridId != "" '>
+            AND a.grid_id LIKE concat('%',#{gridId},'%')
+        </if>
+        <if test='taskName!= null and taskName != "" '>
+            AND a.cnof_name LIKE concat('%',#{taskName},'%')
+        </if>
+        <if test='keeperId!= null and keeperId != "" '>
+            AND FIND_IN_SET(#{keeperId,jdbcType=VARCHAR},a.keeper_id)
+        </if>
+        <if test='confId!= null and confId != "" '>
+            AND a.conf_id = #{confId,jdbcType=VARCHAR}
+        </if>
+        <if test='keeperName!= null and keeperName != "" '>
+            AND a.keeper_name LIKE concat('%',#{keeperName},'%')
+        </if>
+
+        <if test='feedbackEnd!= null and feedbackEnd != "" '>
+            AND a.feedback_end = #{feedbackEnd,jdbcType=VARCHAR}
+        </if>
+
+        <if test="taskDistributionStartTime != null and taskDistributionStartTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') >= #{taskDistributionStartTime}
+        </if>
+        <if test="taskDistributionEndTime != null and taskDistributionEndTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') <![CDATA[<=]]> #{taskDistributionEndTime}
+        </if>
+
+        <if test='feedbackKeeperName!= null and feedbackKeeperName != "" '>
+            AND b.keeper_name LIKE concat('%',#{feedbackKeeperName},'%')
+        </if>
+
+        <choose>
+            <when test="sortName == 'createDate'">
+                order by DATE_FORMAT(a.create_time,'%Y-%m-%d')
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="sortName == 'inspectionPeriod'">
+                order by a.inspection_start_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+                ,a.inspection_end_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+
+            <when test="sortName == 'createTime'">
+                order by a.create_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+
+            <when test="sortName == 'inspectionTime'">
+                order by a.inspection_time
+                <if test="sort == 'desc'">
+                    desc
+                </if>
+                <if test="sort == 'asc'">
+                    asc
+                </if>
+            </when>
+
+            <otherwise>
+                ORDER BY
+                create_date DESC,a.inspection_start_time DESC,a.inspection_end_time DESC,DATE_FORMAT(a.create_time,'%Y-%m-%d') DESC
+            </otherwise>
+        </choose>
+
+
+    </select>
+
+
+
+
+    <select id="getTaskListByCondition" resultType="com.chinatower.bdm.api.entity.InspectionTaskListVO" parameterType="com.chinatower.bdm.api.entity.InspectionTaskNoPageParam">
+        SELECT
+        a.task_id,
+        a.conf_id,
+        a.cnof_name as task_name,
+        a.grid_id,
+        a.keeper_id,
+        a.keeper_name,
+        a.create_time,
+        a.task_status,
+        a.feedback_keeper_id,
+        a.feedback_end,
+        DATE_FORMAT(a.create_time,'%Y-%m-%d') create_date,
+        a.inspection_start_time,
+        a.inspection_end_time,
+        c.grid_name gridName
+        FROM
+        bm_inspection_task a
+        left join bm_grid c on a.grid_id = c.grid_id
+        WHERE a.send_flag = 1 AND a.delete_flag = 0
+
+        <if test='createStartTime != null and createStartTime != ""
+            and createEndTime != null and createEndTime != ""'>
+            AND a.create_time >= #{createStartTime} AND a.create_time <![CDATA[<=]]> #{createEndTime}
+        </if>
+
+        <if test='taskName!= null and taskName != "" '>
+            AND a.cnof_name LIKE concat('%',#{taskName},'%')
+        </if>
+
+        <if test='taskStatus!= null and taskStatus != "" '>
+            AND a.task_status = #{taskStatus}
+        </if>
+
+        <if test='gridId!= null and gridId != "" '>
+            AND a.grid_id = #{gridId}
+        </if>
+
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+
+        <if test='gridIds!= null and gridIds.size() > 0 '>
+            AND a.grid_id in
+            <foreach collection="gridIds" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+
+
+
+        ORDER BY
+        create_date DESC,a.inspection_start_time DESC,a.inspection_end_time DESC
+
+    </select>
+
+
+
+    <select id="getToDoTaskList" resultType="com.chinatower.bdm.api.entity.InspectionTaskListVO" parameterType="com.chinatower.bdm.api.entity.InspectionTaskNoPageParam">
+        SELECT
+        a.task_id,
+        a.conf_id,
+        a.cnof_name as task_name,
+        a.grid_id,
+        a.keeper_id,
+        a.keeper_name,
+        a.start_time,
+        a.end_time,
+        a.inspection_time,
+        a.create_time,
+        a.task_status,
+        a.conf_desc as task_desc,
+        a.retroaction,
+        DATE_FORMAT(a.create_time,'%Y-%m-%d') create_date,
+        a.inspection_start_time,
+        a.inspection_end_time,
+        a.feedback_keeper_id,
+        a.feedback_end,
+        b.keeper_name feedbackKeeperName,
+        c.grid_name gridName
+        FROM
+        bm_inspection_task a
+        left join bm_gridkeeper b on a.feedback_keeper_id = b.keeper_id
+        left join bm_grid c on a.grid_id = c.grid_id
+        WHERE a.send_flag = 1
+
+
+        <if test='taskStatus!= null and taskStatus != "" '>
+            AND a.task_status = #{taskStatus,jdbcType=VARCHAR}
+        </if>
+        <if test='feedbackKeeperId!= null and feedbackKeeperId != "" '>
+            AND a.feedback_keeper_id = #{feedbackKeeperId,jdbcType=VARCHAR}
+        </if>
+
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test="deleteFlag != null">
+            AND a.delete_flag = #{deleteFlag}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            and DATE_FORMAT(a.inspection_time,'%Y-%m-%d') >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            and DATE_FORMAT(a.inspection_time,'%Y-%m-%d') <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="createStartTime != null and createStartTime != ''">
+            and a.create_time >= #{createStartTime}
+        </if>
+        <if test="createEndTime != null and createEndTime != ''">
+            and a.create_time <![CDATA[<=]]> #{createEndTime}
+        </if>
+        <if test='gridId!= null and gridId != "" '>
+            AND a.grid_id LIKE concat('%',#{gridId},'%')
+        </if>
+        <if test='taskName!= null and taskName != "" '>
+            AND a.cnof_name LIKE concat('%',#{taskName},'%')
+        </if>
+        <if test='keeperId!= null and keeperId != "" '>
+            AND FIND_IN_SET(#{keeperId,jdbcType=VARCHAR},a.keeper_id)
+        </if>
+        <if test='confId!= null and confId != "" '>
+            AND a.conf_id = #{confId,jdbcType=VARCHAR}
+        </if>
+        <if test='keeperName!= null and keeperName != "" '>
+            AND a.keeper_name LIKE concat('%',#{keeperName},'%')
+        </if>
+
+        <if test='feedbackEnd!= null and feedbackEnd != "" '>
+            AND a.feedback_end = #{feedbackEnd,jdbcType=VARCHAR}
+        </if>
+
+        <if test="taskDistributionStartTime != null and taskDistributionStartTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') >= #{taskDistributionStartTime}
+        </if>
+        <if test="taskDistributionEndTime != null and taskDistributionEndTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') <![CDATA[<=]]> #{taskDistributionEndTime}
+        </if>
+
+        <if test='feedbackKeeperName!= null and feedbackKeeperName != "" '>
+            AND b.keeper_name LIKE concat('%',#{feedbackKeeperName},'%')
+        </if>
+
+        <if test='gridIds!= null and gridIds.size() > 0  '>
+            AND a.grid_id in
+            <foreach collection="gridIds" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+
+        ORDER BY
+        create_date DESC,a.inspection_start_time DESC,a.inspection_end_time DESC
+
+
+    </select>
+
+
+
+    <select id="getKeeperInfo" resultType="com.chinatower.bdm.api.entity.GridKeeperVO" parameterType="com.chinatower.bdm.api.entity.GridKeeperVO">
+        select
+            keeper_id,keeper_name,keeper_type
+        from bm_gridkeeper
+        where 1 = 1
+        and keeper_id in
+        <foreach collection="keeperIdList" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <select id="getTaskListExtend" resultType="com.chinatower.bdm.api.entity.InspectionTaskListVOExtend"
+            parameterType="com.chinatower.bdm.api.entity.InspectionTaskParamExtend">
+        SELECT
+            a.keeper_id,
+            a.task_id,
+            a.conf_id,
+            a.cnof_name as task_name,
+            a.grid_id,
+            a.grid_name,
+            a.keeper_name,
+            a.start_time,
+            a.end_time,
+            a.inspection_time,
+            a.create_time,
+            a.task_status,
+            a.conf_desc as task_desc,
+            a.retroaction,
+            a.tenant_id,
+            a.fj_id,
+            a.voice_url,
+            a.video_url,
+            a.industry_code,
+            a.app_ver_code,
+            a.send_flag
+        FROM
+        bm_inspection_task a
+        inner join bm_grid bg on a.grid_id = bg.grid_id
+        WHERE a.send_flag = 1
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        <if test="deleteFlag != null">
+            AND a.delete_flag = #{deleteFlag}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            and DATE_FORMAT(a.inspection_time,'%Y-%m-%d') >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            and DATE_FORMAT(a.inspection_time,'%Y-%m-%d') <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="createStartTime != null and createStartTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') >= #{createStartTime}
+        </if>
+        <if test="createEndTime != null and createEndTime != ''">
+            and DATE_FORMAT(a.create_time,'%Y-%m-%d') <![CDATA[<=]]> #{createEndTime}
+        </if>
+        <if test='gridId!= null and gridId != "" '>
+            AND a.grid_id = #{gridId}
+        </if>
+        <if test='taskName!= null and taskName != "" '>
+            AND a.cnof_name LIKE concat('%',#{taskName},'%')
+        </if>
+        <if test='keeperId!= null and keeperId != "" '>
+            AND a.keeper_id = #{keeperId}
+        </if>
+        <if test='taskStatus!= null and taskStatus != "" '>
+            AND a.task_status = #{taskStatus,jdbcType=VARCHAR}
+        </if>
+        <if test='confId!= null and confId != "" '>
+            AND a.conf_id = #{confId,jdbcType=VARCHAR}
+        </if>
+        <if test='keeperName!= null and keeperName != "" '>
+            AND a.keeper_name LIKE concat('%',#{keeperName},'%')
+        </if>
+        <if test='provinceId!= null and provinceId != "" '>
+            AND bg.province_id = #{provinceId}
+        </if>
+        <if test='cityId!= null and cityId != "" '>
+            AND bg.city_id = #{cityId}
+        </if>
+    </select>
+
+    <select id="getTaskInfo" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO">
+        SELECT a.task_id, a.conf_id, a.cnof_name taskName, a.tenant_id, a.grid_id, b.grid_name, a.task_status, a.start_time, a.end_time, a.keeper_id, a.keeper_name,
+        a.create_time, a.retroaction, a.fj_id, a.voice_url, a.video_url, a.inspection_time,a.conf_desc taskDesc,DATE_FORMAT(a.create_time,'%Y-%m-%d') create_date,
+        a.inspection_start_time,a.inspection_end_time,a.feedback_keeper_id,a.feedback_end,a.cover_url,b.grid_range,b.grid_center,c.keeper_name feedbackKeeperName,
+        b.color,b.border_color,b.border_color_transparency,b.border_color_line_thickness,b.color_transparency,c.keeper_type as feedbackKeeperType
+	    FROM bm_inspection_task a
+	    left join bm_grid b on  a.grid_id = b.grid_id
+	    left join bm_gridkeeper c on  a.feedback_keeper_id = c.keeper_id
+	    where a.task_id = #{taskId} and a.send_flag = 1
+    </select>
+
+
+    <select id="getTaskInfoByCondition" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO" parameterType="com.chinatower.bdm.api.entity.InspectionTaskNoPageParam">
+        SELECT a.task_id, a.conf_id, a.cnof_name taskName, a.tenant_id, a.grid_id, b.grid_name, a.task_status, a.start_time, a.end_time, a.keeper_id, a.keeper_name,
+        a.create_time, a.retroaction, a.fj_id, a.voice_url, a.video_url, a.inspection_time,a.conf_desc taskDesc,DATE_FORMAT(a.create_time,'%Y-%m-%d') create_date,
+        a.inspection_start_time,a.inspection_end_time,a.feedback_keeper_id,a.feedback_end,a.cover_url,b.grid_range,b.grid_center,c.keeper_name feedbackKeeperName,
+        b.color,b.border_color,b.border_color_transparency,b.border_color_line_thickness,b.color_transparency,c.keeper_type
+	    FROM bm_inspection_task a
+	    left join bm_grid b on  a.grid_id = b.grid_id
+	    left join bm_gridkeeper c on  a.feedback_keeper_id = c.keeper_id
+	    where a.send_flag = 1
+        and a.grid_id = #{gridId}
+        order by a.task_status DESC,create_date DESC
+        limit 1
+    </select>
+
+    <update id="updateTask">
+        update bm_inspection_task
+        <set>
+            <if test="taskStatus != null">
+                task_status = #{taskStatus},
+            </if>
+            <if test='keeperId != null and keeperId != ""'>
+                keeper_id = #{keeperId},
+            </if>
+            <if test='keeperName != null and keeperName != ""'>
+                keeper_name = #{keeperName},
+            </if>
+            <if test='retroaction != null and retroaction != ""'>
+                retroaction = #{retroaction},
+            </if>
+            <if test='fjId != null and fjId != ""'>
+                fj_id = #{fjId},
+            </if>
+            <if test='voiceUrl != null and voiceUrl != ""'>
+                voice_url = #{voiceUrl},
+            </if>
+            <if test='videoUrl != null and videoUrl != ""'>
+                video_url = #{videoUrl},
+            </if>
+            <if test='taskStatus == "1"'>
+                inspection_time = now(),
+            </if>
+            <if test='tenantId != null and tenantId != ""'>
+                tenant_id = #{tenantId},
+            </if>
+            <if test='industryCode != null and industryCode != ""'>
+                industry_code = #{industryCode},
+            </if>
+            <if test='feedbackKeeperId != null and feedbackKeeperId != ""'>
+                feedback_keeper_id = #{feedbackKeeperId},
+            </if>
+            <if test='feedbackEnd != null and feedbackEnd != ""'>
+                feedback_end = #{feedbackEnd},
+            </if>
+            <if test='coverUrl != null and coverUrl != ""'>
+                cover_url = #{coverUrl}
+            </if>
+        </set>
+        where task_id = #{taskId,jdbcType=VARCHAR}
+    </update>
+    <update id="updateConfStatus">
+        update bm_inspection_conf set conf_status = '1' where conf_id = #{confId} and DATE_FORMAT(now(),'%Y-%m-%d') >= DATE_FORMAT(level_end_time,'%Y-%m-%d')
+    </update>
+    <update id="updateRepeatConfStatus">
+        UPDATE bm_inspection_conf SET no_repeat_over = '1' WHERE conf_id = #{confId}
+    </update>
+    <delete id="delTask">
+        delete from bm_inspection_task where task_id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="selectKeeperIdStr" parameterType="com.chinatower.bdm.api.entity.InspectionConfVO" resultType="com.chinatower.bdm.modules.gridKeeper.entity.GridKeeperStr">
+        SELECT group_concat(keeper_id) keeperIdStr, group_concat(keeper_name) keeperNameStr
+        FROM
+            bm_gridkeeper a
+        WHERE
+            a.delete_flag = 0
+            ${dataScope}
+          and a.`status` = '0'
+          and EXISTS(SELECT b.keeper_id FROM bm_grid_keeper_ref b WHERE b.grid_id = #{gridId} AND b.keeper_id = a.keeper_id)
+        order by a.keeper_sort
+    </select>
+
+    <select id="getTaskStatus" resultType="com.chinatower.bdm.api.entity.InspectionTaskParamVO">
+        select
+               task_status,conf_id
+        from bm_inspection_task
+        where conf_id in (SELECT conf_id from bm_inspection_task where task_id = #{taskId})
+    </select>
+
+    <select id="getParentGridInfo" resultType="com.chinatower.bdm.api.entity.GridVO">
+        select
+               a.grid_id,a.grid_name,a.parent_id
+        from bm_grid a
+        where
+        a.grid_id = #{gridId}
+    </select>
+
+    <select id="CheckTaskByConfId" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO">
+        select task_id,conf_id,task_status,create_time,send_flag
+        from bm_inspection_task
+        where conf_id = #{confId}
+    </select>
+
+    <select id="getConfStatus" resultType="com.chinatower.bdm.api.entity.InspectionConfVO">
+        select conf_status,conf_id
+        from bm_inspection_conf
+        where conf_id = #{confId}
+    </select>
+
+    <select id="getTaskInfoByConfId" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO">
+        select
+               task_id,conf_id
+        from bm_inspection_task
+        where conf_id = #{confId}
+        and DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') >= DATE_FORMAT(now(),'%Y-%m-%d %H:%i:%s')
+    </select>
+    <select id="queryGridAreaTree" resultMap="deviceGridTreeMap"
+            resultType="com.chinatower.bdm.modules.inspection.entity.DeviceGridAreaTreeVO">
+        SELECT DISTINCT
+        a.province_id AS provinceId,
+        a.province_name AS provinceName,
+        a.city_id AS cityId,
+        a.city_name AS cityName,
+        county.area_code AS countyId,
+        county.area_name AS countyName,
+        '1' AS proLevel,
+        '2' AS cityLevel,
+        '3' AS countryLevel
+        FROM
+        `bm_grid` a
+        LEFT JOIN vm_organ_device_rel_t d ON a.grid_em_center = d.dept_id
+        AND d.device_type = 4
+        LEFT JOIN vm_order_devices f ON d.device_code = f.device_code
+        LEFT JOIN vm_device_info_t e ON e.device_code = d.device_code
+        LEFT JOIN sys_area pro ON pro.area_code = a.province_id
+        LEFT JOIN sys_area city ON city.area_code = a.city_id
+        LEFT JOIN sys_area county ON county.AREA_PARENT_CODE = a.city_id
+        WHERE
+        f.delete_flag = '0'
+        AND f.ord_status IN ( 0, 1, 2 )
+        AND (a.province_id  is not null or a.province_id <![CDATA[<>]]> '')
+        ORDER BY
+        a.province_id,
+        a.city_id,
+        countyId
+    </select>
+    <select id="getTaskStatusName" resultType="java.lang.String">
+        select dict_label
+        from sys_dict_data where status = '0' and dict_type = #{dictType} and dict_value = #{taskStatus}
+    </select>
+    <select id="getUserIdByKeerperList" resultType="java.lang.String">
+        SELECT staff_id FROM bm_gridkeeper WHERE delete_flag = 0 AND keeper_id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="inspectionCountTrend" resultType="java.util.Map"
+            parameterType="com.chinatower.bdm.api.entity.QueryCountTrend">
+        SELECT *
+        FROM (SELECT count(b.task_id)  sum,
+        date_format(b.create_time, '%Y-%m-%d') label
+        FROM bm_inspection_task b
+        INNER JOIN bm_gridkeeper a ON a.keeper_id = b.keeper_id
+        INNER JOIN sys_user c ON c.USER_ID = a.staff_id
+        where a.staff_id = #{userId}
+        group by label) t
+        where str_to_date(label, '%Y-%m-%d') >= str_to_date(#{beginTime}, '%Y-%m-%d')
+        and str_to_date(label, '%Y-%m-%d') <![CDATA[<=]]>  str_to_date(#{endTime},'%Y-%m-%d')
+    </select>
+
+    <!-- mybatis嵌套查询  -->
+    <resultMap id="deviceGridTreeMap" type="com.chinatower.bdm.modules.inspection.entity.DeviceGridAreaTreeVO">
+        <result column="provinceId" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="children" ofType="com.chinatower.bdm.modules.inspection.entity.DeviceGridAreaTreeVO">
+            <result column="cityid" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="children" ofType="com.chinatower.bdm.modules.inspection.entity.DeviceGridAreaTreeVO">
+                <result column="countyId" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <!--获取UUID-->
+    <select id="getUUID" resultType="java.lang.String" flushCache="true">
+     select UUID_SHORT()
+    </select>
+
+
+    <update id="deleteTask" parameterType="com.chinatower.bdm.api.entity.InspctionConfStatusParam">
+        update bm_inspection_task
+        <set>
+            delete_flag = 1,update_time = now(),
+            <if test="modifier != null">
+                modifier = #{modifier,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where conf_id = #{confId,jdbcType=VARCHAR}
+    </update>
+
+    <select id="getConfKeeperList" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO"
+            parameterType="com.chinatower.bdm.api.entity.InspectionTaskVO">
+        SELECT conf_id, keeper_id, keeper_name
+        FROM bm_inspection_conf
+        where delete_flag = 0
+        <if test='keeperId != null and keeperId != "" '>
+            AND FIND_IN_SET(#{keeperId},keeper_id)
+        </if>
+    </select>
+
+    <update id="updateConfKeeperList" parameterType="java.util.List">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            UPDATE bm_inspection_conf SET keeper_name = #{item.keeperName,jdbcType=VARCHAR}
+            WHERE conf_id = #{item.confId,jdbcType=VARCHAR}
+        </foreach>
+    </update>
+
+    <select id="getTaskKeeperList" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO"
+            parameterType="com.chinatower.bdm.api.entity.InspectionTaskVO">
+        SELECT task_id, keeper_id, keeper_name
+        FROM bm_inspection_task
+        where delete_flag = 0
+        <if test='keeperId != null and keeperId != "" '>
+            AND FIND_IN_SET(#{keeperId},keeper_id)
+        </if>
+    </select>
+
+    <update id="updateTaskKeeperList" parameterType="java.util.List">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            UPDATE bm_inspection_task SET keeper_name = #{item.keeperName,jdbcType=VARCHAR}
+            WHERE task_id = #{item.taskId,jdbcType=VARCHAR}
+        </foreach>
+    </update>
+
+
+
+    <select id="getUserInfoList" resultType="com.chinatower.bdm.api.entity.InspectionTaskVO" parameterType="com.chinatower.bdm.api.entity.InspectionTaskVO">
+        SELECT
+        a.keeper_name,
+        a.keeper_phone_number,
+        (case when TIMESTAMPDIFF(MINUTE,a.take_point_time,now())<![CDATA[<]]>5 then '1' else '0' end) as is_line,
+        b.AVATAR
+        FROM
+        bm_gridkeeper a
+        LEFT JOIN sys_user b ON a.staff_id = b.USER_ID
+        WHERE
+        a.delete_flag = 0
+        AND b.DEL_FLAG = '0' and b.STATUS = '0'
+        <if test='keeperIdList != null and keeperIdList != ""'>
+            AND a.keeper_id IN
+            <foreach collection="keeperIdList" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+    </select>
+
+</mapper>

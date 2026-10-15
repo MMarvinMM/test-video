@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.chinatower.video.modules.device.mapper.DeviceMapper">
+    <select id="getMonitorList" resultType="com.chinatower.video.modules.device.entity.DeviceDTO">
+        SELECT DISTINCT
+            m.device_code,
+            m.device_name
+        FROM
+            vm_order_devices ord
+        LEFT JOIN vm_device_info_t m ON m.device_code = ord.device_code
+        WHERE
+            m.delete_flag = '0'
+          AND ord.ord_status IN ( 0, 1, 2 )
+          AND ord.tenant_id = #{tenantId}
+          AND ord.accept_node = #{acceptNode}
+          AND ord.industry_code = #{industryCode}
+        <if test="deviceCodes != null and deviceCodes.size > 0">
+           AND m.device_code IN
+            <foreach collection="deviceCodes" separator="," item="item" open="(" close=")" index="index">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+</mapper>

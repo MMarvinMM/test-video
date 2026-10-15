@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.uav.mapper.AirUavMapper">
+
+    <select id="queryUavAlarmList" resultType="com.chinatower.platform.modules.uav.entity.UavAlarmInfo">
+        select id,device_Code deviceCode,uav_Code uavCode,uav_name uavName,send_time sendTime,send_user_id sendUserId,latitude,longitude,address,tenant_id tenantId,industry_code as industryCode,un_connect_time unConnectTime
+        from `vm_air_contact_alarm_t`
+        where delete_flag = 0 and type = 1 and status = 0  and send_time <![CDATA[<=]]> now()
+    </select>
+
+    <select id="queryUserInfo" resultType="com.chinatower.platform.entity.admin.UserInfoDto">
+        select USER_ID as userId,phonenumber  from sys_user
+        where USER_ID in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and DEL_FLAG = 0
+    </select>
+
+    <update id="updateUavAlarmInfo">
+        update `vm_air_contact_alarm_t` set status = 1,delete_flag = 1
+        where id in
+        <foreach collection="ids" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="queryUavAirLinePhotoCompare" resultType="com.chinatower.platform.modules.uav.entity.AirLinePhotoTask">
+        select task_Record_Id taskRecordId,compare_task_record_id as compareTaskRecordId,pt.latitude as latitude,pt.longitude as longitude,tt.access_node as accessNode,lt.device_code,lt.tenant_id as tenantId,lt.industry_code as industryCode,lt.flight_route_id as flightRouteId,
+               pt.algorithm_code as algorithmCode,t.id as id
+            from vm_air_line_compare_task_t t
+            left join vm_air_line_compare_photo_t pt on pt.id = t.compare_id
+            left join vm_air_task_t tt on tt.plan_task_id = t.task_Record_Id
+            left join vm_air_line_t lt on lt.flight_route_id = tt.flight_route_id
+            where compare_Status = 0
+            and compare_Date <![CDATA[<=]]> now()
+            AND compare_Date >= NOW() - INTERVAL 6 HOUR
+    </select>
+
+    <select id="updatePhotoCompareTaskStatus">
+        update vm_air_line_compare_task_t set compare_Status = 1,update_time = now()
+        where id in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

@@ -1,0 +1,64 @@
+# Tomcat
+server:
+  port: 9219
+
+# Spring
+spring:
+  application:
+    # 应用名称
+    name: video-receive
+  profiles:
+    # 环境配置
+    active: local
+  main:
+    allow-bean-definition-overriding: true
+
+# 配置线程池
+task:
+  pool:
+    corePoolSize: 5 #设置核心线程数
+    maxPoolSize: 20  #设置最大线程数
+    keepAliveSeconds: 300 #设置线程活跃时间（秒）
+    queueCapacity: 500 #设置队列容量
+
+# mybatis配置
+mybatis:
+  # 搜索指定包别名
+  typeAliasesPackage: com.chinatower.receive
+  # 配置mapper的扫描，找到所有的mapper.xml映射文件
+  mapperLocations: classpath:mapper/**/*.xml
+  # 重点！！！spring boot集成mybatis的方式打印sql
+tower:
+  #  cache:
+  #    type: REDIS #REDIS or CAFFEINE
+  #    redis:
+  #      time-to-live: 1800000s
+  #      cache-null-values: true
+  redis:
+    enabled: true
+    maxPoolIdex: 10
+    maxPoolTotal: 10
+    minPoolIdle: 1
+    maxWaitMillis: 3000
+    commandTimeout: 3000
+    primary:
+      host: 127.0.0.1
+      port: 6379
+      password:
+  swagger:
+    enable: false
+  log:
+    enable: false
+secure:
+  ignore:
+    urls:
+          - /video-event/alarm/order/getOrderList
+amap:
+  url: https://restapi.amap.com/v3/geocode/regeo
+  key: 9908727316c310a843622aadc4aed736
+
+jasypt:
+  encryptor:
+    bootstrap: false
+video-video:
+  url: 897

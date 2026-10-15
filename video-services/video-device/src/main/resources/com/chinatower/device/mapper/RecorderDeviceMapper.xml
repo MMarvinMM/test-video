@@ -1,0 +1,817 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.RecorderDeviceMapper">
+
+    <resultMap id="treeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="province_code" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="city_code" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                <result column="county_code" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+                <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                    <result column="town_code" property="code" jdbcType="VARCHAR"/>
+                    <result column="townName" property="name" jdbcType="VARCHAR"/>
+                    <result column="townLevel" property="level" jdbcType="VARCHAR"/>
+                    <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                        <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+                        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+                        <result column="code" property="code" jdbcType="VARCHAR"/>
+                        <result column="name" property="name" jdbcType="VARCHAR"/>
+                        <result column="device_alias" property="deviceAlias" jdbcType="VARCHAR"/>
+                        <result column="device_status" property="status" jdbcType="VARCHAR"/>
+                    </collection>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <!-- 组织树查询 mybatis嵌套查询  -->
+    <resultMap id="orgTreeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="org_id" property="code" jdbcType="VARCHAR"/>
+        <result column="org_name" property="name" jdbcType="VARCHAR"/>
+        <result column="org_level" property="level" jdbcType="VARCHAR"/>
+        <result column="parent_org_id" property="parentCode" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="device_code" property="code" jdbcType="VARCHAR"/>
+            <result column="device_name" property="name" jdbcType="VARCHAR"/>
+            <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+            <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+            <result column="devLevel" property="level" jdbcType="VARCHAR"/>
+            <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+            <result column="device_status" property="status" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                <result column="channel_code" property="code" jdbcType="VARCHAR"/>
+                <result column="channel_name" property="name" jdbcType="VARCHAR"/>
+                <result column="channel_code" property="channelCode" jdbcType="VARCHAR"/>
+                <result column="channel_name" property="channelName" jdbcType="VARCHAR"/>
+                <result column="status" property="status" jdbcType="VARCHAR"/>
+                <result column="chanLevel" property="level" jdbcType="VARCHAR"/>
+                <result column="device_code" property="deviceCode" jdbcType="VARCHAR"/>
+                <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+                <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+                <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+                <result column="checked" property="checked" jdbcType="VARCHAR"/>
+                <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+                <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <!-- mybatis嵌套查询  -->
+    <resultMap id="areaTreeMap" type="com.chinatower.platform.entity.device.DeviceTreeVO">
+        <result column="provinceId" property="code" jdbcType="VARCHAR"/>
+        <result column="provinceName" property="name" jdbcType="VARCHAR"/>
+        <result column="proLevel" property="level" jdbcType="VARCHAR"/>
+        <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+            <result column="cityId" property="code" jdbcType="VARCHAR"/>
+            <result column="cityName" property="name" jdbcType="VARCHAR"/>
+            <result column="cityLevel" property="level" jdbcType="VARCHAR"/>
+            <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                <result column="countyId" property="code" jdbcType="VARCHAR"/>
+                <result column="countyName" property="name" jdbcType="VARCHAR"/>
+                <result column="countryLevel" property="level" jdbcType="VARCHAR"/>
+                <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                    <result column="deviceCode" property="code" jdbcType="VARCHAR"/>
+                    <result column="device_name" property="name" jdbcType="VARCHAR"/>
+                    <result column="deviceCode" property="deviceCode" jdbcType="VARCHAR"/>
+                    <result column="deviceName" property="deviceName" jdbcType="VARCHAR"/>
+                    <result column="deviceAlias" property="deviceAlias" jdbcType="VARCHAR"/>
+                    <result column="devLevel" property="level" jdbcType="VARCHAR"/>
+                    <result column="townCode" property="townCode" jdbcType="VARCHAR"/>
+                    <result column="townName" property="townName" jdbcType="VARCHAR"/>
+                    <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+                    <result column="device_status" property="status" jdbcType="VARCHAR"/>
+                    <collection property="list" ofType="com.chinatower.platform.entity.device.DeviceTreeVO">
+                        <result column="channel_code" property="code" jdbcType="VARCHAR"/>
+                        <result column="channel_name" property="name" jdbcType="VARCHAR"/>
+                        <result column="channel_code" property="channelCode" jdbcType="VARCHAR"/>
+                        <result column="channel_name" property="channelName" jdbcType="VARCHAR"/>
+                        <result column="status" property="status" jdbcType="VARCHAR"/>
+                        <result column="chanLevel" property="level" jdbcType="VARCHAR"/>
+                        <result column="deviceCode" property="deviceCode" jdbcType="VARCHAR"/>
+                        <result column="device_name" property="deviceName" jdbcType="VARCHAR"/>
+                        <result column="longitude" property="longitude" jdbcType="VARCHAR"/>
+                        <result column="latitude" property="latitude" jdbcType="VARCHAR"/>
+                        <result column="checked" property="checked" jdbcType="VARCHAR"/>
+                        <result column="channel_name" property="channelAlias" jdbcType="VARCHAR"/>
+                        <result column="isMonitor" property="isMonitor" jdbcType="VARCHAR"/>
+                        <result column="site_code" property="siteCode" jdbcType="VARCHAR"/>
+                    </collection>
+                </collection>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <resultMap id="getRecorderSitesTree" type="com.chinatower.industry.vo.IndustryDeviceTree">
+        <result property="siteCode" column="site_code"/>
+        <result property="longitude" column="longitude"/>
+        <result property="latitude" column="latitude"/>
+        <collection property="list" ofType="com.chinatower.industry.vo.IndustryDeviceTree">
+            <result property="deviceCode" column="device_code"/>
+            <result property="deviceName" column="device_name"/>
+            <result property="status" column="device_status"/>
+        </collection>
+    </resultMap>
+
+    <resultMap id="detailMap" type="com.chinatower.platform.entity.device.RecorderDeviceDTO">
+        <result column="device_code" property="deviceCode"/>
+        <result column="device_status" property="deviceStatus"/>
+        <result column="province_code" property="provinceCode"/>
+        <result column="city_code" property="cityCode"/>
+        <result column="county_code" property="countyCode"/>
+        <result column="town_code" property="townCode"/>
+        <result column="location" property="location"/>
+        <result column="longitude" property="longitude"/>
+        <result column="latitude" property="latitude"/>
+        <result column="area_code" property="areaCode"/>
+        <result column="adm_code" property="admCode"/>
+        <result column="manufacturer_code" property="manufacturerCode"/>
+        <result column="model_code" property="modelCode"/>
+        <result column="site_code" property="siteCode"/>
+        <result column="is_cascade" property="isCascade"/>
+        <result column="collect_type" property="collectType"/>
+        <result column="creator" property="creator"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modifier" property="modifier"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="provinceName" property="provinceName"/>
+        <result column="cityName" property="cityName"/>
+        <result column="countyName" property="countyName"/>
+        <result column="townName" property="townName"/>
+        <result column="device_name" property="deviceName"/>
+        <result column="orderStatus" property="orderStatus"/>
+        <result column="orderStatusName" property="orderStatusName"/>
+        <result column="isMonitor" property="isMonitor"/>
+        <result column="manufacturerName" property="manufacturerName"/>
+        <collection property="channelList" ofType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">
+            <result property="channelCode" column="channel_code"/>
+            <result property="parentDeviceCode" column="device_code"/>
+            <result property="channelName" column="channel_name"/>
+            <result property="status" column="channel_status"/>
+        </collection>
+    </resultMap>
+
+    <sql id="baseColumns">
+        m.device_code,
+        m.device_status,
+        m.province_code,
+        m.city_code,
+        m.county_code,
+        m.town_code,
+        m.location,
+        m.longitude,
+        m.latitude,
+        m.area_code,
+        m.adm_code,
+        m.manufacturer_code,
+        m.model_code,
+        m.site_code,
+        m.is_cascade,
+        m.collect_type,
+        m.creator,
+        m.create_time,
+        m.modifier,
+        m.update_time
+    </sql>
+
+    <sql id="baseWhere">
+        m.delete_flag = 0
+        and od.delete_flag = 0
+        <if test='deviceCode != null and deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{deviceCode}, '%')
+        </if>
+        <if test='deviceStatus != null'>
+            and m.device_status = #{deviceStatus}
+        </if>
+        <if test='manufacturerCode != null and manufacturerCode != ""'>
+            and m.manufacturer_code = #{manufacturerCode}
+        </if>
+        <if test='modelCode != null and modelCode != ""'>
+            and m.model_code like CONCAT('%', #{modelCode}, '%')
+        </if>
+        <if test='orderStatus == 0'>
+            and od.ord_status in ('0', '1', '2')
+        </if>
+        <if test='orderStatus == 1'>
+            and od.ord_status = '4'
+        </if>
+        <if test='orderStatus == 2'>
+            and od.ord_status = '3'
+        </if>
+        <if test='provinceCode != null and provinceCode != ""'>
+            and m.province_code = #{provinceCode}
+        </if>
+        <if test='cityCode != null and cityCode != ""'>
+            and m.city_code = #{cityCode}
+        </if>
+        <if test='countyCode != null and countyCode != ""'>
+            and m.county_code = #{countyCode}
+        </if>
+        <if test='townCode != null and townCode != ""'>
+            and m.town_code = #{townCode}
+        </if>
+        <if test="modelCodeList != null and modelCodeList.size() >0">
+            and m.manufacturer_code in
+            <foreach collection="modelCodeList" open="(" close=")" separator="," index="index" item="modelCode">
+                #{modelCode}
+            </foreach>
+        </if>
+        <if test="deviceStatusList != null and deviceStatusList.size() >0">
+            and m.device_status in
+            <foreach collection="deviceStatusList" open="(" close=")" separator="," index="index" item="deviceStatus">
+                #{deviceStatus}
+            </foreach>
+        </if>
+        <if test='deptIds !=null and deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="getRecorderDeviceListPage" resultType="com.chinatower.platform.entity.device.RecorderDeviceDTO">
+        select * from (
+            select distinct <include refid="baseColumns"/>,
+            <if test="userLatitude != null and userLatitude != '' and userLongitude != null and userLongitude != ''">
+                CAST(ST_DISTANCE(POINT(#{userLongitude},#{userLatitude}),POINT(m.longitude,m.latitude))*111195 as DECIMAL(65,2)) as distance,
+            </if>
+            pro.area_name as provinceName,
+            city.area_name as cityName,
+            county.area_name as countyName,
+            town.area_name as townName,
+            case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+            (case when length(IFNULL(rel.device_name, '')) = 0 then m.device_name else rel.device_name end ) device_name,
+            (CASE WHEN od.ord_status in ('0','1','2') THEN '0'
+            WHEN od.ord_status = '3' THEN '2'
+            WHEN od.ord_status = '4' THEN '1'
+            END) orderStatus,
+            (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+            WHEN od.ord_status = '3' THEN '退订'
+            WHEN od.ord_status = '4' THEN '失效'
+            END) orderStatusName
+            from vm_recorder_device_info_t m
+            join vm_order_recorder_devices od on od.device_code = m.device_code
+            left join vm_tenant_device_common_rel_t rel ON rel.device_code = m.device_code
+                and rel.tenant_id = od.tenant_id
+                and rel.industry_code = od.industry_code
+                and rel.delete_flag = '0'
+                and rel.device_type = '3'
+            left JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+                and dct.coll_obj_type = '12' AND dct.user_id = #{userId}
+            left join sys_area pro ON pro.area_code = m.province_code
+            left join sys_area city ON city.area_code = m.city_code
+            left join sys_area county ON county.area_code = m.county_code
+            left join sys_area town ON town.area_code = m.town_code
+            <if test='deptIds !=null and deptIds.size() > 0'>
+                LEFT JOIN vm_organ_device_rel_t vod
+                on vod.device_code = m.device_code and vod.delete_flag = '0' and vod.tenant_id = od.tenant_id
+                and vod.device_type = '13'
+            </if>
+            <where>
+                <include refid="baseWhere"/>
+                <if test='isMonitorFlag != null and isMonitorFlag != "" and isMonitorFlag == "0" '>
+                    and dct.user_device_coll_id IS NOT NULL
+                </if>
+                <if test='deviceCodeList !=null and deviceCodeList.size() > 0'>
+                    and m.device_code in
+                    <foreach collection="deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                        #{item}
+                    </foreach>
+                </if>
+                ${dataScope}
+            </where>
+        ORDER BY field(od.ord_status,1,0,2,4,3)	ASC
+        ) recorder
+         <where>
+             1 = 1
+             <if test='deviceName != null and deviceName != ""'>
+                 and recorder.device_name like CONCAT('%', #{deviceName}, '%')
+             </if>
+             <if test='codeOrName != null and codeOrName != ""'>
+                 and recorder.device_code like CONCAT('%', #{codeOrName}, '%') or recorder.device_name like CONCAT('%', #{codeOrName}, '%')
+             </if>
+         </where>
+        <choose>
+            <when test='appFlag != null and appFlag != "" and appFlag == "1"'>
+                <choose>
+                    <when test="userLatitude != null and userLatitude != '' and userLongitude != null and userLongitude != ''">
+                        order by recorder.distance,recorder.device_status,cast(recorder.device_code as UNSIGNED),recorder.device_code
+                    </when>
+                    <otherwise>
+                        order by recorder.device_status,cast(recorder.device_code as UNSIGNED),recorder.device_code
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                <if test="orderField == null ">
+                    order by recorder.province_code, recorder.city_code, recorder.county_code,recorder.device_code
+                </if>
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="queryOrgRecorderDevRels" resultType="com.chinatower.platform.entity.devicemgmt.vo.OrganDeviceRelVO" parameterType="com.chinatower.platform.entity.device.RecorderDeviceVO">
+        select t.id, t.tenant_id, t.dept_id, t.device_code, d.dept_name,t.industry_code
+        from vm_organ_device_rel_t t left join sys_dept d on t.dept_id = d.dept_id and d.del_flag='0'
+        where t.delete_flag='0'
+        and t.tenant_id = #{tenantId}
+        <if test='industryCode != null and industryCode != ""'>
+            and t.industry_code = #{industryCode}
+        </if>
+        <if test='deviceCode != null and deviceCode != ""'>
+            and t.device_code like CONCAT('%', #{deviceCode}, '%')
+        </if>
+        <if test="deviceType != null" >
+            and t.device_type = #{deviceType}
+        </if>
+    </select>
+
+    <select id="getAreaTree" resultMap="treeMap">
+        select * from (select distinct m.device_code,
+        m.device_status,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then m.device_name else rel.device_name end ) device_name,
+        m.longitude,
+        m.latitude,
+        m.province_code,
+        m.city_code,
+        m.county_code,
+        m.town_code,
+        pro.area_name as provinceName,
+        city.area_name as cityName,
+        county.area_name as countyName,
+        town.area_name as townName,
+        '1' as prolevel,
+        '2' as citylevel,
+        '3' as countrylevel,
+        m.device_code as code,
+        m.device_name as name,
+        '4' as townLevel,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then m.device_name else rel.device_name end ) device_alias
+        FROM vm_recorder_device_info_t m
+            INNER JOIN vm_order_recorder_devices od ON od.device_code = m.device_code
+            LEFT JOIN sys_area pro ON pro.area_code = m.province_code
+            LEFT JOIN sys_area city ON city.area_code = m.city_code
+            LEFT JOIN sys_area county ON county.area_code = m.county_code
+            LEFT JOIN sys_area town ON town.area_code = m.town_code
+            LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = m.device_code
+                and rel.tenant_id = od.tenant_id
+                and rel.industry_code = od.industry_code
+                and rel.delete_flag = '0'
+                and rel.device_type = '3'
+        <if test='deptIds !=null and deptIds.size() > 0'>
+            LEFT JOIN vm_organ_device_rel_t vod
+            on vod.device_code = m.device_code and vod.delete_flag = '0' and vod.tenant_id = od.tenant_id
+            and vod.device_type = '13'
+        </if>
+        <where>
+            <include refid="baseWhere"/>
+            and od.ord_status in (0,1,2)
+            ${dataScope}
+            GROUP BY od.tenant_id, od.industry_code, od.device_code
+        </where>
+        ) recorder
+        <where>
+            <if test='deviceName != null and deviceName != ""'>
+                recorder.device_name like CONCAT('%', #{deviceName}, '%')
+            </if>
+        </where>
+        order by recorder.province_code, recorder.city_code, recorder.county_code, recorder.town_code, recorder.device_code
+    </select>
+
+    <select id="getAliasByDeviceCode" resultType="com.chinatower.platform.entity.device.RecorderDeviceDTO">
+        select rel.device_code,
+               rel.device_name
+        from vm_tenant_device_common_rel_t rel
+        where rel.device_code = #{deviceCode}
+          and rel.tenant_id = #{tenantId}
+          and rel.industry_code = #{industryCode}
+          and rel.device_type = '3'
+          and rel.delete_flag = '0'
+    </select>
+
+    <insert id="addAlias" parameterType="com.chinatower.platform.entity.device.RecorderDeviceVO">
+        insert into vm_tenant_device_common_rel_t(
+            device_code,
+            device_name,
+            tenant_id,
+            industry_code,
+            app_ver_code,
+            device_type,
+            delete_flag,
+            creator,
+            create_time,
+            modifier,
+            update_time
+        )
+        values (#{deviceCode},
+                #{deviceName},
+                #{tenantId},
+                #{industryCode},
+                #{appVerCode},
+                #{deviceType},
+                '0',
+                #{creator},
+                now(),
+                #{modifier},
+                now()
+               )
+    </insert>
+
+    <update id="updateAlias" parameterType="com.chinatower.platform.entity.device.RecorderDeviceVO">
+        update vm_tenant_device_common_rel_t
+        set device_name = #{deviceName},
+            modifier = #{modifier},
+            update_time = now()
+        where
+            device_code = #{deviceCode}
+          and tenant_id = #{tenantId}
+          and industry_code = #{industryCode}
+          and device_type = #{deviceType}
+          and delete_flag = '0'
+    </update>
+
+    <select id="getByDeviceCode" resultMap="detailMap">
+        select distinct <include refid="baseColumns"/>,
+        pro.area_name as provinceName,
+        city.area_name as cityName,
+        county.area_name as countyName,
+        town.area_name as townName,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then m.device_name else rel.device_name end ) device_name,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '0'
+        WHEN od.ord_status = '3' THEN '2'
+        WHEN od.ord_status = '4' THEN '1'
+        END) orderStatus,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'recorder_device_mfgr_code' and status = '0' AND DICT_VALUE = m.manufacturer_code limit 1) manufacturerName,
+        ch.channel_code,
+        ch.device_code,
+        (case when length(IFNULL(chaAls.channel_name, '')) = 0 then ch.channel_name else chaAls.channel_name end ) channel_name,
+        ch.channel_status
+        from vm_recorder_device_info_t m
+        join vm_order_recorder_devices od on od.device_code = m.device_code
+        left join vm_recorder_channel_info_t ch on m.device_code = ch.device_code and ch.delete_flag = 0
+        left join vm_tenant_device_channel_common_rel_t chaAls on chaAls.channel_code = ch.channel_code
+            and chaAls.tenant_id = od.tenant_id
+            and chaAls.industry_code = od.industry_code
+            and chaAls.delete_flag = 0
+            and chaAls.device_type = 1
+        left JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+            and dct.coll_obj_type = '12' AND dct.user_id = #{userId}
+        left join vm_tenant_device_common_rel_t rel ON rel.device_code = m.device_code
+        and rel.tenant_id = od.tenant_id
+        and rel.industry_code = od.industry_code
+        and rel.delete_flag = 0
+        and rel.device_type = 3
+        left join sys_area pro ON pro.area_code = m.province_code
+        left join sys_area city ON city.area_code = m.city_code
+        left join sys_area county ON county.area_code = m.county_code
+        left join sys_area town ON town.area_code = m.town_code
+        <where>
+            m.delete_flag = 0
+            and od.delete_flag = 0
+            and od.ord_status in ('0', '1', '2')
+            and m.device_code = #{deviceCode}
+            ${dataScope}
+        </where>
+    </select>
+
+    <select id="getChannelByDeviceCodes" resultType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">
+        select
+        channel.channel_code,
+        channel.device_code as parent_device_code,
+        channel.channel_status as status
+        from vm_recorder_channel_info_t channel
+            where channel.delete_flag = '0'
+            and channel.device_code in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+    </select>
+
+    <select id="getChannelAliasByDeviceCodeList" resultType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">
+        select
+        channel.channel_code,
+        channel.device_code as parent_device_code,
+        (case when length(IFNULL(chaAls.channel_name, '')) = 0 then channel.channel_name else chaAls.channel_name end ) channel_name,
+        channel.channel_status as status
+        from vm_recorder_channel_info_t channel
+        left join vm_tenant_device_channel_common_rel_t chaAls on chaAls.channel_code = channel.channel_code
+        and chaAls.tenant_id = #{tenantId}
+        and chaAls.industry_code = #{industryCode}
+        and chaAls.delete_flag = 0
+        and chaAls.device_type = 1
+        where channel.delete_flag = '0'
+        and channel.device_code in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getRecorderDevicesBySiteCode" parameterType="com.chinatower.device.entity.dto.SiteRequestDTO"
+            resultType="com.chinatower.device.entity.vo.DeviceSiteVO">
+        select a.* from
+        (SELECT distinct dev.device_code,
+        (case
+        when length(IFNULL(rel.device_name, '')) = 0
+        then dev.device_name
+        else rel.device_name end) as device_name,
+        dev.device_status as status,
+        dev.location, dev.latitude, dev.longitude, dev.site_code,
+        dev.model_code
+        FROM vm_recorder_device_info_t dev
+        left join vm_order_recorder_devices t1 on dev.device_code = t1.device_code
+        left join vm_tenant_device_common_rel_t rel ON rel.device_code = t1.device_code
+        and rel.tenant_id = t1.tenant_id
+        and rel.industry_code = t1.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 3
+        where t1.delete_flag = '0' and dev.delete_flag = '0' and t1.ord_status in (0,1,2)
+        <if test='param.siteCode!= null and param.siteCode != "" '>
+            AND dev.site_code = #{param.siteCode}
+        </if>
+        <if test='param.latitude!= null and param.latitude != "" '>
+            AND dev.latitude = #{param.latitude}
+        </if>
+        <if test='param.longitude!= null and param.longitude != "" '>
+            AND dev.longitude = #{param.longitude}
+        </if>
+        ${param.dataScope}) a
+        order by CONVERT(a.device_name USING GBK) asc
+    </select>
+
+    <select id="getRecorderMonitorOrgTree" parameterType="com.chinatower.platform.entity.device.DeviceReqDTO"
+            resultMap="orgTreeMap">
+        SELECT DISTINCT gg.dept_id as org_id, gg.dept_name as org_name, gg.dept_level as org_level,
+        gg.parent_id as parent_org_id, dd.device_code, IFNULL(rel.device_name, de.device_name) AS device_name,
+        cc.channel_code, concat(gg.dept_level + 1) AS devLevel,
+        (case when length(IFNULL(chaAls.channel_name, '')) = 0 then cc.channel_name else chaAls.channel_name end ) channel_name,
+        cc.channel_status as status, 'false' AS checked, de.longitude, de.latitude, 1 AS num, de.site_code,de.device_status,
+        IF(cc.channel_status = '0', 1, 0) AS onlineNum, concat(gg.dept_level + 2) AS chanLevel,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor
+        FROM sys_dept gg
+        LEFT JOIN vm_organ_device_rel_t dd ON gg.dept_id = dd.dept_id and dd.device_type = 13 and gg.industry_code = dd.industry_code
+        LEFT JOIN vm_recorder_device_info_t de ON dd.device_code = de.device_code
+        LEFT JOIN vm_recorder_channel_info_t cc ON de.device_code = cc.device_code
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = cc.channel_code
+        AND dct.coll_obj_type = '13' and dct.user_id = #{param.userId}
+        left join vm_order_recorder_devices vod on vod.industry_code = dd.industry_code and vod.device_code = de.device_code and vod.tenant_id = gg.tenant_id
+        left join vm_tenant_device_channel_common_rel_t chaAls on chaAls.channel_code = cc.channel_code
+            and chaAls.tenant_id = vod.tenant_id
+            and chaAls.industry_code = vod.industry_code
+            and chaAls.delete_flag = 0
+            and chaAls.device_type = 1
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = vod.device_code
+        and rel.tenant_id = vod.tenant_id
+        and rel.industry_code = vod.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 3
+        WHERE gg.del_flag = '0' AND dd.delete_flag = '0' AND de.delete_flag = '0' AND cc.delete_flag = '0'
+        AND dd.device_code IS NOT NULL AND dd.device_code != '' AND vod.delete_flag = '0' AND vod.ord_status in (0,1,2)
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and cc.channel_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        ORDER BY gg.dept_id,dd.device_code, cc.channel_code
+    </select>
+
+    <select id="getRecorderDeviceDistanceInfo" resultType="com.chinatower.platform.entity.device.DeviceDistanceVO">
+        select
+        t.device_code,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then t.device_name else rel.device_name end ) name,
+        t.location,
+        ST_Distance_Sphere(
+        ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+        ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+        ) as distance,
+        t.manufacturer_code modelCode,
+        (select DICT_LABEL FROM sys_dict_data where DICT_TYPE = 'recorder_device_mfgr_code' AND DICT_VALUE = t.manufacturer_code limit 1) modelName,
+        <if test='param.userId != null and param.userId != "" '>
+            case when IFNULL(dct.user_device_coll_id, 0) = 0 then '0' else '1' end isMonitor,
+        </if>
+        t.longitude,
+        t.latitude,
+        t.device_status
+        from vm_order_recorder_devices o
+        inner join vm_recorder_device_info_t t on t.device_code = o.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON   rel.device_code = o.device_code and rel.tenant_id = o.tenant_id
+        and rel.industry_code = o.industry_code and rel.delete_flag = 0 and rel.device_type = 3
+        <if test='param.userId != null and param.userId != "" '>
+            LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = t.device_code AND dct.coll_obj_type = '12' AND dct.user_id = #{param.userId}
+        </if>
+        where o.delete_flag = '0'
+        and t.delete_flag = '0'
+        and o.ord_status in (0,1,2)
+        <if test="param.radius != -1">
+            and ST_Distance_Sphere(
+            ST_GeomFromText(CONCAT('POINT(',#{param.longitude},' ',#{param.latitude},')')),
+            ST_GeomFromText(CONCAT('POINT(',t.longitude,' ',t.latitude,')'))
+            )  <![CDATA[<=]]> #{param.radius}
+        </if>
+        ${param.dataScope}
+        group by t.device_code
+        order by t.id
+        <if test='param.limitSize != null'>
+            limit #{param.limitSize}
+        </if>
+    </select>
+
+    <select id="getRecorderMonitorAreaTree" parameterType="com.chinatower.platform.entity.device.DeviceReqDTO"
+            resultMap="areaTreeMap">
+        SELECT DISTINCT dataTable.device_code as deviceCode, dataTable.device_status,
+        dataTable.device_name, ch.channel_code,
+        (case when length(IFNULL(chaAls.channel_name, '')) = 0 then ch.channel_name else chaAls.channel_name end ) channel_name,
+        ch.channel_status as status,
+        dataTable.province_code as provinceId,pro.area_name as provinceName,dataTable.city_code as cityId,
+        city.area_name as cityName,dataTable.county_code as countyId,county.area_name as countyName,
+        dataTable.town_code as townCode, town.area_name as townName, dataTable.site_code,
+        dataTable.longitude,dataTable.latitude, 'false' AS checked, '1' AS proLevel,
+        '2' AS cityLevel,'3' AS countryLevel,'4' AS devLevel,'5' AS chanLevel,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then dataTable.device_name else rel.device_name end ) deviceAlias
+        FROM (SELECT DISTINCT m.device_code, ord.tenant_id, m.site_code,ord.industry_code, ord.accept_node,
+        m.device_name, m.province_code as province_code, m.city_code as city_code, m.town_code,
+        m.county_code as county_code, ord.delete_flag, m.longitude, m.latitude, m.device_status
+        FROM vm_order_recorder_devices ord
+        LEFT JOIN vm_recorder_device_info_t m on m.device_code = ord.device_code
+        where m.delete_flag= '0' and ord.ord_status in (0, 1, 2) and ord.delete_flag= '0'
+            and ord.industry_code = #{param.industryCode}
+            and ord.tenant_id = #{param.tenantId}
+        ) dataTable
+        LEFT JOIN vm_recorder_channel_info_t ch on ch.device_code = dataTable.device_code
+        left join vm_tenant_device_channel_common_rel_t chaAls on chaAls.channel_code = ch.channel_code
+            and chaAls.tenant_id = #{param.tenantId}
+            and chaAls.industry_code = #{param.industryCode}
+            and chaAls.delete_flag = 0
+            and chaAls.device_type = 1
+        LEFT JOIN sys_area pro on pro.area_code = dataTable.province_code
+        LEFT JOIN sys_area city on city.area_code = dataTable.city_code
+        LEFT JOIN sys_area county on county.area_code = dataTable.county_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = dataTable.device_code
+        and rel.tenant_id = dataTable.tenant_id
+        and rel.industry_code = dataTable.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 3
+        LEFT JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = ch.channel_code
+        AND dct.coll_obj_type = '13' AND dct.user_id = #{param.userId}
+        LEFT JOIN sys_area town on town.area_code = dataTable.town_code
+        WHERE ch.delete_flag = '0'
+        <if test='param.isMonitorFlag != null and param.isMonitorFlag != "" and param.isMonitorFlag == "0" '>
+            and dct.user_device_coll_id IS NOT NULL
+        </if>
+        <if test="param.deviceStatusList != null and param.deviceStatusList.size() > 0">
+            and ch.channel_status in
+            <foreach collection="param.deviceStatusList" open="(" close=")" separator="," index="index" item="status">
+                #{status}
+            </foreach>
+        </if>
+        ${param.dataScope}
+        ORDER BY dataTable.province_code, dataTable.city_code, dataTable.county_code, dataTable.town_code,
+        dataTable.device_code, ch.channel_code
+    </select>
+
+    <select id="getRecorderSites" parameterType="com.chinatower.device.entity.dto.SiteRequestDTO"
+            resultMap="getRecorderSitesTree">
+        SELECT distinct dev.device_code,
+        (case when length(IFNULL(tdr.device_name, '')) = 0
+        then dev.device_name else tdr.device_name end ) as device_name,
+                        dev.device_status,
+                        dev.latitude,
+                        dev.longitude,
+                        dev.site_code
+        FROM vm_recorder_device_info_t dev
+                 left join vm_order_recorder_devices t1 on dev.device_code = t1.device_code
+        left join vm_tenant_device_common_rel_t tdr on tdr.device_code = t1.device_code and tdr.tenant_id = t1.tenant_id
+        and tdr.industry_code = t1.industry_code and tdr.delete_flag = 0 and tdr.device_type = 3
+        where dev.delete_flag = '0'
+          AND t1.delete_flag = '0'
+          AND t1.ord_status IN ( 0, 1, 2 )
+        <if test='param.provinceId!= null and param.provinceId != ""'>
+            AND dev.province_code = #{param.provinceId}
+        </if>
+        <if test='param.cityId!= null and param.cityId != ""'>
+            AND dev.city_code = #{param.cityId}
+        </if>
+        <if test='param.countyId != null and param.countyId != ""'>
+            AND dev.county_code = #{param.countyId}
+        </if>
+        <if test='param.townCode != null and param.townCode != ""'>
+            AND dev.town_code = #{param.townCode}
+        </if>
+            ${param.dataScope}
+    </select>
+
+    <select id="getChannelByChannelCodeList" resultType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">
+        select
+        channel.channel_code,
+        channel.device_code as parent_device_code,
+        channel.channel_status as status
+        from vm_recorder_channel_info_t channel
+        where channel.delete_flag = '0'
+        and channel.channel_code in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getAllDeviceChannelByChannelCodeList" resultType="com.chinatower.platform.entity.devicemgmt.vo.ChannelInfoVO">
+        select c.channel_code,
+        c.device_code as parent_device_code,
+        c.channel_status as status
+        from vm_recorder_channel_info_t c
+        where c.delete_flag = '0' and c.device_code in
+        (
+        select
+        channel.device_code
+        from vm_recorder_channel_info_t channel
+        where channel.delete_flag = '0'
+        and channel.channel_code in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        )
+    </select>
+
+    <select id="queryDeviceListByKeyWord" parameterType="com.chinatower.device.entity.dto.DeviceComprehensiveReq" resultType="com.chinatower.device.entity.vo.DeviceComprehensiveVO">
+        select * from (select distinct recorder.device_code,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then recorder.device_name else rel.device_name end ) device_name,
+        recorder.location,
+        recorder.longitude,
+        recorder.site_code,
+        recorder.latitude,
+        recorder.device_status
+        from vm_recorder_device_info_t recorder
+        INNER JOIN vm_order_recorder_devices od ON od.device_code = recorder.device_code
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = recorder.device_code
+        and rel.tenant_id = od.tenant_id
+        and rel.industry_code = od.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = 3
+        where
+        recorder.delete_flag = '0'
+        and od.delete_flag ='0'
+        AND od.ord_status in (0, 1, 2)
+        <if test="param.longitude != null and param.longitude != ''">
+            and recorder.longitude like CONCAT('%', #{param.longitude}, '%')
+        </if>
+        <if test="param.latitude != null and param.latitude != ''">
+            and recorder.latitude like CONCAT('%', #{param.latitude}, '%')
+        </if>
+        ${param.dataScope}
+        GROUP BY od.tenant_id, od.industry_code, od.device_code
+        order by recorder.province_code, recorder.city_code, recorder.county_code,recorder.device_code
+        ) recorder_data
+        <where>
+            <if test='param.keyWord != null and param.keyWord != ""'>
+                and ((recorder_data.device_code =  #{param.keyWord}) or (recorder_data.device_name like CONCAT('%', #{param.keyWord}, '%')))
+            </if>
+        </where>
+    </select>
+
+    <select id="queryRecorderListByCondition" resultType="com.chinatower.platform.entity.device.RecorderDeviceDTO">
+        select distinct <include refid="baseColumns"/>,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then m.device_name else rel.device_name end ) device_name,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '0'
+        WHEN od.ord_status = '3' THEN '2'
+        WHEN od.ord_status = '4' THEN '1'
+        END) orderStatus,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName
+        from vm_recorder_device_info_t m
+        join vm_order_recorder_devices od on od.device_code = m.device_code
+        left join vm_tenant_device_common_rel_t rel ON rel.device_code = m.device_code
+        and rel.tenant_id = od.tenant_id
+        and rel.industry_code = od.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = '3'
+        <where>
+            <include refid="baseWhere"/>
+            <if test='deviceCodeList !=null and deviceCodeList.size() > 0'>
+                and m.device_code in
+                <foreach collection="deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                    #{item}
+                </foreach>
+            </if>
+            ${dataScope}
+        </where>
+
+    </select>
+</mapper>

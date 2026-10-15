@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.ProcessOrderMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.event.dataobject.ProcessOrderDO">
+        <result column="process_order_id" property="processOrderId" />
+        <result column="order_id" property="orderId" />
+        <result column="warning_order_id" property="warningOrderId" />
+        <result column="send_type" property="sendType" />
+        <result column="send_order_time" property="sendOrderTime" />
+        <result column="process_order_time" property="processOrderTime" />
+        <result column="process_id" property="processId" />
+        <result column="curren_area_id" property="currenAreaId" />
+        <result column="air_runing" property="airRuning" />
+        <result column="process_opinion" property="processOpinion" />
+        <result column="process_img" property="processImg" />
+        <result column="process_video" property="processVideo" />
+        <result column="order_status" property="orderStatus" />
+        <result column="modifier_date" property="modifierDate" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="voice" property="voice" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        process_order_id, order_id, warning_order_id, send_type, send_order_time, process_order_time, process_id, curren_area_id, air_runing, process_opinion, process_img, process_video, order_status, modifier_date, delete_flag, voice
+    </sql>
+
+    <insert id="insertProcessOrderList"
+            parameterType="java.util.List">
+        insert into vm_process_order_t (
+        process_order_id,
+        order_id,
+        warning_order_id,
+        send_type,
+        send_order_time,
+        process_id,
+        curren_area_id,
+        order_status,
+        voice,
+        delete_flag
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.processOrderId,jdbcType=VARCHAR},
+            #{item.orderId,jdbcType=VARCHAR},
+            #{item.warningOrderId,jdbcType=VARCHAR},
+            #{item.sendType,jdbcType=VARCHAR},
+            now(),
+            #{item.processId,jdbcType=VARCHAR},
+            #{item.currenAreaId,jdbcType=VARCHAR},
+            #{item.orderStatus,jdbcType=VARCHAR},
+            #{item.voice,jdbcType=VARCHAR},
+            '0'
+            )
+        </foreach>
+    </insert>
+
+    <resultMap id="processOrderMap"
+               type="com.chinatower.event.vo.ProcessOrderVO">
+
+        <result column="process_order_id" property="processOrderId" jdbcType="VARCHAR"/>
+        <result column="order_id" property="orderId" jdbcType="VARCHAR"/>
+        <result column="warning_order_id" property="warningOrderId" jdbcType="VARCHAR"/>
+        <result column="send_type" property="sendType" jdbcType="VARCHAR"/>
+        <result column="send_order_time" property="sendOrderTime" jdbcType="VARCHAR"/>
+        <result column="process_order_time" property="processOrderTime" jdbcType="VARCHAR"/>
+
+        <result column="process_id" property="processId" jdbcType="VARCHAR"/>
+        <result column="curren_area_id" property="currenAreaId" jdbcType="VARCHAR"/>
+        <result column="air_runing" property="airRuning" jdbcType="VARCHAR"/>
+        <result column="process_opinion" property="processOpinion" jdbcType="VARCHAR"/>
+        <result column="process_img" property="processImg" jdbcType="VARCHAR"/>
+        <result column="process_video" property="processVideo" jdbcType="VARCHAR"/>
+        <result column="order_status" property="orderStatus" jdbcType="VARCHAR"/>
+        <result column="modifier_date" property="modifierDate" jdbcType="VARCHAR"/>
+        <result column="delete_flag" property="deleteFlag" jdbcType="VARCHAR"/>
+        <result column="warning_type_name" property="warningTypeName" jdbcType="VARCHAR"/>
+        <result column="province_name" property="provinceName" jdbcType="VARCHAR"/>
+        <result column="city_name" property="cityName" jdbcType="VARCHAR"/>
+        <result column="county_name" property="countyName" jdbcType="VARCHAR"/>
+        <result column="duration" property="duration" jdbcType="VARCHAR"/>
+
+        <result column="process_name" property="processName" jdbcType="VARCHAR"/>
+        <result column="is_end" property="isEnd" jdbcType="VARCHAR"/>
+        <result column="send_man" property="sendMan" jdbcType="VARCHAR"/>
+        <result column="approve_status" property="approveStatus" jdbcType="VARCHAR"/>
+        <result column="approve_time" property="approveTime" jdbcType="VARCHAR"/>
+        <result column="approve_person" property="approvePerson" jdbcType="VARCHAR"/>
+        <result column="approve_result" property="approveResult" jdbcType="VARCHAR"/>
+        <result column="send_remark" property="sendRemark" jdbcType="VARCHAR"/>
+        <result column="mobile_phone" property="mobilePhone" jdbcType="VARCHAR"/>
+        <result column="ext1" property="ext1" jdbcType="VARCHAR"/>
+    </resultMap>
+    <select id="getProcessOrder" resultMap="processOrderMap"
+            parameterType="com.chinatower.common.core.dto.ProcessOrderDTO">
+        select t.process_order_id, t.order_id, t.warning_order_id, t.send_type, t.send_order_time, t.process_order_time,
+        t.process_id, t.curren_area_id, t.air_runing, t.process_opinion, t.process_img, t.process_video,
+        t.order_status, t.modifier_date, t.delete_flag,t.ext1
+        from vm_process_order_t t
+        <where>
+            <if test='processOrderId!= null and processOrderId != "" '>
+                and t.process_order_id = #{processOrderId}
+            </if>
+            <if test='isSign!= null and isSign != "" and isSign == 1'>
+                and t.process_id = #{processId}
+            </if>
+            and t.order_id = #{warningOrderId}
+            AND t.delete_flag = '0'
+        </where>
+        order by t.send_order_time desc limit 1
+    </select>
+    <select id="getProcessOrderPendding" resultMap="processOrderMap"
+            parameterType="com.chinatower.common.core.dto.ProcessOrderDTO">
+        select t.process_order_id, t.order_id, t.warning_order_id, t.send_type, t.send_order_time, t.process_order_time,
+        t.process_id, t.curren_area_id, t.air_runing, t.process_opinion, t.process_img, t.process_video,
+        t.order_status, t.modifier_date, t.delete_flag,t.ext1
+        from vm_process_order_t t
+        <where>
+            <if test='processOrderId!= null and processOrderId != "" '>
+                and t.process_order_id = #{processOrderId}
+            </if>
+            <if test='isSign!= null and isSign != "" and isSign == 1'>
+                and t.process_id = #{processId}
+            </if>
+            and t.order_id = #{warningOrderId}
+            AND t.delete_flag = '0' and order_status='0'
+        </where>
+        order by t.send_order_time desc limit 1
+    </select>
+
+    <update id="updateProcessOrder"
+            parameterType="com.chinatower.event.vo.ProcessOrderVO">
+        update vm_process_order_t set
+        process_order_id=#{processOrderId,jdbcType=VARCHAR}
+        ,modifier_date = now()
+        <if test='airRuning!= null and airRuning != "" '>
+            ,air_runing = #{airRuning,jdbcType=VARCHAR}
+        </if>
+        <if test='processOpinion!= null and processOpinion != "" '>
+            ,process_opinion = #{processOpinion,jdbcType=VARCHAR}
+        </if>
+        <if test='processImg!= null and processImg != "" '>
+            ,process_img = #{processImg,jdbcType=VARCHAR}
+        </if>
+        <if test='processVideo!= null and processVideo != "" '>
+            ,process_video = #{processVideo,jdbcType=VARCHAR}
+        </if>
+        <if test='deleteFlag!= null and deleteFlag != "" '>
+            ,delete_flag = #{deleteFlag,jdbcType=VARCHAR}
+        </if>
+        <if test=' orderStatus!= null and  orderStatus != "" '>
+            , order_status = #{ orderStatus,jdbcType=VARCHAR}
+        </if>
+        <if test='processId!= null and  processId != "" '>
+            , process_id = #{processId,jdbcType=VARCHAR}
+        </if>
+        <if test='voice!= null and voice != "" '>
+            , voice = #{voice,jdbcType=VARCHAR}
+        </if>
+        <if test='ext1!= null and ext1 != "" '>
+            , ext1 = #{ext1,jdbcType=VARCHAR}
+        </if>
+        ,process_order_time = now()
+        where process_order_id = #{processOrderId}
+        <if test='orderId!= null and orderId != "" '>
+            and order_id = #{orderId}
+        </if>
+    </update>
+
+    <insert id="insertPhotoOrVideo" parameterType="java.util.Map">
+        insert into vm_process_order_photo_t (
+        process_order_id,
+        resource_id,
+        resource_url,
+        resource_type,
+        file_name,
+        file_size,
+        file_water_mark,
+        delete_flag,
+        create_date
+        ) values (
+        #{processOrderId,jdbcType=VARCHAR},
+        #{resourceId,jdbcType=VARCHAR},
+        #{resourceUrl,jdbcType=VARCHAR},
+        #{resourceType,jdbcType=VARCHAR},
+        #{fileName,jdbcType=VARCHAR},
+        #{fileSize,jdbcType=VARCHAR},
+        #{fileWaterMark,jdbcType=VARCHAR},
+        '0',
+        now()
+        )
+    </insert>
+
+    <insert id="insertProcessOrder" useGeneratedKeys="true" keyProperty="processOrderId" keyColumn="process_order_id"
+            parameterType="com.chinatower.common.core.dto.ProcessOrderDTO">
+        <selectKey keyProperty="processOrderId" order="BEFORE" resultType="java.lang.String">
+            select UUID_SHORT() from dual
+        </selectKey>
+        insert into vm_process_order_t (
+        process_order_id,
+        order_id,
+        warning_order_id,
+        send_type,
+        send_order_time,
+        process_id,
+        curren_area_id,
+        order_status,
+        <if test='voice!= null and voice != "" '>
+            voice,
+        </if>
+        delete_flag
+        ) values (
+        #{processOrderId,jdbcType=VARCHAR},
+        #{orderId,jdbcType=VARCHAR},
+        #{warningOrderId,jdbcType=VARCHAR},
+        #{sendType,jdbcType=VARCHAR},
+        now(),
+        #{processId,jdbcType=VARCHAR},
+        #{currenAreaId,jdbcType=VARCHAR},
+        #{orderStatus,jdbcType=VARCHAR},
+        <if test='voice!= null and voice != "" '>
+            #{voice,jdbcType=VARCHAR},
+        </if>
+        '0'
+        )
+    </insert>
+
+    <select id="getProcessInfo" resultType="java.util.Map" parameterType="java.lang.String">
+        SELECT a.process_order_id AS processOrderId,a.order_id AS orderId,
+        DATE_FORMAT(a.send_order_time,'%Y-%m-%d %H:%i:%s') AS sendOrderTime, DATE_FORMAT(a.process_order_time,'%Y-%m-%d %H:%i:%s') AS processOrderTime,
+        a.process_id AS processId,
+        '' AS processName,
+        '' AS orgName,
+        '' as mobilePhone,
+        a.process_opinion AS processOpinion,a.order_status AS orderStatus,
+        IFNULL(a.voice,'') as voice
+        FROM vm_process_order_t a
+        WHERE a.process_order_id = #{processOrderId}
+    </select>
+
+    <select id="getPhotos" resultType="java.util.Map" parameterType="java.lang.String">
+        SELECT
+            a.resource_id AS 'resourceId',
+            a.resource_url AS 'resourceUrl',
+            a.resource_type AS 'resourceType',
+            a.file_name AS 'fileName',
+            a.file_size AS 'fileSize',
+            a.file_water_mark AS 'fileWaterMark'
+        FROM
+            vm_process_order_photo_t a
+        WHERE
+            a.process_order_id = #{processOrderId}
+            AND a.delete_flag = '0'
+    </select>
+</mapper>

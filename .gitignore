@@ -1,0 +1,70 @@
+### STS ###
+.settings/
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+rebel.xml
+
+### NetBeans ###
+nbproject/private/
+build/
+node_modules/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+### maven ###
+target/
+*.war
+*.ear
+*.zip
+*.tar
+*.tar.gz
+
+### vscode ###
+.vscode
+
+### logs ###
+/logs/
+*.log
+
+### temp ignore ###
+*.cache
+*.diff
+*.patch
+*.tmp
+*.java~
+*.properties~
+*.xml~
+
+### system ignore ###
+.DS_Store
+Thumbs.db
+Servers
+.metadata
+/video-services/video-event/src/main/java/com/chinatower/event/common/CommonUtil.java
+/video-services/video-event/src/main/java/com/chinatower/event/common/ResultCode.java
+/video-services/video-system/src/main/java/com/chinatower/platform/framework/config/personalityConfig.java
+/video-common/common-core/src/main/java/com/chinatower/common/core/constant/personalityConstants.java
+/video-services/video-msg/src/main/java/com/chinatower/platform/project/entity/request/MessageReq.java
+/video-services/video-gis/src/main/java/com/chinatower/gis/utils/MapDistanceUtil.java
+/video-services/video-gis/src/main/java/com/chinatower/gis/utils/ProvinceUtils.java
+video-services/video-gis/src/main/resources/bootstrap-local.yml
+
+/docs/
+/openspec/
+/.cursor/
+/.workbuddy/
+/.claude/
+AGENTS.md
+CLAUDE.md

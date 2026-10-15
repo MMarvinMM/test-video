@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.chinatower.gis.modules.gis.mapper.LayerTaoheAnalysisLayersInsertMapper">
+    <update id="updateThmanageAllcount">
+        UPDATE t_tmp_thmanage SET allcount = #{allCountJsonStr} WHERE guid=#{guid}
+    </update>
+    <select id="selectNotDeleteTmpTableName" resultType="java.lang.String" parameterType="java.lang.String">
+        select
+            tablename
+        from
+            t_tmp_thmanage
+        where
+            ${inString}
+          AND isdelete = false
+    </select>
+
+    <delete id="dropTable">
+        DROP TABLE IF EXISTS ${tableName};
+    </delete>
+
+    <insert id="insertTmpMngInfo">
+        insert into
+            t_tmp_thmanage (guid, userid, createtime, deletetime, isdelete, tablename, tabletype, overarea)
+        values (#{guid}, #{userID}, now(), null, false, #{newTableName}, #{type}, ${overArea});
+    </insert>
+
+    <insert id="insertXZTBTableTmp1">
+        CREATE SEQUENCE ${newTableName}_id_seq
+            INCREMENT 1
+                    START 1
+                    MINVALUE 1
+                    MAXVALUE 2147483647
+                    CACHE 1;
+    </insert>
+    <insert id="insertXZTBTableTmp2">
+        CREATE TABLE IF NOT EXISTS ${newTableName}
+        (
+            id integer NOT NULL DEFAULT nextval('${newTableName}_id_seq'::regclass),
+            BSM character varying(200) COLLATE pg_catalog.default,
+            coverarea double precision,
+            coverratio double precision,
+            dlmc character varying(20) COLLATE pg_catalog.default,
+            reftablename character varying(50) COLLATE pg_catalog.default,
+            CONSTRAINT ${newTableName}_pkey PRIMARY KEY (id)
+            );
+    </insert>
+    <insert id="insertXZTBTableTmp3">
+        ALTER SEQUENCE ${newTableName}_id_seq OWNED BY ${newTableName}.id;
+    </insert>
+    <insert id="insertXZTBTableTmp4">
+        CREATE INDEX ${newTableName}_idx on ${newTableName} (BSM);
+    </insert>
+
+    <update id="updateTmpTables" parameterType="java.lang.String">
+        update t_tmp_thmanage set isdelete = true, deletetime = now()
+        where tablename in (${updateTableNames});
+    </update>
+</mapper>

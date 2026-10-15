@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.airline.mapper.AirLineSensorInfoMapper">
+
+    <!-- 原有Base_Column_List保留 -->
+    <sql id="Base_Column_List">
+        id, flight_route_id, device_code, snapshot_id, longitude, latitude,
+        air_point_id, horn_type, audio_status, horn_num_type, horn_num,
+        horn_type_url, content_value, is_horn_global, horn_status,
+        create_time, create_user, update_user, update_time, delete_flag,point_index,act_index,sensor_type,brightness,md5
+    </sql>
+
+    <!-- 批量插入 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO vm_air_line_sensor_info (
+        flight_route_id, device_code, snapshot_id, longitude, latitude, air_point_id,
+        horn_type, audio_status, horn_num_type, horn_num, horn_type_url, content_value,
+        is_horn_global, horn_status, create_time, create_user, update_user, update_time,point_index,act_index,sensor_type,brightness,md5
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.flightRouteId}, #{item.deviceCode}, #{item.snapshotId}, #{item.longitude}, #{item.latitude}, #{item.airPointId},
+            #{item.hornType}, #{item.audioStatus}, #{item.hornNumType}, #{item.hornNum}, #{item.hornTypeUrl}, #{item.contentValue},
+            #{item.isHornGlobal}, #{item.hornStatus}, #{item.createTime}, #{item.createUser}, #{item.updateUser}, #{item.updateTime}, #{item.pointIndex}
+            , #{item.actIndex}, #{item.sensorType}, #{item.brightness}, #{item.md5}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 根据航线ID逻辑删除 -->
+    <update id="logicDeleteByFlightRouteId">
+        UPDATE vm_air_line_sensor_info SET
+         delete_flag = '1'
+        WHERE flight_route_id = #{flightRouteId}
+    </update>
+
+    <!-- 根据航线ID查询 -->
+    <select id="selectByFlightRouteId" parameterType="string" resultType="com.chinatower.device.entity.dto.VmAirLineSensorInfo">
+        SELECT <include refid="Base_Column_List"/>
+        FROM vm_air_line_sensor_info
+        WHERE flight_route_id = #{flightRouteId} AND delete_flag = '0'
+    </select>
+
+    <select id="selectByFlightRouteIdAndPointIndex" resultType="com.chinatower.device.entity.dto.VmAirLineSensorInfo">
+        SELECT <include refid="Base_Column_List"/>
+        FROM vm_air_line_sensor_info
+        WHERE flight_route_id = #{flightRouteId} AND delete_flag = '0'
+        and point_index = #{pointIndex}
+    </select>
+
+    <!-- 批量查询航线ID -->
+    <select id="selectBatchByFlightRouteIds" parameterType="java.util.List" resultType="com.chinatower.device.entity.dto.VmAirLineSensorInfo">
+        SELECT <include refid="Base_Column_List"/>
+        FROM vm_air_line_sensor_info
+        WHERE flight_route_id IN
+        <foreach collection="flightRouteIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND delete_flag = '0'
+    </select>
+</mapper>

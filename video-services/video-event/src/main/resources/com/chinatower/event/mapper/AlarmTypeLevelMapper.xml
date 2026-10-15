@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.AlarmTypeLevelMapper">
+
+    <delete id="deleteAlarmTypeLevelBatch">
+        delete from sys_alarm_type_level
+        where tenant_id = #{tenantId} and industry_code = #{industryCode} and delete_flag = '0'
+        and type_value in
+        <foreach collection="typeValueList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <insert id="addAlarmTypeLevelBatch" parameterType="com.chinatower.event.dataobject.AlarmTypeLevelDO">
+        insert into sys_alarm_type_level
+        (type_value, alarm_level, tenant_id, industry_code, app_ver_code, creator, create_time, delete_flag)
+        values
+        <foreach collection="list" item="item" separator=",">
+        (#{item.typeValue}, #{item.alarmLevel}, #{item.tenantId}, #{item.industryCode}, #{item.appVerCode},
+         #{item.creator}, #{item.createTime}, #{item.deleteFlag})
+        </foreach>
+    </insert>
+
+    <select id="getAlarmLevelByTypeValue" resultType="com.chinatower.event.vo.AlarmLevelVO">
+        select t.type_value, d.alarmLevel, d.alarmLevelName
+        from sys_alarm_type_level t
+                 LEFT JOIN
+             (SELECT DICT_VALUE AS alarmLevel, DICT_LABEL AS alarmLevelName FROM sys_dict_data WHERE DICT_TYPE = 'alarm_level') d
+             ON t.alarm_level = d.alarmLevel
+        where t.type_value = #{body.typeValue}
+          and t.tenant_id = #{body.tenantId}
+          and t.industry_code = #{body.industryCode}
+          and t.delete_flag = '0'
+    </select>
+
+    <update id="updateAlarmLevelByTypeValue">
+        update sys_alarm_type_level
+        set alarm_level = #{body.alarmLevel}, modifier = #{body.modifier}, update_time = #{body.updateTime}
+        where type_value = #{body.typeValue}
+          and tenant_id = #{body.tenantId}
+          and industry_code = #{body.industryCode}
+          and delete_flag = '0'
+    </update>
+
+    <insert id="insertAlarmLevel" parameterType="com.chinatower.event.dataobject.AlarmTypeLevelDO">
+        insert into sys_alarm_type_level
+        (type_value, alarm_level, tenant_id, industry_code, app_ver_code, creator, create_time, delete_flag)
+        values (#{body.typeValue}, #{body.alarmLevel}, #{body.tenantId}, #{body.industryCode}, #{body.appVerCode},
+        #{body.creator}, #{body.createTime}, #{body.deleteFlag})
+    </insert>
+
+</mapper>

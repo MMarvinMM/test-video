@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.modules.statistics.dao.UserStatisticsDAO">
+
+    <select id="getUserInfos" resultType="java.util.Map">
+        SELECT DISTINCT
+            u.USER_ID AS 'userId',
+            u.USER_NAME AS 'userName',
+            u.NICK_NAME AS 'nickName',
+            u.DEPT_ID AS 'deptId',
+            st.tenant_id AS 'tenantId',
+            st.tenant_name AS 'tenantName'
+        FROM
+            sys_user u
+            LEFT JOIN sys_tenant_info st ON u.tenant_id = st.tenant_id
+        WHERE u.del_flag = '0' and
+            u.USER_NAME IN
+            <foreach collection="userNameList" item="userName" index="index" open="(" close=")" separator=",">
+                #{userName}
+            </foreach>
+    </select>
+
+    <delete id="delUserStatistics" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_hour
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addUserStatistics" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_hour(user_id, tenant_id, tenant_name, dept_id, user_name, login_time_slot, login_count, year, month, day, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.tenantId},#{item.tenantName},#{item.deptId},#{item.userName},#{item.hour_str},#{item.loginCount},#{item.year_str},#{item.month_str},#{item.day_str},#{item.loginTime})
+        </foreach>
+    </insert>
+
+    <delete id="delCustomForType" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_type
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addCustomForType" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_type(user_id, user_name, tenant_id, tenant_name, dept_id, login_type_name, login_count, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.userName},#{item.tenantId},#{item.tenantName},#{item.deptId},#{item.clientType},#{item.loginCount},#{item.date})
+        </foreach>
+    </insert>
+
+    <delete id="delCustomForDuration" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_duration
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addCustomForDuration" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_duration(user_id, tenant_id, tenant_name, nick_name, dept_id, login_name, login_count, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.tenantId},#{item.tenantName},#{item.nickName},#{item.deptId},#{item.userName},#{item.loginCount},#{item.loginTime})
+        </foreach>
+    </insert>
+
+    <delete id="delCustomForPcBrowser" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_pc_browser
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addCustomForPcBrowser" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_pc_browser(user_id, user_name, tenant_id, tenant_name, dept_id, browser_name, login_count, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.userName},#{item.tenantId},#{item.tenantName},#{item.deptId},#{item.browserName},#{item.loginCount},#{item.loginTime})
+        </foreach>
+    </insert>
+
+    <delete id="delCustomForIphoneModel" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_app_model
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addCustomForIphoneModel" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_app_model(user_id, user_name, tenant_id, tenant_name, dept_id, iphone_model_name, login_count, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.userName},#{item.tenantId},#{item.tenantName},#{item.deptId},#{item.phoneModelName},#{item.loginCount},#{item.loginTime})
+        </foreach>
+    </insert>
+
+    <delete id="delCustomForAppVersion" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_app_version
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addCustomForAppVersion" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_app_version(user_id, user_name, tenant_id, tenant_name, dept_id, version_name, login_count, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.userName},#{item.tenantId},#{item.tenantName},#{item.deptId},#{item.versionName},#{item.loginCount},#{item.loginTime})
+        </foreach>
+    </insert>
+
+    <delete id="delCustomForSuccessRate" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_success_rate
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addCustomForSuccessRate" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_success_rate(user_id, user_name, tenant_id, tenant_name, dept_id, login_status, login_count, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.userName},#{item.tenantId},#{item.tenantName},#{item.deptId},#{item.status},#{item.loginCount},#{item.loginTime})
+        </foreach>
+    </insert>
+
+    <delete id="delCustomForFailCause" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_fail_cause
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addCustomForFailCause" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_fail_cause(user_id, user_name, tenant_id, tenant_name, dept_id, login_cause, fail_cause_num, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.userName},#{item.tenantId},#{item.tenantName},#{item.deptId},#{item.loginCause},#{item.loginCount},#{item.loginTime})
+        </foreach>
+    </insert>
+
+    <delete id="delCustomForPcSystem" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_pc_system
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addCustomForPcSystem" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_pc_system(user_id, user_name, tenant_id, tenant_name, dept_id, pc_system_name, login_count, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.userName},#{item.tenantId},#{item.tenantName},#{item.deptId},#{item.pcSystemName},#{item.loginCount},#{item.loginTime})
+        </foreach>
+    </insert>
+
+    <delete id="delCustomForAppSystem" parameterType="com.chinatower.analysis.api.entity.DateVO">
+        DELETE FROM vm_statistics_custom_app_system
+        <where>
+            <choose>
+                <when test="day != null and day != ''">
+                    AND DATE_FORMAT(login_time,'%Y-%m-%d') = #{handleDate}
+                </when>
+                <otherwise>
+                    AND DATE_FORMAT(login_time,'%Y-%m') = #{handleDate}
+                </otherwise>
+            </choose>
+        </where>
+    </delete>
+
+    <insert id="addCustomForAppSystem" parameterType="java.util.Map">
+        INSERT INTO vm_statistics_custom_app_system(user_id, user_name, tenant_id, tenant_name, dept_id, app_system_name, login_count, login_time) VALUES
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.userId},#{item.userName},#{item.tenantId},#{item.tenantName},#{item.deptId},#{item.appSystemName},#{item.loginCount},#{item.loginTime})
+        </foreach>
+    </insert>
+
+    <select id="selectUserLoginInfo" resultType="com.chinatower.platform.modules.statistics.entity.StatisticsUserOnlineTime">
+        SELECT
+            su.USER_ID,
+            su.dept_id,
+            su.NICK_NAME,
+            su.tenant_id
+        FROM
+            sys_user su
+        WHERE
+            su.USER_TYPE = '2'
+          AND su.DEL_FLAG = '0'
+        <foreach collection="collection" item="item" separator="," open=" and su.USER_ID in ( " close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="selectUserOnlineTime" resultType="com.chinatower.platform.modules.statistics.entity.StatisticsUserOnlineTime">
+        select * from vm_statistics_user_online_time where login_time=#{loginTime}
+        <foreach collection="userIds" item="item" separator="," open=" and user_id in ( " close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="addUserOnlineTime">
+        INSERT INTO vm_statistics_user_online_time
+        (dept_id,
+        tenant_id,
+        user_id,
+        nick_name,
+        login_time,
+        online_time,
+        last_record_json,app_online_time,wx_online_time) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.deptId},#{item.tenantId},#{item.userId},#{item.nickName},#{item.loginTime},#{item.onlineTime},#{item.lastRecordJson},#{item.appOnlineTime},#{item.wxOnlineTime})
+        </foreach>
+    </insert>
+
+    <update id="updateUserOnlineTime" >
+        <foreach collection="list" item="item" separator=";">
+            UPDATE vm_statistics_user_online_time set dept_id = #{item.deptId},nick_name = #{item.nickName},online_time = #{item.onlineTime},last_record_json = #{item.lastRecordJson},app_online_time = #{item.appOnlineTime},wx_online_time = #{item.wxOnlineTime}
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+
+</mapper>

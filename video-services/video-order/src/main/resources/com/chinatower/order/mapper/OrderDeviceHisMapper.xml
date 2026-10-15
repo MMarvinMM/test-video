@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.order.mapper.OrderDeviceHisMapper">
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO `vm_order_devices_his`
+        (`order_code`, `package_code`, `tenant_id`, `device_code`, `device_name`, `move_sign`, `industry_code`,
+        `app_ver_code`, `ord_status`, `delete_flag`, `create_time`, `update_time`, `accept_node`, `access_node`)
+        VALUES
+        <foreach collection="list" item="item" separator="," >
+            (
+            #{item.orderCode}, #{item.packageCode}, #{item.tenantId}, #{item.deviceCode}, #{item.deviceName}, #{item.moveSign}, #{item.industryCode},
+            #{item.appVerCode}, #{item.ordStatus}, #{item.deleteFlag}, #{item.createTime}, #{item.updateTime}, #{item.acceptNode}, #{item.accessNode}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

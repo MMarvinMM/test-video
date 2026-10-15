@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.ReservePlanChannelMapper">
+
+    <select id="queryReservePlanChannel" resultType="com.chinatower.device.dto.ReservePlanChannelDTO">
+        select DISTINCT
+           a.plan_id,
+           a.device_code,
+           a.channel_code,
+           a.stream_type,
+           a.if_preset,
+           a.chan_order,
+           e.longitude,
+           e.latitude,
+           (case when length(IFNULL(dr.device_name, '')) = 0 then e.device_name else dr.device_name end ) deviceName,
+           (case when length(IFNULL(dr.channel_name, '')) = 0 then d.channel_name else dr.channel_name end ) channelName
+        from
+            vm_reserve_plan_channel_t a 
+            join vm_reserve_plan_t b on a.plan_id = b.plan_id
+            LEFT JOIN vm_order_devices c ON c.device_code = a.device_code and c.tenant_id = b.tenant_id AND c.industry_code = b.industry_code 
+            left join vm_channel_info_t d on c.device_code = d.device_code AND d.channel_code = a.channel_code
+            left join vm_device_info_t e on a.device_code = e.device_code
+            LEFT JOIN vm_tenant_device_channel_rel_t dr on dr.device_code = a.device_code and dr.delete_flag = '0'
+            AND dr.tenant_id = b.tenant_id and dr.industry_code = b.industry_code
+            AND dr.channel_code = a.channel_code
+        where
+            a.plan_id = #{planId}
+            and a.delete_flag = 0
+            AND c.delete_flag = 0
+	        AND c.ord_status IN ( 0, 1, 2 )
+            ${param.dataScope}
+    </select>
+    <select id="selectByPlanIds" resultType="com.chinatower.device.dto.ReservePlanChannelDTO">
+        select DISTINCT
+            a.plan_id,
+            a.device_code,
+            a.channel_code,
+            a.stream_type,
+            a.if_preset,
+            vp.preset_name  as presetName,
+            a.chan_order,
+            e.longitude,
+            e.latitude,
+            (case when length(IFNULL(dr.device_name, '')) = 0 then e.device_name else dr.device_name end ) deviceName,
+            (case when length(IFNULL(dr.channel_name, '')) = 0 then d.channel_name else dr.channel_name end ) channelName
+        from
+            vm_reserve_plan_channel_t a
+                join vm_reserve_plan_t b on a.plan_id = b.plan_id
+                LEFT JOIN vm_order_devices c ON c.device_code = a.device_code and c.tenant_id = b.tenant_id AND c.industry_code = b.industry_code
+                left join vm_channel_info_t d on c.device_code = d.device_code AND d.channel_code = a.channel_code
+                left join vm_device_info_t e on a.device_code = e.device_code
+                LEFT JOIN vm_tenant_device_channel_rel_t dr on dr.device_code = a.device_code and dr.delete_flag = '0'
+                AND dr.tenant_id = b.tenant_id and dr.industry_code = b.industry_code
+                AND dr.channel_code = a.channel_code
+                left join vm_video_preset vp on a.if_preset = vp.preset_id and vp.delete_flag = '0'
+                where a.delete_flag = 0 AND c.delete_flag = 0 AND c.ord_status IN ( 0, 1, 2 )
+                <if test='planIds != null and planIds.size()>0'>
+                   and a.plan_id in
+                    <foreach item="planId" collection="planIds" open="(" separator="," close=")">
+                        #{planId}
+                    </foreach>
+                </if>
+            ${param.dataScope}
+        ORDER BY CAST(a.chan_order AS UNSIGNED)
+    </select>
+</mapper>

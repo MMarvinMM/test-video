@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IMessageSendInfoMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.platform.entity.VmMessageSendInfoDO">
+        <id column="uni_id" property="uniId" />
+        <result column="msg_id" property="msgId" />
+        <result column="user_id" property="userId" />
+        <result column="notify_type" property="notifyType" />
+        <result column="notify_title" property="notifyTitle" />
+        <result column="if_read" property="ifRead" />
+        <result column="order_status" property="orderStatus" />
+        <result column="creator" property="creator" />
+        <result column="creator_date" property="creatorDate" />
+        <result column="modifier" property="modifier" />
+        <result column="modifier_date" property="modifierDate" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="address" property="address" />
+    </resultMap>
+    <select id="getSmsSendStatistics" resultType="com.chinatower.platform.entity.ISmsSendStatisticsDto" parameterType="com.chinatower.platform.entity.ISmsSendStatisticsDto">
+        SELECT user_id userId,send_date sendDate,send_count sendCount from vm_sms_send_statistics_t
+        WHERE send_date = #{sendDate}
+        <if test="userList != null and userList.size() > 0 ">
+            and user_id in
+            <foreach collection="userList" item="user" index="index" open="(" close=")" separator=",">
+                #{user}
+            </foreach>
+        </if>
+    </select>
+
+    <update id="updateSmsSendStatistics" parameterType="com.chinatower.platform.entity.ISmsSendStatisticsDto">
+        update vm_sms_send_statistics_t set send_count =send_count+1
+        where send_date = #{sendDate}
+        <if test="userList != null and userList.size() > 0 ">
+            and user_id in
+            <foreach collection="userList" item="user" index="index" open="(" close=")" separator=",">
+                #{user}
+            </foreach>
+        </if>
+    </update>
+
+
+    <insert id="insertSmsSendStatistics" parameterType="java.util.List">
+        insert into vm_sms_send_statistics_t (
+        user_id,
+        send_date,
+        send_count
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.userId},
+            #{item.sendDate},
+            1
+            )
+        </foreach>
+    </insert>
+</mapper>

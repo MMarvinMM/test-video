@@ -1,0 +1,1056 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.AlgorithmConfigMapper">
+
+    <select id="getAlgorithmStatusByTaskIds" resultType="com.chinatower.sync.consumer.entity.TaskIdAndStatusDto">
+        select  task_id taskId,algorithm_status algorithmStatus from vm_algorithm_config where task_id IN
+        <foreach collection="list" item="item" separator="," close=")" open="(">
+            #{item.taskId}
+        </foreach>
+    </select>
+
+    <update id="updateAlgorithmStatusBatch">
+        <foreach collection="list" item="item" index="index" open="" close="" separator=";">
+            UPDATE vm_algorithm_config
+            SET algorithm_status = #{item.pushStatus},
+                update_time = from_unixtime(#{item.ts}/1000),
+                time_stamp = #{item.ts}
+            WHERE task_id = #{item.taskId}
+                AND ( time_stamp <![CDATA[<]]> #{item.ts} OR time_stamp IS NULL )
+        </foreach>
+    </update>
+    <delete id="deleteDeviceInfoByDevice">
+        DELETE FROM vm_device_info_t
+        WHERE delete_flag = '0' AND device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteChannelInfoByDevice">
+        DELETE FROM vm_channel_info_t
+        WHERE delete_flag = '0' AND device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteChannelInfoByChannel">
+        DELETE FROM vm_channel_info_t
+        WHERE delete_flag = '0' AND channel_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteTenantDeviceChannelByDevice">
+        DELETE FROM vm_tenant_device_channel_rel_t
+        WHERE delete_flag = '0' AND device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+    <delete id="deleteTenantDeviceChannelByChannel">
+        DELETE FROM vm_tenant_device_channel_rel_t
+        WHERE delete_flag = '0' AND channel_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+    <select id="queryModFlagByList" resultType="java.lang.String">
+        select device_code from vm_device_info_t a where device_code IN
+        <foreach collection="deviceInfoDTOList" index="index" open="(" close=")" separator="," item="item">
+            #{item.deviceCode}
+        </foreach>
+        AND a.app_mod_flag = '1'
+    </select>
+    <select id="getDeviceCodeByCodes" resultType="com.chinatower.sync.consumer.entity.DeviceCodeAndLonAndLatDto">
+        select device_code deviceCode,longitude,latitude,province_id provinceId, city_id cityId, county_id countyId from vm_device_info_t a where delete_flag = '0' AND device_code IN
+        <foreach collection="batchUpdateDeviceList" item="item" index="index" open="(" close=")" separator=",">
+            #{item.deviceCode}
+        </foreach>
+    </select>
+    <select id="getChannelCodeByChannelCodes" resultType="java.lang.String">
+        select a.channel_code from vm_channel_info_t a where a.delete_flag = '0' AND a.channel_code IN
+        <foreach collection="list" separator="," close=")" open="(" index="index" item="item">
+            #{item.channelCode}
+        </foreach>
+
+    </select>
+
+    <select id="getChannelCodesByDevices" resultType="java.lang.String">
+        SELECT channel_code
+        FROM vm_channel_info_t
+        WHERE  device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="selectByDeviceCodes" resultType="com.chinatower.sync.consumer.entity.DeviceInfoDTO">
+        SELECT
+        `device_id`,
+        `device_code`,
+        `device_name`,
+        `device_status`,
+        `province_id`,
+        `city_id`,
+        `county_id`,
+        `category_code`,
+        `remark`,
+        `enable_snap`,
+        `ip`,
+        `port`,
+        `busin_status`,
+        `collect_type`,
+        `site_code`,
+        `site_name`,
+        `public_site_code`,
+        `plat_form_code`,
+        `model_code`,
+        `dev_user_name`,
+        `dev_password`,
+        `dev_ex_info`,
+        `gb28181_code`,
+        `dev_name_abbr`,
+        `owner`,
+        `collect_method`,
+        `org_code`,
+        `horizon_min`,
+        `horizon_max`,
+        `vertical_min`,
+        `vertical_max`,
+        `visual_min`,
+        `visual_max`,
+        `creator`,
+        `creator_date`,
+        `modifier`,
+        `modifier_date`,
+        `delete_flag`,
+        `height`,
+        `location`,
+        `longitude`,
+        `latitude`,
+        `area_code`,
+        `adm_code`,
+        `net_type`,
+        `is_cascade`,
+        `plat_id`,
+        `alarm_location`,
+        `partrol_mode`,
+        `app_mod_flag`,
+        `device_model_code`,
+        `town_code`,
+         enable_video_node,
+         cus_code_share_property,
+         device_property_id,
+         device_sub_type as videoSubId,
+         monitor_angle
+        FROM vm_device_info_t WHERE delete_flag = '0' AND device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+
+    </select>
+    <select id="selectChannelByDeviceCodes" resultType="com.chinatower.sync.consumer.entity.ChannelInfoDTO">
+        SELECT
+        `channel_id`,
+        `channel_code`,
+        `device_code`,
+        `channel_name`,
+        `channel_status`,
+        `stream_type`,
+        `max_guard`,
+        `max_preset`,
+        `max_patrol`,
+        `facade`,
+        `channel_type`,
+        `visual_range`,
+        `horiz_range`,
+        `verti_range`,
+        `creator`,
+        `creator_date`,
+        `modifier`,
+        `modifier_date`,
+        `delete_flag`
+        FROM vm_channel_info_t WHERE delete_flag = '0' AND device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="selectChannelInfoByChannel" resultType="com.chinatower.sync.consumer.entity.ChannelInfoDTO">
+        SELECT
+        `channel_id`,
+        `channel_code`,
+        `device_code`,
+        `channel_name`,
+        `channel_status`,
+        `stream_type`,
+        `max_guard`,
+        `max_preset`,
+        `max_patrol`,
+        `facade`,
+        `channel_type`,
+        `visual_range`,
+        `horiz_range`,
+        `verti_range`,
+        `creator`,
+        `creator_date`,
+        `modifier`,
+        `modifier_date`,
+        `delete_flag`
+        FROM vm_channel_info_t WHERE delete_flag = '0' AND channel_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <update id="updateDeviceInfoBatch">
+        update vm_device_info_t
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="device_name =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.deviceName!=null and item.deviceName != ''">
+                        when device_code=#{item.deviceCode} then #{item.deviceName}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="device_status =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.deviceStatus!=null">
+                        when device_code=#{item.deviceCode} then #{item.deviceStatus}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="province_id =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.provinceId!=null and item.provinceId != '' and item.provinceId != 'null'">
+                        when device_code=#{item.deviceCode} then #{item.provinceId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="city_id =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.cityId!=null and item.cityId != '' and item.cityId != 'null'">
+                        when device_code=#{item.deviceCode} then #{item.cityId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="county_id =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.countyId!=null and item.countyId != '' and item.countyId != 'null'">
+                        when device_code=#{item.deviceCode} then #{item.countyId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="category_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.categoryCode!=null and item.categoryCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.categoryCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="remark =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.remark!=null and item.remark != ''">
+                        when device_code=#{item.deviceCode} then #{item.remark}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="enable_snap =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.enableSnap!=null and item.enableSnap != ''">
+                        when device_code=#{item.deviceCode} then #{item.enableSnap}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="ip =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.ip!=null and item.ip != ''">
+                        when device_code=#{item.deviceCode} then #{item.ip}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="port =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.port!=null and item.port != ''">
+                        when device_code=#{item.deviceCode} then #{item.port}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="busin_status =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.businStatus!=null and item.businStatus != ''">
+                        when device_code=#{item.deviceCode} then #{item.businStatus}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="collect_type =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.collectType!=null and item.collectType != ''">
+                        when device_code=#{item.deviceCode} then #{item.collectType}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="site_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.siteCode!=null and item.siteCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.siteCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="site_name =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.siteName!=null and item.siteName != ''">
+                        when device_code=#{item.deviceCode} then #{item.siteName}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="public_site_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.publicSiteCode!=null and item.publicSiteCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.publicSiteCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="plat_form_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.platformCode!=null and item.platformCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.platformCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="model_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.modelCode!=null and item.modelCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.modelCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="dev_user_name =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.devUserName!=null and item.devUserName != ''">
+                        when device_code=#{item.deviceCode} then #{item.devUserName}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="dev_password =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.devPassword!=null and item.devPassword != ''">
+                        when device_code=#{item.deviceCode} then #{item.devPassword}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="dev_ex_info =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.devExInfo!=null and item.devExInfo != ''">
+                        when device_code=#{item.deviceCode} then #{item.devExInfo}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="gb28181_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.gb28181Code!=null and item.gb28181Code != ''">
+                        when device_code=#{item.deviceCode} then #{item.gb28181Code}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="dev_name_abbr =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.devNameAbbr!=null and item.devNameAbbr != ''">
+                        when device_code=#{item.deviceCode} then #{item.devNameAbbr}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="owner =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.owner!=null and item.owner != ''">
+                        when device_code=#{item.deviceCode} then #{item.owner}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="collect_method =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.collectMethod!=null and item.collectMethod != ''">
+                        when device_code=#{item.deviceCode} then #{item.collectMethod}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="org_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.orgCode!=null and item.orgCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.orgCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="creator =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.creator!=null and item.creator != ''">
+                        when device_code=#{item.deviceCode} then #{item.creator}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="creator_date =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.creatTime!=null and item.creatTime != ''">
+                        when device_code=#{item.deviceCode} then #{item.creatTime}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="height =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.height!=null and item.height != ''">
+                        when device_code=#{item.deviceCode} then #{item.height}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="location =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.location!=null and item.location != ''">
+                        when device_code=#{item.deviceCode} then #{item.location}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="longitude =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.longitude!=null and item.longitude != ''">
+                        when device_code=#{item.deviceCode} then #{item.longitude}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="latitude =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.latitude!=null and item.latitude != ''">
+                        when device_code=#{item.deviceCode} then #{item.latitude}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="area_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.areaCode!=null and item.areaCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.areaCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="adm_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.admCode!=null and item.admCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.admCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="net_type =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.netType!=null and item.netType != ''">
+                        when device_code=#{item.deviceCode} then #{item.netType}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="is_cascade =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.isCascade!=null and item.isCascade != ''">
+                        when device_code=#{item.deviceCode} then #{item.isCascade}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="plat_id =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.platId!=null and item.platId != ''">
+                        when device_code=#{item.deviceCode} then #{item.platId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="town_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.townCode!=null and item.townCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.townCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="device_model_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.deviceModelCode!=null and item.deviceModelCode != ''">
+                        when device_code=#{item.deviceCode} then #{item.deviceModelCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="access_node =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.accessNode!=null and item.accessNode != ''">
+                        when device_code=#{item.deviceCode} then #{item.accessNode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="altitude =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when device_code=#{item.deviceCode} then #{item.altitude}
+                </foreach>
+            </trim>
+            <trim prefix="collect_protocol =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    when device_code=#{item.deviceCode} then #{item.collectProtocol}
+                </foreach>
+            </trim>
+            <trim prefix="enable_video_node =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.enableVideoNode!=null and item.enableVideoNode != ''">
+                        when device_code=#{item.deviceCode} then #{item.enableVideoNode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="cus_code_share_property =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.cusCodeShareProperty!=null and item.cusCodeShareProperty != ''">
+                        when device_code=#{item.deviceCode} then #{item.cusCodeShareProperty}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="device_property_id =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.devicePropertyId!=null and item.devicePropertyId != ''">
+                        when device_code=#{item.deviceCode} then #{item.devicePropertyId}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="device_sub_type =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.videoSubId!=null and item.videoSubId != ''">
+                        when device_code=#{item.deviceCode} then #{item.videoSubId}
+                    </if>
+                </foreach>
+            </trim>
+            modifier_date = now(),
+            modifier = 'system-yg'
+        </trim>
+        <where>
+            delete_flag = '0' AND
+            device_code IN
+            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+                #{item.deviceCode}
+            </foreach>
+        </where>
+    </update>
+    <update id="updateChannelInfoBatch">
+        update vm_channel_info_t
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="device_code =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.deviceCode!=null and item.deviceCode != ''">
+                        when channel_code=#{item.channelCode} then #{item.deviceCode}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="channel_name =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.channelName!=null and item.channelName != ''">
+                        when channel_code=#{item.channelCode} then #{item.channelName}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="channel_status =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.channelStatus!=null and item.channelStatus != ''">
+                        when channel_code=#{item.channelCode} then #{item.channelStatus}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="stream_type =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.streamType!=null and item.streamType != ''">
+                        when channel_code=#{item.channelCode} then #{item.streamType}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="max_preset =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.maxPreset!=null and item.maxPreset != ''">
+                        when channel_code=#{item.channelCode} then #{item.maxPreset}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="max_patrol =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.maxPatrol!=null and item.maxPatrol != ''">
+                        when channel_code=#{item.channelCode} then #{item.maxPatrol}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="facade =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.facade!=null and item.facade != ''">
+                        when channel_code=#{item.channelCode} then #{item.facade}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="channel_type =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.channelType!=null and item.channelType != ''">
+                        when channel_code=#{item.channelCode} then #{item.channelType}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="visual_range =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.visualRange!=null and item.visualRange != ''">
+                        when channel_code=#{item.channelCode} then #{item.visualRange}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="horiz_range =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.horizRange!=null and item.horizRange != ''">
+                        when channel_code=#{item.channelCode} then #{item.horizRange}
+                    </if>
+                </foreach>
+            </trim>
+            <trim prefix="verti_range =case" suffix="end,">
+                <foreach collection="list" item="item">
+                    <if test="item.vertiRange!=null and item.vertiRange != ''">
+                        when channel_code=#{item.channelCode} then #{item.vertiRange}
+                    </if>
+                </foreach>
+            </trim>
+            modifier_date = NOW()
+        </trim>
+        <where>
+            delete_flag = '0' AND
+            channel_code IN
+            <foreach collection="list" separator="," item="item" open="(" close=")" index="index">
+                #{item.channelCode}
+            </foreach>
+        </where>
+    </update>
+    <insert id="insertDeviceInfoBatch">
+        insert into vm_device_info_t(
+        device_code,
+        device_name,
+        device_status,
+        province_id,
+        city_id,
+        county_id,
+        category_code,
+        remark,
+        enable_snap,
+        ip,
+        port,
+        busin_status,
+        collect_type,
+        site_code,
+        site_name,
+        public_site_code,
+        plat_form_code,
+        model_code,
+        dev_user_name,
+        dev_password,
+        dev_ex_info,
+        gb28181_code,
+        dev_name_abbr,
+        owner,
+        collect_method,
+        org_code,
+        creator,
+        height,
+        location,
+        longitude,
+        latitude,
+        area_code,
+        adm_code,
+        net_type,
+        is_cascade,
+        plat_id,
+        town_code,
+        creator_date,modifier_date,delete_flag,access_node,altitude,collect_protocol,enable_video_node,cus_code_share_property,device_property_id,device_sub_type
+        ) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.deviceCode,jdbcType=VARCHAR},
+            #{item.deviceName,jdbcType=VARCHAR},
+            #{item.deviceStatus,jdbcType=BIGINT},
+            #{item.provinceId,jdbcType=VARCHAR},
+            #{item.cityId,jdbcType=VARCHAR},
+            #{item.countyId,jdbcType=VARCHAR},
+            #{item.categoryCode,jdbcType=BIGINT},
+            #{item.remark,jdbcType=VARCHAR},
+            #{item.enableSnap,jdbcType=BIGINT},
+            #{item.ip,jdbcType=VARCHAR},
+            #{item.port,jdbcType=VARCHAR},
+            #{item.businStatus,jdbcType=BIGINT},
+            #{item.collectType,jdbcType=BIGINT},
+            #{item.siteCode,jdbcType=VARCHAR},
+            #{item.siteName,jdbcType=VARCHAR},
+            #{item.publicSiteCode,jdbcType=VARCHAR},
+            #{item.platformCode,jdbcType=VARCHAR},
+            #{item.modelCode,jdbcType=VARCHAR},
+            #{item.devUserName,jdbcType=VARCHAR},
+            #{item.devPassword,jdbcType=VARCHAR},
+            #{item.devExInfo,jdbcType=VARCHAR},
+            #{item.gb28181Code,jdbcType=VARCHAR},
+            #{item.devNameAbbr,jdbcType=VARCHAR},
+            #{item.owner,jdbcType=VARCHAR},
+            #{item.collectMethod,jdbcType=BIGINT},
+            #{item.orgCode,jdbcType=VARCHAR},
+            #{item.creator,jdbcType=VARCHAR},
+            #{item.height,jdbcType=VARCHAR},
+            #{item.location,jdbcType=VARCHAR},
+            #{item.longitude,jdbcType=VARCHAR},
+            #{item.latitude,jdbcType=VARCHAR},
+            #{item.areaCode,jdbcType=VARCHAR},
+            #{item.admCode,jdbcType=VARCHAR},
+            #{item.netType,jdbcType=BIGINT},
+            #{item.isCascade,jdbcType=BIGINT},
+            #{item.platId,jdbcType=BIGINT},
+            #{item.townCode,jdbcType=VARCHAR},
+            now(),now(),'0',#{item.accessNode,jdbcType=VARCHAR},#{item.altitude,jdbcType=BIGINT},#{item.collectProtocol,jdbcType=VARCHAR},#{item.enableVideoNode,jdbcType=VARCHAR},#{item.cusCodeShareProperty,jdbcType=VARCHAR},#{item.devicePropertyId,jdbcType=VARCHAR},#{item.videoSubId,jdbcType=VARCHAR})
+        </foreach>
+    </insert>
+    <insert id="insertChannelInfoBatch">
+        insert into vm_channel_info_t(
+        channel_code,
+        channel_name,
+        device_code,
+        channel_status,
+        stream_type,
+        max_preset,
+        max_patrol,
+        facade,
+        channel_type,
+        visual_range,
+        horiz_range,
+        verti_range,
+        creator_date, modifier_date, delete_flag
+        )values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.channelCode,jdbcType=VARCHAR},
+            #{item.channelName,jdbcType=VARCHAR},
+            #{item.deviceCode,jdbcType=VARCHAR},
+            #{item.channelStatus,jdbcType=BIGINT},
+            #{item.streamType,jdbcType=BIGINT},
+            #{item.maxPreset,jdbcType=BIGINT},
+            #{item.maxPatrol,jdbcType=BIGINT},
+            #{item.facade,jdbcType=BIGINT},
+            #{item.channelType,jdbcType=BIGINT},
+            #{item.visualRange,jdbcType=VARCHAR},
+            #{item.horizRange,jdbcType=VARCHAR},
+            #{item.vertiRange,jdbcType=VARCHAR},
+            NOW(),NOW(),'0')
+        </foreach>
+    </insert>
+    <insert id="insertSelectDeviceInfoByDevice">
+        INSERT INTO `video_platform_base`.`vm_device_info_t_del` (
+        `device_id`,
+        `device_code`,
+        `device_name`,
+        `device_status`,
+        `province_id`,
+        `city_id`,
+        `county_id`,
+        `category_code`,
+        `remark`,
+        `enable_snap`,
+        `ip`,
+        `port`,
+        `busin_status`,
+        `collect_type`,
+        `site_code`,
+        `site_name`,
+        `public_site_code`,
+        `plat_form_code`,
+        `model_code`,
+        `dev_user_name`,
+        `dev_password`,
+        `dev_ex_info`,
+        `gb28181_code`,
+        `dev_name_abbr`,
+        `owner`,
+        `collect_method`,
+        `org_code`,
+        `horizon_min`,
+        `horizon_max`,
+        `vertical_min`,
+        `vertical_max`,
+        `visual_min`,
+        `visual_max`,
+        `creator`,
+        `creator_date`,
+        `modifier`,
+        `modifier_date`,
+        `delete_flag`,
+        `height`,
+        `location`,
+        `longitude`,
+        `latitude`,
+        `area_code`,
+        `adm_code`,
+        `net_type`,
+        `is_cascade`,
+        `plat_id`,
+        `alarm_location`,
+        `partrol_mode`,
+        `app_mod_flag`,
+        `device_model_code`,
+        `town_code`
+        )
+        SELECT
+        `device_id`,
+        `device_code`,
+        `device_name`,
+        `device_status`,
+        `province_id`,
+        `city_id`,
+        `county_id`,
+        `category_code`,
+        `remark`,
+        `enable_snap`,
+        `ip`,
+        `port`,
+        `busin_status`,
+        `collect_type`,
+        `site_code`,
+        `site_name`,
+        `public_site_code`,
+        `plat_form_code`,
+        `model_code`,
+        `dev_user_name`,
+        `dev_password`,
+        `dev_ex_info`,
+        `gb28181_code`,
+        `dev_name_abbr`,
+        `owner`,
+        `collect_method`,
+        `org_code`,
+        `horizon_min`,
+        `horizon_max`,
+        `vertical_min`,
+        `vertical_max`,
+        `visual_min`,
+        `visual_max`,
+        `creator`,
+        `creator_date`,
+        `modifier`,
+        `modifier_date`,
+        `delete_flag`,
+        `height`,
+        `location`,
+        `longitude`,
+        `latitude`,
+        `area_code`,
+        `adm_code`,
+        `net_type`,
+        `is_cascade`,
+        `plat_id`,
+        `alarm_location`,
+        `partrol_mode`,
+        `app_mod_flag`,
+        `device_model_code`,
+        `town_code`
+        FROM vm_device_info_t WHERE delete_flag = '0' AND device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </insert>
+    <insert id="insertSelectChannelInfoByDevice">
+        INSERT INTO `video_platform_base`.`vm_channel_info_t_del` (
+        `channel_id`,
+        `channel_code`,
+        `device_code`,
+        `channel_name`,
+        `channel_status`,
+        `stream_type`,
+        `max_guard`,
+        `max_preset`,
+        `max_patrol`,
+        `facade`,
+        `channel_type`,
+        `visual_range`,
+        `horiz_range`,
+        `verti_range`,
+        `creator`,
+        `creator_date`,
+        `modifier`,
+        `modifier_date`,
+        `delete_flag`
+        )
+        SELECT
+        `channel_id`,
+        `channel_code`,
+        `device_code`,
+        `channel_name`,
+        `channel_status`,
+        `stream_type`,
+        `max_guard`,
+        `max_preset`,
+        `max_patrol`,
+        `facade`,
+        `channel_type`,
+        `visual_range`,
+        `horiz_range`,
+        `verti_range`,
+        `creator`,
+        `creator_date`,
+        `modifier`,
+        `modifier_date`,
+        `delete_flag`
+        FROM vm_channel_info_t WHERE delete_flag = '0' AND device_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </insert>
+    <insert id="insertSelectChannelInfoByChannel">
+        INSERT INTO `video_platform_base`.`vm_channel_info_t_del` (
+        `channel_id`,
+        `channel_code`,
+        `device_code`,
+        `channel_name`,
+        `channel_status`,
+        `stream_type`,
+        `max_guard`,
+        `max_preset`,
+        `max_patrol`,
+        `facade`,
+        `channel_type`,
+        `visual_range`,
+        `horiz_range`,
+        `verti_range`,
+        `creator`,
+        `creator_date`,
+        `modifier`,
+        `modifier_date`,
+        `delete_flag`
+        )
+        SELECT
+        `channel_id`,
+        `channel_code`,
+        `device_code`,
+        `channel_name`,
+        `channel_status`,
+        `stream_type`,
+        `max_guard`,
+        `max_preset`,
+        `max_patrol`,
+        `facade`,
+        `channel_type`,
+        `visual_range`,
+        `horiz_range`,
+        `verti_range`,
+        `creator`,
+        `creator_date`,
+        `modifier`,
+        `modifier_date`,
+        `delete_flag`
+        FROM vm_channel_info_t WHERE delete_flag = '0' AND channel_code IN
+        <foreach collection="list" index="index" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </insert>
+    <insert id="insertDeviceInfoDelBatch">
+        insert into vm_device_info_t_del(
+        device_code,
+        device_name,
+        device_status,
+        province_id,
+        city_id,
+        county_id,
+        category_code,
+        remark,
+        enable_snap,
+        ip,
+        port,
+        busin_status,
+        collect_type,
+        site_code,
+        site_name,
+        public_site_code,
+        plat_form_code,
+        model_code,
+        dev_user_name,
+        dev_password,
+        dev_ex_info,
+        gb28181_code,
+        dev_name_abbr,
+        owner,
+        collect_method,
+        org_code,
+        creator,
+        height,
+        location,
+        longitude,
+        latitude,
+        area_code,
+        adm_code,
+        net_type,
+        is_cascade,
+        plat_id,
+        town_code,
+        creator_date,modifier_date,delete_flag,access_node,altitude,collect_protocol,enable_video_node,cus_code_share_property,device_property_id,device_sub_type,monitor_angle
+        ) values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.deviceCode,jdbcType=VARCHAR},
+            #{item.deviceName,jdbcType=VARCHAR},
+            #{item.deviceStatus,jdbcType=BIGINT},
+            #{item.provinceId,jdbcType=VARCHAR},
+            #{item.cityId,jdbcType=VARCHAR},
+            #{item.countyId,jdbcType=VARCHAR},
+            #{item.categoryCode,jdbcType=BIGINT},
+            #{item.remark,jdbcType=VARCHAR},
+            #{item.enableSnap,jdbcType=BIGINT},
+            #{item.ip,jdbcType=VARCHAR},
+            #{item.port,jdbcType=VARCHAR},
+            #{item.businStatus,jdbcType=BIGINT},
+            #{item.collectType,jdbcType=BIGINT},
+            #{item.siteCode,jdbcType=VARCHAR},
+            #{item.siteName,jdbcType=VARCHAR},
+            #{item.publicSiteCode,jdbcType=VARCHAR},
+            #{item.platformCode,jdbcType=VARCHAR},
+            #{item.modelCode,jdbcType=VARCHAR},
+            #{item.devUserName,jdbcType=VARCHAR},
+            #{item.devPassword,jdbcType=VARCHAR},
+            #{item.devExInfo,jdbcType=VARCHAR},
+            #{item.gb28181Code,jdbcType=VARCHAR},
+            #{item.devNameAbbr,jdbcType=VARCHAR},
+            #{item.owner,jdbcType=VARCHAR},
+            #{item.collectMethod,jdbcType=BIGINT},
+            #{item.orgCode,jdbcType=VARCHAR},
+            #{item.creator,jdbcType=VARCHAR},
+            #{item.height,jdbcType=VARCHAR},
+            #{item.location,jdbcType=VARCHAR},
+            #{item.longitude,jdbcType=VARCHAR},
+            #{item.latitude,jdbcType=VARCHAR},
+            #{item.areaCode,jdbcType=VARCHAR},
+            #{item.admCode,jdbcType=VARCHAR},
+            #{item.netType,jdbcType=BIGINT},
+            #{item.isCascade,jdbcType=BIGINT},
+            #{item.platId,jdbcType=BIGINT},
+            #{item.townCode,jdbcType=VARCHAR},
+            now(),now(),'0',#{item.accessNode,jdbcType=VARCHAR},#{item.altitude,jdbcType=BIGINT},#{item.collectProtocol,jdbcType=VARCHAR},#{item.enableVideoNode,jdbcType=VARCHAR},#{item.cusCodeShareProperty,jdbcType=VARCHAR},#{item.devicePropertyId,jdbcType=VARCHAR},#{item.videoSubId,jdbcType=VARCHAR},#{item.monitorAngle,jdbcType=VARCHAR})
+        </foreach>
+    </insert>
+    <insert id="insertChannelInfoDelBatch">
+        insert into vm_channel_info_t_del(
+        channel_code,
+        channel_name,
+        device_code,
+        channel_status,
+        stream_type,
+        max_preset,
+        max_patrol,
+        facade,
+        channel_type,
+        visual_range,
+        horiz_range,
+        verti_range,
+        creator_date, modifier_date, delete_flag
+        )values
+        <foreach collection="list" item="item" index="index"  separator=",">
+            (#{item.channelCode,jdbcType=VARCHAR},
+            #{item.channelName,jdbcType=VARCHAR},
+            #{item.deviceCode,jdbcType=VARCHAR},
+            #{item.channelStatus,jdbcType=BIGINT},
+            #{item.streamType,jdbcType=BIGINT},
+            #{item.maxPreset,jdbcType=BIGINT},
+            #{item.maxPatrol,jdbcType=BIGINT},
+            #{item.facade,jdbcType=BIGINT},
+            #{item.channelType,jdbcType=BIGINT},
+            #{item.visualRange,jdbcType=VARCHAR},
+            #{item.horizRange,jdbcType=VARCHAR},
+            #{item.vertiRange,jdbcType=VARCHAR},
+            NOW(),NOW(),'0')
+        </foreach>
+
+
+    </insert>
+</mapper>

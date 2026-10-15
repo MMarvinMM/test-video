@@ -1,0 +1,26 @@
+DO $$
+DECLARE
+    row record;
+BEGIN
+    -- 假设我们查找所有public模式下，名字以'mytable_'开头的表
+    FOR row IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename LIKE 'polygon_xztb_1%'
+    LOOP
+        -- 为每个表添加一个新的字段
+		EXECUTE format('ALTER TABLE %I ADD COLUMN tbybh varchar(50);', row.tablename);
+        EXECUTE format('ALTER TABLE %I ADD COLUMN tbxhdm varchar(50);', row.tablename);
+        EXECUTE format('ALTER TABLE %I ADD COLUMN tbxhmc varchar(50);', row.tablename);
+        EXECUTE format('ALTER TABLE %I ADD COLUMN zzsxdm varchar(50);', row.tablename);
+        EXECUTE format('ALTER TABLE %I ADD COLUMN zzsxmc varchar(50);', row.tablename);
+        EXECUTE format('ALTER TABLE %I ADD COLUMN frdbs varchar(50);', row.tablename);
+        EXECUTE format('ALTER TABLE %I ADD COLUMN czcsxm varchar(50);', row.tablename);
+        EXECUTE format('ALTER TABLE %I ADD COLUMN mssm varchar(50);', row.tablename);
+        EXECUTE format('ALTER TABLE %I ADD COLUMN hdmc varchar(50);', row.tablename);
+        EXECUTE format('ALTER TABLE %I ADD COLUMN bz varchar(50);', row.tablename);
+		EXECUTE format('ALTER TABLE %I ADD COLUMN xzdwkd float8;', row.tablename);
+		EXECUTE format('ALTER TABLE %I ADD COLUMN gddb int4;', row.tablename);
+		EXECUTE format('ALTER TABLE %I ADD COLUMN sjnf int4;', row.tablename);
+		EXECUTE format('ALTER TABLE %I RENAME COLUMN tkxs TO kcxs', row.tablename);
+		EXECUTE format('ALTER TABLE %I RENAME COLUMN tkmj TO kcmj', row.tablename);
+		RAISE NOTICE '处理表:%  ' , row.tablename;
+    END LOOP;
+END $$;

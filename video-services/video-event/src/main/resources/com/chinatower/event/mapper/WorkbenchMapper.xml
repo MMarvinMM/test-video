@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.WorkbenchMapper">
+
+    <sql id="baseColumns">
+        m.device_code,
+        m.device_status,
+        m.province_code,
+        m.city_code,
+        m.county_code,
+        m.town_code,
+        m.location,
+        m.longitude,
+        m.latitude,
+        m.area_code,
+        m.adm_code,
+        m.manufacturer_code,
+        m.model_code,
+        m.site_code,
+        m.is_cascade,
+        m.collect_type,
+        m.creator,
+        m.create_time,
+        m.modifier,
+        m.update_time
+    </sql>
+
+    <sql id="baseWhere">
+        m.delete_flag = 0
+        and od.delete_flag = 0
+        <if test='deviceCode != null and deviceCode != ""'>
+            and m.device_code like CONCAT('%', #{deviceCode}, '%')
+        </if>
+        <if test='deviceStatus != null'>
+            and m.device_status = #{deviceStatus}
+        </if>
+        <if test='manufacturerCode != null and manufacturerCode != ""'>
+            and m.manufacturer_code = #{manufacturerCode}
+        </if>
+        <if test='modelCode != null and modelCode != ""'>
+            and m.model_code like CONCAT('%', #{modelCode}, '%')
+        </if>
+        <if test='orderStatus == 0'>
+            and od.ord_status in ('0', '1', '2')
+        </if>
+        <if test='orderStatus == 1'>
+            and od.ord_status = '4'
+        </if>
+        <if test='orderStatus == 2'>
+            and od.ord_status = '3'
+        </if>
+        <if test='provinceCode != null and provinceCode != ""'>
+            and m.province_code = #{provinceCode}
+        </if>
+        <if test='cityCode != null and cityCode != ""'>
+            and m.city_code = #{cityCode}
+        </if>
+        <if test='countyCode != null and countyCode != ""'>
+            and m.county_code = #{countyCode}
+        </if>
+        <if test='townCode != null and townCode != ""'>
+            and m.town_code = #{townCode}
+        </if>
+        <if test="modelCodeList != null and modelCodeList.size() >0">
+            and m.manufacturer_code in
+            <foreach collection="modelCodeList" open="(" close=")" separator="," index="index" item="modelCode">
+                #{modelCode}
+            </foreach>
+        </if>
+        <if test="deviceStatusList != null and deviceStatusList.size() >0">
+            and m.device_status in
+            <foreach collection="deviceStatusList" open="(" close=")" separator="," index="index" item="deviceStatus">
+                #{deviceStatus}
+            </foreach>
+        </if>
+        <if test='deptIds !=null and deptIds.size() > 0'>
+            and vod.dept_id in
+            <foreach collection="deptIds" open="(" close=")" separator="," index="index" item="id">
+                #{id}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="getStatisticsDevices"  resultType="java.util.Map" parameterType="com.chinatower.event.vo.entity.AnalysisVO">
+        SELECT count(distinct(dataTable.device_code)) as deviceCountTotal,
+        count(distinct case when dataTable.device_status = 0 then dataTable.device_code end) as devCountOnline,
+        count(distinct case when dataTable.device_status = 1 then dataTable.device_code end) as devCountOffline,
+        count((c.channel_code)) as channelCountTotal,
+        count( case when c.channel_status = 0 then c.channel_code end) as channelCountOnline,
+        count( case when c.channel_status = 1 then c.channel_code end) as channelCountOffline
+        FROM vm_device_info_t dataTable
+        left join vm_channel_info_t c on dataTable.device_code = c.device_code and c.delete_flag = '0'
+        <if test="tenantId != null and tenantId != '' ">
+            left JOIN vm_order_devices od ON od.device_code = dataTable.device_code
+        </if>
+        <if test="screenCodeFlag != null and screenCodeFlag != '' ">
+            left join vm_tower_device_labels_rel lab on lab.device_code = dataTable.device_code
+        </if>
+        <where>
+            <if test="tenantId != null and tenantId != '' ">
+                and od.tenant_id = #{tenantId} and od.delete_flag = '0' and od.ord_status IN (0, 1, 2)
+            </if>
+            <if test="screenCodeFlag != null and screenCodeFlag != '' ">
+                <if test="labelId != null and labelId != '' ">
+                    and lab.label_id = #{labelId}
+                </if>
+                <if test='labelIdList != null and labelIdList.size() > 0'>
+                    and lab.label_id in
+                    <foreach collection="labelIdList" item="item" index="index" open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+                </if>
+            </if>
+            <if test='areaCodeLists != null and areaCodeLists.size() > 0'>
+                and (
+                dataTable.province_id in
+                <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                or
+                dataTable.city_id in
+                <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                or
+                dataTable.county_id in
+                <foreach collection="areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                or
+                dataTable.town_code in
+                <foreach collection="areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            and dataTable.delete_flag = '0'
+            <if test="deviceCodeList!= null and deviceCodeList.size() > 0 ">
+                AND dataTable.device_code in
+                <foreach collection="deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                    #{deviceCode}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+
+    <select id="getIotDeviceStatisticsOrder"
+            resultType="com.chinatower.event.vo.entity.IotDeviceStatisticsVo">
+        SELECT
+            COUNT(
+                    IF
+                    ( a.STATUS = 0, 1, NULL )) AS iotDeviceOnlineCount,
+            COUNT(
+                    IF
+                    ( a.STATUS = 1, 1, NULL )) AS iotDeviceOfflineCount,
+            COUNT( a.STATUS ) AS iotDeviceCount
+        FROM
+            (
+                SELECT DISTINCT
+                    m.device_code,
+                    m.device_status as STATUS
+                FROM vm_iot_device_t m
+                         inner JOIN ( SELECT DISTINCT device_code FROM vm_order_sensor_devices WHERE ord_status IN ( '0', '1', '2' ) AND delete_flag = 0 ) t2 ON m.device_code = t2.device_code
+                where  m.delete_flag = '0' and m.category_code = 2
+        <if test="param.deviceCodeList!= null and param.deviceCodeList.size() > 0 ">
+            AND m.device_code in
+            <foreach collection="param.deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                #{deviceCode}
+            </foreach>
+        </if>
+) a
+
+    </select>
+
+    <select id="getUavDeviceStatisticsByType" parameterType="com.chinatower.event.vo.entity.AnalysisVO" resultType="com.chinatower.event.vo.entity.DeviceTypeStatisticsVO">
+        SELECT
+            d.dict_value AS categoryCode,
+            d.dict_label AS deviceTypeName,
+            IFNULL(COUNT(m.device_type), 0) AS deviceTypeNum
+        FROM
+            sys_dict_data d  LEFT JOIN  vm_uav_device_info_t m ON d.dict_value = m.device_type
+                AND m.delete_flag = '0'
+                AND m.device_type IS NOT NULL
+                AND m.device_type != ''
+        WHERE
+            d.dict_type = 'uav_device_type'
+        <if test="param.deviceCodeList!= null and param.deviceCodeList.size() > 0 ">
+            AND m.device_code in
+            <foreach collection="param.deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                #{deviceCode}
+            </foreach>
+        </if>
+        GROUP BY
+            d.dict_value
+        ORDER BY
+            deviceTypeNum desc
+    </select>
+
+    <select id="getHornDeviceStatisticsByType" parameterType="com.chinatower.event.vo.entity.AnalysisVO" resultType="com.chinatower.event.vo.entity.DeviceTypeStatisticsVO">
+        SELECT
+            d.dict_value AS categoryCode,
+            d.dict_label AS deviceTypeName,
+            IFNULL(COUNT(m.device_type), 0) AS deviceTypeNum
+        FROM
+            sys_dict_data d  LEFT JOIN  vm_horn_device_info_t m ON d.dict_value = m.device_type
+                AND m.delete_flag = '0'
+                AND m.device_type IS NOT NULL
+                AND m.device_type != ''
+        WHERE
+            d.dict_type = 'broadcast_device_type'
+        <if test="param.deviceCodeList!= null and param.deviceCodeList.size() > 0 ">
+            AND m.device_code in
+            <foreach collection="param.deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                #{deviceCode}
+            </foreach>
+        </if>
+        GROUP BY
+            d.dict_value
+        ORDER BY
+            deviceTypeNum desc
+    </select>
+
+    <select id="getIotDeviceStatisticsByType" parameterType="com.chinatower.event.vo.entity.AnalysisVO" resultType="com.chinatower.event.vo.entity.DeviceTypeStatisticsVO">
+        SELECT
+            d.dict_value AS categoryCode,
+            d.dict_label AS deviceTypeName,
+            IFNULL(COUNT(m.device_type), 0) AS deviceTypeNum
+        FROM
+            sys_dict_data d  LEFT JOIN  vm_iot_device_t m ON d.dict_value = m.device_type
+                AND m.delete_flag = '0'
+                AND m.category_code = 2
+                AND m.device_type IS NOT NULL
+                AND m.device_type != ''
+        WHERE
+            d.dict_type = 'iot_device_model_type'
+        <if test="param.deviceCodeList!= null and param.deviceCodeList.size() > 0 ">
+            AND m.device_code in
+            <foreach collection="param.deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                #{deviceCode}
+            </foreach>
+        </if>
+        GROUP BY
+            d.dict_value
+        ORDER BY
+            deviceTypeNum desc
+    </select>
+
+    <select id="getRadarDeviceStatisticsByType" parameterType="com.chinatower.event.vo.entity.AnalysisVO" resultType="com.chinatower.event.vo.entity.DeviceTypeStatisticsVO">
+        SELECT
+            d.dict_value AS categoryCode,
+            d.dict_label AS deviceTypeName,
+            IFNULL(COUNT(m.device_type), 0) AS deviceTypeNum
+        FROM
+            sys_dict_data d  LEFT JOIN  vm_iot_device_t m ON d.dict_value = m.device_type
+                AND m.delete_flag = '0'
+                AND m.category_code = 1
+                AND m.device_type IS NOT NULL
+                AND m.device_type != ''
+        WHERE
+            d.dict_type = 'radar_device_type'
+        <if test="param.deviceCodeList!= null and param.deviceCodeList.size() > 0 ">
+            AND m.device_code in
+            <foreach collection="param.deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                #{deviceCode}
+            </foreach>
+        </if>
+        GROUP BY
+            d.dict_value
+        ORDER BY
+            deviceTypeNum desc
+    </select>
+
+    <select id="getHornDeviceStatistics" resultType="com.chinatower.event.vo.entity.HornDeviceStatisticsVo"
+            parameterType="com.chinatower.event.vo.entity.AnalysisVO">
+        SELECT
+        COUNT(
+        IF
+        ( a.STATUS = 0, 1, NULL )) AS hornDeviceOfflineCount,
+        COUNT(
+        IF
+        ( a.STATUS = 1, 1, NULL )) AS hornDeviceFreeCount,
+        COUNT(
+        IF
+        ( a.STATUS = 2, 1, NULL )) AS hornDeviceWorkCount,
+        COUNT(
+        IF
+        ( a.STATUS = 3, 1, NULL )) AS hornDeviceFailCount,
+        COUNT(
+        IF
+        ( a.STATUS = 4, 1, NULL )) AS hornDeviceNoConnectCount,
+        COUNT(
+        IF
+        ( a.STATUS = 1 OR a.STATUS = 2 OR a.STATUS = 3, 1, NULL )) AS hornDeviceOnlineCount,
+        COUNT( a.deviceCode ) AS hornDeviceCount from (
+        SELECT distinct
+        m.device_code deviceCode,
+        m.device_status STATUS
+        from vm_horn_device_info_t m
+        <if test="param.ifOrderFlag != null and param.ifOrderFlag == '1'.toString() ">
+            inner JOIN ( SELECT DISTINCT device_code FROM vm_order_horn_devices WHERE ord_status IN ( '0', '1', '2' ) AND delete_flag = 0 ) t2 ON m.device_code = t2.device_code
+        </if>
+        where m.delete_flag = 0
+        <if test='param.deviceType != null and param.deviceType != "" '>
+            and m.device_type = #{param.deviceType}
+        </if>
+        <if test='param.areaCodeLists != null and param.areaCodeLists.size() > 0'>
+            and (
+            m.province_code in
+            <foreach collection="param.areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            m.city_code in
+            <foreach collection="param.areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            m.county_code in
+            <foreach collection="param.areaCodeLists" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            or
+            m.town_code in
+            <foreach collection="param.areaCodeLists" item="item" index="index" open="(" separator="," close=") ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="param.deviceCodeList!= null and param.deviceCodeList.size() > 0 ">
+            AND m.device_code in
+            <foreach collection="param.deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                #{deviceCode}
+            </foreach>
+        </if>
+        ) a
+        <if test='param.tenantId != null and param.tenantId != "" '>
+            where
+            exists(select od.id from vm_order_horn_devices od join sys_tenant_info ti on od.tenant_id =
+            ti.tenant_id
+            where od.device_code = a.deviceCode and od.delete_flag ='0' and ti.del_flag = '0'
+            and od.tenant_id = #{param.tenantId}
+            )
+        </if>
+    </select>
+
+    <select id="getRadarDeviceStatisticsOrder"
+            resultType="com.chinatower.event.vo.entity.RadarDeviceStatisticsVo">
+        SELECT
+            COUNT(
+                    IF
+                    ( a.STATUS = 0, 1, NULL )) AS radarDeviceOnlineCount,
+            COUNT(
+                    IF
+                    ( a.STATUS = 1, 1, NULL )) AS radarDeviceOfflineCount,
+            COUNT( a.STATUS ) AS radarDeviceCount
+        FROM
+            (
+                SELECT DISTINCT
+                    m.device_code,
+                    m.device_status as STATUS
+                FROM vm_iot_device_t m
+                         inner JOIN ( SELECT DISTINCT device_code FROM vm_order_sensor_devices WHERE ord_status IN ( '0', '1', '2' ) AND delete_flag = 0 ) t2 ON m.device_code = t2.device_code
+                where m.category_code = 1  and m.delete_flag = '0'
+        <if test="param.deviceCodeList!= null and param.deviceCodeList.size() > 0 ">
+            AND m.device_code in
+            <foreach collection="param.deviceCodeList" item="deviceCode" index="index" open="(" close=")" separator=",">
+                #{deviceCode}
+            </foreach>
+        </if>
+              ) a
+    </select>
+
+    <select id="getRecorderDeviceStatistics" resultType="com.chinatower.platform.entity.device.RecorderDeviceDTO">
+        select * from (
+        select distinct <include refid="baseColumns"/>,
+        <if test="userLatitude != null and userLatitude != '' and userLongitude != null and userLongitude != ''">
+            CAST(ST_DISTANCE(POINT(#{userLongitude},#{userLatitude}),POINT(m.longitude,m.latitude))*111195 as DECIMAL(65,2)) as distance,
+        </if>
+        pro.area_name as provinceName,
+        city.area_name as cityName,
+        county.area_name as countyName,
+        town.area_name as townName,
+        case when IFNULL(dct.user_device_coll_id,0) = 0 then '0' else '1' end isMonitor,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then m.device_name else rel.device_name end ) device_name,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '0'
+        WHEN od.ord_status = '3' THEN '2'
+        WHEN od.ord_status = '4' THEN '1'
+        END) orderStatus,
+        (CASE WHEN od.ord_status in ('0','1','2') THEN '有效'
+        WHEN od.ord_status = '3' THEN '退订'
+        WHEN od.ord_status = '4' THEN '失效'
+        END) orderStatusName
+        from vm_recorder_device_info_t m
+        join vm_order_recorder_devices od on od.device_code = m.device_code
+        left join vm_tenant_device_common_rel_t rel ON rel.device_code = m.device_code
+        and rel.tenant_id = od.tenant_id
+        and rel.industry_code = od.industry_code
+        and rel.delete_flag = '0'
+        and rel.device_type = '3'
+        left JOIN vm_user_device_collection_t dct ON dct.coll_obj_code = m.device_code
+        and dct.coll_obj_type = '12' AND dct.user_id = #{userId}
+        left join sys_area pro ON pro.area_code = m.province_code
+        left join sys_area city ON city.area_code = m.city_code
+        left join sys_area county ON county.area_code = m.county_code
+        left join sys_area town ON town.area_code = m.town_code
+        <if test='deptIds !=null and deptIds.size() > 0'>
+            LEFT JOIN vm_organ_device_rel_t vod
+            on vod.device_code = m.device_code and vod.delete_flag = '0' and vod.tenant_id = od.tenant_id
+            and vod.device_type = '13'
+        </if>
+        <where>
+            <include refid="baseWhere"/>
+            <if test='isMonitorFlag != null and isMonitorFlag != "" and isMonitorFlag == "0" '>
+                and dct.user_device_coll_id IS NOT NULL
+            </if>
+            <if test='deviceCodeList !=null and deviceCodeList.size() > 0'>
+                and m.device_code in
+                <foreach collection="deviceCodeList" open="(" close=")" separator="," index="index" item="item">
+                    #{item}
+                </foreach>
+            </if>
+            ${dataScope}
+        </where>
+        ORDER BY field(od.ord_status,1,0,2,4,3)	ASC
+        ) recorder
+        <where>
+            1 = 1
+            <if test='deviceName != null and deviceName != ""'>
+                and recorder.device_name like CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test='codeOrName != null and codeOrName != ""'>
+                and recorder.device_code like CONCAT('%', #{codeOrName}, '%') or recorder.device_name like CONCAT('%', #{codeOrName}, '%')
+            </if>
+        </where>
+        <choose>
+            <when test='appFlag != null and appFlag != "" and appFlag == "1"'>
+                <choose>
+                    <when test="userLatitude != null and userLatitude != '' and userLongitude != null and userLongitude != ''">
+                        order by recorder.distance,recorder.device_status,cast(recorder.device_code as UNSIGNED),recorder.device_code
+                    </when>
+                    <otherwise>
+                        order by recorder.device_status,cast(recorder.device_code as UNSIGNED),recorder.device_code
+                    </otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                <if test="orderField == null ">
+                    order by recorder.province_code, recorder.city_code, recorder.county_code,recorder.device_code
+                </if>
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

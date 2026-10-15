@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.RadarDeviceRelMapper">
+
+    <select id="getDeviceListByRadar" resultType="com.chinatower.device.dto.RadarDeviceRelVO"
+    parameterType="com.chinatower.device.dto.RadarDeviceRelDTO">
+        select distinct info.device_code,
+        info.device_name,
+        info.latitude,
+        info.longitude,
+        info.height,
+        info.model_code as modelId,
+        data.DICT_LABEL as modelName,
+        info.device_model_code,
+        info.location
+        <if test='enablePage != null and "true".toString() == enablePage.toString()'>
+            ,
+            oc.tenant_id,
+            oc.customer_name as tenantName
+        </if>
+        from
+        vm_radar_device_rel_t rel
+        inner join vm_device_info_t info on rel.device_rel_code = info.device_code
+        inner join vm_order_devices osd on osd.device_code = info.device_code
+        and rel.tenant_id = osd.tenant_id and rel.industry_code = osd.industry_code
+        LEFT JOIN vm_order_customer oc on osd.order_code = oc.order_code
+        left join sys_dict_data data on info.model_code = data.DICT_VALUE
+        and data.DICT_TYPE = '103'
+        <where>
+            and info.delete_flag = '0'
+            and rel.tenant_id = #{tenantId}
+            and rel.radar_device_code = #{radarDeviceCode}
+            <if test='enablePage != null and "true".toString() == enablePage.toString()'>
+                and oc.delete_flag = '0' and oc.ord_status in (0,1,2) and osd.delete_flag = '0'
+                ${dataScope}
+            </if>
+            <if test='tenantIdOrName != null and tenantIdOrName != ""'>
+                and (oc.tenant_id  like CONCAT('%', #{tenantIdOrName}, '%')
+                or oc.customer_name like CONCAT('%', #{tenantIdOrName}, '%'))
+            </if>
+            <if test='deviceCode != null and deviceCode != ""'>
+                and info.device_code  like CONCAT('%', #{deviceCode}, '%')
+            </if>
+            <if test='deviceName != null and deviceName != ""'>
+                and info.device_name  like CONCAT('%', #{deviceName}, '%')
+            </if>
+            <if test='industryCode != null and industryCode != ""'>
+                and rel.industry_code = #{industryCode}
+            </if>
+        </where>
+    </select>
+
+    <insert id="saveRelBatch" parameterType="java.util.List">
+        insert into vm_radar_device_rel_t(radar_device_code,device_rel_code,tenant_id,industry_code,app_ver_code) values
+        <foreach collection ="radarDeviceRelDOList" item="radarDeviceRelDO" index="index" separator =",">
+            (#{radarDeviceRelDO.radarDeviceCode}, #{radarDeviceRelDO.deviceRelCode}, #{radarDeviceRelDO.tenantId}, #{radarDeviceRelDO.industryCode}, #{radarDeviceRelDO.appVerCode})
+        </foreach>
+    </insert>
+
+</mapper>

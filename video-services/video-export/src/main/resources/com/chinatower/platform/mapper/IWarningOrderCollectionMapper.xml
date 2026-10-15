@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.IWarningOrderCollectionMapper">
+
+    <!--
+      方案 G V2.0：告警类型 ∧ 下游任务（导出模块本地片段）
+    -->
+    <sql id="warningTypeIdFilter">
+        <if test="param.warningTypeIdList != null and param.warningTypeIdList.size()>0 ">
+            AND ${alias}.warning_type_id IN
+            <foreach collection="param.warningTypeIdList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <sql id="subScenesOnlyFilter">
+        <if test="param.subSceneIdList != null and param.subSceneIdList.size()>0 ">
+            AND (
+                <foreach collection="param.subSceneIdList" item="item" index="index" separator=" OR ">
+                    JSON_CONTAINS(${alias}.sub_scenes, CAST(CONCAT('"', #{item}, '"') AS JSON))
+                </foreach>
+            )
+        </if>
+    </sql>
+
+    <sql id="queryAlarmOrder">
+        <if test="param.alarmBody != null and param.alarmBody != '' ">
+            and t.alarm_body like concat('%', #{param.alarmBody}, '%')
+        </if>
+        <if test="param.deviceCode != null and param.deviceCode.size()>0 ">
+            and t.device_code in
+            <foreach collection="param.deviceCode" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.ifTimeOut == "1"'>
+            <!-- 已超期 -->
+            AND t.time_limit IS NOT NULL AND (TIMESTAMPDIFF(SECOND,t.flow_node_time,NOW()) >= t.time_limit)
+        </if>
+        <if test='param.ifTimeOut == "2"'>
+            <!-- 未超期 -->
+            AND (t.time_limit IS NULL OR (TIMESTAMPDIFF(SECOND,t.flow_node_time,NOW()) <![CDATA[<]]> t.time_limit))
+        </if>
+        <if test="param.orderId != null and param.orderId != '' ">
+            and t.warning_order_id like concat('%', #{param.orderId}, '%')
+        </if>
+        <if test="param.orderStatus != null and param.orderStatus != '' ">
+            and t.order_status = #{param.orderStatus}
+        </if>
+        <if test="param.cityId != null and param.cityId != '' ">
+            and t.city_code = #{param.cityId}
+        </if>
+        <if test="param.countyId != null and param.countyId != '' ">
+            and t.county_code = #{param.countyId}
+        </if>
+        <if test="param.provinceId != null and param.provinceId != '' ">
+            and t.province_code = #{param.provinceId}
+        </if>
+        <if test="param.warningSource != null and param.warningSource != '' ">
+            and t.warning_source = #{param.warningSource}
+        </if>
+        <if test="param.warningTypeId != null and param.warningTypeId != '' ">
+            and t.warning_type_id = #{param.warningTypeId}
+        </if>
+
+        <if test="param.emergencyLevel != null and param.emergencyLevel != '' ">
+            and t.emergency_level like concat('%', #{param.emergencyLevel}, '%')
+        </if>
+        <if test="param.alarmTimeStart != null">
+            and t.alarm_time &gt;= #{param.alarmTimeStart}
+        </if>
+        <if test="param.alarmTimeEnd != null">
+            and t.alarm_time &lt;= #{param.alarmTimeEnd}
+        </if>
+        <if test="param.notInOrderStatus != null and param.notInOrderStatus.size() > 0 ">
+            and t.order_status not in
+            <foreach collection="param.notInOrderStatus" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='param.searchType != null and param.searchType == "1" and param.warningOrderStatus != null and param.warningOrderStatus.size() > 0'>
+            <!-- 待办 -->
+            and t.order_status in
+            <foreach collection="param.warningOrderStatus" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            <!-- 20211126 zzh 增加空串判断 -->
+            and (t.process_id is null or t.process_id = '' or t.process_id = #{param.userId})
+        </if>
+        <!-- 20211126 zzh 增加已办条件 -->
+        <if test='param.searchType == "2"'>
+            and t.user_record like concat('%', #{param.userId}, '%')
+        </if>
+        <if test='param.keyword != null and param.keyword != ""'>
+            AND (t.warning_order_id like concat('%',#{param.keyword,jdbcType=VARCHAR},'%') OR t.alarm_body like concat('%',#{param.keyword,jdbcType=VARCHAR},'%'))
+        </if>
+        <!-- 20211208 zzh 增加告警重要等级 -->
+        <if test='param.importanceLevel != null and param.importanceLevel != ""'>
+            AND t.importance_level = #{param.importanceLevel}
+        </if>
+        <!-- 20211214 zzh 铁塔视角增加租户筛选条件 -->
+        <!--<if test='param.tenantId != null and param.tenantId !=""'>
+            AND t.tenant_id = #{param.tenantId,jdbcType=CHAR}
+        </if>-->
+
+        <if test='param.judgeResult != null and param.judgeResult !=""'>
+            AND t.judge_result = #{param.judgeResult,jdbcType=CHAR}
+        </if>
+
+
+        <if test="param.orderStatusList != null and param.orderStatusList.size()>0 ">
+            and (t.order_status in
+            <foreach collection="param.orderStatusList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            <if test="param.enableAcceptanceMode != null and param.enableAcceptanceMode != '' ">
+                or t.enable_acceptance_mode = #{param.enableAcceptanceMode}
+            </if>
+            <if test="param.enableAcceptanceMode == null or param.enableAcceptanceMode == '' ">
+                and t.enable_acceptance_mode != '1'
+            </if>
+            )
+        </if>
+        <if test="param.warningOrderIds != null and param.warningOrderIds.size()>0 ">
+            and t.warning_order_id in
+            <foreach collection="param.warningOrderIds" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test='(param.confidenceLevelMin != null and param.confidenceLevelMin !="") or (param.confidenceLevelMax != null and param.confidenceLevelMax !="") '>
+            <!--AND dataTable.confidence_level_min <![CDATA[>=]]> #{param.confidenceLevel}-->
+            AND (((t.comp_confidence_level is null or t.comp_confidence_level = '')
+
+            <if test='param.confidenceLevelMin != null and param.confidenceLevelMin !=""'>
+                and  #{param.confidenceLevelMin}
+                <if test='param.maxChar != null and param.maxChar !="" and param.minChar == "100" '>
+                    <![CDATA[<]]>
+                </if>
+                <if test='param.maxChar != null and param.maxChar !="" and param.minChar == "101" '>
+                    <![CDATA[<=]]>
+                </if>
+                t.confidence_level_max
+            </if>
+
+            <if test='param.confidenceLevelMax != null and param.confidenceLevelMax !=""'>
+                and t.confidence_level_max
+                <if test='param.maxChar != null and param.maxChar !="" and param.maxChar == "100" '>
+                    <![CDATA[<]]>
+                </if>
+                <if test='param.maxChar != null and param.maxChar !="" and param.maxChar == "101" '>
+                    <![CDATA[<=]]>
+                </if>
+                #{param.confidenceLevelMax}
+            </if>
+            )
+            or
+            (
+            <if test='param.confidenceLevelMin != null and param.confidenceLevelMin !=""'>#{param.confidenceLevelMin}
+                <if test='param.maxChar != null and param.maxChar !="" and param.minChar == "100" '>
+                    <![CDATA[<]]>
+                </if>
+                <if test='param.maxChar != null and param.maxChar !="" and param.minChar == "101" '>
+                    <![CDATA[<=]]>
+                </if>
+                t.comp_confidence_level
+            </if>
+            <if test='param.confidenceLevelMin != null and param.confidenceLevelMin !="" and param.confidenceLevelMax != null and param.confidenceLevelMax !=""'>
+                and
+            </if>
+            <if test='param.confidenceLevelMax != null and param.confidenceLevelMax !=""'>
+                t.comp_confidence_level
+                <if test='param.maxChar != null and param.maxChar !="" and param.maxChar == "100" '>
+                    <![CDATA[<]]>
+                </if>
+                <if test='param.maxChar != null and param.maxChar !="" and param.maxChar == "101" '>
+                    <![CDATA[<=]]>
+                </if>
+                #{param.confidenceLevelMax}
+            </if>
+            and t.comp_confidence_level is not null and t.comp_confidence_level != '')
+            )
+        </if>
+        <if test='param.warningSource != null and param.warningSource != ""'>
+            and t.warning_source = #{param.warningSource}
+        </if>
+        <if test="param.warningSourceList != null and param.warningSourceList.size()>0 ">
+            and t.warning_source in
+            <foreach collection="param.warningSourceList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <!-- 方案 G V2.0：告警类型 ∧ 下游任务 -->
+        <include refid="warningTypeIdFilter">
+            <property name="alias" value="t"/>
+        </include>
+        <include refid="subScenesOnlyFilter">
+            <property name="alias" value="t"/>
+        </include>
+        <if test="param.devList != null and param.devList.size()>0 ">
+            and
+            <foreach collection="param.devList" item="item" index="index" open="(" close=")" separator="or">
+                t.device_code = #{item.deviceCode}
+            </foreach>
+        </if>
+        <if test='param.orgIdList != null and param.orgIdList.size() > 0'>
+            and(
+            <if test='param.satelliteList != null and param.satelliteList.size() > 0'>
+                (t.county_code in
+                <foreach collection="param.satelliteList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item.countyId}
+                </foreach>
+                and t.warning_source = '9')
+                or
+            </if>
+            <if test='param.radarList != null and param.radarList.size() > 0'>
+                (t.county_code in
+                <foreach collection="param.radarList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item.countyId}
+                </foreach>
+                and t.warning_source = '10')
+                or
+            </if>
+            <if test='param.deviceCodeList != null and param.deviceCodeList.size() > 0'>
+                (t.device_code in
+                <foreach collection="param.deviceCodeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+                and t.warning_source in ('1','3','4','8'))
+            </if>
+            <if test='param.orgUserListString != null and param.orgUserListString !=""'>
+                <if test='(param.satelliteList != null and param.satelliteList.size() > 0)
+                or (param.radarList != null and param.radarList.size() > 0)
+                or (param.deviceCodeList != null and param.deviceCodeList.size() > 0)'>or</if>
+                (t.warning_source = '2'
+                AND FIND_IN_SET(t.find_name, #{param.orgUserListString}))
+            </if>
+            )
+        </if>
+        <if test='param.cameraAlarmType != null and param.cameraAlarmType != ""'>
+            and t.camera_alarm_type = #{param.cameraAlarmType}
+        </if>
+        <if test='param.isSecondJudge != null and param.isSecondJudge != ""'>
+            and t.is_second_judge = #{param.isSecondJudge} and t.warning_source = '4'
+        </if>
+        <if test='param.secondJudgeResult != null and param.secondJudgeResult != ""'>
+            and t.second_judge_result = #{param.secondJudgeResult}
+        </if>
+        <if test='param.isSecondIdentify != null and param.isSecondIdentify !=""'>
+            AND t.is_second_identify = #{param.isSecondIdentify,jdbcType=CHAR}
+        </if>
+        <if test='param.secondIdentifyResult != null and param.secondIdentifyResult !=""'>
+            AND t.second_identify_result = #{param.secondIdentifyResult,jdbcType=CHAR}
+        </if>
+        <if test="param.iotDeviceCode != null and param.iotDeviceCode.size()>0 ">
+            and t.device_code in
+            <foreach collection="param.iotDeviceCode" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="param.alarmReasonList != null and param.alarmReasonList.size()>0 ">
+            and t.alarm_reason in
+            <foreach collection="param.alarmReasonList" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="qryWarningOrderCollection"
+            parameterType="com.chinatower.platform.dto.AlarmOrderDTO"
+            resultType="com.chinatower.event.entity.vo.WarningOrderListVO">
+        SELECT device_code,device_name,channel_code,channel_name,
+        t.warning_order_id as orderId,t.link_id AS linkId,t.warning_source,t.warning_type_id,t.alarm_time,t.tenant_id,t.tenant_name,t.longitude,
+        t.latitude,t.alarm_body,t.remark,t.description,t.address,t.process_id,t.process_name,t.emergency_level,t.order_status,
+        t.flow_node_time,t.find_name,t.find_mobile,t.file_img_url_src as imgUrl,t.create_time as createDate,t.time_limit,t.grid_name,
+        t.judge_time as checkTime,t.duplicate_order_id,t.group_id,t.confidence_level_min,t.confidence_level,t.comp_confidence_level,
+        t.importance_level,t.judge_result,
+        IF(t.warning_source = '4',t.is_second_judge,'') as is_second_judge,
+        IF(t.warning_source = '4',t.second_judge_result,'') as second_judge_result,
+        t.file_img_url_icon,
+        t.front_alarm_pic_url,
+        t.province_name AS provinceName,
+        t.city_name AS cityName,
+        t.county_name AS countyName,
+        t.town_name AS townName,
+        IFNULL(t.ptz_p,'') as ptzP,
+        IFNULL(t.ptz_t,'') as ptzT,
+        IFNULL(t.ptz_z,'') as ptzZ,
+        t.preset_id as presetId,
+        t.alarm_reason as alarmReason,
+        t.enable_acceptance_mode as enableAcceptanceMode
+        FROM vm_warning_order_collection_t t
+        where t.delete_flag = '0' and t.collection_creator = #{param.collectionCreator,jdbcType=CHAR}
+        ${param.dataScope}
+        <include refid="queryAlarmOrder"></include>
+        <choose>
+            <when test="param.sortName == 'alarmTime'">
+                order by t.alarm_time
+                <if test="param.sort == 'desc'">
+                    desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc
+                </if>
+            </when>
+            <when test="param.sortName == 'importanceLevel'">
+                order by t.importance_level
+                <if test="param.sort == 'desc'">
+                    desc,t.alarm_time desc
+                </if>
+                <if test="param.sort == 'asc'">
+                    asc,t.alarm_time desc
+                </if>
+            </when>
+            <otherwise>
+                order by t.alarm_time desc
+            </otherwise>
+        </choose>
+    </select>
+
+</mapper>

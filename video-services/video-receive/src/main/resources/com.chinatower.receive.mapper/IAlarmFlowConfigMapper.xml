@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.receive.mapper.IAlarmFlowConfigMapper">
+
+	<select id="queryAllNextFlowLink" parameterType="com.chinatower.event.entity.dto.AlarmFlowConfigModel" resultType="com.chinatower.event.entity.dto.FlowModel">
+		select * from (
+		select t1.*,
+		if(find_in_set(t1.preLink, @pids) > 0, @pids := concat(@pids, ',', t1.linkId), 0) as ischild
+		from (
+		select
+		ftl.cur_link as linkId,
+		ftl.pre_link as preLink,
+		ftl.next_link as nextLink,
+		ftl.link_type as linkType,
+		fla.user_type as userType,
+		(select group_concat(role_id) from vm_flow_link_role as flr WHERE flr.link_id = fla.link_id and flr.attr_id = fla.id) as roleId,
+		fla.msg_notify_type as msgNotifyType,
+		fla.leader_flag as leaderFlag,
+		fla.sign_flag as signFlag,
+		fla.rollback_flag as rollbackFlag,
+		(select link_name from vm_flow_link_config where link_id = fla.link_id) as linkName,
+		ft.flow_name as flowName,
+		fla.time_limit as timeLimit,
+		if(fla.user_type ='1',(select flr.org_id from vm_flow_link_role as flr WHERE flr.link_id = fla.link_id and flr.attr_id = fla.id),(select flu.org_id from vm_flow_link_user as flu WHERE flu.link_id = fla.link_id and flu.attr_id = fla.id)) as orgId,
+		fla.alarm_flow_id as flowId,
+		fla.alarm_flow_id as alarmFlowId,
+		(select group_concat(user_id) from vm_flow_link_user as flu WHERE flu.link_id = fla.link_id and flu.attr_id = fla.id) as userId,
+		fla.id as flowLinkId
+		from vm_flow_link_attr as fla
+		INNER JOIN vm_flow_template_link as ftl on fla.link_id = ftl.cur_link and fla.template_id = ftl.template_id
+		left join vm_flow_template as ft on fla.template_id = ft.template_id
+		where fla.alarm_flow_id = #{id}
+		<if test="templateId != null and templateId != ''">
+			AND fla.template_id =  #{templateId}
+		</if>
+		<if test="tenantId != null and tenantId != ''">
+			AND fla.tenant_id =  #{tenantId}
+		</if>
+		order by ftl.pre_link, ftl.cur_link
+		) t1,
+		(select @pids := #{linkId} linkId) t2
+		) t3 where ischild != 0
+	</select>
+
+	<select id="queryFlowLink" parameterType="com.chinatower.event.entity.dto.AlarmFlowConfigModel" resultType="com.chinatower.event.entity.dto.FlowModel">
+		SELECT if(a.turn_flag is null ,'0',a.turn_flag) turnFlag,b.* from
+		(select
+		ftl.cur_link as linkId,
+		ftl.cur_link as curLink,
+		ftl.pre_link as preLink,
+		ftl.next_link as nextLink,
+		ftl.link_type as linkType,
+		fla.user_type as userType,
+		ftl.template_id  templateId,
+		fla.data_filter_permiss as dataFilterPermiss,
+		fla.custom_admin as customAdmin,
+		<if test="gridFlag != null and gridFlag != ''">
+			(select group_concat(DISTINCT(role_id)) from vm_flow_link_role as flr WHERE flr.link_id = fla.link_id and
+			flr.attr_id = fla.id and flr.grid_sign ='0') as roleId,
+			(select group_concat(DISTINCT(user_id)) from vm_flow_link_user as flu WHERE flu.link_id = fla.link_id and
+			flu.attr_id = fla.id and flu.grid_sign ='0') as userId,
+		</if>
+		<if test="gridFlag == null or gridFlag == ''">
+			(select group_concat(DISTINCT(role_id)) from vm_flow_link_role as flr WHERE flr.link_id = fla.link_id and
+			flr.attr_id = fla.id) as roleId,
+			(select group_concat(DISTINCT(user_id)) from vm_flow_link_user as flu WHERE flu.link_id = fla.link_id and
+			flu.attr_id = fla.id ) as userId,
+		</if>
+		fla.msg_notify_type as msgNotifyType,
+		fla.leader_flag as leaderFlag,
+		fla.sign_flag as signFlag,
+		fla.rollback_flag as rollbackFlag,
+		ftl.real_link_Type as realLinkType,
+		if(fla.link_alias is null,(select link_name from vm_flow_link_config where link_id = fla.link_id),fla.link_alias) as linkName,
+		ft.flow_name as flowName,
+		fla.time_limit as timeLimit,
+		fla.alarm_flow_id as flowId,
+		fla.alarm_flow_id as alarmFlowId,
+		fla.id as attrId,
+		fla.enable_acceptance_mode as enableAcceptanceMode,
+		fla.time_limit_acceptance as timeLimitAcceptance,
+		fla.id as flowLinkId
+		from vm_flow_link_attr as fla
+		INNER JOIN vm_flow_template_link as ftl on fla.link_id = ftl.cur_link and fla.template_id = ftl.template_id
+		left join vm_flow_template as ft on fla.template_id = ft.template_id
+		where fla.alarm_flow_id = #{id}
+		<if test="linkId != null and linkId != ''">
+			and fla.link_id = #{linkId}
+		</if>
+		<if test="templateId != null and templateId != ''">AND fla.template_id = #{templateId}
+		</if>
+		<if test="tenantId != null and tenantId != ''">
+			AND fla.tenant_id =  #{tenantId}
+		</if>
+		<if test="linkList != null and linkList.size() > 0 ">
+			and fla.link_id in
+			<foreach collection="linkList" item="curLink" index="index" open="(" close=")" separator=",">
+				#{curLink}
+			</foreach>
+		</if>) b LEFT JOIN vm_flow_link_attr a on b.preLink = a.link_id and b.flowId =a.alarm_flow_id and b.templateId = a.template_id
+	</select>
+</mapper>

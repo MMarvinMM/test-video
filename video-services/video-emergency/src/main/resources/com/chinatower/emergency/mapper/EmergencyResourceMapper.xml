@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.emergency.mapper.EmergencyResourceMapper">
+
+
+    <!--获取应急资源树(tree格式用)-->
+    <select id="getEmergencyResourceTree" parameterType="com.chinatower.emergency.dto.EmergencyResourceVO" resultType="com.chinatower.bdm.api.entity.TreeSelectByBdm">
+        SELECT
+        distinct
+        d.RESOURCE_ID AS id,
+        d.RESOURCE_NAME AS label,
+        d.RESOURCE_TYPE_ID as pid,
+        '1' as type,
+        '' as icon,
+        d.resource_property
+        FROM
+        vm_emergency_resource_info t1
+        left join resource_conf d on t1.resource_id = d.resource_id
+        left join resource_type z on d.resource_type_id=z.resource_type_id and d.tenant_id = z.tenant_id and d.industry_code = z.industry_code
+        where
+        t1.delete_flag = 0 and d.DELETE_FLAG = 0 and z.delete_flag = 0
+        and t1.import_flag = 0
+        and d.status='0'
+        and d.tenant_id = #{tenantId,jdbcType=VARCHAR}
+        and d.industry_code = #{industryCode,jdbcType=VARCHAR}
+        <if test="eventCode != null and eventCode != ''">
+            AND t1.event_code = #{eventCode}
+        </if>
+        <if test="stageId != null and stageId != ''">
+            AND t1.stage_id = #{stageId}
+        </if>
+        <if test="taskId != null and taskId != ''">
+            AND t1.task_id = #{taskId}
+        </if>
+        <if test="resourceId != null and resourceId != ''">
+            AND t1.resource_id = #{resourceId}
+        </if>
+        <if test='dataScope != null and dataScope != ""'>
+            ${dataScope}
+        </if>
+        union all
+        SELECT
+        RESOURCE_TYPE_ID AS id,
+        RESOURCE_TYPE_NAME AS label,
+        PARENT_ID as pid,
+        '0' as type,
+        icon,
+        resource_property
+        FROM
+        resource_type
+        where delete_flag = 0
+        and status='0'
+        and tenant_id = #{tenantId,jdbcType=VARCHAR}
+        and industry_code = #{industryCode,jdbcType=VARCHAR}
+    </select>
+
+
+    <!--资源调派-->
+    <insert id="addEmergencyResource" parameterType="com.chinatower.emergency.dto.EmergencyResourceVO" >
+        insert into vm_emergency_resource_info(event_code,stage_id,task_id,resource_id,tenant_id,industry_code,app_ver_code,create_time,creator,delete_flag) values
+        <foreach open="" collection="list" item="item"  close="" separator=",">
+            (#{item.eventCode},#{item.stageId},#{item.taskId},#{item.resourceId},#{item.tenantId},#{item.industryCode},#{item.appVerCode},NOW(),#{item.creator},0)
+        </foreach>
+    </insert>
+
+    <delete id="deleteEmergencyResource" parameterType="com.chinatower.emergency.dto.EmergencyResourceVO">
+ 		delete from vm_emergency_resource_info where
+        event_code = #{eventCode}
+        <if test="stageId != null and stageId != ''">
+            AND stage_id = #{stageId}
+        </if>
+        <if test="taskId != null and taskId != ''">
+            AND task_id = #{taskId}
+        </if>
+        and tenant_id = #{tenantId} and industry_code = #{industryCode}
+ 	</delete>
+    <delete id="deleteEmergencyResourceByEventCodes">
+        DELETE FROM
+            vm_emergency_resource_info
+        WHERE
+            tenant_id = #{tenantId}
+        AND
+            industry_code = #{industryCode}
+        AND
+            event_code IN
+            <foreach collection="eventCodes" item="eventCode" open="(" close=")" separator=",">
+                #{eventCode}
+            </foreach>
+    </delete>
+    <update id="updateResourceStatus">
+        update vm_emergency_resource_info set import_flag = 1
+        where tenant_id = #{tenantId}
+        AND
+        industry_code = #{industryCode}
+        AND
+        event_code IN
+        <foreach collection="eventCodes" item="eventCode" open="(" close=")" separator=",">
+            #{eventCode}
+        </foreach>
+    </update>
+
+</mapper>

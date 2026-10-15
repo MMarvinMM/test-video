@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.UavCameraModelMapper">
+
+    <select id="getAllUavCameraModelCode" resultType="java.lang.String">
+        select model_code
+        from vm_uav_camera_model_t
+    </select>
+
+    <select id="getAllUavCameraModelYgId" resultType="java.lang.Long">
+        select yg_id
+        from vm_uav_camera_model_t
+        where delete_flag = 0
+    </select>
+
+    <insert id="insertUavCameraModelBatch" parameterType="com.chinatower.sync.consumer.item.UavCameraModelReport">
+        insert into vm_uav_camera_model_t
+        (yg_id, model_code, model_name, manufacturer_code, domain, type, sub_type, range_of_pan, range_of_yaw,
+        support_function, creator, create_time, modifier, update_time, delete_flag)
+        values
+        <foreach collection="list"  item="item" separator=",">
+            (#{item.id}, #{item.dictCode}, #{item.dictLabel}, #{item.manufacturerCode}, #{item.domain}, #{item.type},
+            #{item.subType}, #{item.rangeOfPan}, #{item.rangeOfYaw}, #{item.supportFunction}, #{item.createBy},
+            #{item.createTime}, #{item.updateBy}, #{item.updateTime}, 0)
+        </foreach>
+    </insert>
+
+    <update id="updateUavCameraModelBatch" parameterType="com.chinatower.sync.consumer.item.UavCameraModelReport">
+        <foreach collection="list" item="item" separator=";">
+            update vm_uav_camera_model_t
+            set model_code = #{item.dictCode},
+            model_name = #{item.dictLabel},
+            manufacturer_code = #{item.manufacturerCode},
+            domain = #{item.domain},
+            type = #{item.type},
+            sub_type = #{item.subType},
+            range_of_pan = #{item.rangeOfPan},
+            range_of_yaw = #{item.rangeOfYaw},
+            support_function = #{item.supportFunction},
+            creator = #{item.createBy},
+            create_time = #{item.createTime},
+            modifier = #{item.updateBy},
+            update_time = #{item.updateTime},
+            delete_flag = 0
+            where yg_id = #{item.id}
+        </foreach>
+    </update>
+
+    <delete id="deleteUavCameraModelBatch">
+        delete from vm_uav_camera_model_t
+        where yg_id in
+        <foreach collection="deleteIdList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="queryUavCameraModelCode" resultType="java.lang.String">
+        select model_code
+        from vm_uav_camera_model_t
+        where yg_id in
+        <foreach collection="deleteIdList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+</mapper>

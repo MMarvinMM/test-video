@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.sync.consumer.dao.AlgorithmTypeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.sync.consumer.entity.AlgorithmTypeDO">
+        <id column="algorithm_type_id" property="algorithmTypeId" />
+        <result column="algo_min_type_code" property="algoMinTypeCode" />
+        <result column="algo_min_type_name" property="algoMinTypeName" />
+        <result column="algo_type_code" property="algoTypeCode" />
+        <result column="algo_type_name" property="algoTypeName" />
+        <result column="algo_sub_type_code" property="algoSubTypeCode" />
+        <result column="algo_sub_type_name" property="algoSubTypeName" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="delete_flag" property="deleteFlag" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        algorithm_type_id, algo_min_type_code, algo_min_type_name, algo_type_code, algo_type_name, algo_sub_type_code, algo_sub_type_name, status, create_time, update_time, delete_flag
+    </sql>
+
+</mapper>

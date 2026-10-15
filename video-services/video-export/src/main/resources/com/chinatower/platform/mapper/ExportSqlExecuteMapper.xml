@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.ExportSqlExecuteMapper">
+
+    <resultMap id="BaseResultMap" type="com.chinatower.platform.entity.export.ExportSqlExecute">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="sqlValue" column="sql_value" jdbcType="VARCHAR"/>
+            <result property="requestParam" column="request_param" jdbcType="VARCHAR"/>
+            <result property="exportModule" column="export_module" jdbcType="VARCHAR"/>
+            <result property="exportClass" column="export_class" jdbcType="VARCHAR"/>
+            <result property="exportStrategyClass" column="export_strategy_class" jdbcType="VARCHAR"/>
+            <result property="exportStrategyParam" column="export_strategy_param" jdbcType="VARCHAR"/>
+            <result property="isExecute" column="is_execute" jdbcType="TINYINT"/>
+            <result property="exportTimes" column="export_times" jdbcType="TINYINT"/>
+            <result property="delFlag" column="del_flag" jdbcType="TINYINT"/>
+            <result property="createBy" column="create_by" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateBy" column="update_by" jdbcType="VARCHAR"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="exportDatabase" column="export_database" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="selectExportSqlExecuteVo">
+        SELECT
+        t.id,t.sql_value,t.request_param,
+        t.export_module,t.export_class,t.export_strategy_class,
+        t.export_strategy_param,t.is_execute,t.export_times,
+        t.del_flag,t.create_by,t.create_time,
+        t.update_by,t.update_time,t.export_database
+        FROM bs_export_sql_execute t
+        WHERE t.del_flag = '0'
+    </sql>
+    <!--R-ZBZB-202109280789713 web-admin拆分改造-->
+    <select id="selectToCheckOne" resultType="java.lang.Integer">
+        select count(*) from bs_export_sql_execute t  WHERE t.del_flag = 0
+        AND t.is_execute in (0,1)
+        AND t.export_module = #{exportModule}
+        AND t.create_by = #{createBy}
+    </select>
+
+    <!--R-ZBZB-202109280789714 新增功能 export拆分改造-->
+    <select id="selectExportSqlExecuteList" parameterType="com.chinatower.platform.entity.export.ExportSqlExecute" resultType="com.chinatower.platform.entity.export.ExportSqlExecute">
+        <include refid="selectExportSqlExecuteVo"/>
+        AND t.is_execute in (0,1)
+        ORDER BY t.id DESC
+    </select>
+    <!--R-ZBZB-202109280789714 新增功能 export拆分改造-->
+    <update id="updateExportSqlExecute" parameterType="com.chinatower.platform.entity.export.ExportSqlExecute">
+        UPDATE bs_export_sql_execute t
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="isExecute != null">t.is_execute = #{isExecute},</if>
+            <if test="updateBy != null  and updateBy != ''">t.update_by = #{updateBy},</if>
+            <if test="updateTime != null ">t.update_time = #{updateTime},</if>
+            <if test="exportModule != null  and exportModule != ''">t.export_module = #{exportModule},</if>
+            <if test="delFlag != null">t.del_flag = #{delFlag},</if>
+            <if test="requestParam != null  and requestParam != ''">t.request_param = #{requestParam},</if>
+            <if test="exportClass != null  and exportClass != ''">t.export_class = #{exportClass},</if>
+            <if test="sqlValue != null  and sqlValue != ''">t.sql_value = #{sqlValue},</if>
+            <if test="exportStrategyClass != null  and exportStrategyClass != ''">t.export_strategy_class = #{exportStrategyClass},</if>
+            <if test="exportStrategyParam != null  and exportStrategyParam != ''">t.export_strategy_param = #{exportStrategyParam},</if>
+            <if test="exportTimes != null">t.export_times = #{exportTimes}</if>
+        </trim>
+        WHERE t.id = #{id}
+    </update>
+</mapper>

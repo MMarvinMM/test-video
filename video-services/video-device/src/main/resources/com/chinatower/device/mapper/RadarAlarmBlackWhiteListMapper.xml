@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.device.mapper.RadarAlarmBlackWhiteListMapper">
+
+    <select id="queryByTemplateId" resultType="com.chinatower.device.entity.vo.RadarAlarmBlackWhiteVO">
+        select template_id, ship_name, mmsi ,list_type
+        from vm_radar_alarm_black_white_list
+        where template_id = #{templateId}
+        <if test='listType != null and listType != ""'>
+            and list_type = #{listType}
+        </if>
+    </select>
+
+    <delete id="deleteTemplateWhiteRelInfo" parameterType="com.chinatower.device.entity.dto.RadarAlarmTemplateDTO">
+        delete
+        from vm_radar_alarm_black_white_list t
+        where
+        t.template_id = #{param.templateId}
+        and t.tenant_id = #{param.tenantId}
+        and t.industry_code = #{param.industryCode}
+    </delete>
+
+
+    <delete id="deleteWhileBlackListByTempId">
+         delete from vm_radar_alarm_black_white_list where template_id = #{templateId}
+    </delete>
+</mapper>

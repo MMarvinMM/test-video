@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.airline.mapper.AirMapMapper">
+    <insert id="addAnnotationMap" parameterType="com.chinatower.device.entity.dto.AnnotationMapReq" keyColumn="id"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into vm_air_map_annotation_t (type,
+                                             geometry,
+                                             properties,
+                                             create_time,
+                                             create_user,
+                                             delete_flag,
+                                             industry_code,
+                                             annotation_Name,
+                                             tenant_id)
+        values (#{type}, #{geometry}, #{properties}, NOW(),
+                #{createUser}, 0,
+                #{industryCode},
+                CONCAT(#{annotationName}, (SELECT count FROM (SELECT COUNT(id)+1 AS count FROM vm_air_map_annotation_t WHERE type = #{type}  ${dataScope} ) AS temp)),
+                #{tenantId})
+    </insert>
+
+    <select id="queryAnnotationMap" parameterType="com.chinatower.device.entity.dto.AnnotationMapReq"
+            resultType="com.chinatower.airline.dto.response.AirMapAnnotationRes">
+        select id,
+        type,
+        geometry,
+        properties,
+        create_time as createTime,
+        create_user as createUser,
+        industry_code as industryCode,
+        annotation_Name as annotationName
+        from vm_air_map_annotation_t
+        where delete_flag = 0
+        <if test="queryName != null and queryName != ''">
+            and annotation_Name like CONCAT(CONCAT('%', #{queryName}), '%')
+        </if>
+        ${dataScope}
+    </select>
+
+    <update id="delAnnotationMap" parameterType="com.chinatower.device.entity.dto.AnnotationMapReq">
+        update vm_air_map_annotation_t
+        set delete_flag = 1,
+            update_time = NOW(),
+            update_user = #{updateUser}
+        where id = #{id}
+    </update>
+
+    <update id="updateAnnotationMap" parameterType="com.chinatower.device.entity.dto.AnnotationMapReq">
+        update vm_air_map_annotation_t
+        set geometry        = #{geometry},
+            properties      = #{properties},
+            annotation_Name = #{annotationName}
+        where id = #{id}
+    </update>
+
+    <select id="defaultAnnotationMapName" resultType="java.lang.Integer">
+        select count(id)
+        from vm_air_map_annotation_t
+        where type = #{type} ${dataScope}
+    </select>
+
+    <select id="checkAnnotationMapName" parameterType="com.chinatower.device.entity.dto.AnnotationMapReq"
+            resultType="com.chinatower.airline.dto.response.AirMapAnnotationRes">
+        select id,
+               type,
+               geometry,
+               properties,
+               create_time     as createTime,
+               create_user     as createUser,
+               industry_code   as industryCode,
+               annotation_Name as annotationName
+        from vm_air_map_annotation_t
+        where annotation_Name = #{annotationName}
+          and delete_flag = 0
+            ${dataScope}
+    </select>
+
+    <select id="queryAnnotationMapById" resultType="com.chinatower.device.entity.dto.AnnotationMapReq">
+        select id,
+               type,
+               geometry,
+               properties,
+               create_time     as createTime,
+               create_user     as createUser,
+               industry_code   as industryCode,
+               annotation_Name as annotationName
+        from vm_air_map_annotation_t
+        where id = #{id}
+    </select>
+
+    <insert id="addFlyArea" parameterType="com.chinatower.device.entity.dto.FlyAreaReq" keyColumn="id"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into vm_air_map_area_t (type,
+                                        fly_type,
+                                       geometry,
+                                             properties,
+                                             create_time,
+                                             create_user,
+                                             delete_flag,
+                                             industry_code,
+                                       area_name,
+                                             tenant_id,
+                                             status,
+                        device_codes)
+        values (#{type},#{flyType}, #{geometry}, #{properties}, NOW(),
+                #{createUser}, 0,
+                #{industryCode},
+                #{flyName},
+                #{tenantId}
+               ,'1',
+               #{deviceCodesStr})
+    </insert>
+
+    <update id="delFlyArea" parameterType="com.chinatower.device.entity.dto.AnnotationMapReq">
+        update vm_air_map_area_t
+        set delete_flag = 1,
+            update_time = NOW(),
+            update_user = #{updateUser}
+        where id = #{id}
+    </update>
+
+    <select id="queryFlyAreaList" parameterType="com.chinatower.device.entity.dto.FlyAreaReq"
+            resultType="com.chinatower.airline.dto.response.FlyAreaRes">
+        select id,
+        type,
+        fly_type as flyType,
+        geometry,
+        status,
+        properties,
+        create_time as createTime,
+        create_user as createUser,
+        industry_code as industryCode,
+        area_name as flyName,
+        device_codes as deviceCodesStr
+        from vm_air_map_area_t t
+        LEFT JOIN (
+        WITH recursive cte AS ( SELECT 1 AS n UNION ALL SELECT n + 1 FROM cte WHERE n <![CDATA[<]]> 50 ) SELECT
+        id AS area_id,
+        substring_index( substring_index( t2.device_codes, ',', cte.n ), ',', - 1 ) AS device_code
+        FROM
+        vm_air_map_area_t t2
+        JOIN cte ON cte.n <![CDATA[<=]]> ( length( t2.device_codes ) - length( REPLACE ( t2.device_codes, ',', '' )) + 1 )
+        WHERE
+        t2.delete_flag = 0
+        AND t2.device_codes IS NOT NULL
+        ) split_device ON t.id = split_device.area_id
+        where t.delete_flag = 0
+        <if test="queryName != null and queryName != ''">
+            and t.area_name like CONCAT(CONCAT('%', #{queryName}), '%')
+        </if>
+        <if test="flyType != null and flyType != ''">
+            and t.fly_type = #{flyType}
+        </if>
+        <if test="deviceCodes != null and deviceCodes.size() > 0">
+            and (split_device.device_code in
+            <foreach collection="deviceCodes" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            or t.device_codes is null)
+        </if>
+        <!--<if test="deviceCodes != null and deviceCodes.size() > 0 ">
+            and ((
+            <foreach collection="deviceCodes" item="item" separator=" OR ">
+                FIND_IN_SET(#{item}, device_codes) > 0
+            </foreach>
+            ) or device_codes is null)
+        </if>-->
+        ${dataScope}
+        order by t.create_time desc
+    </select>
+
+    <select id="checkFlyAreaName" parameterType="com.chinatower.device.entity.dto.FlyAreaReq"
+            resultType="com.chinatower.airline.dto.response.FlyAreaRes">
+        select id,
+               type,
+               fly_type as flyType,
+               geometry,
+               status,
+               properties,
+               create_time as createTime,
+               create_user as createUser,
+               industry_code as industryCode,
+               area_name as flyName
+        from vm_air_map_area_t
+        where delete_flag = 0 and area_name = #{flyName}
+        <if test="id != null and id != ''">
+            and id != #{id}
+        </if>
+        ${dataScope}
+    </select>
+
+    <select id="queryFlyMapById" parameterType="com.chinatower.device.entity.dto.FlyAreaReq"
+            resultType="com.chinatower.airline.dto.response.FlyAreaRes">
+        select id,
+               type,
+               fly_type as flyType,
+               geometry,
+               status,
+               properties,
+               create_time as createTime,
+               create_user as createUser,
+               industry_code as industryCode,
+               area_name as flyName,
+               device_codes as deviceCodesStr
+        from vm_air_map_area_t
+        where delete_flag = 0 and id = #{id}
+    </select>
+
+    <update id="updateFlyArea" parameterType="com.chinatower.device.entity.dto.FlyAreaReq" >
+        UPDATE vm_air_map_area_t
+        <set>
+            <if test="type != null">type = #{type},</if>
+            <if test="flyType != null">fly_type = #{flyType},</if>
+            <if test="geometry != null">geometry = #{geometry},</if>
+            <if test="properties != null">properties = #{properties},</if>
+            <if test="flyName != null">area_name = #{flyName},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="deviceCodesStr != null">device_Codes = #{deviceCodesStr},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="addCorrespondPoint">
+        INSERT INTO vm_air_map_point_t
+        (
+        point_name,
+        longitude,
+        latitude,
+        industry_code,
+        create_time,
+        create_user,
+        delete_flag,
+        device_code,
+        uav_code,
+        <if test="taskRecordId != null">task_record_id,</if>
+        <if test="taskRecordName != null">task_record_name,</if>
+        <if test="uavName != null">uav_name,</if>
+        <if test="photoId != null">photo_id,</if>
+        <if test="timeCreated != null">time_created,</if>
+        <if test="photoUrl != null">photo_url,</if>
+        <if test="photoAccessNode != null">task_access_node,</if>
+        <if test="tenantId != null">tenant_id,</if>
+        <if test="appVerCode != null">app_ver_code,</if>
+        <if test="photoJsonInfo != null">photo_json_info,</if>
+        <if test="photoHeight != null">photo_height,</if>
+        point_type,
+        status
+        )
+        VALUES
+        (
+        #{pointName},
+        #{longitude},
+        #{latitude},
+        #{industryCode},
+        now(),
+        #{createUser},
+        0,
+        #{deviceCode},
+        #{uavCode},
+        <if test="taskRecordId != null">#{taskRecordId},</if>
+        <if test="taskRecordName != null">#{taskRecordName},</if>
+        <if test="uavName != null">#{uavName},</if>
+        <if test="photoId != null">#{photoId},</if>
+        <if test="timeCreated != null">#{timeCreated},</if>
+        <if test="photoUrl != null">#{photoUrl},</if>
+        <if test="photoAccessNode != null">#{photoAccessNode},</if>
+        <if test="tenantId != null">#{tenantId},</if>
+        <if test="appVerCode != null">#{appVerCode},</if>
+        <if test="photoJsonInfo != null">#{photoJsonInfo},</if>
+        <if test="photoHeight != null">#{photoHeight},</if>
+        #{pointType},
+        1
+        )
+    </insert>
+
+    <update id="updateCorrespondPoint">
+        UPDATE vm_air_map_point_t
+        <set>
+            <if test="pointName != null">point_name = #{pointName},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="taskRecordId != null">task_record_id = #{taskRecordId},</if>
+            <if test="uavName != null">uav_name = #{uavName},</if>
+            <if test="taskRecordName != null">task_record_name = #{taskRecordName},</if>
+            <if test="photoId != null">photo_id = #{photoId},</if>
+            <if test="timeCreated != null">time_created = #{timeCreated},</if>
+            <if test="photoUrl != null">photo_url = #{photoUrl},</if>
+            <if test="photoAccessNode != null">task_access_node = #{photoAccessNode},</if>
+            <if test="tenantId != null">tenant_id = #{tenantId},</if>
+            <if test="industryCode != null">industry_code = #{industryCode},</if>
+            <if test="photoJsonInfo != null">photo_json_info = #{photoJsonInfo},</if>
+            update_time = NOW(),
+            <if test="updateUser != null">update_user = #{updateUser},</if>
+            <if test="appVerCode != null">app_ver_code = #{appVerCode},</if>
+            <if test="pointType != null">point_type = #{pointType},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="photoHeight != null">photo_height = #{photoHeight},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="delCorrespondPoint">
+        UPDATE vm_air_map_point_t
+            set delete_flag = 1
+        where id = #{id}
+    </update>
+
+    <select id="queryCorrespondPointList" resultType="com.chinatower.airline.dto.response.CorrespondPointRes">
+        SELECT
+            id,
+            point_name as pointName,
+            longitude,
+            latitude,
+            uav_name as uavName,
+            task_record_id as taskRecordId,
+            task_record_name as taskRecordName,
+            photo_id as photoId,
+            time_created as timeCreated,
+            photo_url as photoUrl,
+            photo_json_info as photoJsonInfo,
+            task_access_node as photoAccessNode,
+            tenant_id as tenantId,
+            industry_code as industryCode,
+            create_time as createTime,
+            create_user as createUser,
+            update_time as updateTime,
+            update_user as updateUser,
+            app_ver_code as appVerCode,
+            point_type as pointType,
+            status,
+            device_code as deviceCode,
+            uav_code as uavCode,
+            photo_height  as photoHeight
+        FROM vm_air_map_point_t
+        WHERE delete_flag = '0'
+        <if test="pointName != null and pointName != ''">
+            AND point_name LIKE CONCAT('%', #{pointName}, '%')
+        </if>
+        <if test="timeCreatedStartTime != null and timeCreatedEndTime != null and timeCreatedStartTime != '' and timeCreatedEndTime != '' ">
+            and DATE_FORMAT(time_created,'%Y-%m-%d %H:%i:%s') >= #{timeCreatedStartTime}
+            and DATE_FORMAT(time_created,'%Y-%m-%d %H:%i:%s') <![CDATA[<=]]> #{timeCreatedEndTime}
+        </if>
+        <if test="deviceCode != null and deviceCode != ''">
+            and device_code = #{deviceCode}
+        </if>
+        <if test="taskRecordId != null and taskRecordId != ''">
+            and task_record_id = #{taskRecordId}
+        </if>
+        ${dataScope}
+        ORDER BY create_time DESC
+    </select>
+    
+    <select id="countByPointName" resultType="Integer">
+        select count(id) from vm_air_map_point_t
+        where point_name = #{pointName} and delete_flag = 0
+        <if test="id != null and id != ''">
+            AND id !=  #{id}
+        </if>
+        ${dataScope}
+    </select>
+
+    <select id="queryAirLineList" resultType="com.chinatower.device.entity.vo.AirLineVo">
+        select flight_route_id as flightRouteId,extra_field as kmzJson,type as type
+            from vm_air_line_t t
+        where delete_flag = 0 and flight_main_type = 0
+        <if test="deviceCodes != null and !deviceCodes.isEmpty()">
+            and device_code in
+            <foreach item="item" index="index" collection="deviceCodes" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="queryAirLineByFlyArea" resultType="com.chinatower.device.entity.vo.AirLineVo">
+        SELECT t.flight_route_id as flightRouteId,
+        flight_route_name as flightRouteName,
+        kmz_storage_path as kmzUrl,
+        type as type,
+        t.device_code as deviceCode,
+        (case when length(IFNULL(rel.device_name, '')) = 0 then dt.device_name else rel.device_name end ) as deviceName,
+        t.update_time as modifiedTime,
+        warning_type_id as warningTypeId,
+        CASE
+        WHEN col.collect_id IS NOT NULL THEN 0
+        ELSE 1
+        END as colStatus,
+        kmz_file_name as kmzFileName,
+        kmz_access_path as kmzAccessUrl,
+        t.create_time as createTime,
+        (case when length(IFNULL(relnest.device_name, '')) = 0 then dtl.device_name else relnest.device_name end ) as uavNestName,
+        t.create_user as createUser,
+        t.update_user as updateUser,
+        t.update_time as updateTime,
+        t.access_node as accessNode
+        FROM vm_air_line_t t
+        LEFT JOIN vm_uav_device_info_t dt ON t.start_nest_code = dt.device_code
+        LEFT JOIN vm_uav_nest_device_info dtl ON dtl.device_code = t.start_nest_code
+        LEFT JOIN vm_air_line_col_t col ON t.flight_route_id = col.collect_id AND col.user_id = #{userId} and status = 0
+        LEFT JOIN vm_tenant_device_common_rel_t relnest ON relnest.device_code = dtl.device_code
+        and relnest.tenant_id = #{tenantId}
+        and relnest.industry_code = #{industryCode}
+        and relnest.delete_flag = '0'
+        and relnest.device_type = 4
+        LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = dt.device_code
+        and rel.tenant_id = #{tenantId}
+        and rel.industry_code = #{industryCode}
+        and rel.delete_flag = '0'
+        and rel.device_type = 1
+        where t.delete_flag = 0 and t.flight_main_type = 0
+        and
+        (
+        t.device_code in (select device_code from vm_order_uav_nest_devices where tenant_id = t.tenant_id and industry_code = t.industry_code and ord_status in (0,1,2) )
+        )
+        and t.flight_route_id in
+        <foreach item="item" index="index" collection="flightRouteIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        ${dataScope}
+        order by t.create_time desc
+    </select>
+
+    <select id="queryDevice" resultType="com.chinatower.airline.dto.response.DeviceAirLineRes">
+        select dt.device_code as uavCode,
+               (case when length(IFNULL(rel.device_name, '')) = 0 then dt.device_name else rel.device_name end ) as uavName,
+                dt.uav_nest_code as uavNestCode,
+               (case when length(IFNULL(relnest.device_name, '')) = 0 then dtl.device_name else relnest.device_name end ) as uavNestName
+        from vm_uav_device_info_t dt
+        join vm_uav_nest_device_info dtl on dt.uav_nest_code = dtl.device_code
+         LEFT JOIN vm_tenant_device_common_rel_t rel ON rel.device_code = dt.device_code
+            and rel.tenant_id = #{tenantId}
+            and rel.industry_code = #{industryCode}
+            and rel.delete_flag = '0'
+            and rel.device_type = 1
+        LEFT JOIN vm_tenant_device_common_rel_t relnest ON relnest.device_code = dtl.device_code
+        and relnest.tenant_id = #{tenantId}
+        and relnest.industry_code = #{industryCode}
+        and relnest.delete_flag = '0'
+        and relnest.device_type = 4
+        where dt.delete_flag = 0 and (
+            dtl.device_code in
+        <foreach item="item" index="index" collection="allDeviceCodes" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+            or
+            dt.device_code in
+        <foreach item="item" index="index" collection="allDeviceCodes" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+            )
+    </select>
+
+    <insert id="insertCompareImageCollect">
+        insert into vm_air_line_col_t
+        (collect_id, user_id, create_time, create_user, col_type, longitude, latitude,url,device_Code,medium_create_time,industry_code,collect_name)
+        values
+            (#{photoId}, #{userId}, now(),  #{userId}, #{collectType}, #{longitude}, #{latitude}, #{url}, #{deviceCode},#{timeCreated},#{industryCode},#{photoName})
+    </insert>
+
+    <delete id="deleteCompareImageCollect">
+        delete from vm_air_line_col_t
+        where collect_id = #{photoId}
+          and user_id = #{userId}
+          and col_type  in (5,6)
+          and industry_code = #{industryCode}
+    </delete>
+</mapper>

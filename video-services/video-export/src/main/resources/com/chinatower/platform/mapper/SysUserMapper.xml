@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.platform.mapper.SysUserMapper">
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysUser" id="SysUserResult">
+        <id     property="userId"       column="user_id"      />
+        <result property="deptId"       column="dept_id"      />
+        <result property="userType"       column="user_type"  />
+        <result property="userName"     column="user_name"    />
+        <result property="nickName"     column="nick_name"    />
+        <result property="email"        column="email"        />
+        <result property="phonenumber"  column="phonenumber"  />
+        <result property="sex"          column="sex"          />
+        <result property="avatar"       column="avatar"       />
+        <result property="password"     column="password"     />
+        <result property="status"       column="status"       />
+        <result property="delFlag"      column="del_flag"     />
+        <result property="loginIp"      column="login_ip"     />
+        <result property="loginDate"    column="login_date"   />
+        <result property="createBy"     column="create_by"    />
+        <result property="createTime"   column="create_time"  />
+        <result property="updateBy"     column="update_by"    />
+        <result property="updateTime"   column="update_time"  />
+        <result property="remark"       column="remark"       />
+        <result property="loginFailNum" column="login_fail_num" />
+        <result property="telPhone"    column="tel_phone"    />
+        <result property="userSource"   column="user_source"/>
+        <result property="enterpriseId" column="enterprise_id" />
+        <result property="tenantId" column="tenant_id" />
+        <result property="tenantName" column="tenant_name" />
+        <result property="tradeInfo" column="trade_info" />
+        <result property="isTenantAdmin" column="is_tenant_admin"/>
+        <result property="towerUserSource" column="tower_user_source"/>
+        <result property="grade" column="grade"/>
+        <result property="empNo" column="emp_no"/>
+        <result property="sortNo" column="sort_no"/>
+        <result property="source" column="source"/>
+        <result property="provinceId" column="province_id"/>
+        <result property="cityId" column="city_id"/>
+        <result property="pwdUpdateTime" column="pwd_update_time"/>
+        <association property="dept" column="dept_id" javaType="com.chinatower.platform.entity.admin.SysDept" resultMap="deptResult" />
+        <collection  property="roles"   javaType="java.util.List"        resultMap="RoleResult" />
+    </resultMap>
+
+    <resultMap id="RoleResult" type="com.chinatower.platform.entity.admin.SysRole">
+        <id     property="roleId"       column="role_id"        />
+        <result property="roleName"     column="role_name"      />
+        <result property="roleKey"      column="role_key"       />
+        <result property="roleSort"     column="role_sort"      />
+        <result property="dataScope"     column="data_scope"    />
+        <result property="status"       column="role_status"    />
+    </resultMap>
+
+    <resultMap id="deptResult" type="com.chinatower.platform.entity.admin.SysDept">
+        <id     property="deptId"   column="dept_id"     />
+        <result property="parentId" column="parent_id"   />
+        <result property="deptName" column="dept_name"   />
+        <result property="parentName" column="parent_name"   />
+        <result property="orderNum" column="order_num"   />
+        <result property="leader"   column="leader"      />
+        <result property="status"   column="dept_status" />
+        <result property="deptLevel"   column="dept_level" />
+        <result property="ancestors"   column="ancestors" />
+    </resultMap>
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysRole" id="SysRoleResult">
+        <id property="roleId" column="role_id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleKey" column="role_key"/>
+        <result property="roleSort" column="role_sort"/>
+        <result property="dataScope" column="data_scope"/>
+        <result property="status" column="status"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="tenantName" column="tenant_name"/>
+        <result property="provinceName" column="province_name"/>
+        <result property="cityName" column="city_name"/>
+        <result property="roleLevel" column="ROLE_LEVEL" />
+        <result property="industryCode" column="industry_code" />
+
+    </resultMap>
+
+    <sql id="selectUserVo">
+        select u.user_id, d.dept_id, u.user_name, u.user_type, u.nick_name, u.email, u.avatar,
+               u.phonenumber AS  phonenumber,u.pwd_update_time,
+               u.tel_phone, u.sex, u.status, u.user_source, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time,u.update_by, u.update_time,
+               u.remark, u.login_fail_num, u.enterprise_id, u.tenant_id, u.is_tenant_admin,u.tower_user_source,u.grade,u.emp_no,u.sort_no,u.source,
+               d.parent_id, d.dept_name, d.parent_name, d.dept_level, d.order_num, d.leader, d.status as dept_status, d.ancestors,
+               st.tenant_name, st.trade_info,st.province_id,st.city_id,d.INDUSTRY_CODE,
+               d.app_ver_code,
+               ic.industry_name,r.role_name
+        from sys_user u
+                 JOIN (WITH RECURSIVE cte AS (SELECT 1 AS n
+                                              UNION ALL
+                                              SELECT n + 1
+                                              FROM cte
+                                              WHERE n <![CDATA[<]]> 50)
+                       SELECT u.user_id,
+                              SUBSTRING_INDEX(SUBSTRING_INDEX(u.dept_id, ',', n), ',', -1) AS dept_id
+                       FROM sys_user u
+                                JOIN cte ON cte.n <![CDATA[<=]]> LENGTH(u.dept_id) - LENGTH(REPLACE(u.dept_id, ',', '')) + 1
+                       WHERE u.del_flag = '0') ud ON u.user_id = ud.user_id
+                 LEFT JOIN sys_dept d ON ud.dept_id = d.dept_id and d.del_flag = '0'
+                 left join sys_tenant_info st on u.tenant_id = st.tenant_id
+                 LEFT JOIN sys_industry_conf ic ON ic.industry_code = d.INDUSTRY_CODE AND ic.delete_flag=0
+                 LEFT JOIN sys_user_role ur ON u.USER_ID = ur.user_id
+                 LEFT JOIN sys_role r ON ur.role_id = r.role_id
+    </sql>
+
+    <select id="selectUserList" parameterType="com.chinatower.platform.entity.admin.SysUser" resultMap="SysUserResult">
+        select list.* from ( <include refid="selectUserVo"/>
+        where u.del_flag = '0'
+        <if test="userType != null and userType != ''">
+            AND u.USER_TYPE = #{userType}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND u.user_name like CONCAT(CONCAT('%', #{userName}),'%')
+        </if>
+        <if test="nickName != null and nickName != ''">
+            AND u.nick_name like CONCAT(CONCAT('%', #{nickName}),'%')
+        </if>
+        <if test="status != null and status != ''">
+            AND u.status = #{status}
+        </if>
+        <if test="phonenumber != null and phonenumber != ''">
+            AND u.phonenumber like CONCAT(CONCAT('%', #{phonenumber}),'%')
+        </if>
+        <if test="beginTime != null and beginTime != '' and beginTime != 'null'"><!-- 开始时间检索 -->
+            AND u.create_time &gt;= STR_TO_DATE(CONCAT(#{beginTime}, ' 00:00:00'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test="endTime != null and endTime != '' and endTime != 'null'"><!-- 结束时间检索 -->
+            AND u.create_time &lt;= STR_TO_DATE(CONCAT(#{endTime}, ' 23:59:59'),'%Y-%m-%d %H:%i:%s %T')
+        </if>
+        <if test="deptId != null and deptId != ''">
+            AND (u.dept_id = #{deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE INSTR(ANCESTORS, #{deptId})>0 ) )
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            AND u.tenant_id = #{tenantId}
+        </if>
+        <if test="tenantIdOrName != null and tenantIdOrName != ''">
+            AND (
+            u.tenant_id like CONCAT(CONCAT('%', #{tenantIdOrName}),'%')
+            or
+            st.tenant_name like CONCAT(CONCAT('%', #{tenantIdOrName}),'%')
+            )
+        </if>
+        <if test="towerUserSource != null and towerUserSource != ''">
+            AND u.tower_user_source = #{towerUserSource}
+        </if>
+
+        <if test="roleIdquery != null and roleIdquery != ''">
+            AND u.user_id in (select e.user_id from sys_user_role e where e.role_id = #{roleIdquery})
+        </if>
+        <!-- 数据范围过滤 -->
+        ${dataScope}
+        ORDER BY u.create_time DESC ) list
+    </select>
+
+
+    <select id="selectRoleListByUserId" parameterType="com.chinatower.platform.entity.admin.SysUser" resultMap="SysRoleResult">
+		select DISTINCT r.role_id, r.role_name, r.role_key, r.role_sort, r.tenant_id,
+                        r.status, r.del_flag, r.create_time, r.remark, r.role_type, r.create_by,r.ROLE_LEVEL,srdr.data_scope
+        from sys_role r
+	        left join sys_user_role ur on ur.role_id = r.role_id
+            left join sys_user u on ur.user_id = u.user_id
+            LEFT JOIN sys_role_data_rel srdr ON srdr.role_id = ur.role_id
+	    where ur.user_id = #{userId} and srdr.industry_code=#{tradeInfo}
+	      and ( r.tenant_id = u.tenant_id or r.role_type = '1')
+	</select>
+
+    <sql id="selectConfigVo">
+        select config_id, config_name, config_key, config_value, config_type, creator, create_time, modifier, update_time, remark
+		from sys_config
+    </sql>
+
+    <resultMap type="com.chinatower.platform.entity.admin.SysConfig" id="SysConfigResult">
+        <id     property="configId"      column="config_id"      />
+        <result property="configName"    column="config_name"    />
+        <result property="configKey"     column="config_key"     />
+        <result property="configValue"   column="config_value"   />
+        <result property="configType"    column="config_type"    />
+        <result property="creator"      column="creator"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="modifier"      column="modifier"      />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <select id="selectConfig" parameterType="com.chinatower.platform.entity.admin.SysConfig" resultMap="SysConfigResult">
+        <include refid="selectConfigVo"/>
+        <where>
+            <if test="configId !=null">
+                and config_id = #{configId}
+            </if>
+            <if test="configKey !=null and configKey != ''">
+                and config_key = #{configKey}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectUser" resultType="com.chinatower.platform.entity.admin.SysUser" parameterType="com.chinatower.platform.entity.admin.SysUser">
+        select a.user_id as userId,a.user_name as userName,a.nick_name as nickName,b.tenant_name as tenantName
+        from sys_user a
+                 left join sys_tenant_info b  on  a.tenant_id = b.tenant_id and b.del_flag= '0'
+        where  a.USER_TYPE='2'
+            ${dataScope}
+    </select>
+
+    <select id="queryUserListInfoByUserNameList" resultType="com.chinatower.platform.entity.admin.UserInfoDto">
+        select USER_ID userId,USER_NAME userName,NICK_NAME nickName,PHONENUMBER phonenumber,AVATAR avatar,STATUS status from sys_user u
+        where u.DEL_FLAG ='0' and u.USER_ID in
+        <foreach collection="userIdList" item="userId" index="index" open="(" close=")" separator=",">
+            #{userId}
+        </foreach>
+    </select>
+</mapper>

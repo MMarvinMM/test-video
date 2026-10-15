@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.chinatower.event.mapper.AlarmOperateMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.chinatower.common.core.domain.AlarmOperateDO">
+        <id column="warning_order_id" property="warningOrderId" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="tenant_name" property="tenantName" />
+        <result column="task_id" property="taskId" />
+        <result column="alarm_body" property="alarmBody" />
+        <result column="device_code" property="deviceCode" />
+        <result column="device_name" property="deviceName" />
+        <result column="channel_code" property="channelCode" />
+        <result column="channel_name" property="channelName" />
+        <result column="warning_type_id" property="warningTypeId" />
+        <result column="warning_type_name" property="warningTypeName" />
+        <result column="alarm_time" property="alarmTime" />
+        <result column="province_id" property="provinceId" />
+        <result column="province_name" property="provinceName" />
+        <result column="city_id" property="cityId" />
+        <result column="city_name" property="cityName" />
+        <result column="county_id" property="countyId" />
+        <result column="county_name" property="countyName" />
+        <result column="longitude" property="longitude" />
+        <result column="latitude" property="latitude" />
+        <result column="img_url" property="imgUrl" />
+        <result column="create_time" property="createTime" />
+        <result column="modifier_time" property="modifierTime" />
+        <result column="delete_flag" property="deleteFlag" />
+        <result column="ptz_p" property="ptzP" />
+        <result column="ptz_t" property="ptzT" />
+        <result column="ptz_z" property="ptzZ" />
+        <result column="address" property="address" />
+        <result column="alarm_code" property="alarmCode" />
+        <result column="algorithm_code" property="algorithmCode" />
+        <result column="emergency_level" property="emergencyLevel" />
+        <result column="emergency_level_name" property="emergencyLevelName" />
+        <result column="duplicate_order_id" property="duplicateOrderId" />
+        <result column="false_alarm_remark" property="falseAlarmRemark" />
+        <result column="create_user" property="createUser" />
+        <result column="create_user_name" property="createUserName" />
+        <result column="judge_result" property="judgeResult" />
+        <result column="grid_id" property="gridId" />
+        <result column="grid_name" property="gridName" />
+        <result column="video_url" property="videoUrl" />
+        <result column="file_img_url_icon" property="fileImgUrlIcon" />
+        <result column="importance_level" property="importanceLevel" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        warning_order_id, tenant_id, tenant_name, task_id, alarm_body, device_code, device_name, channel_code, channel_name, warning_type_id, warning_type_name, alarm_time, province_id, province_name, city_id, city_name, county_id, county_name, longitude, latitude, img_url, create_time, modifier_time, delete_flag, ptz_p, ptz_t, ptz_z, address, alarm_code, algorithm_code, emergency_level, emergency_level_name, duplicate_order_id, false_alarm_remark, create_user, create_user_name, judge_result, grid_id, grid_name, video_url, file_img_url_icon, importance_level
+    </sql>
+
+    <update id="updateAlarmOperate" parameterType="java.util.Map">
+        update vm_alarm_operate_t
+        <set>
+            modifier_time = now(),
+            <if test='duplicateOrderId != null and duplicateOrderId != ""'>
+                duplicate_order_id = #{duplicateOrderId,jdbcType=VARCHAR},
+            </if>
+            <if test='falseAlarmRemark != null and falseAlarmRemark !=""'>
+                false_alarm_remark = #{falseAlarmRemark,jdbcType=VARCHAR},
+            </if>
+            <if test='createUser != null and createUser !=""'>
+                create_user = #{createUser,jdbcType=VARCHAR},
+            </if>
+            <if test='createUserName != null and createUserName != ""'>
+                create_user_name = #{createUserName,jdbcType=VARCHAR},
+            </if>
+            <if test='judgeResult != null and judgeResult != ""'>
+                judge_result = #{judgeResult,jdbcType=VARCHAR},
+                judge_time = now(),
+            </if>
+            <if test='videoUrl != null and videoUrl != ""'>
+                video_url = #{videoUrl,jdbcType=VARCHAR},
+            </if>
+            <if test='fileImgUrlSrc != null and fileImgUrlSrc != ""'>
+                img_url = #{fileImgUrlSrc,jdbcType=VARCHAR},
+            </if>
+            <if test='fileImgUrlIcon != null and fileImgUrlIcon != ""'>
+                file_img_url_icon = #{fileImgUrlIcon,jdbcType=VARCHAR},
+            </if>
+            <if test='source != null and source != ""'>
+                source = #{source,jdbcType=VARCHAR},
+            </if>
+            <if test='warningTypeId != null and warningTypeId !=""'>
+                warning_type_id = #{warningTypeId},
+            </if>
+            <if test='warningTypeName != null and warningTypeName !=""'>
+                warning_type_name = #{warningTypeName},
+            </if>
+            <if test='emergencyLevel != null and emergencyLevel != ""'>
+                emergency_level = #{emergencyLevel,jdbcType=VARCHAR},
+            </if>
+            <if test='emergencyLevelName != null and emergencyLevelName != ""'>
+                emergency_level_name = #{emergencyLevelName,jdbcType=VARCHAR},
+            </if>
+            <if test='longitude != null and longitude != ""'>
+                longitude = #{longitude,jdbcType=VARCHAR},
+            </if>
+            <if test='latitude != null and latitude != ""'>
+                latitude = #{latitude,jdbcType=VARCHAR},
+            </if>
+            <if test='address != null and address != ""'>
+                address = #{address,jdbcType=VARCHAR},
+            </if>
+            <if test='provinceId != null and provinceId != ""'>
+                province_id = #{provinceId,jdbcType=VARCHAR},
+            </if>
+            <if test='cityId != null and cityId != ""'>
+                city_id = #{cityId,jdbcType=VARCHAR},
+            </if>
+            <if test='countyId != null and countyId != ""'>
+                county_id = #{countyId,jdbcType=VARCHAR},
+            </if>
+            <if test='provinceName != null and provinceName != ""'>
+                province_name = #{provinceName,jdbcType=VARCHAR},
+            </if>
+            <if test='cityName != null and cityName != ""'>
+                city_name = #{cityName,jdbcType=VARCHAR},
+            </if>
+            <if test='countyName != null and countyName != ""'>
+                county_name = #{countyName,jdbcType=VARCHAR},
+            </if>
+            <if test='gridId != null and gridId != ""'>
+                grid_id = #{gridId},
+            </if>
+            <if test='gridName != null and gridName != ""'>
+                grid_name = #{gridName},
+            </if>
+            <if test='importanceLevel != null and importanceLevel != ""'>
+                importance_level = #{importanceLevel},
+            </if>
+            <if test='devicePitch != null and devicePitch != ""'>
+                device_pitch = #{devicePitch},
+            </if>
+            <if test='deviceHorizontal != null and deviceHorizontal != ""'>
+                device_horizontal = #{deviceHorizontal},
+            </if>
+            <if test='deleteFlag != null and deleteFlag != ""'>
+                delete_flag = #{deleteFlag}
+            </if>
+        </set>
+        where 1=1
+        <if test='warningOrderId != null and warningOrderId != ""'>
+            AND warning_order_id = #{warningOrderId,jdbcType=VARCHAR}
+        </if>
+        <if test="warningOrderIds!= null and warningOrderIds.size() > 0 ">
+            AND warning_order_id in
+            <foreach collection="warningOrderIds" item="warningOrderId" index="index" open="(" close=")" separator=",">
+                #{warningOrderId,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+    </update>
+
+    <update id="updateAlarmOperateImg" parameterType="java.util.Map">
+        update vm_alarm_operate_t
+        <set>
+            <if test='videoUrl != null and videoUrl != ""'>
+                video_url = #{videoUrl,jdbcType=VARCHAR},
+            </if>
+            <if test='fileImgUrlSrc != null and fileImgUrlSrc != ""'>
+                img_url = #{fileImgUrlSrc,jdbcType=VARCHAR},
+            </if>
+            <if test='fileImgUrlIcon != null and fileImgUrlIcon != ""'>
+                file_img_url_icon = #{fileImgUrlIcon,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where warning_order_id = #{warningOrderId,jdbcType=VARCHAR}
+    </update>
+
+    <insert id="insertOperateTemp" parameterType="com.chinatower.event.entity.vo.ReceiveAlarmVO">
+        INSERT INTO vm_alarm_operate_temp_t (
+        warning_order_id,task_id,warning_type_id,
+        alarm_time,tenant_id,tenant_name,province_name,province_code,
+        city_name,city_code,county_code,county_name,longitude,
+        latitude,alarm_body,channel_code,channel_name,device_code,
+        device_name,alarm_code,algorithm_code,order_status,
+        modifier_date,create_time) VALUES
+        (#{warningOrderId}, #{taskId},#{alarmType},
+        #{alarmTime},#{tenantId},#{tenantName},#{provinceName},#{provinceCode},
+        #{cityName},#{cityCode},#{countyCode},#{countyName},#{longitude},
+        #{latitude},#{alarmBody},#{channelCode},#{channelName},#{deviceCode},
+        #{deviceName},#{alarmCode},#{algorithmCode},#{orderStatus},
+        now(),now())
+    </insert>
+
+    <insert id="insertAlarmOperates" parameterType="java.util.List">
+        INSERT INTO vm_alarm_operate_t (warning_order_id,
+        tenant_id,
+        tenant_name,
+        task_id,
+        alarm_body,
+        device_code,
+        device_name,
+        channel_code,
+        channel_name,
+        warning_type_id,
+        warning_type_name,
+        alarm_time,
+        province_id,
+        province_name,
+        city_id,
+        city_name,
+        county_id,
+        county_name,
+        longitude,
+        latitude,
+        img_url,
+        create_time,
+        modifier_time,
+        delete_flag,
+        ptz_p,
+        ptz_t,
+        ptz_z,
+        address,
+        alarm_code,
+        algorithm_code,
+        emergency_level,
+        emergency_level_name,
+        duplicate_order_id,
+        false_alarm_remark,
+        create_user,
+        create_user_name,
+        judge_result,
+        grid_id,
+        grid_name,
+        video_url,
+        file_img_url_icon,
+        importance_level,
+        operate_type,
+        industry_code,
+        app_ver_code,
+        alarm_param,
+        alarm_param_value,
+        extra_field,
+        sub_scenes,
+        hori_azimuth_angle,confidence_level,confidence_level_min,confidence_level_max,comp_confidence_level,warning_source,msg_type,
+        msg_id,notice_resource,front_alarm_pic_url,front_alarm_vedio_url,preset_id,camera_alarm_type,is_second_judge,second_judge_result,town_code,town_name,enlarge_flag,device_pitch,device_horizontal,
+        operation_node,alarm_node,operation_dept,operation_node_name,is_second_identify
+        ) VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.warningOrderId}, #{item.tenantId}, #{item.tenantName}, #{item.taskId},#{item.alarmBody},#{item.deviceCode},#{item.deviceName},#{item.channelCode},#{item.channelName},
+            #{item.alarmType},#{item.warningTypeName},#{item.alarmTime},#{item.provinceCode},#{item.provinceName},#{item.cityCode},#{item.cityName},#{item.countyCode},#{item.countyName},
+            #{item.longitude},#{item.latitude},#{item.originalPictureUrl},now(),null,'0',#{item.pan},#{item.tilt},#{item.zoom},#{item.address},#{item.alarmCode},#{item.algorithmCode},'01','一般',
+            null,null,null,null,'3',
+            #{item.gridId},#{item.gridName},#{item.alarmVideoUrl},#{item.alarmPictureUrl},#{item.importanceLevel},#{item.isOperation},
+            #{item.industryCode},#{item.appVerCode},#{item.alarmParam},#{item.alarmParamValue},#{item.extraField},#{item.subScenes},#{item.horiAzimuthAngle},
+            #{item.confidenceLevel},#{item.confidenceLevelMin},#{item.confidenceLevelMax},#{item.compConfidenceLevel},#{item.warningSource},#{item.msgType}
+            <choose>
+                <when test='item.extraInfo != null and item.extraInfo != ""'>
+                    ,#{item.extraInfo.msgId},#{item.extraInfo.noticeResource},#{item.extraInfo.frontAlarmPicUrl},#{item.extraInfo.frontAlarmVedioUrl},#{item.extraInfo.presetId}
+                </when>
+                <otherwise>
+                    ,null,null,null,null,null
+                </otherwise>
+            </choose>
+            ,#{item.cameraAlarmType},#{item.isSecondJudge},#{item.secondJudgeResult},#{item.townCode},#{item.townName},#{item.enlargeFlag},#{item.devicePitch},#{item.horiAzimuthAngle},
+            #{item.operationNode},#{item.alarmNode},#{item.operationDept},#{item.operationNodeName},#{item.isSecondIdentify}
+            )
+        </foreach>
+    </insert>
+
+    <sql id="selectAlarmOperate">
+        a.warning_order_id AS warningOrderId,
+        a.warning_source As warningSource,
+        a.tenant_id AS tenantId,
+        a.tenant_name AS tenantName,
+        IFNULL(a.task_id,'') AS taskId,
+        a.alarm_body AS alarmBody,
+        a.device_code AS deviceCode,
+        a.device_name AS deviceName,
+        a.channel_code AS channelCode,
+        a.channel_name AS channelName,
+        a.warning_type_id AS warningTypeId,
+        a.warning_type_name AS warningTypeName,
+        IFNULL(DATE_FORMAT(a.alarm_time,'%Y-%m-%d %H:%i:%S'),'') AS alarmTime,
+        a.province_id AS provinceId,
+        a.province_name AS provinceName,
+        a.city_id AS cityId,
+        a.city_name AS cityName,
+        a.county_id AS countyId,
+        a.county_name AS countyName,
+        a.longitude,
+        a.latitude,
+        IFNULL(a.img_url,'') AS imgUrl,
+        IFNULL(DATE_FORMAT(a.create_time,'%Y-%m-%d %H:%i:%S'),'') AS createTime,
+        IFNULL(DATE_FORMAT(a.modifier_time,'%Y-%m-%d %H:%i:%S'),'') AS modifierTime,
+        (case when a.judge_result = 3 then '未处理' else'已处理' end)AS orderStatusName,
+        (case when a.judge_result = 3 then '' else DATE_FORMAT(a.modifier_time,'%Y-%m-%d %H:%i:%S') end)AS finishTime,
+        a.delete_flag AS deleteFlag,
+        a.ptz_p AS pan,
+        a.ptz_t AS tilt,
+        a.ptz_z AS zoom,
+        a.address,
+        a.alarm_code AS alarmCode,
+        a.algorithm_code AS algorithmCode,
+        a.emergency_level AS emergencyLevel,
+        a.emergency_level_name AS emergencyLevelName,
+        IFNULL(a.duplicate_order_id,'') AS duplicateOrderId,
+        IFNULL(a.false_alarm_remark,'') AS falseAlarmRemark,
+        IFNULL(a.create_user,'') AS createUser,
+        IFNULL(a.create_user_name,'') AS createUserName,
+        a.judge_result AS judgeResult,
+        a.grid_id AS gridId,
+        a.grid_name AS gridName,
+        a.video_url AS videoUrl,
+        a.file_img_url_icon AS fileImgUrlIcon,
+        a.importance_level AS importanceLevel,
+        a.alarm_param as alarmParam,
+        a.alarm_param_value as alarmParamValue,
+        a.extra_field as extraField,
+        a.operate_type as operateType,
+        a.industry_code as tradeId,
+        a.app_ver_code as tradeVerCode
+    </sql>
+
+    <select id="getAlarmOperate" resultType="com.chinatower.event.entity.dto.AlarmOperateDTO" parameterType="java.lang.String">
+        SELECT
+        <include refid="selectAlarmOperate"/>
+        FROM vm_alarm_operate_t a
+        WHERE a.warning_order_id = #{warningOrderId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="getAlarmOperateList" resultType="com.chinatower.event.entity.dto.AlarmOperateDTO" parameterType="java.util.List">
+        SELECT
+        <include refid="selectAlarmOperate"/>
+        FROM vm_alarm_operate_t a
+        WHERE a.operate_type = '2' AND a.judge_result = '3'
+        <if test="list!= null and list.size() > 0 ">
+            AND a.warning_order_id in
+            <foreach collection="list" item="warningOrderId" index="index" open="(" close=")" separator=",">
+                #{warningOrderId,jdbcType=VARCHAR}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getAlarmOperateByRole" resultType="java.lang.String">
+        SELECT DISTINCT
+            u.user_id
+        FROM
+            sys_user u
+                LEFT JOIN sys_user_role ur ON ur.user_id = u.user_id
+                LEFT JOIN sys_role r ON r.role_id = ur.role_id
+                LEFT JOIN sys_dept d ON d.DEPT_ID = u.DEPT_ID
+                LEFT JOIN sys_area_manage_rel samr ON samr.dept_code = u.DEPT_ID
+        WHERE
+            r.role_key = 'tower_role_32' AND u.STATUS = '0' AND u.USER_TYPE = '0' AND u.DEL_FLAG = '0'
+            AND (
+                d.DEPT_LEVEL='1'
+                OR ( d.DEPT_LEVEL = '2' AND LEFT ( samr.area_code , 4 ) =  #{provinceId,jdbcType=VARCHAR} )
+                OR ( d.DEPT_LEVEL > '2' AND LEFT ( samr.area_code , 6 ) = #{cityId,jdbcType=VARCHAR} )
+            )
+    </select>
+
+</mapper>
